@@ -6,7 +6,8 @@ import type { VideoUpsertInput } from "./videos.schemas.js";
 export async function fetchVideos(
   prisma: PrismaClient,
   sort: "latest" | "trending",
-  limit?: number
+  limit?: number,
+  offset?: number
 ) {
   if (sort === "trending") {
     const cutoff = new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10);
@@ -14,13 +15,19 @@ export async function fetchVideos(
       where: { publishedAt: { gte: cutoff } },
       orderBy: { views: "desc" },
       take: limit,
+      skip: offset,
     });
   }
 
   return prisma.video.findMany({
     orderBy: { publishedAt: "desc" },
     take: limit,
+    skip: offset,
   });
+}
+
+export async function countVideos(prisma: PrismaClient) {
+  return prisma.video.count();
 }
 
 export async function fetchVideoBySlug(prisma: PrismaClient, slug: string) {

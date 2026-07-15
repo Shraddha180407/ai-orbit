@@ -11,6 +11,14 @@ export const ListQuerySchema = z.object({
       const parsed = parseInt(val, 10);
       return isNaN(parsed) ? undefined : parsed;
     }),
+  offset: z
+    .string()
+    .optional()
+    .transform((val: string | undefined) => {
+      if (!val) return undefined;
+      const parsed = parseInt(val, 10);
+      return isNaN(parsed) ? undefined : parsed;
+    }),
 });
 export type ListQueryInput = z.infer<typeof ListQuerySchema>;
 
