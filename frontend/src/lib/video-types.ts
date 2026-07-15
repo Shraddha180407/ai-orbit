@@ -17,6 +17,7 @@ export type Video = {
   likes: number;
   publishedAt: string; // ISO date
   author: { name: string; avatar: string };
+  channelId: string | null;
   tags: string[];
   /** Deterministic fallback gradient shown if the thumbnail URL ever fails to load. */
   accent: string;

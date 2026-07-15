@@ -50,6 +50,7 @@ export const VideoUpsertSchema = z.object({
     name: z.string(),
     avatar: z.string(),
   }),
+  channelId: z.string().nullable().optional(),
   tags: z.array(z.string()),
   accent: z.string(),
 });

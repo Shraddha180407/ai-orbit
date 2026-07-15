@@ -59,7 +59,7 @@ export function Header() {
               News
             </Link>
             <Link
-              href="/video"
+              href="/videos"
               className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
             >
               Videos

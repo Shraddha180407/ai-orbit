@@ -97,6 +97,7 @@ export async function enrichVideos(videoIds: string[]): Promise<Video[]> {
           name: item.snippet.channelTitle ?? "Unknown",
           avatar: (item.snippet.channelTitle ?? "??").slice(0, 2).toUpperCase(),
         },
+        channelId: item.snippet.channelId ?? null,
         tags: [toolCategory],
         accent: accentFor(videoId),
       });
