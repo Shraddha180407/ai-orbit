@@ -19,7 +19,6 @@ import UserIcon from 'lucide-react/dist/esm/icons/user';
 import PenTool from 'lucide-react/dist/esm/icons/pen-tool';
 import Hash from 'lucide-react/dist/esm/icons/hash';
 import Plus from 'lucide-react/dist/esm/icons/plus';
-import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down';
 import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2';
 import Circle from 'lucide-react/dist/esm/icons/circle';
 import Clock4 from 'lucide-react/dist/esm/icons/clock-4';
@@ -33,6 +32,7 @@ interface ShellProps {
 }
 
 const navWorkspace = [
+  { href: '/', label: 'Main Website', icon: Compass },
   { href: '/dashboard/profile', label: 'Profile', icon: UserIcon },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
@@ -66,13 +66,12 @@ export function Shell({ children, title, description, actions }: ShellProps) {
         )}
       >
         <div className="flex h-12 shrink-0 items-center justify-between px-4 mt-2">
-          <div className="flex items-center group cursor-pointer rounded-md hover:bg-white/[0.04] px-1.5 py-1 -ml-1.5 transition-colors">
+          <Link href="/" className="flex items-center group cursor-pointer rounded-md hover:bg-white/[0.04] px-1.5 py-1 -ml-1.5 transition-colors">
             <div className="flex h-5 w-5 items-center justify-center rounded-[4px] bg-[#5e6ad2] font-bold text-white text-[10px]">
               S
             </div>
             <span className="ml-2.5 text-[13px] font-semibold tracking-tight text-[#e8e8e8]">The AI Signal</span>
-            <ChevronDown className="ml-2 h-3.5 w-3.5 text-[#8A8F98] opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
+          </Link>
           <Button 
             variant="ghost" 
             size="icon" 

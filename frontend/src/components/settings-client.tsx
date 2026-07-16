@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { signOut } from '@/lib/auth-client';
 import { toast } from 'sonner';
 import LogOut from 'lucide-react/dist/esm/icons/log-out';
+import { API_URL } from '@/lib/api';
 
 export function SettingsClient() {
   const { data: settingsData } = useQuery({
     queryKey: ['user-settings'],
     queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'}/api/user/settings`, {
+      const res = await fetch(`${API_URL}/api/auth/settings`, {
         credentials: 'include',
       });
       if (!res.ok) return { connectedProviders: [], hasPassword: true };
@@ -28,7 +29,7 @@ export function SettingsClient() {
 
   const passwordMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'}/api/user/password`, { credentials: 'include', 
+      const res = await fetch(`${API_URL}/api/auth/password`, { credentials: 'include', 
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword, newPassword }),
@@ -49,7 +50,7 @@ export function SettingsClient() {
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'}/api/auth/account`, { credentials: 'include', 
+      const res = await fetch(`${API_URL}/api/auth/account`, { credentials: 'include', 
         method: 'DELETE',
       });
       const data = await res.json();

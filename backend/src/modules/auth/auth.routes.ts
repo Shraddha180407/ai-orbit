@@ -18,6 +18,8 @@ authRoutes.post('/resend-verification', (c) => authController.resendVerification
 authRoutes.post('/forgot-password', (c) => authController.forgotPassword(c));
 authRoutes.post('/reset-password', (c) => authController.resetPassword(c));
 authRoutes.delete('/account', jwtMiddleware, (c) => authController.deleteAccount(c));
+authRoutes.get('/settings', jwtMiddleware, (c) => authController.getSettings(c));
+authRoutes.patch('/password', jwtMiddleware, (c) => authController.updatePassword(c));
 
 // --- GOOGLE OAUTH ---
 authRoutes.get('/google', (c) => {
@@ -62,7 +64,10 @@ authRoutes.get('/google/callback', async (c) => {
       })
     });
     
-    if (!tokenRes.ok) throw new Error('Failed to get token');
+    if (!tokenRes.ok) {
+      const errText = await tokenRes.text();
+      throw new Error(`Google token error: ${errText}`);
+    }
     const tokenData = await tokenRes.json();
 
     const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -90,17 +95,18 @@ authRoutes.get('/google/callback', async (c) => {
 
     const jwtSecret = (c.env as any)?.JWT_SECRET || process.env.JWT_SECRET;
     const jwtToken = sign({ id: user.id, email: user.email, name: user.name }, jwtSecret!, { expiresIn: '7d' });
+    const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', jwtToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+      secure: isProd,
+      sameSite: isProd ? 'None' : 'Lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7
     });
 
     return c.redirect(`${frontendUrl}/dashboard`);
   } catch (err) {
-    return c.redirect(`${frontendUrl}/auth/signin?error=OAuthFailed`);
+    return c.redirect(`${frontendUrl}/auth/signin?error=OAuthFailed&details=${encodeURIComponent(err instanceof Error ? err.message : String(err))}`);
   }
 });
 
@@ -147,7 +153,10 @@ authRoutes.get('/github/callback', async (c) => {
       })
     });
     
-    if (!tokenRes.ok) throw new Error('Failed to get github token');
+    if (!tokenRes.ok) {
+      const errText = await tokenRes.text();
+      throw new Error(`Github token error: ${errText}`);
+    }
     const tokenData = await tokenRes.json();
     if (tokenData.error) throw new Error(tokenData.error);
 
@@ -193,17 +202,18 @@ authRoutes.get('/github/callback', async (c) => {
 
     const jwtSecret = (c.env as any)?.JWT_SECRET || process.env.JWT_SECRET;
     const jwtToken = sign({ id: user.id, email: user.email, name: user.name }, jwtSecret!, { expiresIn: '7d' });
+    const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', jwtToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+      secure: isProd,
+      sameSite: isProd ? 'None' : 'Lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7
     });
 
     return c.redirect(`${frontendUrl}/dashboard`);
   } catch (err) {
-    return c.redirect(`${frontendUrl}/auth/signin?error=OAuthFailed`);
+    return c.redirect(`${frontendUrl}/auth/signin?error=OAuthFailed&details=${encodeURIComponent(err instanceof Error ? err.message : String(err))}`);
   }
 });
 

@@ -14,7 +14,7 @@ function resolveApiUrl(): string {
   if (url && url.startsWith("http") && url !== "undefined") {
     return url.replace(/\/$/, "");
   }
-  return "https://ai-orbit.palamrendra-pm.workers.dev";
+  return "https://api.aiorbit.club";
 }
 
 /** Used by the client components (CommentBox, PublisherIcon, SaveButton, VoteButtons) — unchanged. */

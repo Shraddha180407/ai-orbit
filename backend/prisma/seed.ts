@@ -51,7 +51,6 @@ const COMPANIES = [
   { slug: "chatbase", name: "Chatbase", domain: "chatbase.co" },
   { slug: "speechify", name: "Speechify", domain: "speechify.com" },
   { slug: "lovo", name: "Lovo", domain: "lovo.ai" },
-  { slug: "playht", name: "Play.ht", domain: "play.ht" },
   { slug: "podcastle", name: "Podcastle", domain: "podcastle.ai" },
   { slug: "voicemaker", name: "Voicemaker", domain: "voicemaker.in" },
   { slug: "resemble", name: "Resemble AI", domain: "resemble.ai" },
@@ -650,19 +649,6 @@ const TOOLS: SeedTool[] = [
     features: ["500+ voices", "Emotive tone adjustments", "Simple script editor", "Video track sync"],
     categorySlugs: ["audio", "video", "marketing", "design"],
     tagSlugs: ["free-trial", "no-code"],
-  },
-  {
-    slug: "playht",
-    name: "Play.ht",
-    description: "Generates high fidelity synthetic voice clones for corporate training and marketing audio.",
-    websiteUrl: "https://play.ht",
-    companySlug: "playht",
-    pricingModel: PricingModel.FREEMIUM,
-    pricingAmount: 31.20,
-    billingFrequency: BillingFrequency.MONTHLY,
-    features: ["Ultra-realistic clone voice", "Voice library editor", "High speed API", "Podcast distribution"],
-    categorySlugs: ["audio", "marketing", "customer-support"],
-    tagSlugs: ["api", "free-trial"],
   },
   {
     slug: "podcastle",
@@ -1585,19 +1571,6 @@ const TOOLS: SeedTool[] = [
     features: ["Code execution environments", "Beautiful charting options", "Spreadsheet uploads"],
     categorySlugs: ["data-analysis", "productivity"],
     tagSlugs: ["free-trial", "api"]
-  },
-  {
-    slug: "tome",
-    name: "Tome",
-    description: "A collaborative presentation tool that generates structured slide decks and content layouts using AI.",
-    websiteUrl: "https://tome.app",
-    companySlug: "openai",
-    pricingModel: PricingModel.FREEMIUM,
-    pricingAmount: 8,
-    billingFrequency: BillingFrequency.MONTHLY,
-    features: ["Presentation outline generator", "Visual assets placement", "Document formatting"],
-    categorySlugs: ["productivity", "marketing"],
-    tagSlugs: ["free-trial"]
   },
   {
     slug: "beautiful-ai",

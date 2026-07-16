@@ -1,5 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 
+function getServiceLogoUrl(name: string, domain: string): string {
+  const n = name.toLowerCase().trim();
+  if (n.includes("phind")) return "https://avatars.githubusercontent.com/u/144394874?v=4";
+  if (n.includes("beatoven")) return "https://avatars.githubusercontent.com/u/85035121?v=4";
+  if (n.includes("dreamstudio")) return "https://avatars.githubusercontent.com/u/100950301?v=4";
+  if (n.includes("podcastle")) return "https://avatars.githubusercontent.com/u/19472846?v=4";
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+}
+
 export class LeaderboardService {
   private prisma: PrismaClient;
 
@@ -60,7 +69,7 @@ export class LeaderboardService {
         pricing: t.pricingModel.toString().charAt(0) + t.pricingModel.toString().slice(1).toLowerCase(),
         visits,
         addedDate: t.createdAt.toISOString().split('T')[0],
-        logoUrl: `https://logo.clearbit.com/${domain}`
+        logoUrl: getServiceLogoUrl(t.name, domain)
       };
     });
 
@@ -128,7 +137,7 @@ export class LeaderboardService {
         saves,
         description: m.description,
         visits,
-        logoUrl: `https://logo.clearbit.com/${domain}`
+        logoUrl: getServiceLogoUrl(m.name, domain)
       };
     });
 
@@ -185,7 +194,7 @@ export class LeaderboardService {
         saves,
         description: `Leading artificial intelligence company specializing in products and research.`,
         visits,
-        logoUrl: `https://logo.clearbit.com/${domain}`
+        logoUrl: getServiceLogoUrl(c.name, domain)
       };
     });
 

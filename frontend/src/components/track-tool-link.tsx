@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import ExternalLink from 'lucide-react/dist/esm/icons/external-link';
 
@@ -13,7 +14,7 @@ export function TrackToolLink({
 }) {
   const handleClick = () => {
     // Fire and forget the analytics hit
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'}/api/history`, { credentials: 'include', 
+    fetch(`${API_URL}/api/history`, { credentials: 'include', 
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -1,5 +1,10 @@
+import "dotenv/config";
 import { PrismaClient, PricingModel, BillingFrequency } from "@prisma/client";
-const prisma = new PrismaClient();
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 const logoFor = (domain) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 // ---------------------------------------------------------------------------
 // Companies — vendors/providers of the AI tools
@@ -41,7 +46,6 @@ const COMPANIES = [
     { slug: "chatbase", name: "Chatbase", domain: "chatbase.co" },
     { slug: "speechify", name: "Speechify", domain: "speechify.com" },
     { slug: "lovo", name: "Lovo", domain: "lovo.ai" },
-    { slug: "playht", name: "Play.ht", domain: "play.ht" },
     { slug: "podcastle", name: "Podcastle", domain: "podcastle.ai" },
     { slug: "voicemaker", name: "Voicemaker", domain: "voicemaker.in" },
     { slug: "resemble", name: "Resemble AI", domain: "resemble.ai" },
@@ -614,19 +618,6 @@ const TOOLS = [
         features: ["500+ voices", "Emotive tone adjustments", "Simple script editor", "Video track sync"],
         categorySlugs: ["audio", "video", "marketing", "design"],
         tagSlugs: ["free-trial", "no-code"],
-    },
-    {
-        slug: "playht",
-        name: "Play.ht",
-        description: "Generates high fidelity synthetic voice clones for corporate training and marketing audio.",
-        websiteUrl: "https://play.ht",
-        companySlug: "playht",
-        pricingModel: PricingModel.FREEMIUM,
-        pricingAmount: 31.20,
-        billingFrequency: BillingFrequency.MONTHLY,
-        features: ["Ultra-realistic clone voice", "Voice library editor", "High speed API", "Podcast distribution"],
-        categorySlugs: ["audio", "marketing", "customer-support"],
-        tagSlugs: ["api", "free-trial"],
     },
     {
         slug: "podcastle",
@@ -1505,6 +1496,136 @@ const TOOLS = [
         categorySlugs: ["customer-support", "chatbots"],
         tagSlugs: ["enterprise", "api"],
     },
+    {
+        slug: "chatpdf",
+        name: "ChatPDF",
+        description: "An AI-powered tool that allows users to interactively chat with any PDF document to extract insights.",
+        websiteUrl: "https://www.chatpdf.com",
+        companySlug: "openai",
+        pricingModel: PricingModel.FREEMIUM,
+        pricingAmount: 5,
+        billingFrequency: BillingFrequency.MONTHLY,
+        features: ["PDF upload", "Interactive Q&A chat", "Summary generation"],
+        categorySlugs: ["productivity", "data-analysis"],
+        tagSlugs: ["free-trial"]
+    },
+    {
+        slug: "kittl",
+        name: "Kittl",
+        description: "An intuitive graphic design platform with built-in AI tools for vector art and text effects generation.",
+        websiteUrl: "https://www.kittl.com",
+        companySlug: "canva",
+        pricingModel: PricingModel.FREEMIUM,
+        pricingAmount: 15,
+        billingFrequency: BillingFrequency.MONTHLY,
+        features: ["AI vector generator", "Text generation assets", "Premium templates"],
+        categorySlugs: ["image-generation", "marketing"],
+        tagSlugs: ["free-trial"]
+    },
+    {
+        slug: "julius-ai",
+        name: "Julius AI",
+        description: "An advanced AI data analyst that executes Python code to clean data and generate graphs.",
+        websiteUrl: "https://julius.ai",
+        companySlug: "openai",
+        pricingModel: PricingModel.FREEMIUM,
+        pricingAmount: 20,
+        billingFrequency: BillingFrequency.MONTHLY,
+        features: ["Code execution environments", "Beautiful charting options", "Spreadsheet uploads"],
+        categorySlugs: ["data-analysis", "productivity"],
+        tagSlugs: ["free-trial", "api"]
+    },
+    {
+        slug: "beautiful-ai",
+        name: "Beautiful.ai",
+        description: "An AI-powered presentation platform that automatically applies professional brand guidelines to slides.",
+        websiteUrl: "https://www.beautiful.ai",
+        companySlug: "canva",
+        pricingModel: PricingModel.PAID,
+        pricingAmount: 12,
+        billingFrequency: BillingFrequency.MONTHLY,
+        features: ["Brand guardrails", "Smart design template systems", "Real-time sync"],
+        categorySlugs: ["productivity", "marketing"],
+        tagSlugs: ["enterprise"]
+    },
+    {
+        slug: "harvey-ai",
+        name: "Harvey AI",
+        description: "A secure AI platform built for law firms to automate legal research and contract drafting.",
+        websiteUrl: "https://www.harvey.ai",
+        companySlug: "openai",
+        pricingModel: PricingModel.PAID,
+        pricingAmount: 89,
+        billingFrequency: BillingFrequency.MONTHLY,
+        features: ["Secure legal database sync", "Contract clause drafting", "Jurisprudence lookups"],
+        categorySlugs: ["productivity"],
+        tagSlugs: ["enterprise"]
+    },
+    {
+        slug: "pimeyes",
+        name: "Pimeyes",
+        description: "A reverse image search engine that uses facial recognition to locate photos containing specific faces.",
+        websiteUrl: "https://pimeyes.com",
+        companySlug: "google",
+        pricingModel: PricingModel.PAID,
+        pricingAmount: 29.99,
+        billingFrequency: BillingFrequency.MONTHLY,
+        features: ["Facial mapping scans", "Source link exports", "Alert notifications"],
+        categorySlugs: ["data-analysis"],
+        tagSlugs: ["api"]
+    },
+    {
+        slug: "feathery",
+        name: "Feathery",
+        description: "An enterprise-grade AI form builder that streamlines user onboarding flow creation and database integrations.",
+        websiteUrl: "https://www.feathery.io",
+        companySlug: "zapier",
+        pricingModel: PricingModel.FREEMIUM,
+        pricingAmount: 49,
+        billingFrequency: BillingFrequency.MONTHLY,
+        features: ["Logic flows builder", "Webhook systems integration", "Secure storage logs"],
+        categorySlugs: ["productivity"],
+        tagSlugs: ["api", "free-trial"]
+    },
+    {
+        slug: "rewind-ai",
+        name: "Rewind AI",
+        description: "A personalized AI assistant that records your screen and audio locally to help you recall anything you saw.",
+        websiteUrl: "https://www.rewind.ai",
+        companySlug: "microsoft",
+        pricingModel: PricingModel.FREEMIUM,
+        pricingAmount: 19,
+        billingFrequency: BillingFrequency.MONTHLY,
+        features: ["Local compression engines", "Optical character mapping", "Timeline tracking"],
+        categorySlugs: ["productivity"],
+        tagSlugs: ["free-trial"]
+    },
+    {
+        slug: "luma-dream-machine",
+        name: "Luma Dream Machine",
+        description: "A high-fidelity video generator that creates cinematic, realistic 5-second video clips from text prompts.",
+        websiteUrl: "https://lumalabs.ai",
+        companySlug: "google",
+        pricingModel: PricingModel.FREEMIUM,
+        pricingAmount: 29.99,
+        billingFrequency: BillingFrequency.MONTHLY,
+        features: ["Cinematic video styles", "Prompt engineering inputs", "Fast processing options"],
+        categorySlugs: ["image-generation", "video"],
+        tagSlugs: ["free-trial", "api"]
+    },
+    {
+        slug: "udio",
+        name: "Udio",
+        description: "An AI-powered music generation platform that creates full songs with custom vocals, lyrics, and arrangements.",
+        websiteUrl: "https://www.udio.com",
+        companySlug: "suno",
+        pricingModel: PricingModel.FREEMIUM,
+        pricingAmount: 10,
+        billingFrequency: BillingFrequency.MONTHLY,
+        features: ["Multilingual vocals synthesis", "Custom lyrics generators", "Track length extensions"],
+        categorySlugs: ["audio", "marketing"],
+        tagSlugs: ["free-trial"]
+    },
 ];
 // ---------------------------------------------------------------------------
 // Reviews — a handful of realistic sample reviews spread across popular tools
@@ -1521,6 +1642,10 @@ const REVIEWS = [
 ];
 async function main() {
     const companyBySlug = new Map();
+    const allTools = TOOLS;
+    console.log("Cleaning up old companies...");
+    const activeCompanySlugs = COMPANIES.map((c) => c.slug);
+    await prisma.company.deleteMany({ where: { slug: { notIn: activeCompanySlugs } } });
     console.log("Upserting companies...");
     for (const c of COMPANIES) {
         const company = await prisma.company.upsert({
@@ -1566,9 +1691,12 @@ async function main() {
         create: { email: u.email, name: u.name },
     })));
     console.log(`Upserted ${users.length} demo users.`);
+    console.log("Cleaning up old tools...");
+    const activeToolSlugs = allTools.map((t) => t.slug);
+    await prisma.tool.deleteMany({ where: { slug: { notIn: activeToolSlugs } } });
     console.log("Upserting tools...");
     const toolBySlug = new Map();
-    for (const t of TOOLS) {
+    for (const t of allTools) {
         const companyId = t.companySlug ? companyBySlug.get(t.companySlug)?.id ?? null : null;
         const logoUrl = t.companySlug ? logoFor(COMPANIES.find((c) => c.slug === t.companySlug).domain) : logoFor(new URL(t.websiteUrl).hostname.replace(/^www\./, ""));
         const tool = await prisma.tool.upsert({
@@ -1603,7 +1731,7 @@ async function main() {
     // Bulk relate categories and tags to tools to optimize connection roundtrips
     const categoryLinks = [];
     const tagLinks = [];
-    for (const t of TOOLS) {
+    for (const t of allTools) {
         const tool = toolBySlug.get(t.slug);
         if (!tool)
             continue;
@@ -1703,42 +1831,52 @@ async function main() {
     console.log("Seeding AI models...");
     await prisma.aIModel.deleteMany({});
     const seedModels = [
-        {
-            name: "GPT-4o",
-            creator: "OpenAI",
-            contextWindow: "128K tokens",
-            parameterSize: "N/A (Proprietary)",
-            modality: "Text, Audio, Vision",
-            releaseDate: "May 2024",
-            description: "OpenAI's flagship multimodal model, offering real-time conversational voice capabilities and high performance across vision tasks.",
-        },
-        {
-            name: "Claude 3.5 Sonnet",
-            creator: "Anthropic",
-            contextWindow: "200K tokens",
-            parameterSize: "N/A (Proprietary)",
-            modality: "Text, Vision",
-            releaseDate: "June 2024",
-            description: "State-of-the-art reasoning and coding capabilities, featuring the interactive 'Artifacts' environment for live document editing.",
-        },
-        {
-            name: "Gemini 1.5 Pro",
-            creator: "Google",
-            contextWindow: "2M tokens",
-            parameterSize: "N/A (Proprietary)",
-            modality: "Text, Vision, Audio, Code",
-            releaseDate: "April 2024",
-            description: "Features a massive 2-million token context window, allowing users to upload full codebases or hours of video content at once.",
-        },
-        {
-            name: "Llama 3.1 405B",
-            creator: "Meta",
-            contextWindow: "128K tokens",
-            parameterSize: "405 Billion",
-            modality: "Text, Code",
-            releaseDate: "July 2024",
-            description: "Meta's flagship open-weights model, rivaling top proprietary models in coding, multilingual tasks, and complex reasoning.",
-        },
+        // OpenAI Models
+        { name: "GPT-4o", creator: "OpenAI", contextWindow: "128K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Audio, Vision", releaseDate: "May 2024", description: "OpenAI's flagship multimodal model, offering real-time voice capabilities and top performance across vision tasks." },
+        { name: "GPT-4o-mini", creator: "OpenAI", contextWindow: "128K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Vision", releaseDate: "July 2024", description: "A fast, cost-efficient small model designed for high-frequency, lightweight tasks." },
+        { name: "o1", creator: "OpenAI", contextWindow: "200K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Code", releaseDate: "December 2024", description: "A reasoning model optimized for complex science, coding, and mathematical operations." },
+        { name: "o1-mini", creator: "OpenAI", contextWindow: "128K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Code", releaseDate: "September 2024", description: "A faster, coding-focused reasoning model for developers." },
+        { name: "GPT-4 Turbo", creator: "OpenAI", contextWindow: "128K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Vision", releaseDate: "November 2023", description: "Previous flagship model with extended context window and vision capabilities." },
+        { name: "GPT-4", creator: "OpenAI", contextWindow: "8K tokens", parameterSize: "N/A (Proprietary)", modality: "Text", releaseDate: "March 2023", description: "The original ground-breaking large language model from OpenAI." },
+        { name: "GPT-3.5 Turbo", creator: "OpenAI", contextWindow: "16K tokens", parameterSize: "N/A (Proprietary)", modality: "Text", releaseDate: "March 2023", description: "Efficient and fast model for general text completion tasks." },
+        { name: "GPT-4o-audio-preview", creator: "OpenAI", contextWindow: "128K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Audio", releaseDate: "October 2024", description: "OpenAI's audio-capable preview model for natural speech translation and generation." },
+        // Anthropic Models
+        { name: "Claude 3.5 Sonnet", creator: "Anthropic", contextWindow: "200K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Vision", releaseDate: "June 2024", description: "State-of-the-art reasoning and coding capabilities, featuring the interactive 'Artifacts' environment." },
+        { name: "Claude 3.5 Sonnet (New)", creator: "Anthropic", contextWindow: "200K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Vision", releaseDate: "October 2024", description: "Updated version of Claude 3.5 Sonnet with significant improvements in computer-use and coding." },
+        { name: "Claude 3.5 Haiku", creator: "Anthropic", contextWindow: "200K tokens", parameterSize: "N/A (Proprietary)", modality: "Text", releaseDate: "November 2024", description: "Anthropic's fastest, most cost-effective reasoning model." },
+        { name: "Claude 3 Opus", creator: "Anthropic", contextWindow: "200K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Vision", releaseDate: "March 2024", description: "Anthropic's largest model for complex analysis and deep tasks." },
+        { name: "Claude 3 Sonnet", creator: "Anthropic", contextWindow: "200K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Vision", releaseDate: "March 2024", description: "Balanced performance and speed for enterprise workloads." },
+        { name: "Claude 3 Haiku", creator: "Anthropic", contextWindow: "200K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Vision", releaseDate: "March 2024", description: "Lightweight and ultra-fast model for high-speed routing." },
+        // Google Models
+        { name: "Gemini 1.5 Pro", creator: "Google", contextWindow: "2M tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Vision, Audio, Code", releaseDate: "April 2024", description: "Features a massive 2-million token context window, allowing upload of full codebases or videos." },
+        { name: "Gemini 1.5 Flash", creator: "Google", contextWindow: "1M tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Vision, Audio, Code", releaseDate: "May 2024", description: "Google's lightweight, high-speed multimodal model optimized for volume." },
+        { name: "Gemini 1.0 Pro", creator: "Google", contextWindow: "32K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Code", releaseDate: "December 2023", description: "First generation Gemini model for general text and reasoning tasks." },
+        // Meta Models
+        { name: "Llama 3.1 405B", creator: "Meta", contextWindow: "128K tokens", parameterSize: "405 Billion", modality: "Text, Code", releaseDate: "July 2024", description: "Meta's flagship open-weights model, rivaling top proprietary models in coding and reasoning." },
+        { name: "Llama 3.1 70B", creator: "Meta", contextWindow: "128K tokens", parameterSize: "70 Billion", modality: "Text, Code", releaseDate: "July 2024", description: "Highly capable open-weights model for advanced agentic workflows." },
+        { name: "Llama 3.1 8B", creator: "Meta", contextWindow: "128K tokens", parameterSize: "8 Billion", modality: "Text, Code", releaseDate: "July 2024", description: "Super-fast, compact open weights model for local deployment." },
+        { name: "Llama 3 70B", creator: "Meta", contextWindow: "8K tokens", parameterSize: "70 Billion", modality: "Text, Code", releaseDate: "April 2024", description: "Original Llama 3 model optimized for text generation and instruction." },
+        { name: "Llama 3 8B", creator: "Meta", contextWindow: "8K tokens", parameterSize: "8 Billion", modality: "Text, Code", releaseDate: "April 2024", description: "Compact, efficient instruction-tuned model." },
+        // Mistral Models
+        { name: "Mistral Large 2", creator: "Mistral", contextWindow: "128K tokens", parameterSize: "123 Billion", modality: "Text, Code", releaseDate: "July 2024", description: "Mistral's flagship model with advanced multilingual and coding capabilities." },
+        { name: "Mistral 8x22B", creator: "Mistral", contextWindow: "64K tokens", parameterSize: "176 Billion MoE", modality: "Text, Code", releaseDate: "April 2024", description: "High-performance Mixture of Experts open weight model." },
+        { name: "Mixtral 8x7B", creator: "Mistral", contextWindow: "32K tokens", parameterSize: "46.7 Billion MoE", modality: "Text, Code", releaseDate: "December 2023", description: "Highly popular Mixture of Experts model setting benchmark for cost-efficiency." },
+        { name: "Codestral", creator: "Mistral", contextWindow: "32K tokens", parameterSize: "22 Billion", modality: "Code", releaseDate: "May 2024", description: "Open-weights model built specifically for code generation and autocomplete." },
+        // Cohere Models
+        { name: "Command R+", creator: "Cohere", contextWindow: "128K tokens", parameterSize: "104 Billion", modality: "Text, Code", releaseDate: "April 2024", description: "Enterprise-grade model optimized for Retrieval-Augmented Generation (RAG) and tool use." },
+        { name: "Command R", creator: "Cohere", contextWindow: "128K tokens", parameterSize: "35 Billion", modality: "Text, Code", releaseDate: "March 2024", description: "Efficient open weights model tailored for business automation." },
+        // AI21 Labs Models
+        { name: "Jamba 1.5 Large", creator: "AI21 Labs", contextWindow: "256K tokens", parameterSize: "94B (Active)", modality: "Text, Code", releaseDate: "August 2024", description: "State-of-the-art hybrid SSM-Transformer architecture model." },
+        { name: "Jamba 1.5 Mini", creator: "AI21 Labs", contextWindow: "256K tokens", parameterSize: "12B (Active)", modality: "Text, Code", releaseDate: "August 2024", description: "Ultra-fast hybrid model for long-context reasoning." },
+        // xAI Models
+        { name: "Grok 2", creator: "xAI", contextWindow: "128K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Vision", releaseDate: "August 2024", description: "xAI's frontier model integrated with real-time X search capabilities." },
+        { name: "Grok 2 Mini", creator: "xAI", contextWindow: "128K tokens", parameterSize: "N/A (Proprietary)", modality: "Text, Vision", releaseDate: "August 2024", description: "Compact and fast version of Grok 2 with excellent reasoning." },
+        // DeepSeek Models
+        { name: "DeepSeek-Coder-V2", creator: "DeepSeek", contextWindow: "128K tokens", parameterSize: "236 Billion MoE", modality: "Text, Code", releaseDate: "June 2024", description: "Open weights mixture of experts model outperforming top frontier models in coding." },
+        { name: "DeepSeek-V2.5", creator: "DeepSeek", contextWindow: "128K tokens", parameterSize: "236 Billion MoE", modality: "Text, Code", releaseDate: "September 2024", description: "Unified model combining the best of chat and coding capabilities." },
+        // Alibaba Qwen Models
+        { name: "Qwen2.5-72B-Instruct", creator: "Alibaba", contextWindow: "128K tokens", parameterSize: "72 Billion", modality: "Text, Code", releaseDate: "September 2024", description: "Highly capable open model with state of the art instruction-following and math capabilities." },
+        { name: "Qwen2.5-Coder-32B-Instruct", creator: "Alibaba", contextWindow: "128K tokens", parameterSize: "32 Billion", modality: "Code", releaseDate: "September 2024", description: "Top performing open-weights coding model." }
     ];
     await prisma.aIModel.createMany({ data: seedModels });
     // News is no longer static-seeded — the news module gets its data from
@@ -1832,7 +1970,69 @@ async function main() {
         },
     ];
     await prisma.device.createMany({ data: seedDevices });
-    console.log(`Seed complete: ${COMPANIES.length} companies, ${TOOLS.length} tools, ${REVIEWS.length} reviews.`);
+    console.log("Seeding Leaderboard Tools...");
+    await prisma.leaderboardTool.deleteMany({});
+    const leaderboardTools = [
+        ...TOOLS.map((t, index) => ({
+            id: t.slug,
+            name: t.name,
+            category: t.categorySlugs && t.categorySlugs[0] ? t.categorySlugs[0].charAt(0).toUpperCase() + t.categorySlugs[0].slice(1) : "Productivity",
+            tags: t.tagSlugs ? t.tagSlugs.join(",") : "AI,productivity",
+            rank: index + 1,
+            growth: parseFloat((5 + Math.random() * 150).toFixed(1)),
+            votes: Math.floor(200 + Math.random() * 5000),
+            rating: parseFloat((4.0 + Math.random() * 1.0).toFixed(1)),
+            saves: Math.floor(100 + Math.random() * 1500),
+            url: t.websiteUrl || "https://example.com",
+            description: t.description || `State-of-the-art AI tool for modern productivity and workflows.`,
+            pricing: t.pricingModel ? t.pricingModel.toString().charAt(0) + t.pricingModel.toString().slice(1).toLowerCase() : "Freemium",
+            visits: `${(1 + Math.random() * 50).toFixed(1)}M`,
+            addedDate: "2026-01-01"
+        })),
+    ];
+    await prisma.leaderboardTool.createMany({ data: leaderboardTools });
+    console.log("Seeding Leaderboard Models...");
+    await prisma.leaderboardModel.deleteMany({});
+    const leaderboardModels = [
+        ...seedModels.map((m, index) => ({
+            id: m.name.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+            name: m.name,
+            provider: m.creator,
+            category: m.modality,
+            rank: index + 1,
+            growth: parseFloat((5 + Math.random() * 150).toFixed(1)),
+            contextWindow: m.contextWindow,
+            pricing: "$2.50 / M input",
+            eloRating: 1250 - index * 10,
+            benchmarkScore: parseFloat((80 + Math.random() * 19).toFixed(1)),
+            openSource: m.parameterSize.includes("Billion") || m.parameterSize.includes("Million") || m.creator === "Meta" || m.creator === "Mistral",
+            votes: Math.floor(1000 + Math.random() * 5000),
+            rating: parseFloat((4.0 + Math.random() * 1.0).toFixed(1)),
+            saves: Math.floor(200 + Math.random() * 2000),
+            description: m.description,
+            visits: `${(50 + Math.random() * 900).toFixed(1)}M`
+        })),
+    ];
+    await prisma.leaderboardModel.createMany({ data: leaderboardModels });
+    console.log("Seeding Leaderboard Companies...");
+    await prisma.leaderboardCompany.deleteMany({});
+    const leaderboardCompanies = COMPANIES.map((c, index) => ({
+        id: c.slug,
+        name: c.name,
+        rank: index + 1,
+        growth: parseFloat((10 + Math.random() * 200).toFixed(1)),
+        funding: `$${(5 + Math.random() * 95).toFixed(1)}M`,
+        headquarters: "San Francisco, CA",
+        productsCount: Math.floor(1 + Math.random() * 5),
+        modelsCount: Math.floor(1 + Math.random() * 8),
+        votes: Math.floor(100 + Math.random() * 2000),
+        rating: parseFloat((4.0 + Math.random() * 1.0).toFixed(1)),
+        saves: Math.floor(50 + Math.random() * 800),
+        description: `Leading artificial intelligence company specializing in products and research.`,
+        visits: `${(5 + Math.random() * 95).toFixed(1)}M`
+    }));
+    await prisma.leaderboardCompany.createMany({ data: leaderboardCompanies });
+    console.log(`Seed complete: ${COMPANIES.length} companies, ${allTools.length} tools, ${REVIEWS.length} reviews.`);
 }
 main()
     .catch((e) => {

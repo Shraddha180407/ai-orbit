@@ -67,10 +67,11 @@ export class AuthController {
         { expiresIn: '7d' }
       );
       
+      const isProd = c.req.url.startsWith('https://');
       setCookie(c, 'auth_token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+        secure: isProd,
+        sameSite: isProd ? 'None' : 'Lax',
         path: '/',
         maxAge: 60 * 60 * 24 * 7
       });
@@ -124,10 +125,11 @@ export class AuthController {
         { expiresIn: '7d' }
       );
       
+      const isProd = c.req.url.startsWith('https://');
       setCookie(c, 'auth_token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+        secure: isProd,
+        sameSite: isProd ? 'None' : 'Lax',
         path: '/',
         maxAge: 60 * 60 * 24 * 7
       });
@@ -218,15 +220,43 @@ export class AuthController {
       const user = c.get('user');
       await this.getService(c).deleteAccount(user.id);
 
+      const isProd = c.req.url.startsWith('https://');
       deleteCookie(c, 'auth_token', { 
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+        secure: isProd,
+        sameSite: isProd ? 'None' : 'Lax',
       });
 
       return c.json({ success: true, message: 'Account deleted successfully' });
+    } catch (error: any) {
+      console.error('Delete account error:', error);
+      return c.json({ error: error.message || 'Failed to delete account' }, 500);
+    }
+  }
+
+  async getSettings(c: Context) {
+    try {
+      const user = c.get('user');
+      const settings = await this.getService(c).getSettings(user.id);
+      return c.json(settings);
     } catch (error) {
-      return c.json({ error: 'Failed to delete account' }, 500);
+      return c.json({ error: 'Failed to fetch settings' }, 500);
+    }
+  }
+
+  async updatePassword(c: Context) {
+    try {
+      const user = c.get('user');
+      const body = await c.req.json();
+      
+      if (!body.newPassword || body.newPassword.length < 6) {
+        return c.json({ error: 'New password must be at least 6 characters long' }, 400);
+      }
+      
+      await this.getService(c).updatePassword(user.id, body);
+      return c.json({ success: true, message: 'Password updated successfully' });
+    } catch (error: any) {
+      return c.json({ error: error.message || 'Failed to update password' }, 400);
     }
   }
 }

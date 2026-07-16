@@ -16,7 +16,18 @@ import { robotsRouter } from './modules/robots/robots.routes.js';
 import { runIngestion } from './modules/ingestion/ingestion.service.js';
 const app = new Hono();
 // Enable CORS middleware so the frontend Next.js can make HTTP calls
-app.use('*', cors());
+app.use('*', cors({
+    origin: (origin) => {
+        if (!origin)
+            return 'http://localhost:3000';
+        if (origin.endsWith('.aiorbit.club') || origin === 'https://aiorbit.club')
+            return origin;
+        if (origin.startsWith('http://localhost:'))
+            return origin;
+        return 'https://aiorbit.club';
+    },
+    credentials: true,
+}));
 app.route('/api/videos', videosRouter);
 app.route('/api/news', newsRouter);
 app.route('/api/ingestion', ingestionRouter);

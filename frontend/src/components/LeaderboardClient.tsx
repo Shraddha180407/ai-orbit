@@ -299,18 +299,30 @@ export function LeaderboardClient() {
     });
   };
 
+  const matchModelCategory = (m: any, target: string): boolean => {
+    const cat = m.category.toLowerCase();
+    const name = m.name.toLowerCase();
+    const desc = m.description.toLowerCase();
+    
+    if (target === "Code Model") {
+      return cat.includes("code") || name.includes("code") || name.includes("coder");
+    }
+    if (target === "LLM") {
+      return cat.includes("text");
+    }
+    if (target === "Multi-modal" || target === "Multimodal") {
+      return cat.includes(",") || cat.includes("vision") || cat.includes("audio") || desc.includes("multimodal");
+    }
+    if (target === "Reasoning LLM") {
+      return desc.includes("reasoning") || name.includes("reasoning") || name.startsWith("o1");
+    }
+    return cat.includes(target.toLowerCase());
+  };
+
   const getFilteredModels = () => {
     const filtered = models.filter((m) => {
       if (activeCategory === "All Categories") return true;
-      const categoryMapping: Record<string, string> = {
-        "Code Model": "Code Model",
-        "LLM": "LLM",
-        "Multi-modal": "Multi-modal",
-        "Multimodal": "Multimodal",
-        "Reasoning LLM": "Reasoning LLM",
-      };
-      const target = categoryMapping[activeCategory] || activeCategory;
-      return m.category.toLowerCase().includes(target.toLowerCase());
+      return matchModelCategory(m, activeCategory);
     });
 
     // Apply Sorting logic
@@ -350,7 +362,7 @@ export function LeaderboardClient() {
       const list = activeTab === "bookmarks" ? tools.filter((t) => bookmarkedIds.has(t.id)) : tools;
       return list.filter((t) => t.category.toLowerCase().includes(target.toLowerCase())).length;
     } else if (activeTab === "models") {
-      return models.filter((m) => m.category.toLowerCase().includes(target.toLowerCase())).length;
+      return models.filter((m) => matchModelCategory(m, catName)).length;
     }
     return null;
   };
@@ -483,6 +495,7 @@ export function LeaderboardClient() {
     "remove.bg": "remove.bg", "remove-bg": "remove.bg",
     "playground": "playground.com",
     "nightcafe": "nightcafe.studio",
+    "beatoven": "beatoven.ai",
     "ultimate.ai": "ultimate.ai", "ultimate-ai": "ultimate.ai",
     "julius": "julius.ai",
     "harvey": "harvey.ai",
@@ -515,13 +528,37 @@ export function LeaderboardClient() {
 
   const getLogoUrl = (name: string): string => {
     const n = name.toLowerCase().trim();
+    if (n.includes("phind")) return "https://avatars.githubusercontent.com/u/144394874?v=4";
+    if (n.includes("beatoven")) return "https://avatars.githubusercontent.com/u/85035121?v=4";
+    if (n.includes("dreamstudio") || n.includes("stability")) return "https://avatars.githubusercontent.com/u/100950301?v=4";
+    if (n.includes("podcastle")) return "https://avatars.githubusercontent.com/u/19472846?v=4";
+
     for (const [key, domain] of Object.entries(LOGO_DOMAIN_MAP)) {
       if (n === key || n.includes(key)) {
-        return `https://logo.clearbit.com/${domain}`;
+        return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
       }
     }
     const slug = n.replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
-    return `https://logo.clearbit.com/${slug}.com`;
+    return `https://www.google.com/s2/favicons?domain=${slug}.com&sz=128`;
+  };
+
+  const resolveLogoUrl = (url: string | undefined | null, name: string) => {
+    const n = name.toLowerCase().trim();
+    if (
+      n.includes("phind") ||
+      n.includes("beatoven") ||
+      n.includes("dreamstudio") ||
+      n.includes("stability") ||
+      n.includes("podcastle")
+    ) {
+      return getLogoUrl(name);
+    }
+
+    if (url && url.includes("logo.clearbit.com")) {
+      const domain = url.split("logo.clearbit.com/")[1];
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+    }
+    return url || getLogoUrl(name);
   };
 
   const getInitials = (name: string) => name.trim().charAt(0).toUpperCase();
@@ -738,7 +775,7 @@ export function LeaderboardClient() {
                                 {tool.name.charAt(0)}
                               </span>
                               <img
-                                src={tool.logoUrl || getLogoUrl(tool.name)}
+                                src={resolveLogoUrl(tool.logoUrl, tool.name)}
                                 alt={tool.name}
                                 className="h-full w-full object-contain absolute z-10 p-1.5 bg-[#18181C]"
                                 onError={(e) => handleLogoError(e, tool.name)}
@@ -832,7 +869,7 @@ export function LeaderboardClient() {
                                 {model.name.charAt(0)}
                               </span>
                               <img
-                                src={model.logoUrl || getLogoUrl(model.name)}
+                                src={resolveLogoUrl(model.logoUrl, model.name)}
                                 alt={model.name}
                                 className="h-full w-full object-contain absolute z-10 p-1.5 bg-[#18181C]"
                                 onError={(e) => handleLogoError(e, model.name)}
@@ -919,7 +956,7 @@ export function LeaderboardClient() {
                                 {company.name.charAt(0)}
                               </span>
                               <img
-                                src={company.logoUrl || getLogoUrl(company.name)}
+                                src={resolveLogoUrl(company.logoUrl, company.name)}
                                 alt={company.name}
                                 className="h-full w-full object-contain absolute z-10 p-1.5 bg-[#18181C]"
                                 onError={(e) => handleLogoError(e, company.name)}

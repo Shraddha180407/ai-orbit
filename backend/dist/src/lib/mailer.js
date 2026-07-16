@@ -2,7 +2,9 @@ import nodemailer from 'nodemailer';
 const getBaseUrl = (env) => {
     if (env?.FRONTEND_URL)
         return env.FRONTEND_URL;
-    return 'http://localhost:3000';
+    if (process.env.FRONTEND_URL)
+        return process.env.FRONTEND_URL;
+    return 'https://aiorbit.club';
 };
 const getTransporter = (env) => {
     return nodemailer.createTransport({

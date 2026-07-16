@@ -13,9 +13,10 @@ function SignInForm() {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const errorDetails = searchParams.get('details');
   const [error, setError] = useState<string | null>(
     urlError === 'OAuthAccountNotLinked' ? 'Email already in use with another provider.' : 
-    urlError ? 'An error occurred during sign in.' : null
+    urlError ? `Sign in error: ${errorDetails ? decodeURIComponent(errorDetails) : urlError}` : null
   );
   
   const [isLoadingCredentials, setIsLoadingCredentials] = useState(false);

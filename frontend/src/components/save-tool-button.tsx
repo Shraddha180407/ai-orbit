@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/shadcn-button';
@@ -18,7 +19,7 @@ export function SaveToolButton({ tool }: { tool: { id: string; name: string; cat
   const { data: savedTools = [] } = useQuery<SavedTool[]>({
     queryKey: ['saved-tools'],
     queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'}/api/user/saved-tools`, { credentials: 'include' });
+      const res = await fetch(`${API_URL}/api/user/saved-tools`, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
       return data.savedTools || [];
@@ -31,10 +32,10 @@ export function SaveToolButton({ tool }: { tool: { id: string; name: string; cat
   const toggleMutation = useMutation({
     mutationFn: async () => {
       if (isSaved) {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'}/api/user/saved-tools/${existingTool.id}`, { credentials: 'include',  method: 'DELETE' });
+        const res = await fetch(`${API_URL}/api/user/saved-tools/${existingTool.id}`, { credentials: 'include',  method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to unsave');
       } else {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'}/api/user/saved-tools`, { credentials: 'include', 
+        const res = await fetch(`${API_URL}/api/user/saved-tools`, { credentials: 'include', 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ toolId: tool.id, name: tool.name, category: tool.category }),

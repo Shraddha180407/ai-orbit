@@ -173,4 +173,33 @@ export class AuthService {
             throw new Error('User not found.');
         return dbUser;
     }
+    async getSettings(userId) {
+        const dbUser = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { password: true }
+        });
+        if (!dbUser)
+            throw new Error('User not found.');
+        return {
+            connectedProviders: [], // We are not tracking oauth providers in Account table right now
+            hasPassword: Boolean(dbUser.password)
+        };
+    }
+    async updatePassword(userId, data) {
+        const dbUser = await this.prisma.user.findUnique({
+            where: { id: userId }
+        });
+        if (!dbUser)
+            throw new Error('User not found.');
+        if (dbUser.password) {
+            const isValid = await bcrypt.compare(data.currentPassword, dbUser.password);
+            if (!isValid)
+                throw new Error('Incorrect current password.');
+        }
+        const hashedNewPassword = await bcrypt.hash(data.newPassword, 12);
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedNewPassword }
+        });
+    }
 }

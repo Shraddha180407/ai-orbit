@@ -3,16 +3,13 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaNeon } from '@prisma/adapter-neon';
 
-// Helper for dynamic Prisma Neon client creation (Cloudflare Workers dynamic env)
-import { Pool as NeonPool } from '@neondatabase/serverless';
 
 export function getPrisma(env: { DATABASE_URL: string } | any) {
   const dbUrl = env?.DATABASE_URL || process.env.DATABASE_URL;
   if (!dbUrl) {
     throw new Error('DATABASE_URL is not configured');
   }
-  const neonPool = new NeonPool({ connectionString: dbUrl });
-  const adapter = new PrismaNeon(neonPool as any);
+  const adapter = new PrismaNeon({ connectionString: dbUrl });
   return new PrismaClient({ adapter });
 }
 

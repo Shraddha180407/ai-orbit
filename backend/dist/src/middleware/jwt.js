@@ -6,7 +6,8 @@ export const jwtMiddleware = async (c, next) => {
         return c.json({ error: 'Unauthorized' }, 401);
     }
     try {
-        const decoded = verify(token, process.env.JWT_SECRET);
+        const jwtSecret = c.env?.JWT_SECRET || process.env.JWT_SECRET;
+        const decoded = verify(token, jwtSecret);
         c.set('user', decoded);
         await next();
     }

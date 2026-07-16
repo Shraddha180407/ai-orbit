@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -30,7 +31,7 @@ export function BookmarksClient() {
   const { data: bookmarks = [], isLoading } = useQuery<Bookmark[]>({
     queryKey: ['bookmarks'],
     queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'}/api/bookmarks`, { credentials: 'include' });
+      const res = await fetch(`${API_URL}/api/bookmarks`, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch bookmarks');
       return res.json();
     },
@@ -39,7 +40,7 @@ export function BookmarksClient() {
   // Create Bookmark
   const createMutation = useMutation({
     mutationFn: async (newBookmark: { title: string; url: string }) => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'}/api/bookmarks`, { credentials: 'include', 
+      const res = await fetch(`${API_URL}/api/bookmarks`, { credentials: 'include', 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newBookmark),
@@ -62,7 +63,7 @@ export function BookmarksClient() {
   // Delete Bookmark
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'}/api/bookmarks/${id}`, { credentials: 'include',  method: 'DELETE' });
+      const res = await fetch(`${API_URL}/api/bookmarks/${id}`, { credentials: 'include',  method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete bookmark');
     },
     onSuccess: () => {

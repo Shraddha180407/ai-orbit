@@ -3,8 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import Search from 'lucide-react/dist/esm/icons/search';
+import { useUser } from '@/hooks/use-user';
 
 export function Header() {
+  const { user, isLoading } = useUser();
+  
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/20 bg-background/50 backdrop-blur-md py-4">
       <div className="mx-auto max-w-[1440px] px-8 flex items-center justify-between">
@@ -74,12 +77,13 @@ export function Header() {
 
           {/* Action buttons */}
           <div className="flex items-center gap-5">
-            <button
+            <Link
+              href="/search"
               className="p-1.5 text-foreground-muted hover:text-white rounded-lg transition-colors"
               aria-label="Search site"
             >
               <Search size={17} />
-            </button>
+            </Link>
 
             <Link
               href="/tools"
@@ -88,12 +92,31 @@ export function Header() {
               Submit Tool
             </Link>
 
-            <Link
-              href="/dashboard"
-              className="inline-flex h-[32px] items-center justify-center rounded-lg bg-white px-4 text-[13px] font-bold text-black hover:bg-neutral-200 transition-colors shrink-0"
-            >
-              Dashboard
-            </Link>
+            {isLoading ? (
+              <div className="h-[32px] w-[80px] animate-pulse rounded-lg bg-white/10" />
+            ) : user ? (
+              <Link
+                href="/dashboard"
+                className="inline-flex h-[32px] items-center justify-center rounded-lg bg-white px-4 text-[13px] font-bold text-black hover:bg-neutral-200 transition-colors shrink-0"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/auth/signin"
+                  className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors px-2"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="inline-flex h-[32px] items-center justify-center rounded-lg bg-white px-4 text-[13px] font-bold text-black hover:bg-neutral-200 transition-colors shrink-0"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

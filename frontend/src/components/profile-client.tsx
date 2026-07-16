@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
@@ -15,7 +16,7 @@ export function ProfileClient() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ newName }: { newName: string }) => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'}/api/user`, { credentials: 'include', 
+      const res = await fetch(`${API_URL}/api/user`, { credentials: 'include', 
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName }),
