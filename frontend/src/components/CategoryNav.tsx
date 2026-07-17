@@ -12,7 +12,7 @@ export function CategoryNav() {
     { name: "Repositories", href: "#repos" },
     { name: "News", href: "#news" },
     { name: "Collections", href: "/tools", external: true },
-    { name: "Videos", href: "/tools", external: true },
+    { name: "Videos", href: "/videos", external: true },
     { name: "Agents", href: "/tools?category=agents", external: true },
   ];
 
