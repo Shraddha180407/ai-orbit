@@ -1,13 +1,14 @@
 import { CollectionCard } from "@/components/CollectionCard";
+import { EmptyState } from "@/components/EmptyState";
 import type { CollectionListItem } from "@/lib/types";
 
 export function CollectionGrid({ collections }: { collections: CollectionListItem[] }) {
   if (collections.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border bg-surface/50 px-6 py-16 text-center">
-        <h3 className="font-medium text-foreground">No collections match this filter</h3>
-        <p className="mt-1.5 text-sm text-foreground-muted">Try a different category.</p>
-      </div>
+      <EmptyState
+        title="No collections match this filter"
+        description="Try a different category, or check back later — new collections are added regularly."
+      />
     );
   }
 

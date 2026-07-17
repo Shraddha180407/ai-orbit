@@ -346,6 +346,33 @@
 .tas-cinput:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06); }
 
 /* ============================================================
+   Collections module scoped theme (ported from the original
+   design prototype at collection1-mu.vercel.app). The site's
+   shared @theme is deliberately monochrome (--color-accent is
+   pure white), so without this override every "accent" element
+   in Collections renders white/gray instead of the prototype's
+   violet/gold. Scoped to .collections-scope (applied to the
+   <main> wrapper in every Collections page) so this never
+   touches the shared theme or any other module — same pattern
+   as .news-scope above.
+   ============================================================ */
+.collections-scope {
+  --color-accent: #7C5CFC;
+  --color-accent-hover: #5B41C9;
+  --color-accent-muted: rgba(124, 92, 252, 0.15);
+  --collections-gold: #F5B400;
+  --collections-gold-muted: rgba(245, 180, 0, 0.12);
+}
+
+@keyframes collectionsSpinGlow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.collections-scope .collections-glow {
+  animation: collectionsSpinGlow 6s linear infinite;
+}
+
+/* ============================================================
    Search module theme tokens — ported from the Module 2 (Global
    Search) prototype. Every token AND every derived Tailwind
    utility is prefixed `search-` (e.g. `bg-search-surface`,
@@ -356,7 +383,7 @@
    src/app/search/layout.tsx, wrapping every /search page, and by
    EntityDetail.tsx for its handful of stand-in detail routes) —
    same pattern as .news-scope.
-   ============================================================ */
+   
 @theme {
   --color-search-bg: #0b0b0f;
   --color-search-surface: #151519;
@@ -496,3 +523,4 @@
   background: transparent;
   height: 4px;
 }
+

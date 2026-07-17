@@ -1,12 +1,10 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { LoadingState } from "@/components/search/states/LoadingState";
-import { SECTIONS, getSectionBySlug } from "@/lib/sections";
+import { getSectionBySlug } from "@/lib/sections";
 import { SectionPageContent } from "./SectionPageContent";
 
-export function generateStaticParams() {
-  return SECTIONS.map((s) => ({ section: s.slug }));
-}
+export const runtime = "edge";
 
 export default async function SectionPage({
   params,

@@ -32,8 +32,15 @@ const app = new Hono<{ Bindings: Bindings }>()
 app.use('*', cors({
   origin: (origin) => {
     if (!origin) return 'http://localhost:3000';
-    if (origin.endsWith('.aiorbit.club') || origin === 'https://aiorbit.club') return origin;
-    if (origin.startsWith('http://localhost:')) return origin;
+    // Allow local development, preview subdomains, and primary domains
+    if (
+      origin === 'https://aiorbit.club' ||
+      origin.endsWith('.aiorbit.club') ||
+      origin.endsWith('.pages.dev') ||
+      origin.startsWith('http://localhost:')
+    ) {
+      return origin;
+    }
     return 'https://aiorbit.club';
   },
   credentials: true,

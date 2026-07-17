@@ -20,10 +20,10 @@ export function ToolGrid({ tools }: { tools: ToolCardData[] }) {
   return (
     <div
       role="list"
-      className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+      className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10"
     >
       {tools.map((tool) => (
-        <div key={tool.id} role="listitem" className="h-full">
+        <div key={tool.id} role="listitem">
           <ToolCard tool={tool} />
         </div>
       ))}

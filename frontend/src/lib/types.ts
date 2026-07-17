@@ -95,7 +95,7 @@ export type CollectionListItem = {
   featured: boolean;
   updatedAt: string;
   toolCount: number;
-  previewLogos: (string | null)[];
+  previewTools: { logoUrl: string | null; name: string }[];
 };
 
 export type CollectionDetailData = {

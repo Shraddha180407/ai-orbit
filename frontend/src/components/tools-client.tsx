@@ -60,7 +60,7 @@ export function ToolsClient() {
   }, [searchParams.toString()]);
 
   return (
-    <main className="mx-auto max-w-container px-6 py-10">
+    <main className="mx-auto max-w-[1070px] px-6 py-10">
       <header className="mb-8 flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">AI Tools</h1>

@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Search from 'lucide-react/dist/esm/icons/search';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin';
 
 import { API_URL } from "@/lib/api";
 
@@ -14,7 +15,6 @@ import { HeroFeatureChips } from "@/components/HeroFeatureChips";
 import { HeroCategoryPills } from "@/components/HeroCategoryPills";
 import { SortDropdown } from "@/components/SortDropdown";
 import { ToolGrid } from "@/components/ToolGrid";
-import { Pagination } from "@/components/Pagination";
 
 import type { SortOption } from "@/lib/types";
 
@@ -29,6 +29,9 @@ export function HomeClient() {
   const [topRepos, setTopRepos] = useState<any[]>([]);
   const [topNews, setTopNews] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Build params object from URL search params
   const params = {
@@ -36,34 +39,48 @@ export function HomeClient() {
     category: searchParams.get("category") || undefined,
     pricing: searchParams.get("pricing") || undefined,
     sort: (searchParams.get("sort") || undefined) as SortOption | undefined,
-    page: searchParams.get("page") || undefined,
   };
+
+  const filterKey = `${params.q || ''}-${params.category || ''}-${params.pricing || ''}-${params.sort || ''}`;
+
+  // Reset page and tools when filters change
+  useEffect(() => {
+    setTools([]);
+    setPage(1);
+    setTotalPages(1);
+  }, [filterKey]);
 
   useEffect(() => {
     async function fetchData() {
-      setIsLoading(true);
+      if (page === 1) {
+        setIsLoading(true);
+      } else {
+        setIsFetchingMore(true);
+      }
       try {
-        // Fetch tools
         const query = new URLSearchParams();
         if (params.q) query.set("q", params.q);
         if (params.category) query.set("category", params.category);
         if (params.pricing) query.set("pricing", params.pricing);
         if (params.sort) query.set("sort", params.sort);
-        if (params.page) query.set("page", params.page);
+        query.set("page", page.toString());
 
         const [toolsRes, homepageRes] = await Promise.all([
           fetch(`${API_URL}/api/v1/tools?${query.toString()}`),
-          fetch(`${API_URL}/api/v1/homepage`),
+          page === 1 ? fetch(`${API_URL}/api/v1/homepage`) : Promise.resolve(null),
         ]);
 
         if (toolsRes.ok) {
           const toolsData = await toolsRes.json();
-          setTools(toolsData.tools || []);
-          setPage(toolsData.page || 1);
+          if (page === 1) {
+            setTools(toolsData.tools || []);
+          } else {
+            setTools(prev => [...prev, ...(toolsData.tools || [])]);
+          }
           setTotalPages(toolsData.totalPages || 1);
         }
 
-        if (homepageRes.ok) {
+        if (homepageRes && homepageRes.ok) {
           const data = await homepageRes.json();
           setTopCompanies(data.topCompanies || []);
           setTopModels(data.topModels || []);
@@ -74,12 +91,35 @@ export function HomeClient() {
         console.error("Failed to fetch homepage data:", error);
       } finally {
         setIsLoading(false);
+        setIsFetchingMore(false);
       }
     }
 
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams.toString()]);
+  }, [filterKey, page]);
+
+  // IntersectionObserver for endless scrolling
+  useEffect(() => {
+    if (isLoading || isFetchingMore || page >= totalPages) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setPage(prev => prev + 1);
+      }
+    }, { threshold: 0.1 });
+
+    const currentSentinel = sentinelRef.current;
+    if (currentSentinel) {
+      observer.observe(currentSentinel);
+    }
+
+    return () => {
+      if (currentSentinel) {
+        observer.unobserve(currentSentinel);
+      }
+    };
+  }, [isLoading, isFetchingMore, page, totalPages]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
@@ -140,7 +180,7 @@ export function HomeClient() {
       <div className="border-b border-[#232326]/40 w-full z-10 relative" />
 
       {/* 3. Main Grid Content Wrapper */}
-      <div className="mx-auto max-w-[1440px] px-8 py-8 flex-1 space-y-12">
+      <div className="mx-auto max-w-[1070px] px-8 py-8 flex-1 space-y-12 w-full">
         
         {/* Tools Section */}
         <div id="tools" className="scroll-mt-28 space-y-4">
@@ -157,16 +197,22 @@ export function HomeClient() {
           </div>
 
           <div className="space-y-4 pt-1">
-            {isLoading ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {[1,2,3,4,5,6,7,8].map((i) => (
-                  <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
+            {isLoading && page === 1 ? (
+              <div className="flex flex-col gap-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-24 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
                 ))}
               </div>
             ) : (
               <>
                 <ToolGrid tools={tools} />
-                <Pagination page={page} totalPages={totalPages} params={params} />
+                
+                {/* Sentinel for infinite scroll */}
+                {tools.length > 0 && page < totalPages && (
+                  <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -177,27 +223,42 @@ export function HomeClient() {
           id="companies"
           title="Top AI Companies"
           description="Explore leading AI companies, labs, and startups building the future."
-          viewAllHref="/tools"
+          viewAllHref="/companies"
         >
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
             {topCompanies.map((c) => (
               <Link 
                 key={c.id}
-                href={`/tools?q=${encodeURIComponent(c.name)}`}
-                className="flex flex-col justify-between gap-3 rounded-[24px] border border-[#232326] bg-[#131316] p-5 hover:border-neutral-500 hover:bg-[#18181C]/40 transition-all group"
+                href={`/companies/${c.slug}`}
+                className="group grid grid-cols-1 sm:grid-cols-[40px_1fr_200px_120px_120px] gap-4 items-center p-4 bg-transparent hover:bg-[#18181C]/40 transition-all focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60">
-                    {c.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-white truncate">{c.name}</h3>
-                    <p className="text-[11px] text-[#A1A1AA] truncate">AI Company</p>
-                  </div>
+                {/* Column 1: Initials */}
+                <div className="h-10 w-10 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60 shrink-0">
+                  {c.name.charAt(0)}
                 </div>
-                <p className="text-xs text-[#A1A1AA] line-clamp-2 mt-1 min-h-[32px]">
-                  Explore tools and applications developed by {c.name}.
-                </p>
+
+                {/* Column 2: Name */}
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-white truncate">{c.name}</h3>
+                </div>
+
+                {/* Column 3: Headquarters */}
+                <div className="text-sm text-[#A1A1AA] flex items-center gap-1 truncate">
+                  <MapPin size={12} className="shrink-0 text-[#71717A]" />
+                  <span>{c.headquarters || "Global HQ"}</span>
+                </div>
+
+                {/* Column 4: Label */}
+                <div className="text-sm text-[#A1A1AA] truncate">
+                  AI Company
+                </div>
+
+                {/* Column 5: Action Link */}
+                <div className="text-right sm:block hidden">
+                  <span className="text-xs font-semibold text-[#71717A] group-hover:text-white transition-colors">
+                    Details &rarr;
+                  </span>
+                </div>
               </Link>
             ))}
           </div>
@@ -208,30 +269,41 @@ export function HomeClient() {
           id="models"
           title="Top AI Models"
           description="Discover state-of-the-art open source and proprietary AI models."
-          viewAllHref="/tools"
+          viewAllHref="/models"
         >
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
             {topModels.map((m) => (
               <Link 
                 key={m.id}
-                href={`/tools?q=${encodeURIComponent(m.name)}`}
-                className="flex flex-col justify-between gap-3 rounded-[24px] border border-[#232326] bg-[#131316] p-5 hover:border-neutral-500 hover:bg-[#18181C]/40 transition-all group"
+                href={`/models`}
+                className="group grid grid-cols-1 sm:grid-cols-[40px_1fr_180px_120px] gap-4 items-center p-4 bg-transparent hover:bg-[#18181C]/40 transition-all focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60">
-                    {m.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-white truncate">{m.name}</h3>
-                    <p className="text-[11px] text-[#A1A1AA] truncate">{m.creator}</p>
-                  </div>
+                {/* Column 1: Initials */}
+                <div className="h-10 w-10 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60 shrink-0">
+                  {m.name.charAt(0)}
                 </div>
-                <p className="text-xs text-[#A1A1AA] line-clamp-2 mt-1 min-h-[32px]">
-                  {m.description}
-                </p>
-                <div className="mt-2 pt-2 border-t border-[#232326]/60 flex items-center justify-between text-[10px] font-mono text-[#71717A]">
-                  <span>WINDOW</span>
-                  <span className="text-white">{m.contextWindow}</span>
+
+                {/* Column 2: Name + Description */}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white truncate">{m.name}</h3>
+                    <span className="text-[10px] font-mono text-[#71717A]">by {m.creator}</span>
+                  </div>
+                  <p className="text-xs text-[#A1A1AA] line-clamp-1 mt-1 leading-relaxed">
+                    {m.description}
+                  </p>
+                </div>
+
+                {/* Column 3: Context Window */}
+                <div className="text-xs text-[#A1A1AA] font-mono sm:block hidden">
+                  Context: <strong className="text-white">{m.contextWindow}</strong>
+                </div>
+
+                {/* Column 4: Action */}
+                <div className="text-right sm:block hidden">
+                  <span className="text-xs font-semibold text-[#71717A] group-hover:text-white transition-colors">
+                    Details &rarr;
+                  </span>
                 </div>
               </Link>
             ))}
@@ -243,32 +315,43 @@ export function HomeClient() {
           id="repos"
           title="Trending GitHub Repositories"
           description="Explore popular open-source repositories pushing AI boundaries on GitHub."
-          viewAllHref="/tools"
+          viewAllHref="/repositories"
         >
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
             {topRepos.map((repo) => (
               <a 
                 key={repo.id}
                 href={repo.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex flex-col justify-between gap-3 rounded-[24px] border border-[#232326] bg-[#131316] p-5 hover:border-neutral-500 hover:bg-[#18181C]/40 transition-all group"
+                className="group grid grid-cols-1 sm:grid-cols-[40px_1fr_180px_120px] gap-4 items-center p-4 bg-transparent hover:bg-[#18181C]/40 transition-all focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60">
-                    {repo.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-white truncate">{repo.name}</h3>
-                    <p className="text-[11px] text-[#A1A1AA] truncate">⭐ {repo.stars.toLocaleString()} stars</p>
-                  </div>
+                {/* Column 1: Initials */}
+                <div className="h-10 w-10 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60 shrink-0">
+                  {repo.name.charAt(0)}
                 </div>
-                <p className="text-xs text-[#A1A1AA] line-clamp-2 mt-1 min-h-[32px]">
-                  {repo.description}
-                </p>
-                <div className="mt-2 pt-2 border-t border-[#232326]/60 flex items-center justify-between text-[10px] font-mono text-[#71717A]">
-                  <span>LANG</span>
-                  <span className="text-white">{repo.language}</span>
+
+                {/* Column 2: Name + Description */}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white truncate">{repo.name}</h3>
+                    <span className="text-[10px] text-[#71717A]">⭐ {repo.stars.toLocaleString()}</span>
+                  </div>
+                  <p className="text-xs text-[#A1A1AA] line-clamp-1 mt-1 leading-relaxed">
+                    {repo.description}
+                  </p>
+                </div>
+
+                {/* Column 3: Language */}
+                <div className="text-xs text-[#A1A1AA] font-mono sm:block hidden">
+                  Lang: <strong className="text-white">{repo.language}</strong>
+                </div>
+
+                {/* Column 4: Action */}
+                <div className="text-right sm:block hidden">
+                  <span className="text-xs font-semibold text-[#71717A] group-hover:text-white transition-colors">
+                    Github &rarr;
+                  </span>
                 </div>
               </a>
             ))}
@@ -282,26 +365,33 @@ export function HomeClient() {
           description="Stay informed with critical announcements and ecosystem coverage."
           viewAllHref="/news"
         >
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
             {topNews.map((n) => (
               <a
                 key={n.id}
                 href={`/news/${n.slug}`}
-                className="flex flex-col justify-between gap-3 rounded-[24px] border border-[#232326] bg-[#131316] p-5 hover:border-neutral-500 hover:bg-[#18181C]/40 transition-all group"
+                className="group grid grid-cols-1 sm:grid-cols-[40px_1fr_180px_120px] gap-4 items-center p-4 bg-transparent hover:bg-[#18181C]/40 transition-all focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60">
-                    N
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-white truncate">{n.title}</h3>
-                    <p className="text-[11px] text-[#A1A1AA] truncate">{n.publisher?.name}</p>
-                  </div>
+                {/* Column 1: Initials */}
+                <div className="h-10 w-10 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60 shrink-0">
+                  N
                 </div>
-                <div className="mt-2 pt-2 border-t border-[#232326]/60 flex items-center justify-between text-[10px] font-mono text-[#71717A]">
-                  <span>PUBLISHED</span>
-                  <span className="text-white">
-                    {new Date(n.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+
+                {/* Column 2: Title */}
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-white truncate">{n.title}</h3>
+                  <p className="text-[11px] text-[#A1A1AA] mt-0.5 truncate">by {n.publisher?.name}</p>
+                </div>
+
+                {/* Column 3: Published stack */}
+                <div className="text-xs text-[#A1A1AA] font-mono sm:block hidden">
+                  {new Date(n.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </div>
+
+                {/* Column 4: Action */}
+                <div className="text-right sm:block hidden">
+                  <span className="text-xs font-semibold text-[#71717A] group-hover:text-white transition-colors">
+                    Read &rarr;
                   </span>
                 </div>
               </a>
