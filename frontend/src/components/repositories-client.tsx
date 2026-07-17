@@ -187,29 +187,26 @@ export function RepositoriesClient() {
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="grid grid-cols-[0.3fr_3fr_1.2fr_1.2fr_0.4fr] md:grid-cols-[0.3fr_2.5fr_1.5fr_1fr_1fr_0.4fr] lg:grid-cols-[0.3fr_2fr_1.2fr_0.8fr_0.8fr_0.8fr_0.6fr_0.3fr] xl:grid-cols-[0.3fr_2.5fr_1.5fr_1fr_1fr_1fr_1fr_0.8fr_0.4fr] gap-4 items-center py-5 px-4 w-full animate-pulse"
+                className="grid grid-cols-[30px_1fr_70px_80px_50px] md:grid-cols-[30px_1fr_130px_70px_100px_50px] lg:grid-cols-[30px_1fr_130px_70px_70px_100px_80px_50px] xl:grid-cols-[30px_1fr_130px_70px_70px_100px_70px_80px_50px] gap-[10px] items-center py-[14px] px-[10px] h-[58.4px] w-full animate-pulse border-b border-[#232326]/30 last:border-b-0"
               >
                 {/* Col 1 */}
                 <div className="h-3 w-4 rounded bg-white/[0.04] mx-auto" />
                 {/* Col 2 */}
-                <div>
-                  <div className="h-3 w-1/3 rounded bg-white/[0.04] mb-2" />
-                  <div className="h-2.5 w-3/4 rounded bg-white/[0.04]" />
-                </div>
+                <div className="h-3 w-1/3 rounded bg-white/[0.04]" />
                 {/* Col 3 */}
-                <div className="h-3.5 w-1/2 rounded bg-white/[0.04] hidden md:block" />
+                <div className="h-3 w-1/2 rounded bg-white/[0.04] hidden md:block" />
                 {/* Col 4 */}
-                <div className="h-3 w-1/2 rounded bg-white/[0.04]" />
+                <div className="h-3 w-10 rounded bg-white/[0.04] mx-auto" />
                 {/* Col 5 */}
-                <div className="h-3 w-1/3 rounded bg-white/[0.04] hidden lg:block" />
+                <div className="h-3 w-10 rounded bg-white/[0.04] mx-auto hidden lg:block" />
                 {/* Col 6 */}
-                <div className="h-4 w-12 rounded bg-white/[0.04] hidden md:block" />
+                <div className="h-4 w-12 rounded-full bg-white/[0.04] mx-auto hidden md:block" />
                 {/* Col 7 */}
-                <div className="h-3 w-1/2 rounded bg-white/[0.04] hidden xl:block" />
+                <div className="h-3 w-8 rounded bg-white/[0.04] mx-auto hidden xl:block" />
                 {/* Col 8 */}
-                <div className="h-3 w-12 rounded bg-white/[0.04] block md:hidden lg:block" />
+                <div className="h-3 w-8 rounded bg-white/[0.04] mx-auto block md:hidden lg:block" />
                 {/* Col 9 */}
-                <div className="h-8 w-8 rounded-full bg-white/[0.04] justify-self-end" />
+                <div className="h-7 w-7 rounded-full bg-white/[0.04] mx-auto" />
               </div>
             ))}
           </RepositoryTable>

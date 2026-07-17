@@ -40,28 +40,26 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`Open ${repo.name} repository on GitHub in a new tab`}
-        className="hidden sm:grid grid-cols-[0.3fr_3fr_1.2fr_1.2fr_0.4fr] md:grid-cols-[0.3fr_2.5fr_1.5fr_1fr_1fr_0.4fr] lg:grid-cols-[0.3fr_2fr_1.2fr_0.8fr_0.8fr_0.8fr_0.6fr_0.3fr] xl:grid-cols-[0.3fr_2.5fr_1.5fr_1fr_1fr_1fr_1fr_0.8fr_0.4fr] gap-4 items-center py-5 px-4 bg-transparent hover:bg-surface-raised/40 transition-all w-full focus-visible:bg-surface-raised/40 focus-visible:outline-none group"
+        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+        className="hidden sm:grid grid-cols-[30px_1fr_70px_80px_50px] md:grid-cols-[30px_1fr_130px_70px_100px_50px] lg:grid-cols-[30px_1fr_130px_70px_70px_100px_80px_50px] xl:grid-cols-[30px_1fr_130px_70px_70px_100px_70px_80px_50px] gap-[10px] items-center py-[14px] px-[10px] h-[58.4px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none group border-b border-[#232326]/30 last:border-b-0"
       >
         {/* Column 1: Rank */}
-        <div className="text-xs text-[#71717A] font-mono text-center shrink-0">
+        <div className="text-[11px] text-[#71717A] font-mono text-center shrink-0">
           {rank}
         </div>
 
-        {/* Column 2: Repository Name & Description */}
-        <div className="min-w-0">
-          <h3 className="font-bold text-white text-sm truncate group-hover:text-white transition-colors">
+        {/* Column 2: Repository Name (Vertically Centered) */}
+        <div className="min-w-0 flex items-center h-full text-left">
+          <h3 className="font-medium text-white text-[11px] truncate group-hover:text-white transition-colors">
             {repo.name}
             <span className="sr-only"> (opens in a new tab)</span>
           </h3>
-          <p className="text-xs text-[#A1A1AA] line-clamp-2 mt-1 leading-relaxed">
-            {repo.description}
-          </p>
         </div>
 
         {/* Column 3: Company / Owner */}
-        <div className="min-w-0 flex items-center gap-2 text-xs text-[#A1A1AA] font-medium hidden md:flex">
+        <div className="min-w-0 flex items-center gap-[6px] text-[11px] text-[#A1A1AA] font-semibold hidden md:flex text-left">
           {logoBg && (
-            <div className={`h-3.5 w-3.5 rounded shrink-0 ${logoBg} flex items-center justify-center text-[8px] font-black text-white`}>
+            <div className={`h-[20px] w-[20px] rounded-[3px] shrink-0 ${logoBg} flex items-center justify-center text-[10px] font-black text-white`}>
               {repo.owner.charAt(0).toUpperCase()}
             </div>
           )}
@@ -69,42 +67,42 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
         </div>
 
         {/* Column 4: Stars */}
-        <div className="text-xs text-[#A1A1AA] font-mono flex items-center gap-1 block">
-          <Star size={12} className="text-[#71717A]/80 fill-[#71717A]/10" />
+        <div className="text-[11px] text-[#A1A1AA] font-mono flex items-center justify-center gap-[6px] whitespace-nowrap w-full">
+          <Star size={16} className="text-[#71717A]/80 fill-[#71717A]/10 shrink-0" />
           <span>{starCount.toLocaleString()}</span>
         </div>
 
         {/* Column 5: Forks */}
-        <div className="text-xs text-[#A1A1AA] font-mono flex items-center gap-1 hidden lg:flex">
-          <GitFork size={12} className="text-[#71717A]/80" />
+        <div className="text-[11px] text-[#A1A1AA] font-mono flex items-center justify-center gap-[6px] hidden lg:flex whitespace-nowrap w-full">
+          <GitFork size={16} className="text-[#71717A]/80 shrink-0" />
           <span>{forksCount.toLocaleString()}</span>
         </div>
 
         {/* Column 6: License Badge */}
-        <div className="hidden md:block">
+        <div className="hidden md:flex justify-center items-center h-full w-full">
           {licenseText ? (
-            <span className="text-[10px] font-semibold text-white px-2.5 py-0.5 rounded-full bg-border/60 border border-white/[0.04] inline-block w-fit">
+            <span className="text-[11px] font-semibold text-[#A1A1AA] px-[8px] py-[2px] h-[20px] leading-[14px] flex items-center rounded-[999px] border border-[#232326] bg-transparent whitespace-nowrap">
               {licenseText}
             </span>
           ) : (
-            <span className="text-[#71717A] text-xs font-mono ml-4">—</span>
+            <span className="text-[#71717A] text-[11px] font-mono">—</span>
           )}
         </div>
 
         {/* Column 7: Size */}
-        <div className="text-xs text-[#A1A1AA] font-mono hidden xl:block">
+        <div className="text-[11px] text-[#A1A1AA] font-mono text-center hidden xl:block whitespace-nowrap w-full">
           {sizeText}
         </div>
 
         {/* Column 8: Updated */}
-        <div className="text-xs text-[#A1A1AA] font-mono block md:hidden lg:block">
+        <div className="text-[11px] text-[#A1A1AA] font-mono text-center block md:hidden lg:block whitespace-nowrap w-full">
           {updateHours}
         </div>
 
         {/* Column 9: Action Link */}
-        <div className="flex justify-end block">
-          <div className="h-8 w-8 rounded-full border border-[#232326] bg-[#18181C] flex items-center justify-center text-[#71717A] group-hover:text-white group-hover:border-neutral-500 group-hover:bg-[#1C1C22] transition-all duration-200 shrink-0">
-            <Github size={15} />
+        <div className="flex justify-center items-center w-full">
+          <div className="h-[28px] w-[28px] rounded-full border border-[#232326] bg-[#18181C] flex items-center justify-center text-[#71717A] group-hover:text-white group-hover:bg-[#232329] transition-colors shrink-0">
+            <Github size={20} />
           </div>
         </div>
       </a>
@@ -115,26 +113,22 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`Open ${repo.name} repository by ${repo.owner} on GitHub in a new tab`}
-        className="block sm:hidden p-5 bg-transparent hover:bg-surface-raised/40 transition-all w-full focus-visible:bg-surface-raised/40 focus-visible:outline-none flex justify-between items-center gap-4"
+        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+        className="block sm:hidden p-[12px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none flex justify-between items-center gap-[10px] border-b border-[#232326]/30 last:border-b-0"
       >
         <div className="flex-1 min-w-0">
           {/* Row 1: Title & Owner */}
           <div className="flex items-baseline min-w-0">
-            <span className="text-xs font-mono text-[#71717A] mr-1.5 shrink-0">#{rank}</span>
-            <h3 className="font-bold text-white text-sm truncate">
+            <span className="text-[11px] font-mono text-[#71717A] mr-1.5 shrink-0">#{rank}</span>
+            <h3 className="font-medium text-white text-[11px] truncate">
               {repo.name}
               <span className="sr-only"> (opens in a new tab)</span>
             </h3>
             <span className="text-[10px] text-[#71717A] ml-2 shrink-0">by {repo.owner}</span>
           </div>
 
-          {/* Row 2: Description */}
-          <p className="text-xs text-[#A1A1AA] line-clamp-2 mt-1 leading-relaxed">
-            {repo.description}
-          </p>
-
-          {/* Row 3: Stats Inline Bar */}
-          <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-[#71717A] font-mono mt-1.5">
+          {/* Row 2: Stats Inline Bar */}
+          <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-[#71717A] font-mono mt-1">
             <span className="flex items-center gap-0.5">
               ⭐ {starCount.toLocaleString()}
             </span>
@@ -145,7 +139,7 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
             {licenseText && (
               <>
                 <span>·</span>
-                <span className="px-2 py-0.5 rounded-full bg-border/60 border border-white/[0.04] text-[9px]">
+                <span className="px-[6px] py-[1px] rounded-full border border-[#232326] text-[9px] text-[#A1A1AA]">
                   {licenseText}
                 </span>
               </>
@@ -158,8 +152,8 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
         </div>
 
         {/* Far Right Action Icon */}
-        <div className="h-8 w-8 rounded-full border border-[#232326] bg-[#18181C] flex items-center justify-center text-[#71717A] shrink-0">
-          <Github size={15} />
+        <div className="h-[28px] w-[28px] rounded-full border border-[#232326] bg-[#18181C] flex items-center justify-center text-[#71717A] shrink-0">
+          <Github size={16} />
         </div>
       </a>
     </>

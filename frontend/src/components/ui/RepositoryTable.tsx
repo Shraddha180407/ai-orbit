@@ -61,17 +61,20 @@ export function RepositoryTable({
   onCloseRepoFilter,
 }: RepositoryTableProps) {
   return (
-    <div className="w-full flex flex-col border border-[#232326]/60 rounded-xl bg-[#131316]/10">
+    <div 
+      className="w-full flex flex-col border border-[#232326]/60 rounded-xl bg-[#131316]/10"
+      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+    >
       {/* Sticky Table Header */}
-      <div className="sticky top-[68px] z-30 bg-[#000000] border-b border-[#232326]/60 px-4 py-3.5 select-none hidden sm:block rounded-t-xl">
-        <div className="grid grid-cols-[0.3fr_3fr_1.2fr_1.2fr_0.4fr] md:grid-cols-[0.3fr_2.5fr_1.5fr_1fr_1fr_0.4fr] lg:grid-cols-[0.3fr_2fr_1.2fr_0.8fr_0.8fr_0.8fr_0.6fr_0.3fr] xl:grid-cols-[0.3fr_2.5fr_1.5fr_1fr_1fr_1fr_1fr_0.8fr_0.4fr] gap-4 items-center text-[11px] font-extrabold tracking-wider text-[#71717A]">
+      <div className="sticky top-[68px] z-30 bg-[#000000] border-b border-[#232326]/60 px-[10px] py-[12px] h-[48.8px] select-none hidden sm:flex items-center rounded-t-xl">
+        <div className="grid grid-cols-[30px_1fr_70px_80px_50px] md:grid-cols-[30px_1fr_130px_70px_100px_50px] lg:grid-cols-[30px_1fr_130px_70px_70px_100px_80px_50px] xl:grid-cols-[30px_1fr_130px_70px_70px_100px_70px_80px_50px] gap-[10px] items-center text-[10px] font-semibold tracking-[0.5px] text-[#71717A] w-full">
           {/* Rank Column Header */}
           <div className="uppercase text-center">
             #
           </div>
 
           {/* Repository Column Header with Popover */}
-          <div className="relative">
+          <div className="relative text-left">
             <button
               onClick={onToggleRepoFilter}
               className={`flex items-center gap-1.5 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none ${
@@ -95,7 +98,7 @@ export function RepositoryTable({
           </div>
 
           {/* Company Column Header with Dropdown */}
-          <div className="relative hidden md:block">
+          <div className="relative hidden md:block text-left">
             <button
               onClick={onToggleCompanyDropdown}
               className={`flex items-center gap-1 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none ${
@@ -120,11 +123,10 @@ export function RepositoryTable({
             />
           </div>
 
-
           {/* Stars Column Header */}
           <button
             onClick={() => onSort("stars")}
-            className={`flex items-center gap-1 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none block ${sortField === "stars" ? "text-white" : ""}`}
+            className={`flex items-center justify-center gap-1 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none block w-full ${sortField === "stars" ? "text-white" : ""}`}
           >
             STARS
             <ArrowUpDown size={11} className={sortField === "stars" ? "text-white" : "text-[#71717A]/75"} />
@@ -133,17 +135,17 @@ export function RepositoryTable({
           {/* Forks Column Header */}
           <button
             onClick={() => onSort("forks")}
-            className={`flex items-center gap-1 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none hidden lg:flex ${sortField === "forks" ? "text-white" : ""}`}
+            className={`flex items-center justify-center gap-1 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none hidden lg:flex w-full ${sortField === "forks" ? "text-white" : ""}`}
           >
             FORKS
             <ArrowUpDown size={11} className={sortField === "forks" ? "text-white" : "text-[#71717A]/75"} />
           </button>
 
           {/* License Column Header with Dropdown */}
-          <div className="relative hidden md:block">
+          <div className="relative hidden md:block text-center flex justify-center">
             <button
               onClick={onToggleLicenseDropdown}
-              className={`flex items-center gap-1 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none ${
+              className={`flex items-center justify-center gap-1 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none ${
                 selectedLicense ? "text-white" : ""
               }`}
             >
@@ -168,7 +170,7 @@ export function RepositoryTable({
           {/* Size Column Header */}
           <button
             onClick={() => onSort("size")}
-            className={`flex items-center gap-1 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none hidden xl:flex ${sortField === "size" ? "text-white" : ""}`}
+            className={`flex items-center justify-center gap-1 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none hidden xl:flex w-full ${sortField === "size" ? "text-white" : ""}`}
           >
             SIZE
             <ArrowUpDown size={11} className={sortField === "size" ? "text-white" : "text-[#71717A]/75"} />
@@ -177,7 +179,7 @@ export function RepositoryTable({
           {/* Updated Column Header (Muted Gray State) */}
           <button
             onClick={() => onSort("updated")}
-            className={`flex items-center gap-1 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none block md:hidden lg:flex ${sortField === "updated" ? "text-white" : ""}`}
+            className={`flex items-center justify-center gap-1 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none block md:hidden lg:flex w-full ${sortField === "updated" ? "text-white" : ""}`}
           >
             UPDATED
             <ArrowUpDown size={11} className={sortField === "updated" ? "text-white" : "text-[#71717A]/75"} />
@@ -187,6 +189,7 @@ export function RepositoryTable({
           <div className="block"></div>
         </div>
       </div>
+
 
 
 
