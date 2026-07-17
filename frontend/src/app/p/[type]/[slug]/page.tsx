@@ -6,8 +6,10 @@ import { VideoDetailsClient } from "@/components/detail/VideoDetailsClient";
 import { ArticlePageClient } from "@/components/article-page-client";
 import { EntityDetail } from "@/components/detail/EntityDetail";
 
-export default function UnifiedEntityPage({ params }: { params: { type: string; slug: string } }) {
-  const { type } = params;
+export default async function UnifiedEntityPage({ params }: { params: Promise<{ type: string; slug: string }> }) {
+  const resolvedParams = await params;
+  const type = resolvedParams.type;
+  
   
   if (type === "tools") return <ToolDetailClient />;
   if (type === "collections") return <CollectionDetailClient />;
