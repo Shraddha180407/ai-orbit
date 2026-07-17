@@ -1,7 +1,10 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { EntityType } from "@/types/entities";
+import { EntityType, SearchEntity } from "@/types/entities";
 import { ENTITY_META } from "@/lib/entityMeta";
 import { getEntityBySlug } from "@/lib/search-api";
 import { Badge } from "@/components/search/ui/Badge";
@@ -15,9 +18,30 @@ import { Badge } from "@/components/search/ui/Badge";
 // rather integrate gradually.
 // -----------------------------------------------------------------------
 
-export async function EntityDetail({ type, slug }: { type: EntityType; slug: string }) {
-  const entity = await getEntityBySlug(type, slug);
-  if (!entity) notFound();
+export function EntityDetail({ type }: { type: EntityType }) {
+  const params = useParams();
+  const slug = params.slug as string;
+  
+  const [entity, setEntity] = useState<SearchEntity | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getEntityBySlug(type, slug).then(data => {
+      if (!data) notFound();
+      setEntity(data);
+      setLoading(false);
+    });
+  }, [type, slug]);
+
+  if (loading) {
+    return (
+      <main className="search-scope mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="h-64 animate-pulse rounded-xl border border-search-border bg-search-surface" />
+      </main>
+    );
+  }
+
+  if (!entity) return null;
 
   const meta = ENTITY_META[type];
   const Icon = meta.icon;
