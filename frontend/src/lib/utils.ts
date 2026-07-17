@@ -57,6 +57,15 @@ export function resolveCompanyLogoBg(ownerName: string): string {
   if (owner.includes("intuit")) return "bg-blue-500";
   if (owner.includes("crowdstrike")) return "bg-red-500";
   if (owner.includes("snowflake")) return "bg-cyan-500";
+  if (owner.includes("google")) return "bg-red-500";
+  if (owner.includes("meta")) return "bg-blue-600";
+  if (owner.includes("openai")) return "bg-emerald-600";
+  if (owner.includes("anthropic")) return "bg-amber-600";
+  if (owner.includes("huggingface")) return "bg-yellow-500 text-black";
+  if (owner.includes("ollama")) return "bg-neutral-800";
+  if (owner.includes("langchain")) return "bg-green-600";
+  if (owner.includes("microsoft")) return "bg-blue-600";
   return "";
 }
+
 
