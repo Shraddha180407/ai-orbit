@@ -14,7 +14,7 @@ import { DiscoverySection } from "@/components/DiscoverySection";
 import { HeroFeatureChips } from "@/components/HeroFeatureChips";
 import { HeroCategoryPills } from "@/components/HeroCategoryPills";
 import { SortDropdown } from "@/components/SortDropdown";
-import { ToolGrid } from "@/components/ToolGrid";
+import { ToolListView } from "@/components/ToolListView";
 
 import type { SortOption } from "@/lib/types";
 
@@ -127,51 +127,51 @@ export function HomeClient() {
       <Header />
 
       {/* 2. Hero Section */}
-      <section 
-        className="relative w-full flex flex-col items-center pt-8 px-6 overflow-hidden"
+      <section
+        className="relative w-full flex flex-col items-center pt-5 pb-4 px-6 overflow-hidden"
         style={{
           backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
         }}
       >
         <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
-          <h1 className="max-w-[900px] text-3xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-none mb-5 select-none text-white whitespace-nowrap">
+          <h1 className="max-w-[900px] text-2xl sm:text-[28px] lg:text-[32px] font-black tracking-tight leading-[1.1] mb-2 select-none text-white whitespace-nowrap">
             The Best AI in One Place
           </h1>
 
-          <p className="max-w-3xl text-[13px] text-[#A1A1AA] leading-none mb-[30px] select-none whitespace-nowrap">
+          <p className="max-w-3xl text-[12px] text-[#A1A1AA] leading-tight mb-4 select-none whitespace-nowrap">
             The AI Signal helps you find the best AI tools of 2026 easily!
           </p>
 
-          <form action="/tools" method="GET" className="relative w-full max-w-[900px] mx-auto mb-[22px] group">
-            <div className="relative w-full rounded-lg border border-[#232326] bg-[#111113] h-[48px] flex items-center px-5 pr-20 focus-within:border-neutral-500 transition-all duration-300">
+          <form action="/tools" method="GET" className="relative w-full max-w-[720px] mx-auto mb-3 group">
+            <div className="relative w-full rounded-md border border-[#232326]/60 bg-[#111113] h-[40px] flex items-center px-4 pr-16 focus-within:border-[#3a3a3d] transition-colors duration-150">
               <input
                 type="text"
                 name="q"
                 defaultValue={params.q}
                 placeholder="Search AI tools, models, companies..."
-                className="w-full bg-transparent text-sm text-white placeholder:text-[#71717A] focus:outline-none"
+                className="w-full bg-transparent text-[13px] text-white placeholder:text-[#71717A] focus:outline-none"
               />
-              <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border border-[#232326] bg-[#18181C] px-1.5 font-mono text-[9px] text-[#71717A] pointer-events-none">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border border-[#232326]/60 bg-[#18181C] px-1.5 font-mono text-[9px] text-[#71717A] pointer-events-none">
                   <span>⌘</span>K
                 </kbd>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="text-[#71717A] hover:text-white transition-colors"
                   aria-label="Search"
                 >
-                  <Search size={16} />
+                  <Search size={15} />
                 </button>
               </div>
             </div>
           </form>
 
-          <div className="mb-[18px]">
+          <div className="mb-2">
             <HeroFeatureChips />
           </div>
 
-          <div className="mb-[30px] w-full flex justify-center">
+          <div className="w-full flex justify-center">
             <HeroCategoryPills />
           </div>
         </div>
@@ -179,44 +179,37 @@ export function HomeClient() {
 
       <div className="border-b border-[#232326]/40 w-full z-10 relative" />
 
-      {/* 3. Main Grid Content Wrapper */}
-      <div className="mx-auto max-w-[1070px] px-8 py-8 flex-1 space-y-12 w-full">
-        
-        {/* Tools Section */}
-        <div id="tools" className="scroll-mt-28 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-[#232326]/60 pb-2">
-            <div className="space-y-1">
-              <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
+      {/* Tools Section — full width so the data table can use the whole screen */}
+      <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+        <div className="mx-auto w-full max-w-[1600px] space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[#232326]/60 pb-2">
+            <div className="space-y-0.5">
+              <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
                 Featured AI Tools
               </h2>
-              <p className="text-xs text-[#A1A1AA] leading-relaxed">
+              <p className="text-[11px] text-[#A1A1AA] leading-snug">
                 Filter and sort the absolute best active AI tools in the directory database.
               </p>
             </div>
             <SortDropdown />
           </div>
 
-          <div className="space-y-4 pt-1">
-            {isLoading && page === 1 ? (
-              <div className="flex flex-col gap-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-24 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
-                ))}
-              </div>
-            ) : (
-              <>
-                <ToolGrid tools={tools} />
-                
-                {/* Sentinel for infinite scroll */}
-                {tools.length > 0 && page < totalPages && (
-                  <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+          <ToolListView
+            tools={tools}
+            loading={isLoading && page === 1}
+          />
+
+          {/* Sentinel for infinite scroll */}
+          {tools.length > 0 && page < totalPages && (
+            <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* 3. Main Grid Content Wrapper — other sections stay centered */}
+      <div className="mx-auto max-w-[1070px] px-8 py-8 flex-1 space-y-12 w-full">
 
         {/* Companies Section */}
         <DiscoverySection
