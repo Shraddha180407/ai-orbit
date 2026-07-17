@@ -3,6 +3,7 @@ import { listVideos, getVideoBySlug, getRelatedVideos, getVideosCount } from "./
 
 const videosRouter = new Hono();
 
+
 videosRouter.get("/", listVideos);
 videosRouter.get("/count", getVideosCount);
 videosRouter.get("/:slug", getVideoBySlug);
