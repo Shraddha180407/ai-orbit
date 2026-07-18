@@ -8,6 +8,8 @@ import type {
   NewsBookmarkBodyInput,
   NewsBookmarkQueryInput,
   NewsCommentBodyInput,
+  NewsListingQueryInput,
+  NewsDetailQueryInput,
 } from "./news.schemas.js";
 
 /**
@@ -34,17 +36,32 @@ function getService(c: Context) {
 }
 
 export class NewsController {
-  /** GET /api/news — bundles the full article list plus everything the listing page's client-side filter/sort/search/pagination needs. */
+  /**
+   * GET /api/news — bundles the article list plus everything the listing
+   * page's client-side filter/sort/search needs. With ?page=&perPage=, only
+   * that page of the default (newest-first) feed is returned, plus a
+   * `pagination` block; omit both for the full unpaginated list (used
+   * whenever a filter/search/non-default sort is active — see
+   * NewsListingClient).
+   */
   static async getListing(c: Context) {
     try {
+      const query = c.req.valid("query" as never) as unknown as NewsListingQueryInput;
       const service = getService(c);
-      const [articles, sources, categories, filterChips] = await Promise.all([
-        service.getArticles(),
+      const paging = query.page && query.perPage ? { page: query.page, perPage: query.perPage } : undefined;
+
+      const [{ articles, total }, sources, categories, filterChips] = await Promise.all([
+        service.getArticles(paging, query.clientId),
         service.getSourcesMap(),
         service.getCategories(),
         service.getFilterChips(),
       ]);
-      return c.json({ articles, sources, categories, filterChips });
+
+      const pagination = paging
+        ? { page: paging.page, perPage: paging.perPage, total, hasMore: paging.page * paging.perPage < total }
+        : undefined;
+
+      return c.json({ articles, sources, categories, filterChips, pagination });
     } catch (error: any) {
       console.error("News listing error:", error);
       return c.json({ error: "Internal server error." }, 500);
@@ -55,9 +72,10 @@ export class NewsController {
   static async getDetail(c: Context) {
     try {
       const { slug } = c.req.valid("param" as never) as unknown as NewsSlugParamInput;
+      const { clientId } = c.req.valid("query" as never) as unknown as NewsDetailQueryInput;
       const service = getService(c);
 
-      const article = await service.getArticleBySlug(slug);
+      const article = await service.getArticleBySlug(slug, clientId);
       if (!article) {
         return c.json({ error: "Article not found" }, 404);
       }

@@ -327,7 +327,11 @@ const MAX_COMPLETION_TOKENS = 250;
 function buildSummaryPrompt(title: string, description: string): string {
   const boundedTitle = title.slice(0, MAX_PROMPT_TITLE_CHARS);
   const boundedDescription = description.slice(0, MAX_PROMPT_SOURCE_CHARS);
-  return `You are summarizing an AI industry news article for a news aggregator. Write a factual 4-5 sentence summary in your own words (do not just copy the input) based ONLY on the source text below — do not invent details, numbers, or claims that aren't in it. Capture what happened and why it matters to someone following AI news. Do not start with phrases like "This article discusses" or "The author explains", and do not repeat the title verbatim as a sentence.
+  return `You are summarizing an AI industry news article for a news aggregator. Write a factual summary in your own words (do not just copy the input) based ONLY on the source text below — do not invent details, numbers, or claims that aren't in it. Capture what happened and why it matters to someone following AI news. Do not start with phrases like "This article discusses" or "The author explains", and do not repeat the title verbatim as a sentence.
+
+Length requirement: the summary MUST be 3-4 full sentences, approximately 60-90 words total. Do not write fewer than 3 sentences or fewer than 60 words.
+
+Tone requirement: write in professional, neutral English, as a news editor would. Do not use a casual or conversational tone, do not use emojis, and do not write in the first person ("I", "we", "our").
 
 Title: ${boundedTitle}
 Source text: ${boundedDescription}

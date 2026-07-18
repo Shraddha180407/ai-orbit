@@ -43,8 +43,17 @@ export class NewsService {
     this.prisma = prisma;
   }
 
-  /** Ranks by net votes (desc) and assigns a stable 0-100 trending score, same formula as the old app. */
-  private withTrendingScores(rows: ArticleRow[]): NewsArticleDTO[] {
+  /**
+   * Ranks by net votes (desc) and assigns a stable 0-100 trending score, same
+   * formula as the old app. `bookmarkedIds` is keyed by the RAW News.id
+   * (cuid) — not the slug the returned DTO exposes as `id` — since that's
+   * what NewsBookmark.articleId stores; must be looked up here, before the
+   * cuid is discarded in favor of the slug below. Defaults to "nothing
+   * bookmarked" when the caller has no clientId (see getArticles/
+   * getArticleBySlug) or doesn't care (getRelatedArticles never passes one —
+   * related-article rows don't render a Save button).
+   */
+  private withTrendingScores(rows: ArticleRow[], bookmarkedIds: Set<string> = new Set()): NewsArticleDTO[] {
     const ranked = [...rows].sort((x, y) => y.upvotes - y.downvotes - (x.upvotes - x.downvotes));
     const scoreById = new Map<string, number>();
     const n = ranked.length;
@@ -66,26 +75,82 @@ export class NewsService {
       down: a.downvotes,
       filters: a.filterTags,
       score: scoreById.get(a.id) ?? 0,
+      bookmarked: bookmarkedIds.has(a.id),
     }));
   }
 
-  /** Full unfiltered/unpaginated list, newest first — the listing page filters/sorts/paginates client-side, same as the old app. */
-  async getArticles(): Promise<NewsArticleDTO[]> {
-    const rows = await withTiming("getArticles db query", () =>
-      this.prisma.news.findMany({
-        include: ARTICLE_INCLUDE,
-        orderBy: { publishedAt: "desc" },
-      })
-    );
-    return this.withTrendingScores(rows);
+  /** Single query for however many article ids need a bookmark check — empty Set when clientId is absent, never queries for nothing. */
+  private async loadBookmarkedIds(articleIds: string[], clientId: string | undefined): Promise<Set<string>> {
+    if (!clientId || articleIds.length === 0) return new Set();
+    const rows = await this.prisma.newsBookmark.findMany({
+      where: { clientId, articleId: { in: articleIds } },
+      select: { articleId: true },
+    });
+    return new Set(rows.map((r) => r.articleId));
   }
 
-  async getArticleBySlug(slug: string): Promise<NewsArticleDTO | null> {
+  /**
+   * Two modes:
+   *  - No `paging` arg: full unfiltered/unpaginated list, newest first — used
+   *    whenever the listing page has a search/topic/source filter or a
+   *    non-default sort active, since those still filter/sort entirely
+   *    client-side over the complete set (same as the old app).
+   *  - `paging` given: a single page, newest first, for the default
+   *    (unfiltered, date-sorted) infinite-scroll feed — see NewsController.
+   *    `total` is the full table's row count, for the frontend to know
+   *    whether more pages exist.
+   *
+   * Note: the `score` trending-rank field (see withTrendingScores) is
+   * computed relative to whatever set of rows was fetched, so in paginated
+   * mode it's only accurate within that page, not globally. Harmless in
+   * practice — the frontend's "sort by trending" always requests the
+   * unpaginated full list instead of relying on a paginated response's
+   * scores.
+   */
+  async getArticles(paging?: { page: number; perPage: number }, clientId?: string): Promise<{ articles: NewsArticleDTO[]; total: number }> {
+    // `id` (cuid, monotonically-ish increasing, always unique) is a required
+    // second sort key, not just style — RSS entries frequently share the
+    // exact same publishedAt (date-only granularity from the source feed),
+    // and Postgres does not guarantee a stable order for tied rows across
+    // separate queries. Without this, the same article could land on two
+    // different paginated pages (confirmed: caused a duplicate React key /
+    // duplicate row while testing infinite scroll before this fix).
+    const orderBy = [{ publishedAt: "desc" as const }, { id: "desc" as const }];
+
+    if (!paging) {
+      const rows = await withTiming("getArticles db query", () =>
+        this.prisma.news.findMany({
+          include: ARTICLE_INCLUDE,
+          orderBy,
+        })
+      );
+      const bookmarkedIds = await this.loadBookmarkedIds(rows.map((r) => r.id), clientId);
+      return { articles: this.withTrendingScores(rows, bookmarkedIds), total: rows.length };
+    }
+
+    const { page, perPage } = paging;
+    const [rows, total] = await Promise.all([
+      withTiming("getArticles db query (paginated)", () =>
+        this.prisma.news.findMany({
+          include: ARTICLE_INCLUDE,
+          orderBy,
+          skip: (page - 1) * perPage,
+          take: perPage,
+        })
+      ),
+      this.prisma.news.count(),
+    ]);
+    const bookmarkedIds = await this.loadBookmarkedIds(rows.map((r) => r.id), clientId);
+    return { articles: this.withTrendingScores(rows, bookmarkedIds), total };
+  }
+
+  async getArticleBySlug(slug: string, clientId?: string): Promise<NewsArticleDTO | null> {
     const row = await withTiming(`getArticleBySlug(${slug}) db query`, () =>
       this.prisma.news.findUnique({ where: { slug }, include: ARTICLE_INCLUDE })
     );
     if (!row) return null;
-    return this.withTrendingScores([row])[0];
+    const bookmarkedIds = await this.loadBookmarkedIds([row.id], clientId);
+    return this.withTrendingScores([row], bookmarkedIds)[0];
   }
 
   async getRelatedArticles(article: NewsArticleDTO, limit = 4): Promise<NewsArticleDTO[]> {
