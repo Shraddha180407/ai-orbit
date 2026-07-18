@@ -49,6 +49,7 @@ type LeaderboardModel = {
   saves: number;
   description: string;
   visits: string;
+  url: string;
   logoUrl?: string;
 };
 
@@ -66,6 +67,7 @@ type LeaderboardCompany = {
   saves: number;
   description: string;
   visits: string;
+  url: string;
   logoUrl?: string;
 };
 
@@ -912,13 +914,15 @@ export function LeaderboardClient() {
                           </span>
                         </td>
                         <td className="py-4 px-6 text-center">
-                          <Link
-                            href={`/tools`}
+                          <a
+                            href={model.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-[11px] font-semibold text-white hover:text-white hover:border-white/30 transition-all active:scale-95"
                           >
                             {_("visit")}
                             <ArrowUpRight size={12} />
-                          </Link>
+                          </a>
                         </td>
                       </tr>
                     ))}
@@ -992,13 +996,15 @@ export function LeaderboardClient() {
                           </span>
                         </td>
                         <td className="py-4 px-6 text-center">
-                          <Link
-                            href={`/companies/${company.id.toLowerCase()}`}
+                          <a
+                            href={company.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-[11px] font-semibold text-white hover:text-white hover:border-white/30 transition-all active:scale-95"
                           >
                             {_("visit")}
                             <ArrowUpRight size={12} />
-                          </Link>
+                          </a>
                         </td>
                       </tr>
                     ))}

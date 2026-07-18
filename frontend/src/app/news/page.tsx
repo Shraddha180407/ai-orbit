@@ -5,6 +5,12 @@ import { NewsPageClient } from "@/components/news-page-client";
 export const metadata: Metadata = {
   title: "AI News — The AI Signal",
   description: "AI news across the AI ecosystem — models, research, funding, and policy.",
+  openGraph: {
+    title: "AI News — The AI Signal",
+    description: "AI news across the AI ecosystem — models, research, funding, and policy.",
+    siteName: "AIOrbit",
+    type: "website",
+  },
 };
 
 export default function NewsPage() {

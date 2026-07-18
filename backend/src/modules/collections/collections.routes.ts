@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { Prisma, PrismaClient } from '@prisma/client'
-import { getPrisma, getOrCreateDemoUser } from '../lib/prisma.js'
+import { getPrisma, getOrCreateDemoUser } from '../../lib/prisma.js'
 
 const app = new Hono()
 
@@ -228,4 +228,4 @@ export async function recalculateCollectionToolCount(prisma: PrismaClient, colle
   return toolCount
 }
 
-export default app
+export { app as collectionsRouter }

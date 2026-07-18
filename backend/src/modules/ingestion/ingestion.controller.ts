@@ -33,8 +33,6 @@ export class IngestionController {
         sources: selectedSources,
         limit: query.limit,
         includeHackerNews: query.includeHackerNews === "true",
-        prune: query.prune !== "false",
-        keep: query.keep,
       });
 
       return c.json(summary);

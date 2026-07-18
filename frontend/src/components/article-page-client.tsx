@@ -5,6 +5,7 @@ import { useParams, notFound } from "next/navigation";
 import { PageShell } from "@/components/news/PageShell";
 import { ArticleDetail } from "@/components/news/ArticleDetail";
 import { API_URL } from "@/lib/api";
+import { getClientId } from "@/lib/clientId";
 import type { NewsArticle, NewsComment, NewsSource } from "@/types/news";
 
 interface NewsDetailResponse {
@@ -27,7 +28,9 @@ export function ArticlePageClient() {
     async function fetchArticle() {
       setIsLoading(true);
       try {
-        const res = await fetch(`${API_URL}/api/news/${encodeURIComponent(slug)}`);
+        const clientId = getClientId();
+        const url = `${API_URL}/api/news/${encodeURIComponent(slug)}${clientId ? `?clientId=${encodeURIComponent(clientId)}` : ""}`;
+        const res = await fetch(url);
         if (res.status === 404) {
           setNotFoundState(true);
           return;
