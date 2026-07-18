@@ -29,6 +29,9 @@
   --radius-lg: 12px;
   --radius-card: 20px;
   --radius-full: 999px;
+
+  /* Global navigation offset */
+  --spacing-navbar: 68px;
 }
 
 @layer base {

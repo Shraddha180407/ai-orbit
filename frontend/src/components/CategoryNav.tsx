@@ -17,7 +17,7 @@ export function CategoryNav() {
   ];
 
   return (
-    <div className="w-full border-b border-[#232326]/40 bg-[#000000] py-4 sticky top-[68px] z-30 select-none">
+    <div className="w-full border-b border-[#232326]/40 bg-[#000000] py-4 sticky top-navbar z-30 select-none">
       <div className="mx-auto max-w-[1440px] px-8">
         <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-none pb-1 w-full">
           {CATEGORIES.map((cat) => {

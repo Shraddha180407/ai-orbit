@@ -75,12 +75,22 @@ export async function fetchAllNews(): Promise<any[]> {
   return res.json();
 }
 
+import { DUMMY_REPOSITORIES } from "./dummyRepositories";
+
 export async function fetchAllRepos(): Promise<any[]> {
+  // Feature flag to toggle between backend API and mock data for UI testing/demonstration.
+  // Set NEXT_PUBLIC_USE_DUMMY_REPOSITORIES=true in .env.local to load dummy repositories.
+  const USE_DUMMY = process.env.NEXT_PUBLIC_USE_DUMMY_REPOSITORIES === "true";
+  if (USE_DUMMY) {
+    return DUMMY_REPOSITORIES;
+  }
+
   const url = `${API_URL}/api/v1/repositories`;
   const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) return [];
   return res.json();
 }
+
 
 export async function fetchAllVideos(): Promise<any[]> {
   const url = `${API_URL}/api/v1/videos`;

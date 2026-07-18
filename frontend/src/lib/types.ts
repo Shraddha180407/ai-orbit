@@ -162,6 +162,8 @@ export type Repository = {
   description: string;
   stars: number;
   language: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type Video = {
