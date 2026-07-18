@@ -1,16 +1,13 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Search from 'lucide-react/dist/esm/icons/search';
-import MapPin from 'lucide-react/dist/esm/icons/map-pin';
 
 import { API_URL } from "@/lib/api";
 
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { DiscoverySection } from "@/components/DiscoverySection";
 import { HeroFeatureChips } from "@/components/HeroFeatureChips";
 import { HeroCategoryPills } from "@/components/HeroCategoryPills";
 import { SortDropdown } from "@/components/SortDropdown";
@@ -24,10 +21,6 @@ export function HomeClient() {
   const [tools, setTools] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [topCompanies, setTopCompanies] = useState<any[]>([]);
-  const [topModels, setTopModels] = useState<any[]>([]);
-  const [topRepos, setTopRepos] = useState<any[]>([]);
-  const [topNews, setTopNews] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
@@ -65,10 +58,7 @@ export function HomeClient() {
         if (params.sort) query.set("sort", params.sort);
         query.set("page", page.toString());
 
-        const [toolsRes, homepageRes] = await Promise.all([
-          fetch(`${API_URL}/api/v1/tools?${query.toString()}`),
-          page === 1 ? fetch(`${API_URL}/api/v1/homepage`) : Promise.resolve(null),
-        ]);
+        const toolsRes = await fetch(`${API_URL}/api/v1/tools?${query.toString()}`);
 
         if (toolsRes.ok) {
           const toolsData = await toolsRes.json();
@@ -78,14 +68,6 @@ export function HomeClient() {
             setTools(prev => [...prev, ...(toolsData.tools || [])]);
           }
           setTotalPages(toolsData.totalPages || 1);
-        }
-
-        if (homepageRes && homepageRes.ok) {
-          const data = await homepageRes.json();
-          setTopCompanies(data.topCompanies || []);
-          setTopModels(data.topModels || []);
-          setTopRepos(data.topRepos || []);
-          setTopNews(data.topNews || []);
         }
       } catch (error) {
         console.error("Failed to fetch homepage data:", error);
@@ -128,46 +110,73 @@ export function HomeClient() {
 
       {/* 2. Hero Section */}
       <section
-        className="relative w-full flex flex-col items-center pt-5 pb-4 px-6 overflow-hidden"
+        className="relative w-full flex flex-col items-center pt-16 pb-10 px-6 overflow-hidden"
         style={{
           backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
         }}
       >
+        {/* ambient signal glow behind headline */}
+        <div
+          className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-[0.12] blur-[100px]"
+          style={{ backgroundColor: 'var(--color-signal)' }}
+        />
+
         <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
-          <h1 className="max-w-[900px] text-2xl sm:text-[28px] lg:text-[32px] font-black tracking-tight leading-[1.1] mb-2 select-none text-white whitespace-nowrap">
-            The Best AI in One Place
+          {/* Eyebrow: live signal pulse */}
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#232326]/60 bg-[#111113]/80 px-3 py-1 select-none">
+            <span className="relative flex h-1.5 w-1.5">
+              <span
+                className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
+                style={{ backgroundColor: 'var(--color-signal)' }}
+              />
+              <span
+                className="relative inline-flex h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: 'var(--color-signal)' }}
+              />
+            </span>
+            <span className="text-[11px] font-semibold tracking-wide text-[#A1A1AA]">
+              Live directory &middot; updated daily
+            </span>
+          </div>
+
+          <h1 className="max-w-[820px] text-4xl sm:text-5xl lg:text-[64px] font-black tracking-tight leading-[1.05] mb-4 select-none text-white text-balance">
+            The best AI, in one signal.
           </h1>
 
-          <p className="max-w-3xl text-[12px] text-[#A1A1AA] leading-tight mb-4 select-none whitespace-nowrap">
-            The AI Signal helps you find the best AI tools of 2026 easily!
+          <p className="max-w-xl text-[15px] sm:text-base text-[#A1A1AA] leading-relaxed mb-8 select-none">
+            Cut through the noise. Discover, compare, and track the AI tools,
+            models, and companies that actually matter.
           </p>
 
-          <form action="/tools" method="GET" className="relative w-full max-w-[720px] mx-auto mb-3 group">
-            <div className="relative w-full rounded-md border border-[#232326]/60 bg-[#111113] h-[40px] flex items-center px-4 pr-16 focus-within:border-[#3a3a3d] transition-colors duration-150">
+          <form action="/tools" method="GET" className="relative w-full max-w-[640px] mx-auto mb-5 group">
+            <div
+              className="relative w-full rounded-xl border border-[#232326]/70 bg-[#111113] h-[52px] flex items-center px-5 pr-[4.5rem] transition-colors duration-150"
+              style={{ borderColor: undefined }}
+            >
+              <Search size={16} className="mr-3 text-[#71717A] shrink-0" />
               <input
                 type="text"
                 name="q"
                 defaultValue={params.q}
-                placeholder="Search AI tools, models, companies..."
-                className="w-full bg-transparent text-[13px] text-white placeholder:text-[#71717A] focus:outline-none"
+                placeholder="Search AI tools, models, companies…"
+                className="w-full bg-transparent text-[14px] text-white placeholder:text-[#71717A] focus:outline-none"
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border border-[#232326]/60 bg-[#18181C] px-1.5 font-mono text-[9px] text-[#71717A] pointer-events-none">
+                <kbd className="hidden sm:inline-flex h-6 select-none items-center gap-0.5 rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 font-mono text-[10px] text-[#71717A] pointer-events-none">
                   <span>⌘</span>K
                 </kbd>
-                <button
-                  type="submit"
-                  className="text-[#71717A] hover:text-white transition-colors"
-                  aria-label="Search"
-                >
-                  <Search size={15} />
-                </button>
               </div>
             </div>
+            <style jsx>{`
+              form:focus-within > div {
+                border-color: var(--color-signal) !important;
+                box-shadow: 0 0 0 3px var(--color-signal-dim);
+              }
+            `}</style>
           </form>
 
-          <div className="mb-2">
+          <div className="mb-3">
             <HeroFeatureChips />
           </div>
 
@@ -206,192 +215,6 @@ export function HomeClient() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* 3. Main Grid Content Wrapper — other sections stay centered */}
-      <div className="mx-auto max-w-[1070px] px-8 py-8 flex-1 space-y-12 w-full">
-
-        {/* Companies Section */}
-        <DiscoverySection
-          id="companies"
-          title="Top AI Companies"
-          description="Explore leading AI companies, labs, and startups building the future."
-          viewAllHref="/companies"
-        >
-          <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
-            {topCompanies.map((c) => (
-              <Link 
-                key={c.id}
-                href={`/companies/${c.slug}`}
-                className="group grid grid-cols-1 sm:grid-cols-[40px_1fr_200px_120px_120px] gap-4 items-center p-4 bg-transparent hover:bg-[#18181C]/40 transition-all focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
-              >
-                {/* Column 1: Initials */}
-                <div className="h-10 w-10 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60 shrink-0">
-                  {c.name.charAt(0)}
-                </div>
-
-                {/* Column 2: Name */}
-                <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-white truncate">{c.name}</h3>
-                </div>
-
-                {/* Column 3: Headquarters */}
-                <div className="text-sm text-[#A1A1AA] flex items-center gap-1 truncate">
-                  <MapPin size={12} className="shrink-0 text-[#71717A]" />
-                  <span>{c.headquarters || "Global HQ"}</span>
-                </div>
-
-                {/* Column 4: Label */}
-                <div className="text-sm text-[#A1A1AA] truncate">
-                  AI Company
-                </div>
-
-                {/* Column 5: Action Link */}
-                <div className="text-right sm:block hidden">
-                  <span className="text-xs font-semibold text-[#71717A] group-hover:text-white transition-colors">
-                    Details &rarr;
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </DiscoverySection>
-
-        {/* Models Section */}
-        <DiscoverySection
-          id="models"
-          title="Top AI Models"
-          description="Discover state-of-the-art open source and proprietary AI models."
-          viewAllHref="/models"
-        >
-          <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
-            {topModels.map((m) => (
-              <Link 
-                key={m.id}
-                href={`/models`}
-                className="group grid grid-cols-1 sm:grid-cols-[40px_1fr_180px_120px] gap-4 items-center p-4 bg-transparent hover:bg-[#18181C]/40 transition-all focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
-              >
-                {/* Column 1: Initials */}
-                <div className="h-10 w-10 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60 shrink-0">
-                  {m.name.charAt(0)}
-                </div>
-
-                {/* Column 2: Name + Description */}
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-white truncate">{m.name}</h3>
-                    <span className="text-[10px] font-mono text-[#71717A]">by {m.creator}</span>
-                  </div>
-                  <p className="text-xs text-[#A1A1AA] line-clamp-1 mt-1 leading-relaxed">
-                    {m.description}
-                  </p>
-                </div>
-
-                {/* Column 3: Context Window */}
-                <div className="text-xs text-[#A1A1AA] font-mono sm:block hidden">
-                  Context: <strong className="text-white">{m.contextWindow}</strong>
-                </div>
-
-                {/* Column 4: Action */}
-                <div className="text-right sm:block hidden">
-                  <span className="text-xs font-semibold text-[#71717A] group-hover:text-white transition-colors">
-                    Details &rarr;
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </DiscoverySection>
-
-        {/* Repositories Section */}
-        <DiscoverySection
-          id="repos"
-          title="Trending GitHub Repositories"
-          description="Explore popular open-source repositories pushing AI boundaries on GitHub."
-          viewAllHref="/repositories"
-        >
-          <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
-            {topRepos.map((repo) => (
-              <a 
-                key={repo.id}
-                href={repo.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group grid grid-cols-1 sm:grid-cols-[40px_1fr_180px_120px] gap-4 items-center p-4 bg-transparent hover:bg-[#18181C]/40 transition-all focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
-              >
-                {/* Column 1: Initials */}
-                <div className="h-10 w-10 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60 shrink-0">
-                  {repo.name.charAt(0)}
-                </div>
-
-                {/* Column 2: Name + Description */}
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-white truncate">{repo.name}</h3>
-                    <span className="text-[10px] text-[#71717A]">⭐ {repo.stars.toLocaleString()}</span>
-                  </div>
-                  <p className="text-xs text-[#A1A1AA] line-clamp-1 mt-1 leading-relaxed">
-                    {repo.description}
-                  </p>
-                </div>
-
-                {/* Column 3: Language */}
-                <div className="text-xs text-[#A1A1AA] font-mono sm:block hidden">
-                  Lang: <strong className="text-white">{repo.language}</strong>
-                </div>
-
-                {/* Column 4: Action */}
-                <div className="text-right sm:block hidden">
-                  <span className="text-xs font-semibold text-[#71717A] group-hover:text-white transition-colors">
-                    Github &rarr;
-                  </span>
-                </div>
-              </a>
-            ))}
-          </div>
-        </DiscoverySection>
-
-        {/* News Section */}
-        <DiscoverySection
-          id="news"
-          title="Latest AI News & Insights"
-          description="Stay informed with critical announcements and ecosystem coverage."
-          viewAllHref="/news"
-        >
-          <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
-            {topNews.map((n) => (
-              <a
-                key={n.id}
-                href={`/news/${n.slug}`}
-                className="group grid grid-cols-1 sm:grid-cols-[40px_1fr_180px_120px] gap-4 items-center p-4 bg-transparent hover:bg-[#18181C]/40 transition-all focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
-              >
-                {/* Column 1: Initials */}
-                <div className="h-10 w-10 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60 shrink-0">
-                  N
-                </div>
-
-                {/* Column 2: Title */}
-                <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-white truncate">{n.title}</h3>
-                  <p className="text-[11px] text-[#A1A1AA] mt-0.5 truncate">by {n.publisher?.name}</p>
-                </div>
-
-                {/* Column 3: Published stack */}
-                <div className="text-xs text-[#A1A1AA] font-mono sm:block hidden">
-                  {new Date(n.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                </div>
-
-                {/* Column 4: Action */}
-                <div className="text-right sm:block hidden">
-                  <span className="text-xs font-semibold text-[#71717A] group-hover:text-white transition-colors">
-                    Read &rarr;
-                  </span>
-                </div>
-              </a>
-            ))}
-          </div>
-        </DiscoverySection>
-
       </div>
 
       {/* 4. Footer */}

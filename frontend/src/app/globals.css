@@ -12,6 +12,9 @@
   --color-accent: #FFFFFF;
   --color-accent-hover: #A1A1AA;
   --color-accent-muted: #18181C;
+
+  --color-signal: #F5A623;
+  --color-signal-dim: #F5A62333;
   
   --color-pricing-free: #71717A;
   --color-pricing-freemium: #71717A;
@@ -523,4 +526,3 @@
   background: transparent;
   height: 4px;
 }
-

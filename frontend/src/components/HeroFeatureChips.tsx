@@ -39,14 +39,15 @@ export function HeroFeatureChips() {
             }}
             className={`inline-flex items-center gap-1.5 rounded-md px-2.5 h-[28px] text-[11px] font-medium border transition-colors duration-150 ${
               isActive
-                ? "bg-white text-[#000000] border-transparent"
+                ? "border-transparent text-black"
                 : "bg-[#131316]/60 border-[#232326]/50 text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
             }`}
+            style={isActive ? { backgroundColor: "var(--color-signal)" } : undefined}
           >
             <Icon
               size={12}
               strokeWidth={2}
-              className={isActive ? "text-[#000000]" : "text-[#71717A]"}
+              className={isActive ? "text-black" : "text-[#71717A]"}
             />
             <span>{f.name}</span>
           </button>
