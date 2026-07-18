@@ -53,6 +53,7 @@ model User {
   bookmarks Bookmark[]
   accounts  Account[]
   sessions  Session[]
+  taskBookmarks TaskBookmark[] 
 }
 
 // ---- Module 3: AI Tools ----
@@ -82,6 +83,7 @@ model Tool {
 
   alternatives  Tool[] @relation("ToolAlternatives")
   alternativeOf Tool[] @relation("ToolAlternatives")
+  ttasks TaskTool[]
 
   // Denormalized for fast listing-page sort/display. Recomputed by the
   // reviews API on every create/update/delete — see lib/reviews.ts.
@@ -103,6 +105,7 @@ model Category {
   name String
 
   tools ToolCategory[]
+  tasks Task[]
 }
 
 model Tag {
@@ -424,3 +427,60 @@ model LeaderboardTool {
   addedDate   String
 }
 
+// ---- Module: Tasks ----
+
+enum TaskDifficulty {
+  EASY
+  MEDIUM
+  ADVANCED
+}
+
+model Task {
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  title       String
+  description String
+  difficulty  TaskDifficulty @default(EASY)
+  pricingModel PricingModel  @default(FREE)
+  isFeatured  Boolean        @default(false)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  bookmarks TaskBookmark[]
+  tools     TaskTool[]
+
+  @@index([categoryId])
+  @@index([difficulty])
+  @@index([pricingModel])
+  @@index([isFeatured])
+}
+
+model TaskTool {
+  taskId String
+  toolId String
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tool Tool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, toolId])
+  @@index([toolId])
+}
+
+model TaskBookmark {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+}
