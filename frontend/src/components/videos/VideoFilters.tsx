@@ -82,6 +82,7 @@ export function VideoFilters({
           placeholder="Search videos or tools"
           className="w-full rounded-lg border border-border bg-bg-elevated py-2 pl-9 pr-3 text-[13.5px] text-primary placeholder:text-muted outline-none transition-colors focus:border-border-strong"
         />
+        
       </div>
     </div>
   );
