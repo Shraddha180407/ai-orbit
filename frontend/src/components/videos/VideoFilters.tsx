@@ -25,7 +25,7 @@ export function VideoFilters({
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none]">
         {categories.map((c) => {
           const color = c === "All" ? DEFAULT_COLOR : CATEGORY_COLORS[c];
           const label = c === "All" ? "All" : CATEGORY_LABELS[c];

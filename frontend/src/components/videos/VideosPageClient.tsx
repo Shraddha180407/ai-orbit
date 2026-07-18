@@ -58,7 +58,10 @@ export function VideosPageClient({
     return () => observer.disconnect();
   }, [loadMore]);
 
-  const channelCount = useMemo(() => new Set(videos.map((v) => v.toolName)).size, [videos]);
+  const channelCount = useMemo(
+    () => new Set(videos.map((v) => v.channelId).filter((id): id is string => Boolean(id))).size,
+    [videos]
+  );
   const totalViews = useMemo(() => videos.reduce((sum, v) => sum + v.views, 0), [videos]);
 
   const filtered = useMemo(() => {

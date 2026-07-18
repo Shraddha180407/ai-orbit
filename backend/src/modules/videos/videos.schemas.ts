@@ -11,14 +11,11 @@ export const ListQuerySchema = z.object({
       const parsed = parseInt(val, 10);
       return isNaN(parsed) ? undefined : parsed;
     }),
-  offset: z
-    .string()
-    .optional()
-    .transform((val: string | undefined) => {
-      if (!val) return undefined;
-      const parsed = parseInt(val, 10);
-      return isNaN(parsed) ? undefined : parsed;
-    }),
+  offset: z.coerce
+    .number()
+    .int("offset must be an integer")
+    .nonnegative("offset must be >= 0")
+    .optional(),
 });
 export type ListQueryInput = z.infer<typeof ListQuerySchema>;
 

@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Video, formatDuration } from "@/lib/video-types";
+import { Video, formatDuration, getChannelUrl } from "@/lib/video-types";
 import { ThumbImage } from "./ThumbImage";
+import { VideoSaveButton } from "./VideoSaveButton";
 
 type SortKey = "name" | "posted" | "views";
 type SortDir = "asc" | "desc";
@@ -118,6 +119,7 @@ export function VideoTable({ videos }: { videos: Video[] }) {
             <th className="px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted">
               Channel
             </th>
+            <th className="w-12 px-4 py-[9.6px]" aria-hidden="true" />
           </tr>
         </thead>
         <tbody>
@@ -178,11 +180,7 @@ export function VideoTable({ videos }: { videos: Video[] }) {
               </td>
               <td className="whitespace-nowrap px-4 py-[9.6px]">
                 <a
-                  href={
-                    v.channelId
-                      ? `https://www.youtube.com/channel/${v.channelId}`
-                      : `https://www.youtube.com/results?search_query=${encodeURIComponent(v.author.name)}`
-                  }
+                  href={getChannelUrl(v.channelId, v.author.name)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group/channel inline-flex items-center gap-1.5"
@@ -207,6 +205,9 @@ export function VideoTable({ videos }: { videos: Video[] }) {
                     />
                   </svg>
                 </a>
+              </td>
+              <td className="px-4 py-[9.6px] text-right">
+                <VideoSaveButton id={v.id} />
               </td>
             </tr>
           ))}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { VideoPlayer } from "@/components/videos/VideoPlayer";
 import { getVideoBySlug } from "@/lib/videos-data";
+import { getChannelUrl } from "@/lib/video-types";
 
 export const runtime = 'edge';
 export const dynamic = "force-dynamic";
@@ -51,11 +52,7 @@ export default async function VideoDetailsPage({ params }: { params: Promise<{ s
         {/* Bottom bar — mirrors the title bar so the card reads as a closed, complete frame */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-4 px-5 sm:px-7">
           <a
-            href={
-              video.channelId
-                ? `https://www.youtube.com/channel/${video.channelId}`
-                : `https://www.youtube.com/results?search_query=${encodeURIComponent(video.author.name)}`
-            }
+            href={getChannelUrl(video.channelId, video.author.name)}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex shrink-0 items-center gap-1.5 rounded-full py-1 pl-1 pr-2 text-[12.5px] text-white/60 transition-colors hover:bg-white/5 hover:text-white"

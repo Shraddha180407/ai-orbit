@@ -56,6 +56,15 @@ export const BLUR_DATA_URL =
     '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="#151619"/></svg>'
   ).toString("base64");
 
+// Shared by VideoTable.tsx and app/videos/[slug]/page.tsx — both linked to the
+// channel directly when we have a channelId, else fell back to a YouTube
+// search for the author name. Previously duplicated inline in both places.
+export function getChannelUrl(channelId: string | null | undefined, authorName: string): string {
+  return channelId
+    ? `https://www.youtube.com/channel/${channelId}`
+    : `https://www.youtube.com/results?search_query=${encodeURIComponent(authorName)}`;
+}
+
 export function formatDuration(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
