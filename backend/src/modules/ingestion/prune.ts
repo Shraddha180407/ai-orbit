@@ -19,6 +19,12 @@
  */
 import type { PrismaClient } from "@prisma/client";
 
+/**
+ * INTENTIONALLY UNUSED as of the "stop pruning" change — no caller invokes
+ * this anymore (see runIngestion() in ingestion.service.ts, which used to
+ * call it after every run). The News table now accumulates indefinitely
+ * instead. Left in place, not deleted, in case pruning is ever reinstated.
+ */
 export async function pruneToMostRecent(prisma: PrismaClient, keep = 150): Promise<number> {
   const idsToDelete = await prisma.news.findMany({
     orderBy: { publishedAt: "desc" },
