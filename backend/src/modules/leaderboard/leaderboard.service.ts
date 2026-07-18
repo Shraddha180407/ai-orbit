@@ -182,7 +182,7 @@ async function fetchNpmToolStats(slug: string, websiteDomain: string): Promise<N
     if (!websiteDomain) return null;
 
     const pkgRes = await fetch(`https://registry.npmjs.org/${encodeURIComponent(slug)}`, {
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(8000),
     });
     // 404 means "not a real npm package" — not an error, just no data for
     // this tool. Every other non-ok status (5xx, etc.) also just means
@@ -209,7 +209,7 @@ async function fetchNpmToolStats(slug: string, websiteDomain: string): Promise<N
     if (!links.includes(websiteDomain.toLowerCase()) && !githubOrgIsBrand) return null;
 
     const res = await fetch(`https://api.npmjs.org/downloads/range/last-month/${encodeURIComponent(slug)}`, {
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return null;
 
@@ -307,10 +307,10 @@ async function fetchHnBuzzStats(name: string, toolUrl: string): Promise<HnBuzzSt
 
     const [lastWeekRes, priorWeekRes] = await Promise.all([
       fetch(`https://hn.algolia.com/api/v1/search?query=${q}&tags=story&numericFilters=created_at_i%3E${weekAgo}&hitsPerPage=50`, {
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(8000),
       }),
       fetch(`https://hn.algolia.com/api/v1/search?query=${q}&tags=story&numericFilters=created_at_i%3E${twoWeeksAgo}%2Ccreated_at_i%3C${weekAgo}&hitsPerPage=50`, {
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(8000),
       }),
     ]);
     if (!lastWeekRes.ok || !priorWeekRes.ok) return null;
