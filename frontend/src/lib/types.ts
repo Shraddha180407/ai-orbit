@@ -185,10 +185,24 @@ export type Robot = {
 
 export type Device = {
   id: string;
+  slug?: string;
   name: string;
   category: string;
   manufacturer: string;
   year: string;
   description: string;
+  availability?: "Available" | "Pre-order" | "Announced" | "Discontinued" | null;
+  price?: string | null;
+  month?: string | null;
+  imageUrl?: string | null;
+  manufacturerLogoUrl?: string | null;
+  mainTask?: string | null;
+  mainTaskColor?: string | null;
+  formFactor?: string | null;
+  country?: string | null;
+  ram?: string | null;
+  aiFeatures?: string[];
+  primaryUseCases?: string[];
+  additionalInfo?: string | null;
+  buyUrl?: string | null;
 };
-

@@ -103,6 +103,13 @@ export async function fetchAllDevices(): Promise<any[]> {
   return res.json();
 }
 
+export async function fetchDeviceById(id: string): Promise<any | null> {
+  const url = `${API_URL}/api/v1/devices/${id}`;
+  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
+  if (!res.ok) return null;
+  return res.json();
+}
+
 /**
  * Server-side-only origin, for the two News page.tsx server components.
  * api.aiorbit.club is a Cloudflare-proxied custom domain; a Pages Function

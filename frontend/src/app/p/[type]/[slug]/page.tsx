@@ -5,6 +5,7 @@ import { CollectionDetailClient } from "@/components/detail/CollectionDetailClie
 import { VideoDetailsClient } from "@/components/detail/VideoDetailsClient";
 import { ArticlePageClient } from "@/components/article-page-client";
 import { EntityDetail } from "@/components/detail/EntityDetail";
+import { DeviceDetailClient } from "@/components/detail/DeviceDetailClient";
 
 export default async function UnifiedEntityPage({ params }: { params: Promise<{ type: string; slug: string }> }) {
   const resolvedParams = await params;
@@ -27,6 +28,7 @@ export default async function UnifiedEntityPage({ params }: { params: Promise<{ 
     tasks: "task"
   };
 
+  if (type === "devices") return <DeviceDetailClient />;
   if (entityTypeMap[type]) {
     return <EntityDetail type={entityTypeMap[type]} />;
   }
