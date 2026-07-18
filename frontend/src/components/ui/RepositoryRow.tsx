@@ -14,11 +14,31 @@ interface Repository {
   description: string;
   stars: number;
   language: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface RepositoryRowProps {
   repo: Repository;
   rank: number;
+}
+
+// Reusable subcomponents to reduce duplicated markup
+function RepositoryTitle({ name, className = "" }: { name: string; className?: string }) {
+  return (
+    <h3 className={`font-medium text-white text-[11px] truncate ${className}`}>
+      {name}
+      <span className="sr-only"> (opens in a new tab)</span>
+    </h3>
+  );
+}
+
+function GithubIconButton({ size, className = "" }: { size: number; className?: string }) {
+  return (
+    <div className={`h-[28px] w-[28px] rounded-full border border-[#232326] bg-[#18181C] flex items-center justify-center text-[#71717A] shrink-0 ${className}`}>
+      <Github size={size} />
+    </div>
+  );
 }
 
 export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: RepositoryRowProps) {
@@ -30,7 +50,25 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
   // Resolve license and logo properties using shared utilities
   const licenseText = resolveRepositoryLicense(repo.name);
   const logoBg = resolveCompanyLogoBg(repo.owner);
-  const updateHours = `${(repo.stars % 6) + 2}h`;
+  
+  // Format updated time using backend updatedAt field if available, fallback to mock formula
+  const getUpdatedText = () => {
+    if (!repo.updatedAt) return `${(repo.stars % 6) + 2}h`;
+    try {
+      const date = new Date(repo.updatedAt);
+      if (isNaN(date.getTime())) return `${(repo.stars % 6) + 2}h`;
+      const diffMs = Date.now() - date.getTime();
+      const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+      if (diffHrs < 1) return "1h";
+      if (diffHrs < 24) return `${diffHrs}h`;
+      const diffDays = Math.floor(diffHrs / 24);
+      return `${diffDays}d`;
+    } catch {
+      return `${(repo.stars % 6) + 2}h`;
+    }
+  };
+  const updateHours = getUpdatedText();
+
 
   return (
     <>
@@ -50,10 +88,7 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
 
         {/* Column 2: Repository Name (Vertically Centered) */}
         <div className="min-w-0 flex items-center h-full text-left">
-          <h3 className="font-medium text-white text-[11px] truncate group-hover:text-white transition-colors">
-            {repo.name}
-            <span className="sr-only"> (opens in a new tab)</span>
-          </h3>
+          <RepositoryTitle name={repo.name} className="group-hover:text-white transition-colors" />
         </div>
 
         {/* Column 3: Company / Owner */}
@@ -101,9 +136,7 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
 
         {/* Column 9: Action Link */}
         <div className="flex justify-center items-center w-full">
-          <div className="h-[28px] w-[28px] rounded-full border border-[#232326] bg-[#18181C] flex items-center justify-center text-[#71717A] group-hover:text-white group-hover:bg-[#232329] transition-colors shrink-0">
-            <Github size={20} />
-          </div>
+          <GithubIconButton size={20} className="group-hover:text-white group-hover:bg-[#232329] transition-colors" />
         </div>
       </a>
 
@@ -120,10 +153,7 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
           {/* Row 1: Title & Owner */}
           <div className="flex items-baseline min-w-0">
             <span className="text-[11px] font-mono text-[#71717A] mr-1.5 shrink-0">#{rank}</span>
-            <h3 className="font-medium text-white text-[11px] truncate">
-              {repo.name}
-              <span className="sr-only"> (opens in a new tab)</span>
-            </h3>
+            <RepositoryTitle name={repo.name} />
             <span className="text-[10px] text-[#71717A] ml-2 shrink-0">by {repo.owner}</span>
           </div>
 
@@ -152,9 +182,7 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
         </div>
 
         {/* Far Right Action Icon */}
-        <div className="h-[28px] w-[28px] rounded-full border border-[#232326] bg-[#18181C] flex items-center justify-center text-[#71717A] shrink-0">
-          <Github size={16} />
-        </div>
+        <GithubIconButton size={16} />
       </a>
     </>
   );

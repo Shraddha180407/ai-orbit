@@ -78,9 +78,9 @@ export async function fetchAllNews(): Promise<any[]> {
 import { DUMMY_REPOSITORIES } from "./dummyRepositories";
 
 export async function fetchAllRepos(): Promise<any[]> {
-  // Temporary workaround for deployed frontend CORS restriction on Vercel preview URLs.
-  // Set USE_DUMMY to false to load live repositories from the backend API.
-  const USE_DUMMY = true;
+  // Feature flag to toggle between backend API and mock data for UI testing/demonstration.
+  // Set NEXT_PUBLIC_USE_DUMMY_REPOSITORIES=true in .env.local to load dummy repositories.
+  const USE_DUMMY = process.env.NEXT_PUBLIC_USE_DUMMY_REPOSITORIES === "true";
   if (USE_DUMMY) {
     return DUMMY_REPOSITORIES;
   }

@@ -6,9 +6,11 @@ export interface Repository {
   description: string;
   stars: number;
   language: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-const FAMOUS_REPOS: Omit<Repository, "id">[] = [
+const FAMOUS_REPOS: Omit<Repository, "id" | "createdAt" | "updatedAt">[] = [
   {
     name: "stable-diffusion-webui",
     owner: "AUTOMATIC1111",
@@ -172,10 +174,15 @@ const FAMOUS_REPOS: Omit<Repository, "id">[] = [
 ];
 
 function generateDummyRepos(): Repository[] {
-  const result: Repository[] = FAMOUS_REPOS.map((r, i) => ({
-    id: `famous-${i}`,
-    ...r
-  }));
+  const result: Repository[] = FAMOUS_REPOS.map((r, i) => {
+    const updatedDate = new Date(Date.now() - (i * 3 + 2) * 60 * 60 * 1000).toISOString();
+    return {
+      id: `famous-${i}`,
+      ...r,
+      createdAt: updatedDate,
+      updatedAt: updatedDate
+    };
+  });
 
   const ownersPrefix = ["Mind", "Alpha", "Vertex", "Core", "Helix", "Sync", "Quant", "Tensor", "Neuro", "Semantic", "Deep", "Cognitive", "Robo", "Auto", "Flow", "Open", "Mind", "Hyper", "Apex", "Logic"];
   const ownersSuffix = ["Labs", "AI", "Tech", "Software", "Corp", "Research", "Systems", "Technologies", "Hub", "Group", "Solutions", "Networks", "Foundations", "Intelligence", "Analytics"];
@@ -206,6 +213,7 @@ function generateDummyRepos(): Repository[] {
     const category = pickRandom(categories);
     const stars = Math.floor(random() * 85000) + 1200;
     
+    const updatedDate = new Date(Date.now() - Math.floor(random() * 120 + 2) * 60 * 60 * 1000).toISOString();
     result.push({
       id: `gen-${i}`,
       name,
@@ -213,7 +221,9 @@ function generateDummyRepos(): Repository[] {
       stars,
       language,
       description: `A highly capable and modular ${category.toLowerCase()} tool designed to optimize and scale modern developer workflows.`,
-      url: `https://github.com/${owner}/${name}`
+      url: `https://github.com/${owner}/${name}`,
+      createdAt: updatedDate,
+      updatedAt: updatedDate
     });
   }
 

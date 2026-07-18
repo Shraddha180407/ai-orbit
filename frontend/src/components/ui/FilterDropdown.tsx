@@ -12,6 +12,7 @@ interface FilterDropdownProps {
   onSelectItem: (item: string | null) => void;
   searchPlaceholder?: string;
   allLabel?: string;
+  id?: string;
 }
 
 export function FilterDropdown({
@@ -23,10 +24,25 @@ export function FilterDropdown({
   onSelectItem,
   searchPlaceholder = "Search...",
   allLabel = "All items",
+  id,
 }: FilterDropdownProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const triggerElementRef = useRef<HTMLElement | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Capture active trigger element and focus search input on open
+  useEffect(() => {
+    if (isOpen) {
+      triggerElementRef.current = document.activeElement as HTMLElement;
+      searchInputRef.current?.focus();
+    } else {
+      if (triggerElementRef.current) {
+        triggerElementRef.current.focus();
+        triggerElementRef.current = null;
+      }
+    }
+  }, [isOpen]);
 
   // Handle click outside to close
   useEffect(() => {
@@ -43,15 +59,43 @@ export function FilterDropdown({
     };
   }, [isOpen, onClose]);
 
-  // Reset search and autofocus on open
+  // Reset search query when dropdown opens
   useEffect(() => {
     if (isOpen) {
       setSearchQuery("");
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 50);
     }
   }, [isOpen]);
+
+  // Keyboard navigation logic
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      onClose();
+      e.preventDefault();
+      return;
+    }
+
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!dropdownRef.current) return;
+
+      // Select all interactive focusable elements
+      const focusables = Array.from(
+        dropdownRef.current.querySelectorAll("input, button")
+      ) as HTMLElement[];
+
+      if (focusables.length === 0) return;
+
+      const currentIndex = focusables.indexOf(document.activeElement as HTMLElement);
+
+      if (e.key === "ArrowDown") {
+        const nextIndex = (currentIndex + 1) % focusables.length;
+        focusables[nextIndex]?.focus();
+      } else {
+        const prevIndex = (currentIndex - 1 + focusables.length) % focusables.length;
+        focusables[prevIndex]?.focus();
+      }
+    }
+  };
 
   // Filter items based on search query
   const filteredItems = React.useMemo(() => {
@@ -67,6 +111,10 @@ export function FilterDropdown({
   return (
     <div
       ref={dropdownRef}
+      id={id}
+      role="dialog"
+      aria-label={`${searchPlaceholder.replace("Search ", "")} filter dropdown`}
+      onKeyDown={handleKeyDown}
       className="absolute top-full left-0 mt-2 z-50 w-56 bg-[#131316] border border-[#232326] rounded-lg shadow-2xl p-2 select-none"
     >
       {/* Search Input */}
@@ -80,18 +128,28 @@ export function FilterDropdown({
           placeholder={searchPlaceholder}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          aria-label={searchPlaceholder}
+          aria-autocomplete="list"
+          aria-controls={`${id || 'filter'}-options-list`}
           className="w-full pl-7 pr-3 py-1.5 text-xs bg-[#000000] border border-[#232326] rounded text-white focus:outline-none focus:border-[#71717A] placeholder-[#71717A] font-medium"
         />
       </div>
 
       {/* Options List */}
-      <div className="max-h-52 overflow-y-auto flex flex-col gap-0.5 custom-scrollbar">
+      <div
+        role="listbox"
+        id={`${id || 'filter'}-options-list`}
+        aria-label="Available filter options"
+        className="max-h-52 overflow-y-auto flex flex-col gap-0.5 custom-scrollbar"
+      >
         {/* All Items option */}
         <button
           onClick={() => {
             onSelectItem(null);
             onClose();
           }}
+          role="option"
+          aria-selected={selectedItem === null}
           className={`w-full text-left px-2.5 py-1.5 text-xs rounded transition-colors flex justify-between items-center font-medium focus:outline-none focus:bg-neutral-800 ${
             selectedItem === null
               ? "text-white bg-[#18181C]"
@@ -110,6 +168,8 @@ export function FilterDropdown({
               onSelectItem(item);
               onClose();
             }}
+            role="option"
+            aria-selected={selectedItem === item}
             className={`w-full text-left px-2.5 py-1.5 text-xs rounded transition-colors flex justify-between items-center font-medium focus:outline-none focus:bg-neutral-800 ${
               selectedItem === item
                 ? "text-white bg-[#18181C]"

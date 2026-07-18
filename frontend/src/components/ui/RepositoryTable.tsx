@@ -66,7 +66,7 @@ export function RepositoryTable({
       style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
     >
       {/* Sticky Table Header */}
-      <div className="sticky top-[68px] z-30 bg-[#000000] border-b border-[#232326]/60 px-[10px] py-[12px] h-[48.8px] select-none hidden sm:flex items-center rounded-t-xl">
+      <div className="sticky top-navbar z-30 bg-[#000000] border-b border-[#232326]/60 px-[10px] py-[12px] h-[48.8px] select-none hidden sm:flex items-center rounded-t-xl">
         <div className="grid grid-cols-[30px_1fr_70px_80px_50px] md:grid-cols-[30px_1fr_130px_70px_100px_50px] lg:grid-cols-[30px_1fr_130px_70px_70px_100px_80px_50px] xl:grid-cols-[30px_1fr_130px_70px_70px_100px_70px_80px_50px] gap-[10px] items-center text-[10px] font-semibold tracking-[0.5px] text-[#71717A] w-full">
           {/* Rank Column Header */}
           <div className="uppercase text-center">
@@ -77,6 +77,9 @@ export function RepositoryTable({
           <div className="relative text-left">
             <button
               onClick={onToggleRepoFilter}
+              aria-haspopup="dialog"
+              aria-expanded={isRepoFilterOpen}
+              aria-controls="repo-name-filter-popover"
               className={`flex items-center gap-1.5 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none ${
                 activeRepoSearch ? "text-white" : ""
               }`}
@@ -101,6 +104,9 @@ export function RepositoryTable({
           <div className="relative hidden md:block text-left">
             <button
               onClick={onToggleCompanyDropdown}
+              aria-haspopup="listbox"
+              aria-expanded={isCompanyDropdownOpen}
+              aria-controls="company-filter-dropdown"
               className={`flex items-center gap-1 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none ${
                 selectedCompany ? "text-white" : ""
               }`}
@@ -120,6 +126,7 @@ export function RepositoryTable({
               onSelectItem={onSelectCompany}
               searchPlaceholder="Search companies..."
               allLabel="All companies"
+              id="company-filter-dropdown"
             />
           </div>
 
@@ -145,6 +152,9 @@ export function RepositoryTable({
           <div className="relative hidden md:block text-center flex justify-center">
             <button
               onClick={onToggleLicenseDropdown}
+              aria-haspopup="listbox"
+              aria-expanded={isLicenseDropdownOpen}
+              aria-controls="license-filter-dropdown"
               className={`flex items-center justify-center gap-1 uppercase hover:text-white transition-colors cursor-pointer focus:outline-none ${
                 selectedLicense ? "text-white" : ""
               }`}
@@ -164,6 +174,7 @@ export function RepositoryTable({
               onSelectItem={onSelectLicense}
               searchPlaceholder="Search license..."
               allLabel="All Licenses"
+              id="license-filter-dropdown"
             />
           </div>
 

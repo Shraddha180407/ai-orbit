@@ -35,17 +35,36 @@ export function buildToolsUrl(
   return qs ? `/tools?${qs}` : "/tools";
 }
 
+// Substring-to-value lookup mapping configurations
+const LICENSE_MAP: [string, string | null][] = [
+  ["webui", "Apache-2.0"],
+  ["transformer", null],
+  ["toolkit", "MIT"],
+  ["comfy", null],
+  ["bark", "MIT"]
+];
+
+const COMPANY_LOGO_MAP: [string, string][] = [
+  ["intuit", "bg-blue-500"],
+  ["crowdstrike", "bg-red-500"],
+  ["snowflake", "bg-cyan-500"],
+  ["google", "bg-red-500"],
+  ["meta", "bg-blue-600"],
+  ["openai", "bg-emerald-600"],
+  ["anthropic", "bg-amber-600"],
+  ["huggingface", "bg-yellow-500 text-black"],
+  ["ollama", "bg-neutral-800"],
+  ["langchain", "bg-green-600"],
+  ["microsoft", "bg-blue-600"]
+];
+
 /**
  * Resolves repository license from title/name (placeholder helper for Phase 2).
  */
 export function resolveRepositoryLicense(repoName: string): string | null {
   const name = repoName.toLowerCase();
-  if (name.includes("webui")) return "Apache-2.0";
-  if (name.includes("transformer")) return null;
-  if (name.includes("toolkit")) return "MIT";
-  if (name.includes("comfy")) return null;
-  if (name.includes("bark")) return "MIT";
-  return "Apache-2.0";
+  const match = LICENSE_MAP.find(([key]) => name.includes(key));
+  return match ? match[1] : "Apache-2.0";
 }
 
 /**
@@ -54,18 +73,8 @@ export function resolveRepositoryLicense(repoName: string): string | null {
  */
 export function resolveCompanyLogoBg(ownerName: string): string {
   const owner = ownerName.toLowerCase();
-  if (owner.includes("intuit")) return "bg-blue-500";
-  if (owner.includes("crowdstrike")) return "bg-red-500";
-  if (owner.includes("snowflake")) return "bg-cyan-500";
-  if (owner.includes("google")) return "bg-red-500";
-  if (owner.includes("meta")) return "bg-blue-600";
-  if (owner.includes("openai")) return "bg-emerald-600";
-  if (owner.includes("anthropic")) return "bg-amber-600";
-  if (owner.includes("huggingface")) return "bg-yellow-500 text-black";
-  if (owner.includes("ollama")) return "bg-neutral-800";
-  if (owner.includes("langchain")) return "bg-green-600";
-  if (owner.includes("microsoft")) return "bg-blue-600";
-  return "";
+  const match = COMPANY_LOGO_MAP.find(([key]) => owner.includes(key));
+  return match ? match[1] : "";
 }
 
 
