@@ -29,18 +29,10 @@ export class TasksService {
         { description: { contains: filters.q.trim(), mode: 'insensitive' } },
       ];
     }
-    if (filters.category) {
-      where.category = { slug: filters.category };
-    }
-    if (filters.difficulty) {
-      where.difficulty = filters.difficulty;
-    }
-    if (filters.pricing) {
-      where.pricingModel = filters.pricing;
-    }
-    if (filters.featuredOnly) {
-      where.isFeatured = true;
-    }
+    if (filters.category) where.category = { slug: filters.category };
+    if (filters.difficulty) where.difficulty = filters.difficulty;
+    if (filters.pricing) where.pricingModel = filters.pricing;
+    if (filters.featuredOnly) where.isFeatured = true;
 
     let orderBy: Prisma.TaskOrderByWithRelationInput = { createdAt: 'desc' };
     switch (filters.sort) {
@@ -51,7 +43,7 @@ export class TasksService {
         orderBy = { title: 'asc' };
         break;
       case 'popular':
-        orderBy = { bookmarks: { _count: 'desc' } };
+        orderBy = { likes: { _count: 'desc' } };
         break;
     }
 
@@ -64,9 +56,20 @@ export class TasksService {
       pricingModel: true,
       isFeatured: true,
       category: { select: { slug: true, name: true } },
-      primaryTool: { select: { name: true, logoUrl: true } },
-      _count: { select: { bookmarks: true } },
+      creator: { select: { id: true, name: true, image: true } },
       createdAt: true,
+      _count: {
+        select: {
+          likes: true,
+          subscribers: true,
+          bookmarks: true,
+          resources: true,
+          tools: true,
+          models: true,
+          robots: true,
+          devices: true,
+        },
+      },
     };
 
     const [tasks, total, categoriesList] = await Promise.all([
@@ -79,7 +82,7 @@ export class TasksService {
     ]);
 
     return {
-      tasks,
+      tasks: tasks.map(this.serializeTask),
       total,
       page: pageNum,
       totalPages: Math.max(1, Math.ceil(total / limit)),
@@ -101,36 +104,111 @@ export class TasksService {
         isFeatured: true,
         createdAt: true,
         category: { select: { slug: true, name: true } },
-        primaryTool: { select: { slug: true, name: true, logoUrl: true } },
-        _count: { select: { bookmarks: true } },
+        creator: { select: { id: true, name: true, image: true } },
+        _count: {
+          select: {
+            likes: true,
+            subscribers: true,
+            bookmarks: true,
+            resources: true,
+            tools: true,
+            models: true,
+            robots: true,
+            devices: true,
+          },
+        },
       },
     });
 
     if (!task) return null;
 
     const demoUser = await getOrCreateDemoUser(this.prisma);
-    const bookmark = await this.prisma.taskBookmark.findUnique({
-      where: { taskId_userId: { taskId: task.id, userId: demoUser.id } },
-      select: { id: true },
-    });
 
-    return { task, bookmarked: Boolean(bookmark) };
+    const [bookmark, liked, subscribed] = await Promise.all([
+      this.prisma.taskBookmark.findUnique({
+        where: { taskId_userId: { taskId: task.id, userId: demoUser.id } },
+        select: { id: true },
+      }),
+      this.prisma.taskLike.findUnique({
+        where: { taskId_userId: { taskId: task.id, userId: demoUser.id } },
+      }),
+      this.prisma.taskSubscriber.findUnique({
+        where: { taskId_userId: { taskId: task.id, userId: demoUser.id } },
+      }),
+    ]);
+
+    return {
+      task: this.serializeTask(task),
+      bookmarked: Boolean(bookmark),
+      liked: Boolean(liked),
+      subscribed: Boolean(subscribed),
+    };
   }
 
   async toggleBookmark(taskId: string) {
+    return this.toggleJoinRow(this.prisma.taskBookmark, taskId);
+  }
+
+  async toggleLike(taskId: string) {
+    return this.toggleJoinRow(this.prisma.taskLike, taskId, true);
+  }
+
+  async toggleSubscribe(taskId: string) {
+    return this.toggleJoinRow(this.prisma.taskSubscriber, taskId, true);
+  }
+
+  // Shared helper — TaskBookmark uses its own `id` primary key,
+  // while TaskLike/TaskSubscriber use a composite (taskId, userId) key.
+  // The `compositeKey` flag switches between the two lookup styles.
+  private async toggleJoinRow(model: any, taskId: string, compositeKey = false) {
     const demoUser = await getOrCreateDemoUser(this.prisma);
 
-    const existing = await this.prisma.taskBookmark.findUnique({
-      where: { taskId_userId: { taskId, userId: demoUser.id } },
-      select: { id: true },
-    });
-
-    if (existing) {
-      await this.prisma.taskBookmark.delete({ where: { id: existing.id } });
-      return false;
+    if (compositeKey) {
+      const existing = await model.findUnique({
+        where: { taskId_userId: { taskId, userId: demoUser.id } },
+      });
+      if (existing) {
+        await model.delete({ where: { taskId_userId: { taskId, userId: demoUser.id } } });
+        return false;
+      } else {
+        await model.create({ data: { taskId, userId: demoUser.id } });
+        return true;
+      }
     } else {
-      await this.prisma.taskBookmark.create({ data: { taskId, userId: demoUser.id } });
-      return true;
+      const existing = await model.findUnique({
+        where: { taskId_userId: { taskId, userId: demoUser.id } },
+        select: { id: true },
+      });
+      if (existing) {
+        await model.delete({ where: { id: existing.id } });
+        return false;
+      } else {
+        await model.create({ data: { taskId, userId: demoUser.id } });
+        return true;
+      }
     }
+  }
+
+  private serializeTask(t: any) {
+    return {
+      id: t.id,
+      slug: t.slug,
+      title: t.title,
+      description: t.description,
+      difficulty: t.difficulty,
+      pricingModel: t.pricingModel,
+      isFeatured: t.isFeatured,
+      category: t.category,
+      creator: t.creator,
+      createdAt: t.createdAt,
+      likes: t._count?.likes ?? 0,
+      subscribers: t._count?.subscribers ?? 0,
+      saves: t._count?.bookmarks ?? 0,
+      resources: t._count?.resources ?? 0,
+      tools: t._count?.tools ?? 0,
+      models: t._count?.models ?? 0,
+      robots: t._count?.robots ?? 0,
+      devices: t._count?.devices ?? 0,
+    };
   }
 }

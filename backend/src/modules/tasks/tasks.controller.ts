@@ -61,15 +61,53 @@ export class TasksController {
       const service = new TasksService(prisma);
       const body = await c.req.json();
       const parsed = ToggleTaskBookmarkSchema.safeParse(body);
-
       if (!parsed.success) {
         return c.json({ error: 'Invalid input data', details: parsed.error.issues }, 400);
       }
-
       const bookmarked = await service.toggleBookmark(parsed.data.taskId);
       return c.json({ bookmarked });
     } catch (error: any) {
       console.error('toggleBookmark error:', error);
+      return c.json({ error: error.message ?? String(error) }, 500);
+    } finally {
+      if (prisma) await prisma.$disconnect();
+    }
+  }
+
+  async toggleLike(c: Context) {
+    let prisma;
+    try {
+      prisma = getPrisma(c.env);
+      const service = new TasksService(prisma);
+      const body = await c.req.json();
+      const parsed = ToggleTaskBookmarkSchema.safeParse(body); // same shape: { taskId }
+      if (!parsed.success) {
+        return c.json({ error: 'Invalid input data', details: parsed.error.issues }, 400);
+      }
+      const liked = await service.toggleLike(parsed.data.taskId);
+      return c.json({ liked });
+    } catch (error: any) {
+      console.error('toggleLike error:', error);
+      return c.json({ error: error.message ?? String(error) }, 500);
+    } finally {
+      if (prisma) await prisma.$disconnect();
+    }
+  }
+
+  async toggleSubscribe(c: Context) {
+    let prisma;
+    try {
+      prisma = getPrisma(c.env);
+      const service = new TasksService(prisma);
+      const body = await c.req.json();
+      const parsed = ToggleTaskBookmarkSchema.safeParse(body); // same shape: { taskId }
+      if (!parsed.success) {
+        return c.json({ error: 'Invalid input data', details: parsed.error.issues }, 400);
+      }
+      const subscribed = await service.toggleSubscribe(parsed.data.taskId);
+      return c.json({ subscribed });
+    } catch (error: any) {
+      console.error('toggleSubscribe error:', error);
       return c.json({ error: error.message ?? String(error) }, 500);
     } finally {
       if (prisma) await prisma.$disconnect();
