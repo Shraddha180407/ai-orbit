@@ -1666,6 +1666,25 @@ const TOOLS: SeedTool[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Tasks — temporary sample data until Soumya's real dataset lands.
+// Swap TASKS for `import tasks from "./tasks.json"` once that PR merges.
+// ---------------------------------------------------------------------------
+
+interface SeedTask {
+  title: string;
+  slug: string;
+  description: string;
+  category: string;
+  difficulty: "EASY" | "MEDIUM" | "ADVANCED";
+  pricingModel: PricingModel;
+  isFeatured: boolean;
+  recommendedAITools: string[];
+}
+
+import tasksData from "./task.json" with { type: "json" };
+const TASKS: SeedTask[] = tasksData as SeedTask[];
+
+// ---------------------------------------------------------------------------
 // Reviews — a handful of realistic sample reviews spread across popular tools
 // ---------------------------------------------------------------------------
 
@@ -1817,6 +1836,58 @@ async function main() {
   }
   console.log(`Relate completed: bulk created ${categoryLinks.length} categories and ${tagLinks.length} tags.`);
 
+  console.log("Seeding tasks...");
+
+  const toolByName = new Map<string, { id: string }>();
+  for (const t of allTools) {
+    const tool = toolBySlug.get(t.slug);
+    if (tool) toolByName.set(t.name.toLowerCase(), tool);
+  }
+
+  for (const t of TASKS) {
+    const categorySlug = t.category.toLowerCase().replace(/ /g, "-");
+    const category = categoryBySlug.get(categorySlug);
+
+    if (!category) {
+      console.warn(`⚠️  Skipping task "${t.title}" — category "${t.category}" not found`);
+      continue;
+    }
+
+    const createdTask = await prisma.task.upsert({
+      where: { slug: t.slug },
+      update: {
+        title: t.title,
+        description: t.description,
+        difficulty: t.difficulty,
+        pricingModel: t.pricingModel,
+        isFeatured: t.isFeatured,
+        categoryId: category.id,
+      },
+      create: {
+        slug: t.slug,
+        title: t.title,
+        description: t.description,
+        difficulty: t.difficulty,
+        pricingModel: t.pricingModel,
+        isFeatured: t.isFeatured,
+        categoryId: category.id,
+      },
+    });
+
+    await prisma.taskTool.deleteMany({ where: { taskId: createdTask.id } });
+
+    for (const toolName of t.recommendedAITools) {
+      const tool = toolByName.get(toolName.toLowerCase());
+      if (!tool) {
+        console.warn(`   ⚠️  Tool "${toolName}" not found for task "${t.title}"`);
+        continue;
+      }
+      await prisma.taskTool.create({ data: { taskId: createdTask.id, toolId: tool.id } });
+    }
+  }
+
+  console.log(`Seeded ${TASKS.length} tasks.`);
+  
   // Curated similar mappings
   const ALTERNATIVE_PAIRS: [string, string][] = [
     ["chatgpt", "claude"],
