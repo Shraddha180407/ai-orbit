@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import Search from 'lucide-react/dist/esm/icons/search';
 import { useUser } from '@/hooks/use-user';
 
 export function Header() {
@@ -23,14 +22,7 @@ export function Header() {
 
         {/* Right Aligned Navigation & Action Elements */}
         <div className="flex items-center gap-8">
-          {/* Center Navigation links moved here to be right-aligned */}
           <nav className="hidden lg:flex items-center gap-6">
-            <Link
-              href="/tools"
-              className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
-            >
-              AI Tools
-            </Link>
             <Link
               href="/leaderboard"
               className="text-[13px] font-medium text-[#6E56CF] hover:text-white transition-colors font-semibold"
@@ -38,59 +30,21 @@ export function Header() {
               Leaderboard
             </Link>
             <Link
-              href="/models"
+              href="/#newsletter"
               className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
             >
-              Models
+              Newsletter
             </Link>
             <Link
-              href="/devices"
+              href="/tools"
               className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
             >
-              Devices
-            </Link>
-            <Link
-              href="/companies"
-              className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
-            >
-              Companies
-            </Link>
-            <Link
-              href="/collections"
-              className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
-            >
-              Collections
-            </Link>
-            <Link
-              href="/news"
-              className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
-            >
-              News
-            </Link>
-            <Link
-              href="/videos"
-              className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
-            >
-              Videos
-            </Link>
-            <Link
-              href="/repositories"
-              className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
-            >
-              Repositories
+              Resources
             </Link>
           </nav>
 
           {/* Action buttons */}
           <div className="flex items-center gap-5">
-            <Link
-              href="/search"
-              className="p-1.5 text-foreground-muted hover:text-white rounded-lg transition-colors"
-              aria-label="Search site"
-            >
-              <Search size={17} />
-            </Link>
-
             <Link
               href="/tools"
               className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
@@ -108,20 +62,12 @@ export function Header() {
                 Dashboard
               </Link>
             ) : (
-              <>
-                <Link
-                  href="/auth/signin"
-                  className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors px-2"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  className="inline-flex h-[32px] items-center justify-center rounded-lg bg-white px-4 text-[13px] font-bold text-black hover:bg-neutral-200 transition-colors shrink-0"
-                >
-                  Sign Up
-                </Link>
-              </>
+              <Link
+                href="/auth/signin"
+                className="inline-flex h-[32px] items-center justify-center rounded-lg bg-white px-4 text-[13px] font-bold text-black hover:bg-neutral-200 transition-colors shrink-0"
+              >
+                Sign In
+              </Link>
             )}
           </div>
         </div>

@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Search from 'lucide-react/dist/esm/icons/search';
 import Wrench from 'lucide-react/dist/esm/icons/wrench';
+import ListChecks from 'lucide-react/dist/esm/icons/list-checks';
 import Cpu from 'lucide-react/dist/esm/icons/cpu';
 import Building2 from 'lucide-react/dist/esm/icons/building-2';
 import FolderHeart from 'lucide-react/dist/esm/icons/folder-heart';
@@ -11,7 +12,8 @@ import Newspaper from 'lucide-react/dist/esm/icons/newspaper';
 import GitBranch from 'lucide-react/dist/esm/icons/git-branch';
 import Smartphone from 'lucide-react/dist/esm/icons/smartphone';
 import Bot from 'lucide-react/dist/esm/icons/bot';
-import Landmark from 'lucide-react/dist/esm/icons/landmark';
+import Plug from 'lucide-react/dist/esm/icons/plug';
+import PlayCircle from 'lucide-react/dist/esm/icons/play-circle';
 
 import { API_URL } from "@/lib/api";
 
@@ -25,14 +27,16 @@ import type { SortOption } from "@/lib/types";
 
 const DIRECTORY_CARDS = [
   { name: "Tools", href: "/tools", description: "Browse the full AI tools directory, filter by category and pricing.", icon: Wrench, color: "#FFC53D" },
-  { name: "Models", href: "/models", description: "Compare context windows, pricing, and benchmarks across AI models.", icon: Cpu, color: "#A78BFA" },
+  { name: "Tasks", href: "/tasks", description: "Find the right AI tool for a specific job to be done.", icon: ListChecks, color: "#FB923C" },
   { name: "Companies", href: "/companies", description: "Explore the labs and startups building the AI ecosystem.", icon: Building2, color: "#38BDF8" },
-  { name: "Collections", href: "/collections", description: "Curated bundles of tools grouped by use case.", icon: FolderHeart, color: "#34D399" },
   { name: "News", href: "/news", description: "The latest announcements and coverage across the AI world.", icon: Newspaper, color: "#FF6B4A" },
-  { name: "Repositories", href: "/repositories", description: "Trending open-source AI repositories on GitHub.", icon: GitBranch, color: "#22D3EE" },
-  { name: "Devices", href: "/devices", description: "Hardware built for and powered by AI.", icon: Smartphone, color: "#F472B6" },
+  { name: "Videos", href: "/videos", description: "Watch demos, reviews, and deep dives on the latest AI tools.", icon: PlayCircle, color: "#F87171" },
   { name: "Robots", href: "/robots", description: "Robotics platforms and the companies behind them.", icon: Bot, color: "#2DD4BF" },
-  { name: "Investors", href: "/investors", description: "Who's funding the AI ecosystem, and where the money's going.", icon: Landmark, color: "#818CF8" },
+  { name: "Devices", href: "/devices", description: "Hardware built for and powered by AI.", icon: Smartphone, color: "#F472B6" },
+  { name: "Models", href: "/models", description: "Compare context windows, pricing, and benchmarks across AI models.", icon: Cpu, color: "#A78BFA" },
+  { name: "Repositories", href: "/repositories", description: "Trending open-source AI repositories on GitHub.", icon: GitBranch, color: "#22D3EE" },
+  { name: "MCP", href: "/tools", description: "Model Context Protocol servers and integrations.", icon: Plug, color: "#818CF8" },
+  { name: "Collections", href: "/collections", description: "Curated bundles of tools grouped by use case.", icon: FolderHeart, color: "#34D399" },
 ] as const;
 
 export function HomeClient() {
@@ -199,8 +203,15 @@ export function HomeClient() {
                 <a
                   key={card.name}
                   href={card.href}
-                  className="group relative flex flex-1 min-w-[110px] shrink-0 flex-row items-center justify-center gap-2.5 overflow-hidden rounded-xl border border-[#232326]/60 bg-[#0d0d10] px-5 py-3 text-center transition-all duration-200 hover:border-[color:var(--card-color)] hover:-translate-y-0.5"
-                  style={{ ["--card-color" as string]: card.color }}
+                  className="group flex flex-1 min-w-[110px] shrink-0 flex-row items-center justify-center gap-2.5 rounded-xl border border-[#232326]/60 bg-[#0d0d10] px-5 py-3 text-center transition-colors duration-200"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = card.color;
+                    e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "";
+                    e.currentTarget.style.boxShadow = "";
+                  }}
                 >
                   <div
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
