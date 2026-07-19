@@ -11,6 +11,7 @@ import authRoutes from './modules/auth/auth.routes.js'
 import { leaderboardRouter } from './modules/leaderboard/leaderboard.routes.js'
 import { companiesRouter } from './modules/companies/companies.routes.js'
 import { devicesRouter } from './modules/devices/devices.routes.js'
+import { tasksRouter } from './modules/tasks/tasks.routes.js'
 import { modelsRouter } from './modules/models/models.routes.js'
 import { repositoriesRouter } from './modules/repositories/repositories.routes.js'
 import { robotsRouter } from './modules/robots/robots.routes.js'
@@ -57,6 +58,7 @@ app.route('/api/v1/devices', devicesRouter)
 app.route('/api/v1/models', modelsRouter)
 app.route('/api/v1/repositories', repositoriesRouter)
 app.route('/api/v1/robots', robotsRouter)
+app.route('/api/v1/tasks', tasksRouter)
 
 app.get('/', (c) => {
   return c.json({
