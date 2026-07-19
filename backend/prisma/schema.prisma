@@ -18,24 +18,27 @@ model Company {
 }
 
 model User {
-  id             String           @id @default(cuid())
-  name           String?
-  email          String           @unique
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @default(now()) @updatedAt
-  emailVerified  DateTime?
-  image          String?
-  password       String?
-  role           String           @default("USER")
-  status         String           @default("ACTIVE")
-  accounts       Account[]
-  bookmarks      Bookmark[]
-  reviews        Review[]
-  sessions       Session[]
-  Task           Task[]
-  TaskBookmark   TaskBookmark[]
-  TaskLike       TaskLike[]
-  TaskSubscriber TaskSubscriber[]
+  id                                 String           @id @default(cuid())
+  name                               String?
+  email                              String           @unique
+  createdAt                          DateTime         @default(now())
+  updatedAt                          DateTime         @default(now()) @updatedAt
+  emailVerified                      DateTime?
+  image                              String?
+  password                           String?
+  role                               String           @default("USER")
+  status                             String           @default("ACTIVE")
+  accounts                           Account[]
+  bookmarks                          Bookmark[]
+  Report_Report_reportedUserIdToUser Report[]         @relation("Report_reportedUserIdToUser")
+  Report_Report_reporterIdToUser     Report[]         @relation("Report_reporterIdToUser")
+  reviews                            Review[]
+  sessions                           Session[]
+  Task                               Task[]
+  TaskBookmark                       TaskBookmark[]
+  TaskLike                           THaskLike[]
+  TaskSubscriber                     TaskSubscriber[]
+  ToolHistory                        ToolHistory[]
 }
 
 model Tool {
@@ -56,10 +59,13 @@ model Tool {
   slug             String           @unique
   websiteUrl       String
   bookmarks        Bookmark[]
+  Report           Report[]
   reviews          Review[]
   TaskTool         TaskTool[]
   company          Company?         @relation(fields: [companyId], references: [id])
   categories       ToolCategory[]
+  ToolCollection   ToolCollection[]
+  ToolHistory      ToolHistory[]
   tags             ToolTag[]
   Tool_A           Tool[]           @relation("ToolAlternatives")
   Tool_B           Tool[]           @relation("ToolAlternatives")
@@ -192,6 +198,7 @@ model News {
   bookmarks   NewsBookmark[]
   comments    NewsComment[]
   votes       NewsVote[]
+  Report      Report[]
   topics      Topic[]        @relation("NewsToTopic")
 
   @@index([publishedAt])
@@ -233,20 +240,37 @@ model NewsComment {
 }
 
 model Repository {
-  id          String   @id @default(cuid())
-  name        String
-  owner       String
-  stars       Int
-  language    String
-  description String
-  url         String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  id              String    @id @default(cuid())
+  name            String
+  owner           String
+  stars           Int
+  language        String?
+  description     String?
+  url             String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  brandColor      String?
+  defaultBranch   String    @default("main")
+  forks           Int
+  githubCreatedAt DateTime
+  githubId        Int       @unique
+  homepage        String?
+  license         String?
+  logoUrl         String?
+  openIssues      Int
+  ownerAvatarUrl  String?
+  readmeFetchedAt DateTime?
+  readmeHtml      String?
+  slug            String    @unique
+  syncedAt        DateTime
+  topics          String[]
+
+  @@index([language])
+  @@index([stars])
+  @@index([syncedAt])
+  @@index([topics], type: Gin)
 }
 
-// Synced from live production DB via `prisma db pull` on 2026-07-19 — this
-// model was migrated directly to prod by another module without ever being
-// committed here. Kept verbatim; not owned by this module, do not alter.
 model Video {
   id              String   @id @default(cuid())
   title           String
@@ -497,6 +521,58 @@ model TaskTool {
 
   @@id([taskId, toolId])
   @@index([toolId])
+}
+
+model Collection {
+  id             String           @id
+  slug           String           @unique
+  title          String
+  description    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @default(now())
+  ToolCollection ToolCollection[]
+}
+
+model Report {
+  id                               String   @id
+  reason                           String
+  status                           String   @default("PENDING")
+  reporterId                       String
+  reportedUserId                   String?
+  reportedToolId                   String?
+  reportedNewsId                   String?
+  createdAt                        DateTime @default(now())
+  updatedAt                        DateTime @default(now())
+  News                             News?    @relation(fields: [reportedNewsId], references: [id])
+  Tool                             Tool?    @relation(fields: [reportedToolId], references: [id])
+  User_Report_reportedUserIdToUser User?    @relation("Report_reportedUserIdToUser", fields: [reportedUserId], references: [id])
+  User_Report_reporterIdToUser     User     @relation("Report_reporterIdToUser", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([status])
+}
+
+model ToolCollection {
+  toolId       String
+  collectionId String
+  Collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  Tool         Tool       @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@id([toolId, collectionId])
+  @@index([collectionId])
+}
+
+model ToolHistory {
+  id       String   @id
+  userId   String
+  toolId   String
+  viewedAt DateTime @default(now())
+  Tool     Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  User     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, toolId])
+  @@index([toolId])
+  @@index([userId])
 }
 
 enum PricingModel {
