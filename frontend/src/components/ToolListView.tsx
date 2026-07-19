@@ -1,14 +1,19 @@
 'use client';
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import GitCompare from 'lucide-react/dist/esm/icons/git-compare';
+import Check from 'lucide-react/dist/esm/icons/check';
+import X from 'lucide-react/dist/esm/icons/x';
 import Star from 'lucide-react/dist/esm/icons/star';
 import { PricingBadge } from "@/components/PricingBadge";
 import { CategoryChip } from "@/components/CategoryChip";
 import type { ToolCardData } from "@/lib/types";
+
+const MAX_COMPARE = 2;
 
 /**
  * Loose tool shape — extends `ToolCardData` with optional fields the backend
@@ -111,7 +116,17 @@ const COLUMN_HEADERS = [
 
 // Row renderer ---------------------------------------------------------------
 
-function ToolRow({ tool }: { tool: ListTool }) {
+function ToolRow({
+  tool,
+  isSelected,
+  isCompareFull,
+  onToggleCompare,
+}: {
+  tool: ListTool;
+  isSelected: boolean;
+  isCompareFull: boolean;
+  onToggleCompare: (tool: ListTool) => void;
+}) {
   const primaryCategory = tool.categories[0]?.category;
   const isOpenSource = isTruthy(tool.isOpenSource, tool.openSource);
   const isTrending = isTruthy(tool.isTrending, tool.trending);
@@ -219,18 +234,25 @@ function ToolRow({ tool }: { tool: ListTool }) {
       <div className="hidden text-right sm:block">
         <button
           type="button"
+          disabled={!isSelected && isCompareFull}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            // Placeholder: real compare flow isn't built yet. Future implementation
-            // will push a compare-set into context and navigate to /compare.
-            window.location.href = `/tools/${tool.slug}#compare`;
+            onToggleCompare(tool);
           }}
-          className="inline-flex items-center gap-1 rounded-md border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] transition-colors hover:border-[#3a3a3d] hover:text-white"
-          aria-label={`Compare ${tool.name}`}
+          className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-mono font-semibold transition-colors ${
+            isSelected
+              ? "border-transparent text-black"
+              : !isSelected && isCompareFull
+              ? "cursor-not-allowed border-[#232326]/40 bg-[#131316] text-[#4a4a4d]"
+              : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
+          }`}
+          style={isSelected ? { backgroundColor: "var(--color-signal)" } : undefined}
+          aria-label={isSelected ? `Remove ${tool.name} from compare` : `Add ${tool.name} to compare`}
+          aria-pressed={isSelected}
         >
-          <GitCompare size={10} />
-          Compare
+          {isSelected ? <Check size={10} /> : <GitCompare size={10} />}
+          {isSelected ? "Added" : "Compare"}
         </button>
       </div>
     </Link>
@@ -244,6 +266,26 @@ export function ToolListView({
   loading = false,
   skeletonRows = 4,
 }: ToolListViewProps) {
+  const router = useRouter();
+  const [compareSet, setCompareSet] = useState<ListTool[]>([]);
+
+  const toggleCompare = (tool: ListTool) => {
+    setCompareSet((prev) => {
+      const exists = prev.some((t) => t.id === tool.id);
+      if (exists) return prev.filter((t) => t.id !== tool.id);
+      if (prev.length >= MAX_COMPARE) return prev; // full — no-op
+      return [...prev, tool];
+    });
+  };
+
+  const clearCompare = () => setCompareSet([]);
+
+  const goToCompare = () => {
+    if (compareSet.length !== MAX_COMPARE) return;
+    const slugs = compareSet.map((t) => t.slug).join(",");
+    router.push(`/tools/compare?slugs=${slugs}`);
+  };
+
   // Loading skeleton
   if (loading) {
     return (
@@ -291,30 +333,101 @@ export function ToolListView({
 
   // Real rows
   return (
-    <div className="flex flex-col rounded-lg border border-[#232326]/60 bg-[#131316]/10 overflow-hidden">
-      {/* Column header row */}
-      <div className="overflow-x-auto">
-        <div className="border-b border-[#232326]/60 bg-[#131316]/40">
-          <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2`}>
-            {COLUMN_HEADERS.map((h) => (
-              <span
-                key={h.label}
-                className={`text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] ${h.align}`}
-              >
-                {h.label}
-              </span>
-            ))}
+    <>
+      <div className="flex flex-col rounded-lg border border-[#232326]/60 bg-[#131316]/10 overflow-hidden">
+        {/* Column header row */}
+        <div className="overflow-x-auto">
+          <div className="border-b border-[#232326]/60 bg-[#131316]/40">
+            <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2`}>
+              {COLUMN_HEADERS.map((h) => (
+                <span
+                  key={h.label}
+                  className={`text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] ${h.align}`}
+                >
+                  {h.label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div role="list" className="flex flex-col divide-y divide-[#232326]/60">
+            {tools.map((tool) => {
+              const isSelected = compareSet.some((t) => t.id === tool.id);
+              return (
+                <div key={tool.id} role="listitem">
+                  <ToolRow
+                    tool={tool}
+                    isSelected={isSelected}
+                    isCompareFull={compareSet.length >= MAX_COMPARE}
+                    onToggleCompare={toggleCompare}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
-
-        <div role="list" className="flex flex-col divide-y divide-[#232326]/60">
-          {tools.map((tool) => (
-            <div key={tool.id} role="listitem">
-              <ToolRow tool={tool} />
-            </div>
-          ))}
-        </div>
       </div>
-    </div>
+
+      {/* Sticky compare bar — only shows once at least 1 tool is selected */}
+      {compareSet.length > 0 && (
+        <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
+          <div className="flex w-full max-w-xl items-center gap-3 rounded-xl border border-[#232326]/70 bg-[#111113]/95 backdrop-blur px-4 py-3 shadow-2xl shadow-black/40">
+            <div className="flex flex-1 items-center gap-2 min-w-0">
+              {Array.from({ length: MAX_COMPARE }).map((_, i) => {
+                const tool = compareSet[i];
+                return (
+                  <div
+                    key={i}
+                    className={`flex flex-1 items-center gap-2 rounded-lg border px-2.5 py-1.5 min-w-0 ${
+                      tool ? "border-[#232326]/70 bg-[#18181C]" : "border-dashed border-[#232326]/50"
+                    }`}
+                  >
+                    {tool ? (
+                      <>
+                        <span className="truncate text-[12px] font-semibold text-white">{tool.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleCompare(tool)}
+                          aria-label={`Remove ${tool.name} from compare`}
+                          className="ml-auto shrink-0 text-[#71717A] hover:text-white"
+                        >
+                          <X size={12} />
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-[11px] text-[#71717A]">Select another tool&hellip;</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={goToCompare}
+              disabled={compareSet.length !== MAX_COMPARE}
+              className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[12px] font-semibold transition-colors ${
+                compareSet.length === MAX_COMPARE
+                  ? "text-black"
+                  : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
+              }`}
+              style={compareSet.length === MAX_COMPARE ? { backgroundColor: "var(--color-signal)" } : undefined}
+            >
+              <GitCompare size={13} />
+              Compare
+            </button>
+
+            <button
+              type="button"
+              onClick={clearCompare}
+              aria-label="Clear compare selection"
+              className="shrink-0 text-[#71717A] hover:text-white"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

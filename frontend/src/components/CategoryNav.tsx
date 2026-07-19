@@ -11,11 +11,11 @@ export function CategoryNav() {
   // Anything without it is treated as an in-page `#hash` anchor on the homepage.
   const CATEGORIES = [
     { name: "AI Tools", href: "#tools" },
-    { name: "Models", href: "#models" },
-    { name: "Companies", href: "#companies" },
-    { name: "Repositories", href: "#repos" },
-    { name: "News", href: "#news" },
-    { name: "Collections", href: "/tools", isPageLink: true },
+    { name: "Models", href: "/models", isPageLink: true },
+    { name: "Companies", href: "/companies", isPageLink: true },
+    { name: "Repositories", href: "/repositories", isPageLink: true },
+    { name: "News", href: "/news", isPageLink: true },
+    { name: "Collections", href: "/collections", isPageLink: true },
     { name: "Videos", href: "/videos", isPageLink: true },
     { name: "Agents", href: "/tools?category=agents", isPageLink: true },
   ];

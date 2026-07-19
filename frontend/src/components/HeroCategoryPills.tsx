@@ -6,11 +6,11 @@ type Category = { name: string; href: string; external?: boolean };
 
 const CATEGORIES: Category[] = [
   { name: "Tools", href: "#tools" },
-  { name: "Models", href: "#models" },
-  { name: "Companies", href: "#companies" },
-  { name: "Repositories", href: "#repos" },
-  { name: "News", href: "#news" },
-  { name: "Collections", href: "/tools", external: true },
+  { name: "Models", href: "/models", external: true },
+  { name: "Companies", href: "/companies", external: true },
+  { name: "Repositories", href: "/repositories", external: true },
+  { name: "News", href: "/news", external: true },
+  { name: "Collections", href: "/collections", external: true },
 ];
 
 export function HeroCategoryPills() {
