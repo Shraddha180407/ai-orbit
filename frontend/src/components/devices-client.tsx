@@ -29,7 +29,7 @@ function mergeWithDummy(apiDevices: Device[]): DeviceData[] {
       availability: api.availability || dummy?.availability || "Announced",
       price: api.price || dummy?.price || null,
       year: api.year || dummy?.year || "—",
-      month: dummy?.month || api.year || "—",
+      month: dummy?.month || api.month || api.year || "—",
       description: api.description || dummy?.description || "",
       imageUrl: api.imageUrl || dummy?.imageUrl || "",
       manufacturerLogoUrl: dummy?.manufacturerLogoUrl || "",
