@@ -1681,78 +1681,8 @@ interface SeedTask {
   recommendedAITools: string[];
 }
 
-const TASKS: SeedTask[] = [
-  {
-    title: "Generate Images",
-    slug: "generate-images",
-    description: "Create AI-generated images from text prompts for marketing, design, and creative work.",
-    category: "Image Generation",
-    difficulty: "EASY",
-    pricingModel: PricingModel.FREEMIUM,
-    isFeatured: true,
-    recommendedAITools: ["Midjourney", "DALL-E 3", "Stable Diffusion"],
-  },
-  {
-    title: "Write Blog Posts",
-    slug: "write-blog-posts",
-    description: "Generate SEO-friendly blog articles using AI.",
-    category: "Writing",
-    difficulty: "EASY",
-    pricingModel: PricingModel.FREE,
-    isFeatured: true,
-    recommendedAITools: ["ChatGPT", "Claude", "Gemini"],
-  },
-  {
-    title: "Generate Marketing Copy",
-    slug: "generate-marketing-copy",
-    description: "Create ad copy, emails, and landing page content.",
-    category: "Marketing",
-    difficulty: "MEDIUM",
-    pricingModel: PricingModel.FREEMIUM,
-    isFeatured: false,
-    recommendedAITools: ["Jasper", "ChatGPT", "Copy.ai"],
-  },
-  {
-    title: "Research a Topic",
-    slug: "research-topic",
-    description: "Collect, summarize, and organize research from multiple sources.",
-    category: "Research",
-    difficulty: "MEDIUM",
-    pricingModel: PricingModel.FREE,
-    isFeatured: true,
-    recommendedAITools: ["Perplexity", "ChatGPT", "Gemini"],
-  },
-  {
-    title: "Generate YouTube Script",
-    slug: "youtube-script",
-    description: "Write engaging YouTube video scripts with hooks and CTAs.",
-    category: "Video",
-    difficulty: "EASY",
-    pricingModel: PricingModel.FREE,
-    isFeatured: false,
-    recommendedAITools: ["ChatGPT", "Claude"],
-  },
-  {
-    title: "Customer Support Assistant",
-    slug: "customer-support-assistant",
-    description: "Generate customer support responses and FAQs.",
-    category: "Customer Support",
-    difficulty: "MEDIUM",
-    pricingModel: PricingModel.FREE_TRIAL,
-    isFeatured: false,
-    recommendedAITools: ["Intercom Fin", "ChatGPT"],
-  },
-  {
-    title: "Code Review",
-    slug: "code-review",
-    description: "Review source code and suggest improvements.",
-    category: "Coding",
-    difficulty: "ADVANCED",
-    pricingModel: PricingModel.FREE,
-    isFeatured: true,
-    recommendedAITools: ["GitHub Copilot", "Cursor", "Claude"],
-  },
-];
+import tasksData from "./task.json" with { type: "json" };
+const TASKS: SeedTask[] = tasksData as SeedTask[];
 
 // ---------------------------------------------------------------------------
 // Reviews — a handful of realistic sample reviews spread across popular tools
