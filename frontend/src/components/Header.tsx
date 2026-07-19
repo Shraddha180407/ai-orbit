@@ -44,6 +44,12 @@ export function Header() {
               Models
             </Link>
             <Link
+              href="/devices"
+              className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
+            >
+              Devices
+            </Link>
+            <Link
               href="/companies"
               className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
             >
