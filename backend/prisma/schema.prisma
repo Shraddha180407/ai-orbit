@@ -304,6 +304,7 @@ model Video {
   publishedAt     String   // ISO date, YYYY-MM-DD (slice(0,10) at ingest time)
   authorName      String
   authorAvatar    String
+  channelId       String?
   tags            String[] @default([])
   accent          String
 

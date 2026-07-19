@@ -25,6 +25,7 @@ export type Video = {
   likes: number;
   publishedAt: string; // ISO date, YYYY-MM-DD
   author: { name: string; avatar: string };
+  channelId: string | null;
   tags: string[];
   accent: string;
 };
