@@ -3,13 +3,13 @@
     "title": "Generate Images",
     "slug": "generate-images",
     "description": "Create AI-generated images from text prompts for marketing, design, or creative work.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "Midjourney",
-      "DALL·E",
+      "DALL-E 3",
       "Stable Diffusion"
     ]
   },
@@ -17,9 +17,9 @@
     "title": "Write Blog Posts",
     "slug": "write-blog-posts",
     "description": "Draft blog articles, outlines, and edits with AI writing assistants.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "ChatGPT",
@@ -31,9 +31,9 @@
     "title": "Summarize Documents",
     "slug": "summarize-documents",
     "description": "Condense long PDFs, articles, or notes into short summaries while keeping key points.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -45,9 +45,9 @@
     "title": "Generate Code",
     "slug": "generate-code",
     "description": "Produce code snippets, refactor existing code, and explain logic using AI coding tools.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "Cursor",
@@ -59,12 +59,12 @@
     "title": "Create Landing Pages",
     "slug": "create-landing-pages",
     "description": "Design and generate landing page copy, layout ideas, and CTA variations.",
-    "category": "Frontend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "v0",
+      "v0 by Vercel",
       "Framer AI",
       "ChatGPT"
     ]
@@ -73,23 +73,23 @@
     "title": "Transcribe Audio",
     "slug": "transcribe-audio",
     "description": "Convert speech from meetings, podcasts, or videos into accurate text transcripts.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Credits",
+    "category": "Video",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Whisper",
       "Otter.ai",
-      "Descript"
+      "Descript",
+      "Runway Gen-3 Alpha"
     ]
   },
   {
     "title": "Generate Video Scripts",
     "slug": "generate-video-scripts",
     "description": "Write scripts and scene outlines for short-form or long-form video content.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Video",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -101,23 +101,23 @@
     "title": "Build Chatbots",
     "slug": "build-chatbots",
     "description": "Design conversational agents for support, onboarding, or internal knowledge bases.",
-    "category": "Full Stack",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Chatbots",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
-      "Botpress",
-      "Voiceflow",
-      "LangChain"
+      "Chatbase",
+      "Character.AI",
+      "Poe"
     ]
   },
   {
     "title": "Analyze Data",
     "slug": "analyze-data",
     "description": "Explore datasets, find patterns, and generate charts or insights from tabular data.",
-    "category": "Data Science",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Image Generation",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -129,40 +129,40 @@
     "title": "Automate Workflows",
     "slug": "automate-workflows",
     "description": "Connect apps and automate repetitive business processes with AI-assisted flows.",
-    "category": "Automation",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
-      "Zapier",
-      "Make",
-      "n8n"
+      "Zapier Central",
+      "Notion AI",
+      "ChatGPT"
     ]
   },
   {
     "title": "Create Presentations",
     "slug": "create-presentations",
     "description": "Generate slide decks, outlines, and speaker notes from a topic or brief.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Gamma",
-      "Tome",
-      "Beautiful.ai"
+      "Beautiful.ai",
+      "Notion AI"
     ]
   },
   {
     "title": "Design Logos",
     "slug": "design-logos",
     "description": "Produce logo concepts and brand mark variations from a short brand brief.",
-    "category": "UI/UX",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Looka",
+      "Kittl",
       "Midjourney",
       "Canva Magic Studio"
     ]
@@ -171,23 +171,23 @@
     "title": "Translate Content",
     "slug": "translate-content",
     "description": "Translate text across languages while preserving tone and technical meaning.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "DeepL",
       "ChatGPT",
-      "Google Translate"
+      "Notion AI",
+      "Claude"
     ]
   },
   {
     "title": "Write Unit Tests",
     "slug": "write-unit-tests",
     "description": "Generate unit and integration tests for existing functions and APIs.",
-    "category": "Testing",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -199,9 +199,9 @@
     "title": "Deploy Applications",
     "slug": "deploy-applications",
     "description": "Plan and execute cloud deployments, CI/CD setup, and basic infrastructure config.",
-    "category": "DevOps",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -213,9 +213,9 @@
     "title": "Write Product Descriptions",
     "slug": "write-product-descriptions",
     "description": "Draft clear product descriptions for ecommerce listings and catalogs.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "ChatGPT",
@@ -227,27 +227,27 @@
     "title": "Write Email Campaigns",
     "slug": "write-email-campaigns",
     "description": "Compose marketing emails, subject lines, and follow-up sequences.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Write Social Media Captions",
     "slug": "write-social-media-captions",
     "description": "Create platform-specific captions and post copy for social channels.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -255,9 +255,9 @@
     "title": "Write Press Releases",
     "slug": "write-press-releases",
     "description": "Draft press releases for product launches and company announcements.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -269,27 +269,27 @@
     "title": "Write Ad Copy",
     "slug": "write-ad-copy",
     "description": "Generate ads for search, social, and display campaigns.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Rewrite Content",
     "slug": "rewrite-content",
     "description": "Rewrite existing text for clarity, tone, or different audiences.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -297,9 +297,9 @@
     "title": "Proofread Documents",
     "slug": "proofread-documents",
     "description": "Check grammar, spelling, and style in drafts before publishing.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -311,27 +311,27 @@
     "title": "Generate Newsletter Content",
     "slug": "generate-newsletter-content",
     "description": "Plan and draft newsletter sections from topics or source material.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Subscription",
+    "category": "Marketing",
+    "difficulty": "EASY",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Write Case Studies",
     "slug": "write-case-studies",
     "description": "Turn project outcomes into structured customer case studies.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -339,9 +339,9 @@
     "title": "Write White Papers",
     "slug": "write-white-papers",
     "description": "Outline and draft long-form thought leadership or technical papers.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Marketing",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -353,27 +353,27 @@
     "title": "Create Seo Content",
     "slug": "create-seo-content",
     "description": "Write SEO-focused articles with keywords, headings, and meta text.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "SEO",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Generate Meta Descriptions",
     "slug": "generate-meta-descriptions",
     "description": "Produce concise meta titles and descriptions for web pages.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "SEO",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -381,9 +381,9 @@
     "title": "Write Job Descriptions",
     "slug": "write-job-descriptions",
     "description": "Draft role descriptions with responsibilities and requirements.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -395,27 +395,27 @@
     "title": "Write Cover Letters",
     "slug": "write-cover-letters",
     "description": "Generate tailored cover letters from a resume and job posting.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Write Resumes",
     "slug": "write-resumes",
     "description": "Create and refine resume bullet points for target roles.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -423,9 +423,9 @@
     "title": "Generate Faqs",
     "slug": "generate-faqs",
     "description": "Build FAQ lists from product docs or support tickets.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Customer Support",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -437,27 +437,27 @@
     "title": "Write User Guides",
     "slug": "write-user-guides",
     "description": "Produce step-by-step user guides and help center articles.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Create Course Outlines",
     "slug": "create-course-outlines",
     "description": "Structure online course modules, lessons, and learning outcomes.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -465,9 +465,9 @@
     "title": "Write Sales Scripts",
     "slug": "write-sales-scripts",
     "description": "Draft call scripts and objection-handling responses for sales teams.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Marketing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -479,41 +479,41 @@
     "title": "Generate Taglines",
     "slug": "generate-taglines",
     "description": "Create short brand taglines and slogan options.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Upscale Images",
     "slug": "upscale-images",
     "description": "Increase image resolution while preserving detail and sharpness.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Credits",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Canva Magic Studio",
       "Adobe Firefly",
-      "DALL·E"
+      "DALL-E 3"
     ]
   },
   {
     "title": "Remove Image Backgrounds",
     "slug": "remove-image-backgrounds",
     "description": "Isolate subjects by removing or replacing image backgrounds.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "Midjourney",
-      "DALL·E",
+      "DALL-E 3",
       "Stable Diffusion"
     ]
   },
@@ -521,41 +521,41 @@
     "title": "Generate Product Photos",
     "slug": "generate-product-photos",
     "description": "Create product mockups and lifestyle photos from descriptions.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Credits",
+    "category": "Image Generation",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
-      "Leonardo AI",
-      "Ideogram",
-      "Midjourney"
+      "Leonardo.Ai",
+      "Midjourney",
+      "DALL-E 3"
     ]
   },
   {
     "title": "Edit Photos With Ai",
     "slug": "edit-photos-with-ai",
     "description": "Apply AI edits for lighting, objects, and composition changes.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Canva Magic Studio",
       "Adobe Firefly",
-      "DALL·E"
+      "DALL-E 3"
     ]
   },
   {
     "title": "Generate Illustrations",
     "slug": "generate-illustrations",
     "description": "Produce digital illustrations for apps, books, or marketing.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Credits",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Midjourney",
-      "DALL·E",
+      "DALL-E 3",
       "Stable Diffusion"
     ]
   },
@@ -563,12 +563,12 @@
     "title": "Create Brand Moodboards",
     "slug": "create-brand-moodboards",
     "description": "Assemble visual moodboards aligned to a brand direction.",
-    "category": "UI/UX",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Design",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "v0",
+      "v0 by Vercel",
       "Framer AI",
       "ChatGPT"
     ]
@@ -577,27 +577,27 @@
     "title": "Design App Icons",
     "slug": "design-app-icons",
     "description": "Generate app icon concepts across styles and sizes.",
-    "category": "UI/UX",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Design",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Canva Magic Studio",
       "Adobe Firefly",
-      "DALL·E"
+      "DALL-E 3"
     ]
   },
   {
     "title": "Create Social Graphics",
     "slug": "create-social-graphics",
     "description": "Design post graphics and story templates for social media.",
-    "category": "UI/UX",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Design",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Midjourney",
-      "DALL·E",
+      "DALL-E 3",
       "Stable Diffusion"
     ]
   },
@@ -605,41 +605,41 @@
     "title": "Generate Stock Photos",
     "slug": "generate-stock-photos",
     "description": "Create custom stock-style photos for websites and ads.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Credits",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Leonardo AI",
-      "Ideogram",
-      "Midjourney"
+      "Leonardo.Ai",
+      "Midjourney",
+      "DALL-E 3"
     ]
   },
   {
     "title": "Restore Old Photos",
     "slug": "restore-old-photos",
     "description": "Repair damaged or faded photos using AI restoration.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Credits",
+    "category": "Image Generation",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Canva Magic Studio",
       "Adobe Firefly",
-      "DALL·E"
+      "DALL-E 3"
     ]
   },
   {
     "title": "Generate Patterns",
     "slug": "generate-patterns",
     "description": "Create seamless patterns for packaging, textiles, or UI.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Midjourney",
-      "DALL·E",
+      "DALL-E 3",
       "Stable Diffusion"
     ]
   },
@@ -647,41 +647,41 @@
     "title": "Design Thumbnails",
     "slug": "design-thumbnails",
     "description": "Produce click-worthy thumbnails for videos and articles.",
-    "category": "UI/UX",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
-      "Leonardo AI",
-      "Ideogram",
-      "Midjourney"
+      "Leonardo.Ai",
+      "Midjourney",
+      "DALL-E 3"
     ]
   },
   {
     "title": "Create Infographics",
     "slug": "create-infographics",
     "description": "Turn facts and stats into structured infographic layouts.",
-    "category": "UI/UX",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Design",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Galileo AI",
-      "Uizard",
-      "Figma AI"
+      "Framer AI",
+      "Canva Magic Studio",
+      "Kittl"
     ]
   },
   {
     "title": "Generate Avatars",
     "slug": "generate-avatars",
     "description": "Create profile avatars and character portraits from prompts.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Midjourney",
-      "DALL·E",
+      "DALL-E 3",
       "Stable Diffusion"
     ]
   },
@@ -689,79 +689,79 @@
     "title": "Design Packaging",
     "slug": "design-packaging",
     "description": "Concept packaging visuals and label layouts for products.",
-    "category": "UI/UX",
-    "difficulty": "Medium",
-    "pricingModel": "Credits",
+    "category": "Image Generation",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Leonardo AI",
-      "Ideogram",
-      "Midjourney"
+      "Leonardo.Ai",
+      "Midjourney",
+      "DALL-E 3"
     ]
   },
   {
     "title": "Generate Short Videos",
     "slug": "generate-short-videos",
     "description": "Create short promotional or social videos from text prompts.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Credits",
+    "category": "Video",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "Synthesia",
       "HeyGen",
-      "Runway"
+      "Runway Gen-3 Alpha"
     ]
   },
   {
     "title": "Edit Video Footage",
     "slug": "edit-video-footage",
     "description": "Cut, caption, and refine video clips with AI assistance.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Video",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "Runway",
-      "Pika",
-      "Kling"
+      "Runway Gen-3 Alpha",
+      "Luma Dream Machine",
+      "Synthesia"
     ]
   },
   {
     "title": "Add Captions To Videos",
     "slug": "add-captions-to-videos",
     "description": "Generate and style captions for accessibility and engagement.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Video",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Descript",
-      "CapCut",
-      "Runway"
+      "CapCut AI Tools",
+      "Runway Gen-3 Alpha"
     ]
   },
   {
     "title": "Create Explainer Videos",
     "slug": "create-explainer-videos",
     "description": "Produce simple explainer videos from scripts or outlines.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Video",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Synthesia",
       "HeyGen",
-      "Runway"
+      "Runway Gen-3 Alpha"
     ]
   },
   {
     "title": "Clone Voices",
     "slug": "clone-voices",
     "description": "Generate speech in a chosen voice style for narration.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Credits",
+    "category": "Audio",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ElevenLabs",
@@ -773,26 +773,26 @@
     "title": "Generate Music Tracks",
     "slug": "generate-music-tracks",
     "description": "Compose background music for videos, games, or podcasts.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Credits",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
-      "Whisper",
       "Otter.ai",
-      "Descript"
+      "Descript",
+      "Midjourney"
     ]
   },
   {
     "title": "Remove Audio Noise",
     "slug": "remove-audio-noise",
     "description": "Clean recordings by reducing background noise and hiss.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Murf",
+      "Murf AI",
       "ElevenLabs",
       "Speechify"
     ]
@@ -801,9 +801,9 @@
     "title": "Generate Podcast Intros",
     "slug": "generate-podcast-intros",
     "description": "Create intro and outro audio for podcast episodes.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Credits",
+    "category": "Audio",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ElevenLabs",
@@ -815,37 +815,37 @@
     "title": "Dub Videos",
     "slug": "dub-videos",
     "description": "Generate dubbed audio tracks in other languages.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Credits",
+    "category": "Video",
+    "difficulty": "ADVANCED",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Whisper",
       "Otter.ai",
-      "Descript"
+      "Descript",
+      "Runway Gen-3 Alpha"
     ]
   },
   {
     "title": "Create Talking Avatars",
     "slug": "create-talking-avatars",
     "description": "Produce presenter-style videos with AI avatars.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Image Generation",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "Synthesia",
       "HeyGen",
-      "Runway"
+      "Runway Gen-3 Alpha"
     ]
   },
   {
     "title": "Storyboard Videos",
     "slug": "storyboard-videos",
     "description": "Break scripts into shot-by-shot storyboards.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Video",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -857,9 +857,9 @@
     "title": "Compress Media Files",
     "slug": "compress-media-files",
     "description": "Suggest and apply efficient compression for images and video.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -871,9 +871,9 @@
     "title": "Debug Code",
     "slug": "debug-code",
     "description": "Locate bugs, explain root causes, and propose fixes.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "GitHub Copilot",
@@ -885,9 +885,9 @@
     "title": "Refactor Legacy Code",
     "slug": "refactor-legacy-code",
     "description": "Improve structure and readability of existing codebases.",
-    "category": "Backend",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -899,13 +899,13 @@
     "title": "Write Api Documentation",
     "slug": "write-api-documentation",
     "description": "Generate OpenAPI-style docs and usage examples for APIs.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
-      "Cody",
+      "Sourcegraph Cody",
       "ChatGPT"
     ]
   },
@@ -913,9 +913,9 @@
     "title": "Design Rest Apis",
     "slug": "design-rest-apis",
     "description": "Define endpoints, payloads, and status codes for REST APIs.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "Cursor",
@@ -927,9 +927,9 @@
     "title": "Build Graphql Schemas",
     "slug": "build-graphql-schemas",
     "description": "Design GraphQL types, queries, and mutations.",
-    "category": "Backend",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -941,9 +941,9 @@
     "title": "Create Database Schemas",
     "slug": "create-database-schemas",
     "description": "Model tables, relations, and indexes for applications.",
-    "category": "Database",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "ChatGPT",
@@ -955,9 +955,9 @@
     "title": "Write Sql Queries",
     "slug": "write-sql-queries",
     "description": "Generate and optimize SQL for reports and app logic.",
-    "category": "Database",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -969,9 +969,9 @@
     "title": "Migrate Databases",
     "slug": "migrate-databases",
     "description": "Plan migrations between database engines or schema versions.",
-    "category": "Database",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -983,9 +983,9 @@
     "title": "Optimize Database Performance",
     "slug": "optimize-database-performance",
     "description": "Identify slow queries and recommend index or schema changes.",
-    "category": "Database",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -997,23 +997,23 @@
     "title": "Scaffold Crud Apps",
     "slug": "scaffold-crud-apps",
     "description": "Generate basic create-read-update-delete application shells.",
-    "category": "Full Stack",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "Cursor",
       "Claude",
-      "v0"
+      "v0 by Vercel"
     ]
   },
   {
     "title": "Build Authentication Flows",
     "slug": "build-authentication-flows",
     "description": "Implement signup, login, and password reset flows.",
-    "category": "Full Stack",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -1025,23 +1025,23 @@
     "title": "Integrate Payment Gateways",
     "slug": "integrate-payment-gateways",
     "description": "Wire Stripe or similar payment checkout into apps.",
-    "category": "Full Stack",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
       "Claude",
-      "v0"
+      "v0 by Vercel"
     ]
   },
   {
     "title": "Create Cli Tools",
     "slug": "create-cli-tools",
     "description": "Build command-line utilities for developer workflows.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Free",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "GitHub Copilot",
@@ -1053,9 +1053,9 @@
     "title": "Write Regex Patterns",
     "slug": "write-regex-patterns",
     "description": "Produce and explain regular expressions for text matching.",
-    "category": "Backend",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -1067,13 +1067,13 @@
     "title": "Convert Code Languages",
     "slug": "convert-code-languages",
     "description": "Translate code snippets between programming languages.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
-      "Cody",
+      "Sourcegraph Cody",
       "ChatGPT"
     ]
   },
@@ -1081,9 +1081,9 @@
     "title": "Generate Boilerplate",
     "slug": "generate-boilerplate",
     "description": "Create starter project structure and config files.",
-    "category": "Full Stack",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "GitHub Copilot",
@@ -1095,9 +1095,9 @@
     "title": "Review Pull Requests",
     "slug": "review-pull-requests",
     "description": "Summarize diffs and flag risks in proposed code changes.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "Cursor",
@@ -1109,13 +1109,13 @@
     "title": "Write Commit Messages",
     "slug": "write-commit-messages",
     "description": "Draft clear conventional commit messages from diffs.",
-    "category": "Backend",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
-      "Cody",
+      "Sourcegraph Cody",
       "ChatGPT"
     ]
   },
@@ -1123,9 +1123,9 @@
     "title": "Explain Codebases",
     "slug": "explain-codebases",
     "description": "Map architecture and explain how unfamiliar code works.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "GitHub Copilot",
@@ -1137,9 +1137,9 @@
     "title": "Build Web Scrapers",
     "slug": "build-web-scrapers",
     "description": "Create scrapers and parsers for structured web data.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -1151,9 +1151,9 @@
     "title": "Implement Caching",
     "slug": "implement-caching",
     "description": "Add caching layers to reduce latency and load.",
-    "category": "Backend",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -1165,9 +1165,9 @@
     "title": "Design Microservices",
     "slug": "design-microservices",
     "description": "Split monoliths into service boundaries and contracts.",
-    "category": "Backend",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -1179,9 +1179,9 @@
     "title": "Create Dockerfiles",
     "slug": "create-dockerfiles",
     "description": "Write Dockerfiles and compose configs for apps.",
-    "category": "DevOps",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "GitHub Copilot",
@@ -1193,9 +1193,9 @@
     "title": "Build Ci Pipelines",
     "slug": "build-ci-pipelines",
     "description": "Set up continuous integration workflows for tests and builds.",
-    "category": "DevOps",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "Cursor",
@@ -1207,9 +1207,9 @@
     "title": "Configure Cd Pipelines",
     "slug": "configure-cd-pipelines",
     "description": "Automate release and deployment pipelines.",
-    "category": "DevOps",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "GitHub Copilot",
@@ -1221,9 +1221,9 @@
     "title": "Write Terraform",
     "slug": "write-terraform",
     "description": "Author infrastructure-as-code for cloud resources.",
-    "category": "Cloud",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Writing",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -1235,12 +1235,12 @@
     "title": "Manage Kubernetes",
     "slug": "manage-kubernetes",
     "description": "Create manifests and troubleshoot cluster workloads.",
-    "category": "Cloud",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
-      "AWS Q",
+      "Amazon Q Developer",
       "ChatGPT",
       "Claude"
     ]
@@ -1249,9 +1249,9 @@
     "title": "Monitor Application Health",
     "slug": "monitor-application-health",
     "description": "Set up metrics, logs, and alerting for services.",
-    "category": "DevOps",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -1263,12 +1263,12 @@
     "title": "Optimize Cloud Costs",
     "slug": "optimize-cloud-costs",
     "description": "Find waste and recommend cheaper cloud configurations.",
-    "category": "Cloud",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "AWS Q",
+      "Amazon Q Developer",
       "ChatGPT",
       "Claude"
     ]
@@ -1277,9 +1277,9 @@
     "title": "Secure Apis",
     "slug": "secure-apis",
     "description": "Apply auth, rate limits, and input validation to APIs.",
-    "category": "Cybersecurity",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "ChatGPT",
@@ -1291,23 +1291,23 @@
     "title": "Scan For Vulnerabilities",
     "slug": "scan-for-vulnerabilities",
     "description": "Review code and dependencies for common security issues.",
-    "category": "Cybersecurity",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Snyk"
+      "Sourcegraph Cody"
     ]
   },
   {
     "title": "Write Threat Models",
     "slug": "write-threat-models",
     "description": "Document assets, threats, and mitigations for a system.",
-    "category": "Cybersecurity",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Writing",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -1319,23 +1319,23 @@
     "title": "Rotate Secrets",
     "slug": "rotate-secrets",
     "description": "Plan and execute secret rotation safely across services.",
-    "category": "Cybersecurity",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Snyk"
+      "Sourcegraph Cody"
     ]
   },
   {
     "title": "Implement Rbac",
     "slug": "implement-rbac",
     "description": "Design role-based access control for users and resources.",
-    "category": "Cybersecurity",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -1347,12 +1347,12 @@
     "title": "Build Responsive Layouts",
     "slug": "build-responsive-layouts",
     "description": "Create layouts that adapt across mobile, tablet, and desktop.",
-    "category": "Frontend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "v0",
+      "v0 by Vercel",
       "Cursor",
       "ChatGPT"
     ]
@@ -1361,13 +1361,13 @@
     "title": "Create React Components",
     "slug": "create-react-components",
     "description": "Generate reusable React components with props and styles.",
-    "category": "Frontend",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "Framer AI",
-      "v0",
+      "v0 by Vercel",
       "Claude"
     ]
   },
@@ -1375,26 +1375,26 @@
     "title": "Style With Tailwind",
     "slug": "style-with-tailwind",
     "description": "Apply Tailwind utility classes for consistent UI styling.",
-    "category": "Frontend",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
-      "Galileo AI",
-      "Uizard",
-      "v0"
+      "Framer AI",
+      "v0 by Vercel",
+      "Cursor"
     ]
   },
   {
     "title": "Animate Interfaces",
     "slug": "animate-interfaces",
     "description": "Add micro-interactions and transitions to UI elements.",
-    "category": "Frontend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "v0",
+      "v0 by Vercel",
       "Cursor",
       "ChatGPT"
     ]
@@ -1403,12 +1403,12 @@
     "title": "Build Design Systems",
     "slug": "build-design-systems",
     "description": "Define tokens, components, and usage rules for a design system.",
-    "category": "UI/UX",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Design",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
-      "v0",
+      "v0 by Vercel",
       "Framer AI",
       "ChatGPT"
     ]
@@ -1417,26 +1417,26 @@
     "title": "Create Wireframes",
     "slug": "create-wireframes",
     "description": "Produce low-fidelity wireframes for product screens.",
-    "category": "UI/UX",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Design",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Galileo AI",
-      "Uizard",
-      "Figma AI"
+      "Framer AI",
+      "Canva Magic Studio",
+      "Kittl"
     ]
   },
   {
     "title": "Run Usability Tests",
     "slug": "run-usability-tests",
     "description": "Plan usability tests and summarize findings.",
-    "category": "UI/UX",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Design",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "v0",
+      "v0 by Vercel",
       "Framer AI",
       "ChatGPT"
     ]
@@ -1445,40 +1445,40 @@
     "title": "Write Design Specs",
     "slug": "write-design-specs",
     "description": "Document spacing, states, and interaction specs for engineering.",
-    "category": "UI/UX",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Galileo AI",
-      "Uizard",
-      "Figma AI"
+      "Framer AI",
+      "ChatGPT",
+      "Claude"
     ]
   },
   {
     "title": "Improve Accessibility",
     "slug": "improve-accessibility",
     "description": "Audit and fix accessibility issues in web interfaces.",
-    "category": "Frontend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
-      "Galileo AI",
-      "Uizard",
-      "v0"
+      "Framer AI",
+      "v0 by Vercel",
+      "Cursor"
     ]
   },
   {
     "title": "Optimize Web Performance",
     "slug": "optimize-web-performance",
     "description": "Reduce load time with bundle, image, and render fixes.",
-    "category": "Frontend",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Image Generation",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "v0",
+      "v0 by Vercel",
       "Cursor",
       "ChatGPT"
     ]
@@ -1487,13 +1487,13 @@
     "title": "Build Form Wizards",
     "slug": "build-form-wizards",
     "description": "Create multi-step forms with validation and progress.",
-    "category": "Frontend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Framer AI",
-      "v0",
+      "v0 by Vercel",
       "Claude"
     ]
   },
@@ -1501,26 +1501,26 @@
     "title": "Implement Dark Mode",
     "slug": "implement-dark-mode",
     "description": "Add theme switching and dark palette support.",
-    "category": "Frontend",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
-      "Galileo AI",
-      "Uizard",
-      "v0"
+      "Framer AI",
+      "v0 by Vercel",
+      "Cursor"
     ]
   },
   {
     "title": "Create Dashboards",
     "slug": "create-dashboards",
     "description": "Design admin or analytics dashboards with charts and filters.",
-    "category": "Frontend",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
-      "v0",
+      "v0 by Vercel",
       "Cursor",
       "ChatGPT"
     ]
@@ -1529,13 +1529,13 @@
     "title": "Build Data Tables",
     "slug": "build-data-tables",
     "description": "Implement sortable, filterable tables for large datasets.",
-    "category": "Frontend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Framer AI",
-      "v0",
+      "v0 by Vercel",
       "Claude"
     ]
   },
@@ -1543,12 +1543,12 @@
     "title": "Prototype Mobile Apps",
     "slug": "prototype-mobile-apps",
     "description": "Rapidly prototype mobile app screens and flows.",
-    "category": "Mobile",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "FlutterFlow AI",
+      "Replit Agent",
       "Cursor",
       "ChatGPT"
     ]
@@ -1557,9 +1557,9 @@
     "title": "Build React Native Screens",
     "slug": "build-react-native-screens",
     "description": "Create React Native screens from product requirements.",
-    "category": "Mobile",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -1571,12 +1571,12 @@
     "title": "Build Flutter Widgets",
     "slug": "build-flutter-widgets",
     "description": "Generate Flutter widgets and layouts for mobile apps.",
-    "category": "Mobile",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "FlutterFlow AI",
+      "Replit Agent",
       "Cursor",
       "ChatGPT"
     ]
@@ -1585,13 +1585,13 @@
     "title": "Publish App Store Listings",
     "slug": "publish-app-store-listings",
     "description": "Write store listing text and screenshot guidance.",
-    "category": "Mobile",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -1599,12 +1599,12 @@
     "title": "Handle Push Notifications",
     "slug": "handle-push-notifications",
     "description": "Design and implement push notification strategies.",
-    "category": "Mobile",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "FlutterFlow AI",
+      "Replit Agent",
       "Cursor",
       "ChatGPT"
     ]
@@ -1613,9 +1613,9 @@
     "title": "Optimize Mobile Battery Use",
     "slug": "optimize-mobile-battery-use",
     "description": "Find battery drains and suggest mobile performance fixes.",
-    "category": "Mobile",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -1627,12 +1627,12 @@
     "title": "Create Offline Sync",
     "slug": "create-offline-sync",
     "description": "Design offline-first sync for mobile clients.",
-    "category": "Mobile",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "FlutterFlow AI",
+      "Replit Agent",
       "Cursor",
       "ChatGPT"
     ]
@@ -1641,9 +1641,9 @@
     "title": "Train Classification Models",
     "slug": "train-classification-models",
     "description": "Prepare data and train basic classification models.",
-    "category": "Machine Learning",
-    "difficulty": "Hard",
-    "pricingModel": "Credits",
+    "category": "Research",
+    "difficulty": "ADVANCED",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "ChatGPT",
@@ -1655,12 +1655,12 @@
     "title": "Fine Tune Language Models",
     "slug": "fine-tune-language-models",
     "description": "Fine-tune small language models on domain data.",
-    "category": "Machine Learning",
-    "difficulty": "Hard",
-    "pricingModel": "Credits",
+    "category": "Research",
+    "difficulty": "ADVANCED",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
-      "Hugging Face",
+      "Julius AI",
       "ChatGPT",
       "Claude"
     ]
@@ -1669,9 +1669,9 @@
     "title": "Build Recommendation Systems",
     "slug": "build-recommendation-systems",
     "description": "Design recommender pipelines for products or content.",
-    "category": "Machine Learning",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -1683,12 +1683,12 @@
     "title": "Label Training Data",
     "slug": "label-training-data",
     "description": "Create labeling guidelines and sample labeled datasets.",
-    "category": "Machine Learning",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Research",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Hugging Face",
+      "Julius AI",
       "ChatGPT",
       "Claude"
     ]
@@ -1697,9 +1697,9 @@
     "title": "Evaluate Model Quality",
     "slug": "evaluate-model-quality",
     "description": "Define metrics and evaluate model performance.",
-    "category": "Machine Learning",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Research",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -1711,12 +1711,12 @@
     "title": "Detect Anomalies",
     "slug": "detect-anomalies",
     "description": "Find unusual patterns in logs, metrics, or transactions.",
-    "category": "Machine Learning",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Image Generation",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "Hugging Face",
+      "Julius AI",
       "ChatGPT",
       "Claude"
     ]
@@ -1725,9 +1725,9 @@
     "title": "Cluster Customer Segments",
     "slug": "cluster-customer-segments",
     "description": "Group customers by behavior for targeting.",
-    "category": "Data Science",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Research",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -1739,12 +1739,12 @@
     "title": "Forecast Demand",
     "slug": "forecast-demand",
     "description": "Build demand forecasts from historical sales data.",
-    "category": "Data Science",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Research",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "Excel Copilot",
+      "Julius AI",
       "ChatGPT",
       "Claude"
     ]
@@ -1753,9 +1753,9 @@
     "title": "Clean Datasets",
     "slug": "clean-datasets",
     "description": "Fix missing values, duplicates, and inconsistent fields.",
-    "category": "Data Science",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Research",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "ChatGPT",
@@ -1767,12 +1767,12 @@
     "title": "Visualize Metrics",
     "slug": "visualize-metrics",
     "description": "Create charts and dashboards from KPI datasets.",
-    "category": "Data Science",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Research",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Excel Copilot",
+      "Julius AI",
       "ChatGPT",
       "Claude"
     ]
@@ -1781,9 +1781,9 @@
     "title": "Build Etl Pipelines",
     "slug": "build-etl-pipelines",
     "description": "Design extract-transform-load jobs for analytics data.",
-    "category": "Data Science",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -1795,12 +1795,12 @@
     "title": "Write Data Dictionaries",
     "slug": "write-data-dictionaries",
     "description": "Document dataset fields, types, and business meaning.",
-    "category": "Data Science",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
-      "Excel Copilot",
+      "Julius AI",
       "ChatGPT",
       "Claude"
     ]
@@ -1809,9 +1809,9 @@
     "title": "Perform Sentiment Analysis",
     "slug": "perform-sentiment-analysis",
     "description": "Classify sentiment in reviews, tickets, or social posts.",
-    "category": "Machine Learning",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Research",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -1823,9 +1823,9 @@
     "title": "Extract Entities From Text",
     "slug": "extract-entities-from-text",
     "description": "Pull people, orgs, dates, and products from unstructured text.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Credits",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -1837,26 +1837,26 @@
     "title": "Classify Support Tickets",
     "slug": "classify-support-tickets",
     "description": "Route and tag support tickets by topic and urgency.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Customer Support",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Grok"
+      "Gemini"
     ]
   },
   {
     "title": "Generate Synthetic Data",
     "slug": "generate-synthetic-data",
     "description": "Create synthetic datasets for testing and model training.",
-    "category": "Machine Learning",
-    "difficulty": "Hard",
-    "pricingModel": "Credits",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Hugging Face",
+      "Julius AI",
       "ChatGPT",
       "Claude"
     ]
@@ -1865,79 +1865,79 @@
     "title": "Automate Email Triage",
     "slug": "automate-email-triage",
     "description": "Sort and draft replies for inbound email queues.",
-    "category": "Automation",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Customer Support",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
-      "Zapier",
-      "Make",
-      "n8n"
+      "Zapier Central",
+      "Intercom Fin",
+      "Zendesk Advanced AI"
     ]
   },
   {
     "title": "Automate Invoice Processing",
     "slug": "automate-invoice-processing",
     "description": "Extract invoice fields and route them to accounting tools.",
-    "category": "Automation",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Audio",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "Zapier",
+      "Zapier Central",
       "ChatGPT",
-      "Make"
+      "ElevenLabs"
     ]
   },
   {
     "title": "Schedule Social Posts",
     "slug": "schedule-social-posts",
     "description": "Plan and queue social posts across platforms.",
-    "category": "Automation",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Zapier",
-      "Make",
-      "n8n"
+      "Zapier Central",
+      "Notion AI",
+      "ChatGPT"
     ]
   },
   {
     "title": "Sync Crm Records",
     "slug": "sync-crm-records",
     "description": "Keep CRM contacts and deals synchronized across tools.",
-    "category": "Automation",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "Zapier",
+      "Zapier Central",
       "ChatGPT",
-      "Make"
+      "Notion AI"
     ]
   },
   {
     "title": "Generate Meeting Notes",
     "slug": "generate-meeting-notes",
     "description": "Turn call transcripts into action items and summaries.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Audio",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Grok"
+      "Gemini"
     ]
   },
   {
     "title": "Prepare Interview Questions",
     "slug": "prepare-interview-questions",
     "description": "Create role-specific interview questions and rubrics.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -1949,9 +1949,9 @@
     "title": "Score Candidate Resumes",
     "slug": "score-candidate-resumes",
     "description": "Rank applicants against a job description.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -1963,13 +1963,13 @@
     "title": "Create Project Plans",
     "slug": "create-project-plans",
     "description": "Break goals into milestones, tasks, and timelines.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -1977,41 +1977,41 @@
     "title": "Estimate Project Effort",
     "slug": "estimate-project-effort",
     "description": "Estimate engineering effort from feature descriptions.",
-    "category": "Full Stack",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
       "Claude",
-      "v0"
+      "v0 by Vercel"
     ]
   },
   {
     "title": "Write Acceptance Criteria",
     "slug": "write-acceptance-criteria",
     "description": "Define clear acceptance criteria for user stories.",
-    "category": "Full Stack",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Generate User Stories",
     "slug": "generate-user-stories",
     "description": "Turn product ideas into structured user stories.",
-    "category": "Full Stack",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -2019,9 +2019,9 @@
     "title": "Prioritize Backlogs",
     "slug": "prioritize-backlogs",
     "description": "Rank backlog items by impact and effort.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2033,27 +2033,27 @@
     "title": "Create Competitor Analyses",
     "slug": "create-competitor-analyses",
     "description": "Compare competitor products, pricing, and positioning.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Draft Pitch Decks",
     "slug": "draft-pitch-decks",
     "description": "Build investor or sales pitch deck outlines and copy.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Marketing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -2061,9 +2061,9 @@
     "title": "Research Market Trends",
     "slug": "research-market-trends",
     "description": "Summarize market trends from reports and articles.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Research",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2075,27 +2075,27 @@
     "title": "Generate Customer Personas",
     "slug": "generate-customer-personas",
     "description": "Create buyer personas from research notes.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Write Policy Documents",
     "slug": "write-policy-documents",
     "description": "Draft internal policies from requirements and constraints.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -2103,9 +2103,9 @@
     "title": "Create Knowledge Bases",
     "slug": "create-knowledge-bases",
     "description": "Structure and draft internal knowledge base articles.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2117,9 +2117,9 @@
     "title": "Answer Internal Faqs",
     "slug": "answer-internal-faqs",
     "description": "Build Q&A assistants over company docs.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Chatbots",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "Perplexity",
@@ -2131,23 +2131,23 @@
     "title": "Automate Report Generation",
     "slug": "automate-report-generation",
     "description": "Produce recurring business reports from raw data.",
-    "category": "Automation",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "Zapier",
+      "Zapier Central",
       "ChatGPT",
-      "Make"
+      "Notion AI"
     ]
   },
   {
     "title": "Write E2e Tests",
     "slug": "write-e2e-tests",
     "description": "Create end-to-end tests for critical user journeys.",
-    "category": "Testing",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Writing",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "Cursor",
@@ -2159,9 +2159,9 @@
     "title": "Generate Test Cases",
     "slug": "generate-test-cases",
     "description": "Expand requirements into edge-case test cases.",
-    "category": "Testing",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
@@ -2173,9 +2173,9 @@
     "title": "Create Mock Apis",
     "slug": "create-mock-apis",
     "description": "Generate mock API responses for frontend development.",
-    "category": "Testing",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -2187,9 +2187,9 @@
     "title": "Fuzz Input Validation",
     "slug": "fuzz-input-validation",
     "description": "Propose fuzz inputs to stress validation logic.",
-    "category": "Testing",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
@@ -2201,9 +2201,9 @@
     "title": "Perform Load Testing",
     "slug": "perform-load-testing",
     "description": "Design load tests and interpret throughput results.",
-    "category": "Testing",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -2215,9 +2215,9 @@
     "title": "Write Snapshot Tests",
     "slug": "write-snapshot-tests",
     "description": "Generate UI snapshot tests for visual regressions.",
-    "category": "Testing",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
@@ -2229,9 +2229,9 @@
     "title": "Automate Qa Checklists",
     "slug": "automate-qa-checklists",
     "description": "Convert manual QA checklists into automated suites.",
-    "category": "Testing",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -2243,9 +2243,9 @@
     "title": "Debug Flaky Tests",
     "slug": "debug-flaky-tests",
     "description": "Diagnose and stabilize intermittently failing tests.",
-    "category": "Testing",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
@@ -2257,9 +2257,9 @@
     "title": "Set Up Cdn Caching",
     "slug": "set-up-cdn-caching",
     "description": "Configure CDN caching rules for static assets.",
-    "category": "Cloud",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2271,12 +2271,12 @@
     "title": "Configure Dns Records",
     "slug": "configure-dns-records",
     "description": "Plan DNS records for domains, mail, and verification.",
-    "category": "Cloud",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
-      "AWS Q",
+      "Amazon Q Developer",
       "ChatGPT",
       "Claude"
     ]
@@ -2285,9 +2285,9 @@
     "title": "Implement Ssl Certificates",
     "slug": "implement-ssl-certificates",
     "description": "Set up TLS certificates and HTTPS redirects.",
-    "category": "Cloud",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2299,12 +2299,12 @@
     "title": "Design Backup Strategies",
     "slug": "design-backup-strategies",
     "description": "Define backup and restore plans for critical data.",
-    "category": "Cloud",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "AWS Q",
+      "Amazon Q Developer",
       "ChatGPT",
       "Claude"
     ]
@@ -2313,9 +2313,9 @@
     "title": "Create Disaster Recovery Plans",
     "slug": "create-disaster-recovery-plans",
     "description": "Document failover and recovery procedures.",
-    "category": "Cloud",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2327,9 +2327,9 @@
     "title": "Provision Staging Environments",
     "slug": "provision-staging-environments",
     "description": "Create staging environments that mirror production.",
-    "category": "DevOps",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "GitHub Copilot",
@@ -2341,9 +2341,9 @@
     "title": "Write Runbooks",
     "slug": "write-runbooks",
     "description": "Document incident response runbooks for on-call teams.",
-    "category": "DevOps",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -2355,9 +2355,9 @@
     "title": "Triage Production Incidents",
     "slug": "triage-production-incidents",
     "description": "Summarize incidents and propose immediate mitigations.",
-    "category": "DevOps",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Customer Support",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "GitHub Copilot",
@@ -2369,23 +2369,23 @@
     "title": "Configure Feature Flags",
     "slug": "configure-feature-flags",
     "description": "Introduce feature flags for safer rollouts.",
-    "category": "Full Stack",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
       "Claude",
-      "v0"
+      "v0 by Vercel"
     ]
   },
   {
     "title": "Implement Rate Limiting",
     "slug": "implement-rate-limiting",
     "description": "Protect APIs with rate limits and quotas.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2397,9 +2397,9 @@
     "title": "Generate Product Roadmaps",
     "slug": "generate-product-roadmaps",
     "description": "Draft roadmap themes, bets, and release sequencing.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2411,9 +2411,9 @@
     "title": "Create Prompt Libraries",
     "slug": "create-prompt-libraries",
     "description": "Organize reusable prompts for teams and workflows.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": true,
     "recommendedAITools": [
       "Perplexity",
@@ -2425,23 +2425,23 @@
     "title": "Optimize Prompts",
     "slug": "optimize-prompts",
     "description": "Improve prompts for accuracy, format, and cost.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Grok"
+      "Gemini"
     ]
   },
   {
     "title": "Build Rag Pipelines",
     "slug": "build-rag-pipelines",
     "description": "Connect documents to retrieval-augmented generation flows.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "ChatGPT",
@@ -2453,9 +2453,9 @@
     "title": "Chunk Documents",
     "slug": "chunk-documents",
     "description": "Split documents into retrieval-friendly chunks.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -2467,12 +2467,12 @@
     "title": "Embed Text For Search",
     "slug": "embed-text-for-search",
     "description": "Generate embeddings for semantic search indexes.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Credits",
+    "category": "Research",
+    "difficulty": "ADVANCED",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Hugging Face",
+      "Julius AI",
       "ChatGPT",
       "Claude"
     ]
@@ -2481,23 +2481,23 @@
     "title": "Build Semantic Search",
     "slug": "build-semantic-search",
     "description": "Create search that ranks by meaning, not keywords.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Research",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
-      "ChatGPT",
-      "Claude",
-      "Gemini"
+      "Perplexity",
+      "Elicit",
+      "Consensus"
     ]
   },
   {
     "title": "Moderate User Content",
     "slug": "moderate-user-content",
     "description": "Flag unsafe or policy-violating user-generated content.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -2509,23 +2509,23 @@
     "title": "Detect Spam",
     "slug": "detect-spam",
     "description": "Identify spam messages and bot-like activity.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Grok"
+      "Gemini"
     ]
   },
   {
     "title": "Personalize Recommendations",
     "slug": "personalize-recommendations",
     "description": "Tailor content or product suggestions per user.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Marketing",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2537,27 +2537,27 @@
     "title": "Generate Quiz Questions",
     "slug": "generate-quiz-questions",
     "description": "Create quizzes and answer keys from study material.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Create Flashcards",
     "slug": "create-flashcards",
     "description": "Turn notes into spaced-repetition flashcards.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -2565,9 +2565,9 @@
     "title": "Grade Short Answers",
     "slug": "grade-short-answers",
     "description": "Score short-answer responses against rubrics.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Credits",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2579,9 +2579,9 @@
     "title": "Translate Ui Strings",
     "slug": "translate-ui-strings",
     "description": "Localize product UI strings with consistent terminology.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -2593,13 +2593,13 @@
     "title": "Generate Alt Text",
     "slug": "generate-alt-text",
     "description": "Write accessibility alt text for images.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Image Generation",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -2607,12 +2607,12 @@
     "title": "Create Sitemap Structures",
     "slug": "create-sitemap-structures",
     "description": "Propose information architecture and sitemap trees.",
-    "category": "UI/UX",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Design",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "v0",
+      "v0 by Vercel",
       "Framer AI",
       "ChatGPT"
     ]
@@ -2621,26 +2621,26 @@
     "title": "Write Microcopy",
     "slug": "write-microcopy",
     "description": "Craft button labels, empty states, and error messages.",
-    "category": "UI/UX",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Generate Color Palettes",
     "slug": "generate-color-palettes",
     "description": "Propose accessible color palettes for brands and UIs.",
-    "category": "UI/UX",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Design",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "v0",
+      "v0 by Vercel",
       "Framer AI",
       "ChatGPT"
     ]
@@ -2649,26 +2649,26 @@
     "title": "Create Typography Scales",
     "slug": "create-typography-scales",
     "description": "Define type scales and pairing recommendations.",
-    "category": "UI/UX",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Design",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
-      "Galileo AI",
-      "Uizard",
-      "Figma AI"
+      "Framer AI",
+      "Canva Magic Studio",
+      "Kittl"
     ]
   },
   {
     "title": "Design Onboarding Flows",
     "slug": "design-onboarding-flows",
     "description": "Map first-run onboarding steps and copy.",
-    "category": "UI/UX",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Design",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "v0",
+      "v0 by Vercel",
       "Framer AI",
       "ChatGPT"
     ]
@@ -2677,13 +2677,13 @@
     "title": "Write Support Macros",
     "slug": "write-support-macros",
     "description": "Create reusable support reply templates.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Customer Support",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -2691,9 +2691,9 @@
     "title": "Summarize Support Threads",
     "slug": "summarize-support-threads",
     "description": "Condense long ticket threads into next actions.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Customer Support",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2705,27 +2705,27 @@
     "title": "Generate Refund Policies",
     "slug": "generate-refund-policies",
     "description": "Draft clear refund and cancellation policies.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Create Pricing Pages",
     "slug": "create-pricing-pages",
     "description": "Write pricing page copy and plan comparisons.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -2733,9 +2733,9 @@
     "title": "A B Test Copy",
     "slug": "a-b-test-copy",
     "description": "Propose A/B variants for headlines and CTAs.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": true,
     "recommendedAITools": [
       "ChatGPT",
@@ -2747,9 +2747,9 @@
     "title": "Segment Email Lists",
     "slug": "segment-email-lists",
     "description": "Suggest audience segments for campaigns.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -2761,9 +2761,9 @@
     "title": "Forecast Churn Risk",
     "slug": "forecast-churn-risk",
     "description": "Identify customers at risk of churning.",
-    "category": "Data Science",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Research",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2775,9 +2775,9 @@
     "title": "Score Sales Leads",
     "slug": "score-sales-leads",
     "description": "Rank inbound leads by likelihood to convert.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Marketing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "ChatGPT",
@@ -2789,27 +2789,27 @@
     "title": "Generate Outreach Sequences",
     "slug": "generate-outreach-sequences",
     "description": "Create multi-step cold outreach sequences.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Marketing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Write Linkedin Posts",
     "slug": "write-linkedin-posts",
     "description": "Draft LinkedIn posts for founders and marketers.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -2817,9 +2817,9 @@
     "title": "Create Webinar Outlines",
     "slug": "create-webinar-outlines",
     "description": "Structure webinar agendas and speaker notes.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2831,23 +2831,23 @@
     "title": "Generate Survey Questions",
     "slug": "generate-survey-questions",
     "description": "Write surveys that reduce bias and improve response quality.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Analyze Survey Results",
     "slug": "analyze-survey-results",
     "description": "Summarize open-ended survey responses into themes.",
-    "category": "Data Science",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Research",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2859,9 +2859,9 @@
     "title": "Create Okrs",
     "slug": "create-okrs",
     "description": "Draft objectives and key results for teams.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2873,23 +2873,23 @@
     "title": "Write Status Updates",
     "slug": "write-status-updates",
     "description": "Turn weekly work into concise status updates.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Implement Websocket Features",
     "slug": "implement-websocket-features",
     "description": "Add real-time updates with WebSockets or similar.",
-    "category": "Full Stack",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2901,27 +2901,27 @@
     "title": "Build File Upload Flows",
     "slug": "build-file-upload-flows",
     "description": "Design secure upload, storage, and virus-scan flows.",
-    "category": "Full Stack",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
       "Claude",
-      "v0"
+      "v0 by Vercel"
     ]
   },
   {
     "title": "Implement Search Filters",
     "slug": "implement-search-filters",
     "description": "Add faceted search and filter UX to catalogs.",
-    "category": "Frontend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Framer AI",
-      "v0",
+      "v0 by Vercel",
       "Claude"
     ]
   },
@@ -2929,9 +2929,9 @@
     "title": "Create Pdf Reports",
     "slug": "create-pdf-reports",
     "description": "Generate PDF reports from application data.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -2943,9 +2943,9 @@
     "title": "Parse Csv Imports",
     "slug": "parse-csv-imports",
     "description": "Validate and import CSV uploads into databases.",
-    "category": "Backend",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -2957,9 +2957,9 @@
     "title": "Export Data As Excel",
     "slug": "export-data-as-excel",
     "description": "Produce Excel exports for ops and finance teams.",
-    "category": "Backend",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -2971,9 +2971,9 @@
     "title": "Implement Soft Deletes",
     "slug": "implement-soft-deletes",
     "description": "Add soft-delete and restore patterns safely.",
-    "category": "Database",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Image Generation",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -2985,9 +2985,9 @@
     "title": "Design Idempotent Apis",
     "slug": "design-idempotent-apis",
     "description": "Make write APIs safe to retry without side effects.",
-    "category": "Backend",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Writing",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -2999,9 +2999,9 @@
     "title": "Add Observability Tracing",
     "slug": "add-observability-tracing",
     "description": "Instrument distributed tracing across services.",
-    "category": "DevOps",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "GitHub Copilot",
@@ -3013,9 +3013,9 @@
     "title": "Configure Log Aggregation",
     "slug": "configure-log-aggregation",
     "description": "Centralize logs for search and alerting.",
-    "category": "DevOps",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -3027,9 +3027,9 @@
     "title": "Write Shell Scripts",
     "slug": "write-shell-scripts",
     "description": "Automate ops tasks with maintainable shell scripts.",
-    "category": "DevOps",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "GitHub Copilot",
@@ -3041,9 +3041,9 @@
     "title": "Manage Env Configs",
     "slug": "manage-env-configs",
     "description": "Organize environment variables across stages.",
-    "category": "DevOps",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -3055,9 +3055,9 @@
     "title": "Create Seed Data",
     "slug": "create-seed-data",
     "description": "Generate realistic seed data for local development.",
-    "category": "Database",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": true,
     "recommendedAITools": [
       "Cursor",
@@ -3069,9 +3069,9 @@
     "title": "Anonymize Production Data",
     "slug": "anonymize-production-data",
     "description": "Scrub PII before using prod-like datasets in staging.",
-    "category": "Cybersecurity",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3083,23 +3083,23 @@
     "title": "Implement Audit Logs",
     "slug": "implement-audit-logs",
     "description": "Record sensitive actions for compliance review.",
-    "category": "Cybersecurity",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Snyk"
+      "Sourcegraph Cody"
     ]
   },
   {
     "title": "Enforce Password Policies",
     "slug": "enforce-password-policies",
     "description": "Define and implement strong password requirements.",
-    "category": "Cybersecurity",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3111,23 +3111,23 @@
     "title": "Add Two Factor Auth",
     "slug": "add-two-factor-auth",
     "description": "Implement 2FA enrollment and verification.",
-    "category": "Cybersecurity",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Snyk"
+      "Sourcegraph Cody"
     ]
   },
   {
     "title": "Validate Webhooks",
     "slug": "validate-webhooks",
     "description": "Verify webhook signatures and replay protection.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -3139,9 +3139,9 @@
     "title": "Build Rate Limit Dashboards",
     "slug": "build-rate-limit-dashboards",
     "description": "Visualize API usage and rate-limit hits.",
-    "category": "Full Stack",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3153,9 +3153,9 @@
     "title": "Create Sdk Wrappers",
     "slug": "create-sdk-wrappers",
     "description": "Generate client SDKs for public APIs.",
-    "category": "Backend",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -3167,9 +3167,9 @@
     "title": "Generate Recipe Ideas",
     "slug": "generate-recipe-ideas",
     "description": "Create recipes from ingredients, diets, or cuisine goals.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -3181,23 +3181,23 @@
     "title": "Plan Travel Itineraries",
     "slug": "plan-travel-itineraries",
     "description": "Build day-by-day trip plans with logistics notes.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Grok"
+      "Gemini"
     ]
   },
   {
     "title": "Create Workout Plans",
     "slug": "create-workout-plans",
     "description": "Generate fitness plans from goals and constraints.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3209,9 +3209,9 @@
     "title": "Generate Meal Plans",
     "slug": "generate-meal-plans",
     "description": "Produce weekly meal plans with shopping lists.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -3223,13 +3223,13 @@
     "title": "Write Fiction Stories",
     "slug": "write-fiction-stories",
     "description": "Draft short stories and chapter outlines.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -3237,9 +3237,9 @@
     "title": "Create Character Profiles",
     "slug": "create-character-profiles",
     "description": "Build detailed characters for stories or games.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3251,9 +3251,9 @@
     "title": "Generate Game Levels",
     "slug": "generate-game-levels",
     "description": "Propose level ideas and difficulty curves for games.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -3265,13 +3265,13 @@
     "title": "Design Npc Dialog",
     "slug": "design-npc-dialog",
     "description": "Write branching dialogue for game NPCs.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -3279,9 +3279,9 @@
     "title": "Create Legal Summaries",
     "slug": "create-legal-summaries",
     "description": "Summarize contracts into plain-language highlights.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3293,37 +3293,37 @@
     "title": "Draft Contracts",
     "slug": "draft-contracts",
     "description": "Generate first-draft agreements from deal terms.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Prepare Tax Notes",
     "slug": "prepare-tax-notes",
     "description": "Organize expense notes for accountant handoff.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Grok"
+      "Gemini"
     ]
   },
   {
     "title": "Generate Swot Analyses",
     "slug": "generate-swot-analyses",
     "description": "Produce SWOT analyses for products or markets.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3335,37 +3335,37 @@
     "title": "Create Lesson Plans",
     "slug": "create-lesson-plans",
     "description": "Build classroom lesson plans with activities and goals.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Explain Complex Topics",
     "slug": "explain-complex-topics",
     "description": "Simplify technical topics for beginners.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": true,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Grok"
+      "Gemini"
     ]
   },
   {
     "title": "Generate Study Guides",
     "slug": "generate-study-guides",
     "description": "Create study guides from lectures or textbooks.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3377,23 +3377,23 @@
     "title": "Create Interview Prep Plans",
     "slug": "create-interview-prep-plans",
     "description": "Build prep plans for coding or behavioral interviews.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Generate Architecture Diagrams",
     "slug": "generate-architecture-diagrams",
     "description": "Describe system diagrams that engineers can draw.",
-    "category": "Full Stack",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3405,9 +3405,9 @@
     "title": "Document Adrs",
     "slug": "document-adrs",
     "description": "Write architecture decision records from discussions.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Free",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3419,27 +3419,27 @@
     "title": "Create Changelog Entries",
     "slug": "create-changelog-entries",
     "description": "Turn merged PRs into user-facing changelog notes.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Localize Marketing Pages",
     "slug": "localize-marketing-pages",
     "description": "Adapt marketing copy for regional audiences.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -3447,9 +3447,9 @@
     "title": "Generate Utm Strategies",
     "slug": "generate-utm-strategies",
     "description": "Propose UTM naming and campaign tracking schemes.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Marketing",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3461,27 +3461,27 @@
     "title": "Create Affiliate Content",
     "slug": "create-affiliate-content",
     "description": "Draft affiliate reviews with disclosure-friendly copy.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Marketing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Build Comparison Tables",
     "slug": "build-comparison-tables",
     "description": "Compare products or tools in structured tables.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -3489,37 +3489,37 @@
     "title": "Generate Faq Schema",
     "slug": "generate-faq-schema",
     "description": "Create FAQ content suitable for rich results.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "SEO",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "ChatGPT",
-      "Claude",
-      "Jasper"
+      "Surfer SEO",
+      "Semrush AI",
+      "Frase"
     ]
   },
   {
     "title": "Write Release Notes",
     "slug": "write-release-notes",
     "description": "Summarize releases for customers and internal teams.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Create On Call Schedules",
     "slug": "create-on-call-schedules",
     "description": "Propose on-call rotations and escalation paths.",
-    "category": "DevOps",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -3531,12 +3531,12 @@
     "title": "Plan Capacity",
     "slug": "plan-capacity",
     "description": "Estimate capacity needs from traffic projections.",
-    "category": "Cloud",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "AWS Q",
+      "Amazon Q Developer",
       "ChatGPT",
       "Claude"
     ]
@@ -3545,9 +3545,9 @@
     "title": "Design Event Driven Systems",
     "slug": "design-event-driven-systems",
     "description": "Propose events, topics, and consumers for workflows.",
-    "category": "Backend",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -3559,9 +3559,9 @@
     "title": "Implement Queue Workers",
     "slug": "implement-queue-workers",
     "description": "Build background workers for async jobs.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Image Generation",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3573,9 +3573,9 @@
     "title": "Create Retry Policies",
     "slug": "create-retry-policies",
     "description": "Define backoff and dead-letter strategies for jobs.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -3587,9 +3587,9 @@
     "title": "Build Admin Panels",
     "slug": "build-admin-panels",
     "description": "Create internal admin tools for ops teams.",
-    "category": "Full Stack",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3601,13 +3601,13 @@
     "title": "Generate Crm Email Templates",
     "slug": "generate-crm-email-templates",
     "description": "Write CRM templates for lifecycle stages.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -3615,9 +3615,9 @@
     "title": "Create Customer Success Plans",
     "slug": "create-customer-success-plans",
     "description": "Draft success plans for onboarding accounts.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Customer Support",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3629,9 +3629,9 @@
     "title": "Analyze Call Transcripts",
     "slug": "analyze-call-transcripts",
     "description": "Extract objections and insights from sales calls.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Audio",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -3643,23 +3643,23 @@
     "title": "Generate Coaching Feedback",
     "slug": "generate-coaching-feedback",
     "description": "Turn call reviews into coachable feedback notes.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Grok"
+      "Gemini"
     ]
   },
   {
     "title": "Create Compliance Checklists",
     "slug": "create-compliance-checklists",
     "description": "Build compliance checklists for audits.",
-    "category": "Cybersecurity",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3671,27 +3671,27 @@
     "title": "Map Data Flows",
     "slug": "map-data-flows",
     "description": "Document personal data flows for privacy reviews.",
-    "category": "Cybersecurity",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Marketing",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Snyk"
+      "Sourcegraph Cody"
     ]
   },
   {
     "title": "Write Privacy Policies",
     "slug": "write-privacy-policies",
     "description": "Draft privacy policy sections from product behavior.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -3699,9 +3699,9 @@
     "title": "Generate Cookie Notices",
     "slug": "generate-cookie-notices",
     "description": "Create cookie consent copy and category descriptions.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3713,9 +3713,9 @@
     "title": "Create Api Rate Plans",
     "slug": "create-api-rate-plans",
     "description": "Design API tiers, quotas, and overage rules.",
-    "category": "Backend",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Cursor",
@@ -3727,9 +3727,9 @@
     "title": "Build Billing Integrations",
     "slug": "build-billing-integrations",
     "description": "Connect usage metering to invoices and plans.",
-    "category": "Full Stack",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Audio",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3741,12 +3741,12 @@
     "title": "Implement Feature Tours",
     "slug": "implement-feature-tours",
     "description": "Create in-product tours and tip sequences.",
-    "category": "Frontend",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Coding",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "v0",
+      "v0 by Vercel",
       "Cursor",
       "ChatGPT"
     ]
@@ -3755,37 +3755,37 @@
     "title": "Generate Empty States",
     "slug": "generate-empty-states",
     "description": "Write helpful empty-state messages and next steps.",
-    "category": "UI/UX",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Writing",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Create Error Pages",
     "slug": "create-error-pages",
     "description": "Design 404 and error page copy and layouts.",
-    "category": "UI/UX",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Design",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
-      "Galileo AI",
-      "Uizard",
-      "Figma AI"
+      "Framer AI",
+      "Canva Magic Studio",
+      "Kittl"
     ]
   },
   {
     "title": "Build Notification Centers",
     "slug": "build-notification-centers",
     "description": "Design in-app notification models and UI.",
-    "category": "Full Stack",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3797,51 +3797,51 @@
     "title": "Generate Slack Bots",
     "slug": "generate-slack-bots",
     "description": "Create Slack bots for team ops and alerts.",
-    "category": "Automation",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Chatbots",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
-      "Zapier",
-      "Make",
-      "n8n"
+      "Zapier Central",
+      "Chatbase",
+      "Character.AI"
     ]
   },
   {
     "title": "Automate Spreadsheet Tasks",
     "slug": "automate-spreadsheet-tasks",
     "description": "Automate formulas, cleanup, and reporting in sheets.",
-    "category": "Automation",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Zapier",
+      "Zapier Central",
       "ChatGPT",
-      "Make"
+      "Notion AI"
     ]
   },
   {
     "title": "Create Zap Templates",
     "slug": "create-zap-templates",
     "description": "Design reusable automation templates for common flows.",
-    "category": "Automation",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
-      "Zapier",
-      "Make",
-      "n8n"
+      "Zapier Central",
+      "Notion AI",
+      "ChatGPT"
     ]
   },
   {
     "title": "Parse Receipts",
     "slug": "parse-receipts",
     "description": "Extract merchant, date, and totals from receipts.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Credits",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -3853,23 +3853,23 @@
     "title": "Extract Tables From Pdfs",
     "slug": "extract-tables-from-pdfs",
     "description": "Pull tabular data out of PDF documents.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Credits",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Grok"
+      "Gemini"
     ]
   },
   {
     "title": "Convert Handwriting To Text",
     "slug": "convert-handwriting-to-text",
     "description": "Digitize handwritten notes into editable text.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Credits",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3881,27 +3881,27 @@
     "title": "Generate Meeting Agendas",
     "slug": "generate-meeting-agendas",
     "description": "Create agendas from goals and attendee lists.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Follow Up After Meetings",
     "slug": "follow-up-after-meetings",
     "description": "Draft follow-up emails with owners and deadlines.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Freemium",
+    "category": "Productivity",
+    "difficulty": "EASY",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -3909,9 +3909,9 @@
     "title": "Create Rfp Responses",
     "slug": "create-rfp-responses",
     "description": "Draft responses to vendor RFPs and questionnaires.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Writing",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3923,27 +3923,27 @@
     "title": "Write Grant Proposals",
     "slug": "write-grant-proposals",
     "description": "Outline grant proposals from program criteria.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Writing",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Generate Research Abstracts",
     "slug": "generate-research-abstracts",
     "description": "Write abstracts from papers or experiment notes.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Freemium",
+    "category": "Writing",
+    "difficulty": "MEDIUM",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
-      "Grammarly",
+      "Grammarly AI",
       "ChatGPT"
     ]
   },
@@ -3951,9 +3951,9 @@
     "title": "Cite Sources",
     "slug": "cite-sources",
     "description": "Format citations and bibliographies consistently.",
-    "category": "AI",
-    "difficulty": "Easy",
-    "pricingModel": "Free",
+    "category": "Research",
+    "difficulty": "EASY",
+    "pricingModel": "FREE",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -3965,37 +3965,37 @@
     "title": "Create Literature Reviews",
     "slug": "create-literature-reviews",
     "description": "Summarize related work into a structured review.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Writing",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Copy.ai",
       "ChatGPT",
-      "Rytr"
+      "Writesonic"
     ]
   },
   {
     "title": "Build Prompt Evaluations",
     "slug": "build-prompt-evaluations",
     "description": "Design eval sets to score prompt and model quality.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Research",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Grok"
+      "Gemini"
     ]
   },
   {
     "title": "Red Team Prompts",
     "slug": "red-team-prompts",
     "description": "Probe prompts and models for unsafe failure modes.",
-    "category": "Cybersecurity",
-    "difficulty": "Hard",
-    "pricingModel": "Paid",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -4007,9 +4007,9 @@
     "title": "Create Guardrail Policies",
     "slug": "create-guardrail-policies",
     "description": "Define content and tool-use guardrails for agents.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -4021,23 +4021,23 @@
     "title": "Orchestrate Ai Agents",
     "slug": "orchestrate-ai-agents",
     "description": "Coordinate multi-agent workflows for complex jobs.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Grok"
+      "Gemini"
     ]
   },
   {
     "title": "Build Tool Calling Agents",
     "slug": "build-tool-calling-agents",
     "description": "Connect LLMs to tools and APIs with function calling.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Coding",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": true,
     "recommendedAITools": [
       "ChatGPT",
@@ -4049,9 +4049,9 @@
     "title": "Monitor Llm Costs",
     "slug": "monitor-llm-costs",
     "description": "Track token usage and reduce expensive prompts.",
-    "category": "AI",
-    "difficulty": "Medium",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "MEDIUM",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
@@ -4063,23 +4063,23 @@
     "title": "Cache Llm Responses",
     "slug": "cache-llm-responses",
     "description": "Design semantic caching for repeated AI requests.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Productivity",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Claude",
       "ChatGPT",
-      "Grok"
+      "Gemini"
     ]
   },
   {
     "title": "Evaluate Hallucinations",
     "slug": "evaluate-hallucinations",
     "description": "Detect unsupported claims in model outputs.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Credits",
+    "category": "Research",
+    "difficulty": "ADVANCED",
+    "pricingModel": "FREEMIUM",
     "isFeatured": false,
     "recommendedAITools": [
       "ChatGPT",
@@ -4091,9 +4091,9 @@
     "title": "Ground Answers In Docs",
     "slug": "ground-answers-in-docs",
     "description": "Force answers to cite only provided source documents.",
-    "category": "AI",
-    "difficulty": "Hard",
-    "pricingModel": "Subscription",
+    "category": "Research",
+    "difficulty": "ADVANCED",
+    "pricingModel": "PAID",
     "isFeatured": false,
     "recommendedAITools": [
       "Perplexity",
