@@ -6,6 +6,7 @@ import { CollectionDetailClient } from "@/components/detail/CollectionDetailClie
 import { VideoDetailsClient } from "@/components/detail/VideoDetailsClient";
 import { ArticlePageClient } from "@/components/article-page-client";
 import { EntityDetail } from "@/components/detail/EntityDetail";
+import { DeviceDetailClient } from "@/components/detail/DeviceDetailClient";
 import { SERVER_API_URL } from "@/lib/api";
 
 interface UnifiedEntityPageProps {
@@ -69,6 +70,7 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     tasks: "task"
   };
 
+  if (type === "devices") return <DeviceDetailClient />;
   if (entityTypeMap[type]) {
     return <EntityDetail type={entityTypeMap[type]} />;
   }
