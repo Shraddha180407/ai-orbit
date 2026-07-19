@@ -4,7 +4,6 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { LeaderboardClient } from "@/components/LeaderboardClient";
 
-export const runtime = "edge";
 
 export const metadata: Metadata = {
   title: "AI Ecosystem Leaderboard — The AI Signal",

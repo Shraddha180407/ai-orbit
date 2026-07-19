@@ -275,15 +275,35 @@ model NewsComment {
 }
 
 model Repository {
-  id          String   @id @default(cuid())
-  name        String
-  owner       String
-  stars       Int
-  language    String
-  description String
-  url         String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  id               String    @id @default(cuid())
+  githubId         Int       @unique
+  slug             String    @unique
+  name             String
+  owner            String
+  ownerAvatarUrl   String?
+  description      String?
+  url              String
+  homepage         String?
+  language         String?
+  license          String?
+  topics           String[]
+  stars            Int
+  forks            Int
+  openIssues       Int
+  defaultBranch    String    @default("main")
+  logoUrl          String?
+  brandColor       String?
+  readmeHtml       String?
+  readmeFetchedAt  DateTime?
+  githubCreatedAt  DateTime
+  syncedAt         DateTime
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([stars])
+  @@index([language])
+  @@index([topics], type: Gin)
+  @@index([syncedAt])
 }
 
 // Synced from live production DB via `prisma db pull` on 2026-07-12 — this

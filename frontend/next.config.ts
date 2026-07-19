@@ -29,6 +29,15 @@ const nextConfig: NextConfig = {
       "tailwind-merge",
     ],
   },
+  
+  async rewrites() {
+    return [
+      {
+        source: "/:type(collections|countries|devices|fundraises|investors|models|news|repositories|robots|tasks|tools|videos)/:slug",
+        destination: "/p/:type/:slug",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -1,35 +1,38 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { notFound, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getCollectionDetail } from "@/lib/collections";
 import { CollectionGrid } from "@/components/CollectionGrid";
 import { StackedLogos } from "@/components/StackedLogos";
 import { DetailToolCard } from "@/components/DetailToolCard";
 
-export const dynamic = "force-dynamic";
-export const runtime = "edge";
+export function CollectionDetailClient() {
+  const params = useParams();
+  const slug = params.slug as string;
 
-type PageProps = {
-  params: Promise<{ slug: string }>;
-};
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const data = await getCollectionDetail(slug);
-  if (!data?.collection) return { title: "Collection not found" };
+  useEffect(() => {
+    getCollectionDetail(slug).then((res) => {
+      if (!res?.collection) notFound();
+      setData(res);
+      setLoading(false);
+    });
+  }, [slug]);
 
-  return {
-    title: `${data.collection.title} — Collections`,
-    description: data.collection.description,
-  };
-}
+  if (loading) {
+    return (
+      <main className="collections-scope mx-auto max-w-container px-6 py-10">
+        <div className="h-[60vh] animate-pulse rounded-xl border border-border bg-surface" />
+      </main>
+    );
+  }
 
-export default async function CollectionDetailPage({ params }: PageProps) {
-  const { slug } = await params;
-  const data = await getCollectionDetail(slug);
-
-  if (!data?.collection) notFound();
+  if (!data?.collection) return null;
 
   const { collection, related } = data;
   const previewTools = collection.tools
