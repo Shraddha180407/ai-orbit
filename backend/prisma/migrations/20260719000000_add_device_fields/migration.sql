@@ -11,8 +11,8 @@ ALTER TABLE "Device" ADD COLUMN "mainTask" TEXT;
 ALTER TABLE "Device" ADD COLUMN "formFactor" TEXT;
 ALTER TABLE "Device" ADD COLUMN "country" TEXT;
 ALTER TABLE "Device" ADD COLUMN "ram" TEXT;
-ALTER TABLE "Device" ADD COLUMN "aiFeatures" TEXT;
-ALTER TABLE "Device" ADD COLUMN "primaryUseCases" TEXT;
+ALTER TABLE "Device" ADD COLUMN "aiFeatures" TEXT[] DEFAULT '{}';
+ALTER TABLE "Device" ADD COLUMN "primaryUseCases" TEXT[] DEFAULT '{}';
 ALTER TABLE "Device" ADD COLUMN "additionalInfo" TEXT;
 ALTER TABLE "Device" ADD COLUMN "buyUrl" TEXT;
 

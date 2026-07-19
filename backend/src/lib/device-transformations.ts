@@ -137,6 +137,8 @@ export function transformDeviceForListing(device: any): any {
     mainTask: device.mainTask,
     formFactor: device.formFactor,
     country: device.country,
+    aiFeatures: device.aiFeatures || [],
+    primaryUseCases: device.primaryUseCases || [],
   };
 }
 
@@ -151,8 +153,8 @@ export function transformDeviceForDetail(device: any): any {
   return {
     ...listingData,
     ram: device.ram,
-    aiFeatures: parseCommaSeparated(device.aiFeatures),
-    primaryUseCases: parseCommaSeparated(device.primaryUseCases),
+    aiFeatures: device.aiFeatures || [],
+    primaryUseCases: device.primaryUseCases || [],
     additionalInfo: device.additionalInfo,
     buyUrl: validateImageUrl(device.buyUrl),
   };

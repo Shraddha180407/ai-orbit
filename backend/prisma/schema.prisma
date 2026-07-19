@@ -378,8 +378,8 @@ model Device {
   formFactor        String?
   country           String?
   ram               String?
-  aiFeatures        String?  
-  primaryUseCases   String?
+  aiFeatures        String[] @default([])
+  primaryUseCases   String[] @default([])
   additionalInfo    String?
   buyUrl            String?
   createdAt         DateTime @default(now())
