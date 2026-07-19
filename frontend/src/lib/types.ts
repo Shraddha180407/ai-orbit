@@ -83,6 +83,7 @@ export type SimilarToolData = {
 export type CollectionsSearchParams = {
   category?: string;
   page?: string;
+  q?: string;
 };
 
 export type CollectionListItem = {
@@ -193,4 +194,5 @@ export type Device = {
   year: string;
   description: string;
 };
+
 

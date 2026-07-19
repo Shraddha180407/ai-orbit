@@ -1,33 +1,86 @@
-import type { Metadata } from "next";
-import { Suspense } from "react";
-import { CollectionsPageClient } from "./CollectionsPageClient";
+import CollectionsPageClient from "./CollectionsPageClient";
+import type { CollectionListItem } from "@/lib/types";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
-export const metadata: Metadata = {
-  title: "Collections — The AI Signal",
-  description:
-    "Curated bundles of the best AI tools, agents and models, hand-picked by category.",
+
+
+// 1. Optional Server Component configuration
+export const metadata = {
+  title: "Curated Collections | Tool Directory",
+  description: "Explore curated lists and stack configurations by domain experts.",
 };
 
-export default function CollectionsPage() {
+// 2. Data Fetcher / Mock Seeding (Replace with your actual DB query if needed)
+async function getCollections(): Promise<CollectionListItem[]> {
+  // Simulating an API call or database round-trip
+  return [
+    {
+      id: "col-1",
+      slug: "frontend-architecture-2026",
+      title: "Enterprise Frontend Architecture Stack",
+      description: "Production-ready open source configurations engineered for high-scale micro-frontends, containing atomic layouts and modern reactive virtualization strategies.",
+      curatedBy: "Alex Rivers",
+      category: "Engineering",
+      featured: true,
+      updatedAt: new Date().toISOString(),
+      toolCount: 14,
+      previewTools: [
+        { name: "Next.js", logoUrl: "" },
+        { name: "Tailwind CSS", logoUrl: "" },
+        { name: "TypeScript", logoUrl: "" },
+        { name: "TanStack Virtual", logoUrl: "" }
+      ]
+    },
+    {
+      id: "col-2",
+      slug: "data-science-tooling",
+      title: "Data Science & Pipeline Processing Essentials",
+      description: "A comprehensive map of machine learning evaluation toolsets, vector database indices, and high-performance streaming pipelines.",
+      curatedBy: "Dr. Elena Rostova",
+      category: "Data Science",
+      featured: false,
+      updatedAt: new Date(Date.now() - 86400000 * 3).toISOString(), // 3 days ago
+      toolCount: 8,
+      previewTools: [
+        { name: "Python", logoUrl: "" },
+        { name: "Jupyter", logoUrl: "" },
+        { name: "Polars", logoUrl: "" },
+        { name: "DuckDB", logoUrl: "" }
+      ]
+    },
+    {
+      id: "col-3",
+      slug: "design-systems-foundations",
+      title: "Design System Foundations & Tokens",
+      description: "Curated libraries mapping design primitives, headless component configurations, and automation systems tailored for cohesive cross-platform interfaces.",
+      curatedBy: "Marcus Vance",
+      category: "Design",
+      featured: true,
+      updatedAt: new Date(Date.now() - 86400000 * 7).toISOString(), // 1 week ago
+      toolCount: 22,
+      previewTools: [
+        { name: "Figma", logoUrl: "" },
+        { name: "Radix UI", logoUrl: "" },
+        { name: "Stitches", logoUrl: "" },
+        { name: "Storybook", logoUrl: "" }
+      ]
+    }
+  ];
+}
+
+// 3. Main Server Page Entry Route
+export default async function CollectionsPage() {
+  const initialData = await getCollections();
+
   return (
-    <Suspense fallback={
-      <main className="collections-scope min-h-screen pb-20">
-        <div className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
-          <div className="mx-auto flex max-w-container items-center justify-between px-6 py-3">
-             <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-bold text-background">
-                  S
-                </span>
-                <span className="text-base font-bold text-foreground">The AI Signal</span>
-             </div>
-          </div>
-        </div>
-        <div className="mx-auto max-w-container px-6 pt-6">
-          <div className="h-60 animate-pulse rounded-xl border border-[#232326] bg-[#131316]/50" />
-        </div>
-      </main>
-    }>
-      <CollectionsPageClient />
-    </Suspense>
+    <div>
+      <Header/>
+    <main className="min-h-screen bg-background text-foreground antialiased selection:bg-accent/20">
+      <CollectionsPageClient initialCollections={initialData} />
+    </main>
+    <Footer />
+    </div>
+    
   );
 }
