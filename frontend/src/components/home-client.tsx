@@ -143,7 +143,7 @@ export function HomeClient() {
             The AI Signal helps you find the best AI tools of 2026 easily!
           </p>
 
-          <HeroSearchBar defaultValue={params.q} featuredTools={tools.slice(0, 3)} />
+          <HeroSearchBar defaultValue={params.q} />
 
           <div className="mb-[18px]">
             <HeroFeatureChips />

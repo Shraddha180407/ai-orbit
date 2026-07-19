@@ -3,26 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Search,
-  Clock,
-  TrendingUp,
-  Trophy,
-  X,
-  ArrowRight,
-  BadgeCheck,
-  Image as ImageIcon,
-  Type,
-  Gift,
-  Puzzle,
-  Sparkles,
-  Plus,
-  Tag,
-  FileText,
-  Calendar,
-  MessageSquare,
-} from "lucide-react";
-import { useAutocomplete } from "@/hooks/useAutocomplete";
+import { Search, Clock, TrendingUp, Trophy, X, Video, Newspaper } from "lucide-react";
+import { useHomeSearch } from "@/hooks/useHomeSearch";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
 import { ENTITY_META } from "@/lib/entityMeta";
 
@@ -30,94 +12,51 @@ interface QuickLink {
   label: string;
   href: string;
   icon: React.ComponentType<{ size?: number }>;
-  /** icon-badge tint, one distinct color per row — matches TAAFT's colored icon tiles */
-  tint: string;
 }
 
-interface QuickLinkGroup {
-  title: string;
-  links: QuickLink[];
-}
-
-/**
- * Mirrors TAAFT's homepage search dropdown: quick actions, then every
- * browsable entity type, then a few extra discovery shortcuts. Items that
- * don't have a dedicated page/entity in this app yet (Deals, Papers,
- * Organizations, Events, Prompt Pack, Generate image/text, Free mode,
- * Starter pack, Create tool) fall back to the closest existing page, filtered
- * with a relevant query string, so nothing here is a dead link.
- */
-const QUICK_LINK_GROUPS: QuickLinkGroup[] = [
-  {
-    title: "Quick links",
-    links: [
-      { label: "Generate image", href: "/tools?q=image+generator", icon: ImageIcon, tint: "bg-rose-500/15 text-rose-400" },
-      { label: "Tasks", href: ENTITY_META.task.basePath, icon: ENTITY_META.task.icon, tint: ENTITY_META.task.tint },
-      { label: "Generate text", href: "/tools?q=text+generator", icon: Type, tint: "bg-blue-500/15 text-blue-400" },
-      { label: "Free mode", href: "/tools?maxPrice=0", icon: Gift, tint: "bg-emerald-500/15 text-emerald-400" },
-      { label: "Trending", href: "/tools?sort=rating", icon: TrendingUp, tint: "bg-emerald-500/15 text-emerald-400" },
-      { label: "Leaderboard", href: "/leaderboard", icon: Trophy, tint: "bg-amber-500/15 text-amber-400" },
-      { label: "Mini tools", href: "/search/mini-tools", icon: Puzzle, tint: "bg-violet-500/15 text-violet-400" },
-      { label: "New", href: "/search/new", icon: Sparkles, tint: "bg-sky-500/15 text-sky-400" },
-      { label: "Starter pack", href: "/collections", icon: ENTITY_META.fundraise.icon, tint: "bg-orange-500/15 text-orange-400" },
-      { label: "Create tool", href: "/dashboard/settings", icon: Plus, tint: "bg-search-accent-soft text-search-accent-hover" },
-    ],
-  },
-  {
-    title: "Browse by type",
-    links: [
-      { label: "Deals", href: "/tools?sort=popular&maxPrice=0", icon: Tag, tint: "bg-rose-500/15 text-rose-400" },
-      { label: "Companies", href: ENTITY_META.company.basePath, icon: ENTITY_META.company.icon, tint: ENTITY_META.company.tint },
-      { label: "Models", href: ENTITY_META.model.basePath, icon: ENTITY_META.model.icon, tint: ENTITY_META.model.tint },
-      { label: "Robots", href: ENTITY_META.robot.basePath, icon: ENTITY_META.robot.icon, tint: ENTITY_META.robot.tint },
-      { label: "Papers", href: "/news?q=paper", icon: FileText, tint: "bg-amber-500/15 text-amber-400" },
-      { label: "Fundraises", href: ENTITY_META.fundraise.basePath, icon: ENTITY_META.fundraise.icon, tint: ENTITY_META.fundraise.tint },
-      { label: "Repositories", href: ENTITY_META.repository.basePath, icon: ENTITY_META.repository.icon, tint: ENTITY_META.repository.tint },
-      { label: "Devices", href: ENTITY_META.device.basePath, icon: ENTITY_META.device.icon, tint: ENTITY_META.device.tint },
-      { label: "Organizations", href: ENTITY_META.company.basePath, icon: ENTITY_META.investor.icon, tint: "bg-yellow-500/15 text-yellow-400" },
-      { label: "Events", href: "/news?q=event", icon: Calendar, tint: "bg-teal-500/15 text-teal-400" },
-    ],
-  },
-  {
-    title: "More to explore",
-    links: [
-      { label: "Prompt Pack", href: "/collections?q=prompt+pack", icon: MessageSquare, tint: "bg-lime-500/15 text-lime-400" },
-      { label: "Tools", href: ENTITY_META.tool.basePath, icon: ENTITY_META.tool.icon, tint: ENTITY_META.tool.tint },
-      { label: "Countries", href: ENTITY_META.country.basePath, icon: ENTITY_META.country.icon, tint: ENTITY_META.country.tint },
-      { label: "Collections", href: ENTITY_META.collection.basePath, icon: ENTITY_META.collection.icon, tint: ENTITY_META.collection.tint },
-      { label: "Videos", href: ENTITY_META.video.basePath, icon: ENTITY_META.video.icon, tint: ENTITY_META.video.tint },
-    ],
-  },
+// Top-of-menu quick actions. Only entries that map to a real route on the
+// site belong here — the reference design also had "Generate text", "Free
+// mode", "Mini tools", "New", "Starter pack" and "Create tool", but none of
+// those exist as pages here, so they're intentionally left out.
+const QUICK_LINKS: QuickLink[] = [
+  { label: "Trending", href: "/search/trending", icon: TrendingUp },
+  { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
 ];
 
-/** Minimal shape the hero bar needs from a tool card — avoids importing the full ToolCardData type. */
-export interface HeroFeaturedTool {
-  slug: string;
-  name: string;
-  logoUrl?: string | null;
-}
+// "Browse by type" — one entry per entity the backend actually indexes.
+// (Deals, Papers, Organizations and Events from the reference design have
+// no matching page, so they're skipped.)
+const BROWSE_BY_TYPE: QuickLink[] = [
+  { label: ENTITY_META.company.label, href: ENTITY_META.company.basePath, icon: ENTITY_META.company.icon },
+  { label: ENTITY_META.model.label, href: ENTITY_META.model.basePath, icon: ENTITY_META.model.icon },
+  { label: ENTITY_META.robot.label, href: ENTITY_META.robot.basePath, icon: ENTITY_META.robot.icon },
+  { label: ENTITY_META.repository.label, href: ENTITY_META.repository.basePath, icon: ENTITY_META.repository.icon },
+  { label: ENTITY_META.device.label, href: ENTITY_META.device.basePath, icon: ENTITY_META.device.icon },
+];
+
+// "More to explore" — same idea; Prompt Pack and Countries from the
+// reference design don't exist here, so only real pages are listed.
+const MORE_TO_EXPLORE: QuickLink[] = [
+  { label: ENTITY_META.tool.label, href: ENTITY_META.tool.basePath, icon: ENTITY_META.tool.icon },
+  { label: ENTITY_META.collection.label, href: ENTITY_META.collection.basePath, icon: ENTITY_META.collection.icon },
+  { label: "Videos", href: "/videos", icon: Video },
+  { label: "News", href: "/news", icon: Newspaper },
+];
 
 /**
- * Homepage hero search bar. Previously a plain <form action="/tools"> that
- * blind-redirected on submit — now opens a live dropdown (quick links +
- * recent/popular searches when empty, autocomplete suggestions while typing)
- * so the person can preview and pick a destination instead of always being
- * thrown straight at /tools, matching TAAFT's own search-bar behavior.
+ * Homepage hero search bar. Opens a mega-menu dropdown (quick links, recent
+ * searches, browse-by-type, more-to-explore, and featured tools when empty;
+ * live autocomplete suggestions while typing) instead of blind-redirecting
+ * on submit.
  */
-export function HeroSearchBar({
-  defaultValue,
-  featuredTools = [],
-}: {
-  defaultValue?: string;
-  featuredTools?: HeroFeaturedTool[];
-}) {
+export function HeroSearchBar({ defaultValue }: { defaultValue?: string }) {
   const router = useRouter();
   const [value, setValue] = useState(defaultValue ?? "");
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { suggestions, popular, isLoading } = useAutocomplete(value);
+  const { suggestions, popular, featured, isLoading } = useHomeSearch(value);
   const { recent, addRecent, clearRecent } = useRecentSearches();
 
   const showSuggestions = value.trim().length > 0;
@@ -153,6 +92,16 @@ export function HeroSearchBar({
     addRecent(trimmed);
     setOpen(false);
     router.push(`${basePath}?q=${encodeURIComponent(trimmed)}`);
+  }
+
+  function goToTool(slug: string | null, title: string) {
+    addRecent(title);
+    setOpen(false);
+    if (slug) {
+      router.push(`/p/tools/${slug}`);
+    } else {
+      router.push(`${ENTITY_META.tool.basePath}?q=${encodeURIComponent(title)}`);
+    }
   }
 
   const recentToShow = useMemo(() => recent.slice(0, 5), [recent]);
@@ -262,65 +211,24 @@ export function HeroSearchBar({
             </div>
           ) : (
             <>
-              {QUICK_LINK_GROUPS.map((group) => (
-                <div key={group.title} className="border-b border-search-border p-2">
-                  <div className="px-2 py-1.5 text-xs font-medium text-search-text-tertiary">{group.title}</div>
-                  {group.links.map((link) => {
-                    const Icon = link.icon;
-                    return (
-                      <Link
-                        key={link.label}
-                        href={link.href}
-                        onClick={() => setOpen(false)}
-                        className="group flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
-                      >
-                        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${link.tint}`}>
-                          <Icon size={14} />
-                        </span>
-                        <span className="flex-1 text-left">{link.label}</span>
-                        <ArrowRight
-                          size={14}
-                          className="shrink-0 text-search-text-tertiary opacity-0 transition-opacity group-hover:opacity-100"
-                        />
-                      </Link>
-                    );
-                  })}
-                </div>
-              ))}
-
-              {featuredTools.length > 0 && (
-                <div className="border-b border-search-border p-2">
-                  <div className="px-2 py-1.5 text-xs font-medium text-search-text-tertiary">Featured</div>
-                  {featuredTools.map((tool) => (
+              <div className="border-b border-search-border p-2">
+                {QUICK_LINKS.map((link) => {
+                  const Icon = link.icon;
+                  return (
                     <Link
-                      key={tool.slug}
-                      href={`/tools/${tool.slug}`}
+                      key={link.label}
+                      href={link.href}
                       onClick={() => setOpen(false)}
-                      className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm hover:bg-search-surface-hover"
+                      className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
                     >
-                      {tool.logoUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={tool.logoUrl}
-                          alt=""
-                          className="h-7 w-7 shrink-0 rounded-md object-cover"
-                        />
-                      ) : (
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
-                          <ENTITY_META.tool.icon size={14} />
-                        </span>
-                      )}
-                      <span className="flex flex-1 items-center gap-1.5 truncate text-search-text-primary">
-                        <span className="truncate">{tool.name}</span>
-                        <BadgeCheck size={13} className="shrink-0 text-search-accent" />
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
+                        <Icon size={14} />
                       </span>
-                      <span className="shrink-0 rounded-full border border-search-border-hover bg-search-surface-active px-2 py-0.5 text-[10px] font-medium text-search-text-secondary">
-                        Featured
-                      </span>
+                      {link.label}
                     </Link>
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
 
               {recentToShow.length > 0 && (
                 <div className="border-b border-search-border p-2">
@@ -350,22 +258,92 @@ export function HeroSearchBar({
                 </div>
               )}
 
-              <div className="p-2">
-                <div className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-search-text-tertiary">
-                  <TrendingUp size={13} />
-                  Popular searches
+              <div className="border-b border-search-border p-2">
+                <div className="px-2 py-2 text-center text-[11px] font-medium uppercase tracking-wide text-search-text-tertiary">
+                  Browse by type
                 </div>
-                {popular.map((term) => (
-                  <button
-                    key={term}
-                    type="button"
-                    onClick={() => goToResults(term)}
-                    className="flex w-full items-center rounded-md px-2.5 py-2 text-left text-sm text-search-text-primary hover:bg-search-surface-hover"
-                  >
-                    {term}
-                  </button>
-                ))}
+                {BROWSE_BY_TYPE.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
+                        <Icon size={14} />
+                      </span>
+                      {link.label}
+                    </Link>
+                  );
+                })}
               </div>
+
+              <div className="border-b border-search-border p-2">
+                <div className="px-2 py-2 text-center text-[11px] font-medium uppercase tracking-wide text-search-text-tertiary">
+                  More to explore
+                </div>
+                {MORE_TO_EXPLORE.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
+                        <Icon size={14} />
+                      </span>
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {featured.length > 0 && (
+                <div className="border-b border-search-border p-2">
+                  <div className="px-2 py-2 text-center text-[11px] font-medium uppercase tracking-wide text-search-text-tertiary">
+                    Featured
+                  </div>
+                  {featured.map((tool) => (
+                    <button
+                      key={tool.id}
+                      type="button"
+                      onClick={() => goToTool(tool.slug, tool.title)}
+                      className="flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm hover:bg-search-surface-hover"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-xs font-semibold text-search-text-secondary">
+                        {tool.title.charAt(0).toUpperCase()}
+                      </span>
+                      <span className="flex-1 truncate text-search-text-primary">{tool.title}</span>
+                      <span className="shrink-0 rounded-full border border-search-border px-2 py-0.5 text-[10px] text-search-text-tertiary">
+                        {tool.category}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {popular.length > 0 && (
+                <div className="p-2">
+                  <div className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-search-text-tertiary">
+                    <TrendingUp size={13} />
+                    Popular searches
+                  </div>
+                  {popular.map((term) => (
+                    <button
+                      key={term}
+                      type="button"
+                      onClick={() => goToResults(term)}
+                      className="flex w-full items-center rounded-md px-2.5 py-2 text-left text-sm text-search-text-primary hover:bg-search-surface-hover"
+                    >
+                      {term}
+                    </button>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { Repository } from "@/lib/types";
 import { fetchAllRepos } from "@/lib/api";
 import { RepositoryHero } from "@/components/ui/RepositoryHero";
@@ -10,6 +11,9 @@ import { RepositoryRow } from "@/components/ui/RepositoryRow";
 import { resolveRepositoryLicense } from "@/lib/utils";
 
 export function RepositoriesClient() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("q") || "";
+
   const [repos, setRepos] = useState<Repository[]>([]);
   const [visibleCount, setVisibleCount] = useState(15);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,8 +23,8 @@ export function RepositoriesClient() {
   const [isLicenseDropdownOpen, setIsLicenseDropdownOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
-  const [repoSearchQuery, setRepoSearchQuery] = useState("");
-  const [activeRepoSearch, setActiveRepoSearch] = useState("");
+  const [repoSearchQuery, setRepoSearchQuery] = useState(initialQuery);
+  const [activeRepoSearch, setActiveRepoSearch] = useState(initialQuery);
   const [isRepoFilterOpen, setIsRepoFilterOpen] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -29,7 +33,7 @@ export function RepositoriesClient() {
     async function getRepos() {
       try {
         const data = await fetchAllRepos();
-        setRepos(data || []);
+        setRepos(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error("Failed to fetch repositories:", e);
       } finally {
@@ -258,4 +262,3 @@ export function RepositoriesClient() {
     </div>
   );
 }
-

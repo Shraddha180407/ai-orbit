@@ -1,24 +1,35 @@
 import { useEffect, useState } from "react";
 import { useDebounce } from "./useDebounce";
-import { fetchSearchAutocomplete, fetchPopularSearches, RealSearchSuggestion } from "@/lib/api";
+import {
+  fetchSearchAutocomplete,
+  fetchPopularSearches,
+  fetchFeaturedTools,
+  RealSearchSuggestion,
+} from "@/lib/api";
 
 /**
  * Real-backend counterpart to hooks/useAutocomplete.ts (which is wired to
  * the mock search module used by /search). This one calls
- * /api/v1/search/autocomplete and /api/v1/search/popular directly, for the
- * homepage hero search bar where suggestions must point at real DB rows.
+ * /api/v1/search/autocomplete, /api/v1/search/popular and
+ * /api/v1/search/featured directly, for the homepage hero search bar where
+ * suggestions must point at real DB rows.
  */
 export function useHomeSearch(query: string) {
   const [suggestions, setSuggestions] = useState<RealSearchSuggestion[]>([]);
   const [popular, setPopular] = useState<string[]>([]);
+  const [featured, setFeatured] = useState<RealSearchSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
   const debounced = useDebounce(query, 200);
 
-  // Popular terms only need to load once (empty-query state).
+  // Popular terms + featured tools only need to load once (empty-query state).
   useEffect(() => {
     let cancelled = false;
     fetchPopularSearches().then((terms) => {
       if (!cancelled) setPopular(terms);
+    });
+    fetchFeaturedTools().then((tools) => {
+      if (!cancelled) setFeatured(tools);
     });
     return () => {
       cancelled = true;
@@ -48,5 +59,5 @@ export function useHomeSearch(query: string) {
     };
   }, [debounced]);
 
-  return { suggestions, popular, isLoading };
+  return { suggestions, popular, featured, isLoading };
 }

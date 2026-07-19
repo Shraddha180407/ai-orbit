@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
 import { AIModel } from "@/lib/types";
 import { fetchAllModels } from "@/lib/api";
@@ -9,6 +10,8 @@ export function ModelsClient() {
   const [models, setModels] = useState<AIModel[]>([]);
   const [visibleCount, setVisibleCount] = useState(15);
   const [isLoading, setIsLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const q = (searchParams.get("q") || "").trim();
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -26,9 +29,19 @@ export function ModelsClient() {
     getModels();
   }, []);
 
+  const filteredModels = useMemo(() => {
+    if (!q) return models;
+    const needle = q.toLowerCase();
+    return models.filter((m) => m.name.toLowerCase().includes(needle));
+  }, [models, q]);
+
+  useEffect(() => {
+    setVisibleCount(15);
+  }, [q]);
+
   // IntersectionObserver for client-side endless scroll
   useEffect(() => {
-    if (isLoading || visibleCount >= models.length) return;
+    if (isLoading || visibleCount >= filteredModels.length) return;
 
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
@@ -46,9 +59,9 @@ export function ModelsClient() {
         observer.unobserve(currentSentinel);
       }
     };
-  }, [isLoading, visibleCount, models.length]);
+  }, [isLoading, visibleCount, filteredModels.length]);
 
-  const visibleModels = models.slice(0, visibleCount);
+  const visibleModels = filteredModels.slice(0, visibleCount);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
@@ -59,7 +72,11 @@ export function ModelsClient() {
             AI Language Models
           </h1>
           <p className="text-sm text-[#A1A1AA] mt-2">
-            Discover and explore state-of-the-art LLMs, neural architectures, and vision models pushing machine intelligence limits.
+            {q ? (
+              <>Showing results for <span className="text-white font-medium">&ldquo;{q}&rdquo;</span></>
+            ) : (
+              "Discover and explore state-of-the-art LLMs, neural architectures, and vision models pushing machine intelligence limits."
+            )}
           </p>
         </div>
 
@@ -69,9 +86,9 @@ export function ModelsClient() {
               <div key={i} className="h-20 animate-pulse bg-[#131316]/50" />
             ))}
           </div>
-        ) : models.length === 0 ? (
+        ) : filteredModels.length === 0 ? (
           <div className="text-center py-20 border border-[#232326] bg-[#131316] rounded-xl">
-            <p className="text-[#A1A1AA] text-sm">No models found.</p>
+            <p className="text-[#A1A1AA] text-sm">{q ? `No models match "${q}".` : "No models found."}</p>
           </div>
         ) : (
           <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
@@ -115,7 +132,7 @@ export function ModelsClient() {
             ))}
 
             {/* Sentinel for infinite scroll */}
-            {models.length > 0 && visibleCount < models.length && (
+            {filteredModels.length > 0 && visibleCount < filteredModels.length && (
               <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
               </div>

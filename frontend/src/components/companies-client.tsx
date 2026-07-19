@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import Building from 'lucide-react/dist/esm/icons/building';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin';
 import { Company } from "@/lib/types";
@@ -11,6 +12,8 @@ export function CompaniesClient() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [visibleCount, setVisibleCount] = useState(15);
   const [isLoading, setIsLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const q = (searchParams.get("q") || "").trim();
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -28,9 +31,20 @@ export function CompaniesClient() {
     getCompanies();
   }, []);
 
+  const filteredCompanies = useMemo(() => {
+    if (!q) return companies;
+    const needle = q.toLowerCase();
+    return companies.filter((c) => c.name.toLowerCase().includes(needle));
+  }, [companies, q]);
+
+  // Reset pagination whenever the active query changes.
+  useEffect(() => {
+    setVisibleCount(15);
+  }, [q]);
+
   // IntersectionObserver for client-side endless scroll
   useEffect(() => {
-    if (isLoading || visibleCount >= companies.length) return;
+    if (isLoading || visibleCount >= filteredCompanies.length) return;
 
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
@@ -48,9 +62,9 @@ export function CompaniesClient() {
         observer.unobserve(currentSentinel);
       }
     };
-  }, [isLoading, visibleCount, companies.length]);
+  }, [isLoading, visibleCount, filteredCompanies.length]);
 
-  const visibleCompanies = companies.slice(0, visibleCount);
+  const visibleCompanies = filteredCompanies.slice(0, visibleCount);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
@@ -61,7 +75,13 @@ export function CompaniesClient() {
             AI Companies
           </h1>
           <p className="text-sm text-[#A1A1AA] mt-2">
-            Explore leading AI research labs, software vendors, and hardware makers in the global ecosystem.
+            {q ? (
+              <>
+                Showing results for <span className="text-white font-medium">&ldquo;{q}&rdquo;</span>
+              </>
+            ) : (
+              "Explore leading AI research labs, software vendors, and hardware makers in the global ecosystem."
+            )}
           </p>
         </div>
 
@@ -71,9 +91,11 @@ export function CompaniesClient() {
               <div key={i} className="h-20 animate-pulse bg-[#131316]/50" />
             ))}
           </div>
-        ) : companies.length === 0 ? (
+        ) : filteredCompanies.length === 0 ? (
           <div className="text-center py-20 border border-[#232326] bg-[#131316] rounded-xl">
-            <p className="text-[#A1A1AA] text-sm">No companies found.</p>
+            <p className="text-[#A1A1AA] text-sm">
+              {q ? `No companies match "${q}".` : "No companies found."}
+            </p>
           </div>
         ) : (
           <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
@@ -117,7 +139,7 @@ export function CompaniesClient() {
             ))}
 
             {/* Sentinel for infinite scroll */}
-            {companies.length > 0 && visibleCount < companies.length && (
+            {filteredCompanies.length > 0 && visibleCount < filteredCompanies.length && (
               <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
               </div>

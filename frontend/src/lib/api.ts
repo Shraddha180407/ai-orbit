@@ -82,13 +82,25 @@ export async function fetchAllRepos(): Promise<any[]> {
   // Set NEXT_PUBLIC_USE_DUMMY_REPOSITORIES=true in .env.local to load dummy repositories.
   const USE_DUMMY = process.env.NEXT_PUBLIC_USE_DUMMY_REPOSITORIES === "true";
   if (USE_DUMMY) {
-    return DUMMY_REPOSITORIES;
+    return Array.isArray(DUMMY_REPOSITORIES) ? DUMMY_REPOSITORIES : [];
   }
 
   const url = `${API_URL}/api/v1/repositories`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
+    if (!res.ok) return [];
+    const data = await res.json();
+    // The backend returns a bare array on success and `{ error: ... }` on
+    // failure (still possible to hit even when res.ok is true behind a
+    // proxy/edge cache), so normalize defensively rather than trusting the
+    // shape — this is what was crashing repos.forEach() downstream.
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.repositories)) return data.repositories;
+    return [];
+  } catch (e) {
+    console.error("Failed to fetch repositories:", e);
+    return [];
+  }
 }
 
 
@@ -111,6 +123,45 @@ export async function fetchAllDevices(): Promise<any[]> {
   const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) return [];
   return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Global search API helpers (cross-entity autocomplete + popular terms)
+// ---------------------------------------------------------------------------
+
+export interface RealSearchSuggestion {
+  id: string;
+  type: "tool" | "company" | "model" | "repository" | "robot" | "device";
+  title: string;
+  category: string;
+  slug: string | null;
+}
+
+export async function fetchSearchAutocomplete(q: string): Promise<RealSearchSuggestion[]> {
+  const trimmed = q.trim();
+  if (!trimmed) return [];
+  const url = `${API_URL}/api/v1/search/autocomplete?q=${encodeURIComponent(trimmed)}`;
+  const res = await fetch(url);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.suggestions ?? [];
+}
+
+export async function fetchPopularSearches(): Promise<string[]> {
+  const url = `${API_URL}/api/v1/search/popular`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.popular ?? [];
+}
+
+/** Featured tools for the search dropdown's empty-query "Featured" section. */
+export async function fetchFeaturedTools(): Promise<RealSearchSuggestion[]> {
+  const url = `${API_URL}/api/v1/search/featured`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.featured ?? [];
 }
 
 /**
