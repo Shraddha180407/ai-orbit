@@ -74,44 +74,136 @@ export type SimilarToolData = {
   avgRating: number | null;
 };
 
-// ============================================================
-// APPEND THIS to the END of frontend/src/lib/types.ts
-// Do not remove or modify any existing type above it (ToolCardData,
-// ToolDetailData, etc. belong to Module 3).
-// ============================================================
 
-export type CollectionsSearchParams = {
-  category?: string;
-  page?: string;
-  q?: string;
-};
+// lib/types.ts
 
-export type CollectionListItem = {
+export interface CreatorProfile {
   id: string;
-  slug: string;
-  title: string;
-  description: string;
-  curatedBy: string;
-  category: string;
-  featured: boolean;
-  updatedAt: string;
-  toolCount: number;
-  previewTools: { logoUrl: string | null; name: string }[];
-};
+  name: string;
+  image: string | null;
+}
 
-export type CollectionDetailData = {
+export interface CollectionCategory {
+  categoryName: string;
+}
+
+export interface CollectionCounts {
+  relatedModels: number;
+  relatedCompanies: number;
+}
+
+export interface CollectionListItem {
   id: string;
+  name: string;
   slug: string;
-  title: string;
-  description: string;
-  curatedBy: string;
-  category: string;
-  featured: boolean;
-  updatedAt: string;
-  toolCount: number;
-  tools: ToolCardData[]; // reuses Module 3's existing ToolCardData shape
-};
 
+  description: string;
+
+  isFeatured: boolean;
+  isCurated: boolean;
+
+  toolCount: number;
+
+  // Backend sorts/filters using this.
+  // Ask backend to include it if it isn't already returned.
+  updatedAt: string;
+
+  creatorType: "EDITORIAL" | "COMMUNITY";
+
+  creator: CreatorProfile;
+
+  categories: CollectionCategory[];
+
+  _count: CollectionCounts;
+
+  // Optional until backend sends it
+  bookmarked?: boolean;
+}
+
+export interface CollectionsListResponse {
+  items: CollectionListItem[];
+  nextCursor: string | null;
+}
+
+export interface CollectionDetailsResponse {
+  collection: CollectionListItem & {
+    tools: any[];
+    relatedModels: any[];
+    relatedCompanies: any[];
+  };
+
+  nextToolCursor: string | null;
+}
+
+export type CollectionSortOption =
+  | "recently_updated"
+  | "oldest_updated"
+  | "name_asc"
+  | "name_desc"
+  | "most_tools"
+  | "fewest_tools"
+  | "most_bookmarked"
+  | "most_related_models"
+  | "most_related_companies"
+  | "featured_first";
+
+export const SORT_OPTIONS: {
+  value: CollectionSortOption;
+  label: string;
+}[] = [
+  {
+    value: "recently_updated",
+    label: "Recently Updated",
+  },
+  {
+    value: "oldest_updated",
+    label: "Oldest Updated",
+  },
+  {
+    value: "name_asc",
+    label: "Name (A-Z)",
+  },
+  {
+    value: "name_desc",
+    label: "Name (Z-A)",
+  },
+  {
+    value: "most_tools",
+    label: "Most Tools",
+  },
+  {
+    value: "fewest_tools",
+    label: "Fewest Tools",
+  },
+  {
+    value: "most_bookmarked",
+    label: "Most Bookmarked",
+  },
+  {
+    value: "most_related_models",
+    label: "Most Related Models",
+  },
+  {
+    value: "most_related_companies",
+    label: "Most Related Companies",
+  },
+  {
+    value: "featured_first",
+    label: "Featured First",
+  },
+];
+
+export interface CollectionsQueryParams {
+  search?: string;
+  sort?: SortOption;
+  category?: string[];
+  creatorType?: "EDITORIAL" | "COMMUNITY";
+  featured?: boolean;
+  hasRelatedModels?: boolean;
+  hasRelatedCompanies?: boolean;
+  updatedWithin?: "7d" | "30d" | "90d";
+  cursor?: string;
+}
 export type Company = {
   id: string;
   slug: string;

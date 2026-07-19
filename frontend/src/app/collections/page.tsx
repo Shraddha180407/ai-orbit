@@ -1,86 +1,98 @@
 import CollectionsPageClient from "./CollectionsPageClient";
+import { CategoryNav } from "@/components/CategoryNav"; 
 import type { CollectionListItem } from "@/lib/types";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 
-
-
-// 1. Optional Server Component configuration
 export const metadata = {
   title: "Curated Collections | Tool Directory",
   description: "Explore curated lists and stack configurations by domain experts.",
 };
 
-// 2. Data Fetcher / Mock Seeding (Replace with your actual DB query if needed)
 async function getCollections(): Promise<CollectionListItem[]> {
-  // Simulating an API call or database round-trip
   return [
     {
       id: "col-1",
+      name: "Enterprise Frontend Architecture Stack",
       slug: "frontend-architecture-2026",
-      title: "Enterprise Frontend Architecture Stack",
       description: "Production-ready open source configurations engineered for high-scale micro-frontends, containing atomic layouts and modern reactive virtualization strategies.",
-      curatedBy: "Alex Rivers",
-      category: "Engineering",
-      featured: true,
-      updatedAt: new Date().toISOString(),
+      isFeatured: true,
+      isCurated: true,
       toolCount: 14,
-      previewTools: [
-        { name: "Next.js", logoUrl: "" },
-        { name: "Tailwind CSS", logoUrl: "" },
-        { name: "TypeScript", logoUrl: "" },
-        { name: "TanStack Virtual", logoUrl: "" }
-      ]
+      updatedAt: new Date().toISOString(), // Today
+      creator: {
+        id: "user-1",
+        name: "Alex Rivers",
+        image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
+        isOfficial: true
+      },
+      categories: [
+        { categoryName: "Engineering" },
+        { categoryName: "Architecture" }
+      ],
+      _count: {
+        relatedModels: 5,
+        relatedCompanies: 12
+      }
     },
     {
       id: "col-2",
+      name: "Data Science & Pipeline Processing Essentials",
       slug: "data-science-tooling",
-      title: "Data Science & Pipeline Processing Essentials",
       description: "A comprehensive map of machine learning evaluation toolsets, vector database indices, and high-performance streaming pipelines.",
-      curatedBy: "Dr. Elena Rostova",
-      category: "Data Science",
-      featured: false,
-      updatedAt: new Date(Date.now() - 86400000 * 3).toISOString(), // 3 days ago
+      isFeatured: false,
+      isCurated: true,
       toolCount: 8,
-      previewTools: [
-        { name: "Python", logoUrl: "" },
-        { name: "Jupyter", logoUrl: "" },
-        { name: "Polars", logoUrl: "" },
-        { name: "DuckDB", logoUrl: "" }
-      ]
+      updatedAt: new Date(Date.now() - 86400000 * 3).toISOString(), // 3 days ago
+      creator: {
+        id: "user-2",
+        name: "Dr. Elena Rostova",
+        image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=100&q=80",
+        isOfficial: false
+      },
+      categories: [
+        { categoryName: "Data Science" },
+        { categoryName: "Pipelines" }
+      ],
+      _count: {
+        relatedModels: 24,
+        relatedCompanies: 4
+      }
     },
     {
       id: "col-3",
+      name: "Design System Foundations & Tokens",
       slug: "design-systems-foundations",
-      title: "Design System Foundations & Tokens",
       description: "Curated libraries mapping design primitives, headless component configurations, and automation systems tailored for cohesive cross-platform interfaces.",
-      curatedBy: "Marcus Vance",
-      category: "Design",
-      featured: true,
-      updatedAt: new Date(Date.now() - 86400000 * 7).toISOString(), // 1 week ago
+      isFeatured: true,
+      isCurated: false,
       toolCount: 22,
-      previewTools: [
-        { name: "Figma", logoUrl: "" },
-        { name: "Radix UI", logoUrl: "" },
-        { name: "Stitches", logoUrl: "" },
-        { name: "Storybook", logoUrl: "" }
-      ]
+      updatedAt: new Date(Date.now() - 86400000 * 7).toISOString(), // 1 week ago
+      creator: {
+        id: "user-3",
+        name: "Marcus Vance",
+        image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80",
+        isOfficial: true
+      },
+      categories: [
+        { categoryName: "Design" }
+      ],
+      _count: {
+        relatedModels: 0,
+        relatedCompanies: 8
+      }
     }
   ];
 }
 
-// 3. Main Server Page Entry Route
 export default async function CollectionsPage() {
   const initialData = await getCollections();
 
   return (
-    <div>
-      <Header/>
-    <main className="min-h-screen bg-background text-foreground antialiased selection:bg-accent/20">
-      <CollectionsPageClient initialCollections={initialData} />
-    </main>
-    <Footer />
+    <div className="relative min-h-screen bg-[#000000] text-[#E4E4E7] antialiased">
+      <CategoryNav />
+      
+      <main className="relative z-10 bg-[#000000]">
+        <CollectionsPageClient initialCollections={initialData} />
+      </main>
     </div>
-    
   );
 }
