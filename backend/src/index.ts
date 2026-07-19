@@ -14,6 +14,8 @@ import { devicesRouter } from './modules/devices/devices.routes.js'
 import { modelsRouter } from './modules/models/models.routes.js'
 import { repositoriesRouter } from './modules/repositories/repositories.routes.js'
 import { robotsRouter } from './modules/robots/robots.routes.js'
+import { searchRouter } from './modules/search/search.routes.js'
+import { collectionsRouter } from './modules/collections/collections.routes.js'
 import { runIngestion } from './modules/ingestion/ingestion.service.js'
 import type { IngestionContext } from './modules/ingestion/pipeline.js'
 
@@ -57,6 +59,8 @@ app.route('/api/v1/devices', devicesRouter)
 app.route('/api/v1/models', modelsRouter)
 app.route('/api/v1/repositories', repositoriesRouter)
 app.route('/api/v1/robots', robotsRouter)
+app.route('/api/v1/search', searchRouter)
+app.route('/api/v1/collections', collectionsRouter)
 
 app.get('/', (c) => {
   return c.json({
@@ -65,7 +69,9 @@ app.get('/', (c) => {
       health: "/health",
       homepage: "/api/v1/homepage",
       tools: "/api/v1/tools",
-      news: "/api/news"
+      news: "/api/news",
+      search: "/api/v1/search/autocomplete, /api/v1/search/popular",
+      collections: "/api/v1/collections"
     }
   })
 })

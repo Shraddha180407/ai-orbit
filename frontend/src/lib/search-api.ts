@@ -5,17 +5,19 @@ import {
   SearchView,
   SortOption,
 } from "@/types/entities";
-import { CATEGORIES, COUNTRY_NAMES, MAX_PRICE, MOCK_ENTITIES, POPULAR_SEARCH_TERMS, PRICING_OPTIONS, TAG_POOL } from "./mockData";
+import { CATEGORIES, COUNTRY_NAMES, MAX_PRICE, MOCK_ENTITIES, PRICING_OPTIONS, TAG_POOL } from "./mockData";
+import { API_URL } from "./api";
 
 // ---------------------------------------------------------------------------
-// Swap-in point for the real backend.
-// Every function below returns exactly what its real REST equivalent will:
-//   getAutocomplete   -> GET /api/search/autocomplete?q=
-//   getPopularSearches-> GET /api/search/popular
-//   getSearchResults  -> GET /api/search?q=&types=&categories=&sort=&page=
-// When the main repo is ready, replace the function bodies with `fetch(...)`
-// calls to those endpoints and delete mockData.ts. Nothing in /components
-// or /hooks needs to change because they only depend on these signatures.
+// getAutocomplete and getPopularSearches are backed by the real API —
+// GET /api/v1/search/autocomplete?q= and GET /api/v1/search/popular — which
+// query the actual Tool/Company/AIModel/News/Video/Repository/Robot/Device
+// tables instead of the mock catalog below.
+//
+// getSearchResults, getFacetCounts, and getEntityBySlug still run against
+// MOCK_ENTITIES: they power the full faceted /search/results page, which
+// spans entity types (collection/task/country/fundraise/investor) that have
+// no real table yet. Swap these once that page has a real backend too.
 // ---------------------------------------------------------------------------
 
 const NETWORK_DELAY_MS = 380;
@@ -37,26 +39,16 @@ function maybeFail() {
 export async function getAutocomplete(
   query: string
 ): Promise<AutocompleteSuggestion[]> {
-  maybeFail();
-  if (!query.trim()) return delay([]);
-  const q = query.toLowerCase();
-  const results = MOCK_ENTITIES.filter((e) =>
-    e.title.toLowerCase().includes(q)
-  )
-    .sort((a, b) => b.popularityScore - a.popularityScore)
-    .slice(0, 6)
-    .map<AutocompleteSuggestion>((e) => ({
-      id: e.id,
-      type: e.type,
-      title: e.title,
-      category: e.category,
-    }));
-  return delay(results, 220);
+  if (!query.trim()) return [];
+  const res = await fetch(`${API_URL}/api/v1/search/autocomplete?q=${encodeURIComponent(query.trim())}`);
+  if (!res.ok) throw new Error("Couldn't load suggestions.");
+  return res.json();
 }
 
 export async function getPopularSearches(): Promise<string[]> {
-  maybeFail();
-  return delay(POPULAR_SEARCH_TERMS, 150);
+  const res = await fetch(`${API_URL}/api/v1/search/popular`);
+  if (!res.ok) throw new Error("Couldn't load popular searches.");
+  return res.json();
 }
 
 export interface SearchQueryParams {

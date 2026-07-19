@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import Search from 'lucide-react/dist/esm/icons/search';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin';
 
 import { API_URL } from "@/lib/api";
@@ -11,6 +10,7 @@ import { API_URL } from "@/lib/api";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { DiscoverySection } from "@/components/DiscoverySection";
+import { HeroSearchBar } from "@/components/HeroSearchBar";
 import { HeroFeatureChips } from "@/components/HeroFeatureChips";
 import { HeroCategoryPills } from "@/components/HeroCategoryPills";
 import { SortDropdown } from "@/components/SortDropdown";
@@ -128,7 +128,7 @@ export function HomeClient() {
 
       {/* 2. Hero Section */}
       <section 
-        className="relative w-full flex flex-col items-center pt-8 px-6 overflow-hidden"
+        className="relative w-full flex flex-col items-center pt-8 px-6"
         style={{
           backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
@@ -143,29 +143,7 @@ export function HomeClient() {
             The AI Signal helps you find the best AI tools of 2026 easily!
           </p>
 
-          <form action="/tools" method="GET" className="relative w-full max-w-[900px] mx-auto mb-[22px] group">
-            <div className="relative w-full rounded-lg border border-[#232326] bg-[#111113] h-[48px] flex items-center px-5 pr-20 focus-within:border-neutral-500 transition-all duration-300">
-              <input
-                type="text"
-                name="q"
-                defaultValue={params.q}
-                placeholder="Search AI tools, models, companies..."
-                className="w-full bg-transparent text-sm text-white placeholder:text-[#71717A] focus:outline-none"
-              />
-              <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border border-[#232326] bg-[#18181C] px-1.5 font-mono text-[9px] text-[#71717A] pointer-events-none">
-                  <span>⌘</span>K
-                </kbd>
-                <button 
-                  type="submit" 
-                  className="text-[#71717A] hover:text-white transition-colors"
-                  aria-label="Search"
-                >
-                  <Search size={16} />
-                </button>
-              </div>
-            </div>
-          </form>
+          <HeroSearchBar defaultValue={params.q} featuredTools={tools.slice(0, 3)} />
 
           <div className="mb-[18px]">
             <HeroFeatureChips />
