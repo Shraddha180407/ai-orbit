@@ -33,6 +33,8 @@ export interface NewsArticleRecord {
   up: number;
   down: number;
   filters: string[];
+  /** Whether the requesting clientId has bookmarked this article — false when no clientId was sent, never omitted. See NewsService.withTrendingScores. */
+  bookmarked: boolean;
 }
 
 export interface NewsArticleDTO extends NewsArticleRecord {

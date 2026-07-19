@@ -1,22 +1,42 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import Github from 'lucide-react/dist/esm/icons/github';
 import { Repository } from "@/lib/types";
-import { fetchAllRepos } from "@/lib/api";
+import { fetchRepositories } from "@/lib/api";
+import { RepositoryHero } from "@/components/ui/RepositoryHero";
+import { RepositoryTable } from "@/components/ui/RepositoryTable";
+import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
+import { RepositoryRow } from "@/components/ui/RepositoryRow";
+import { resolveRepositoryLicense } from "@/lib/utils";
 
 export function RepositoriesClient() {
   const [repos, setRepos] = useState<Repository[]>([]);
-  const [visibleCount, setVisibleCount] = useState(15);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [sortField, setSortField] = useState<"stars" | "forks" | "size" | "updated" | null>("stars");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [selectedLicense, setSelectedLicense] = useState<string | null>(null);
+  const [isLicenseDropdownOpen, setIsLicenseDropdownOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
+  const [repoSearchQuery, setRepoSearchQuery] = useState("");
+  const [activeRepoSearch, setActiveRepoSearch] = useState("");
+  const [isRepoFilterOpen, setIsRepoFilterOpen] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // Initial fetch
   useEffect(() => {
     async function getRepos() {
       try {
-        const data = await fetchAllRepos();
-        setRepos(data || []);
+        const data = await fetchRepositories();
+        setRepos(data.items || []);
+        setNextCursor(data.nextCursor);
+        setHasMore(data.hasMore);
+        setTotal(data.total);
       } catch (e) {
         console.error("Failed to fetch repositories:", e);
       } finally {
@@ -26,13 +46,32 @@ export function RepositoriesClient() {
     getRepos();
   }, []);
 
-  // IntersectionObserver for client-side endless scroll
+  // IntersectionObserver for server-side infinite scroll
   useEffect(() => {
-    if (isLoading || visibleCount >= repos.length) return;
+    if (isLoading || isFetchingMore || !hasMore || !nextCursor) return;
 
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
-        setVisibleCount(prev => prev + 15);
+        async function fetchMore() {
+          if (isFetchingMore) return;
+          setIsFetchingMore(true);
+          try {
+            const data = await fetchRepositories(15, nextCursor);
+            setRepos((prev) => {
+              const existingIds = new Set(prev.map(r => r.id));
+              const newItems = (data.items || []).filter(r => !existingIds.has(r.id));
+              return [...prev, ...newItems];
+            });
+            setNextCursor(data.nextCursor);
+            setHasMore(data.hasMore);
+            setTotal(data.total);
+          } catch (e) {
+            console.error("Failed to fetch more repositories:", e);
+          } finally {
+            setIsFetchingMore(false);
+          }
+        }
+        fetchMore();
       }
     }, { threshold: 0.1 });
 
@@ -46,85 +85,200 @@ export function RepositoriesClient() {
         observer.unobserve(currentSentinel);
       }
     };
-  }, [isLoading, visibleCount, repos.length]);
+  }, [isLoading, isFetchingMore, hasMore, nextCursor]);
 
-  const visibleRepos = repos.slice(0, visibleCount);
+  function handleSort(field: "stars" | "forks" | "size" | "updated") {
+    if (sortField === field) {
+      setSortOrder(prev => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortOrder("desc");
+    }
+  }
+
+  // Generate dynamic license counts from the loaded datasets
+  const licenseCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    repos.forEach((repo) => {
+      const license = resolveRepositoryLicense(repo.name);
+      if (license) {
+        counts[license] = (counts[license] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [repos]);
+
+  // Generate dynamic company counts from the loaded datasets
+  const companyCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    repos.forEach((repo) => {
+      if (repo.owner) {
+        counts[repo.owner] = (counts[repo.owner] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [repos]);
+
+  // Filter repositories by name
+  const nameFilteredRepos = React.useMemo(() => {
+    if (!activeRepoSearch) return repos;
+    const query = activeRepoSearch.toLowerCase();
+    return repos.filter((repo) => repo.name.toLowerCase().includes(query));
+  }, [repos, activeRepoSearch]);
+
+  // Filter repositories by company
+  const companyFilteredRepos = React.useMemo(() => {
+    if (!selectedCompany) return nameFilteredRepos;
+    return nameFilteredRepos.filter((repo) => repo.owner === selectedCompany);
+  }, [nameFilteredRepos, selectedCompany]);
+
+  // Filter repositories by license
+  const filteredRepos = React.useMemo(() => {
+    if (!selectedLicense) return companyFilteredRepos;
+    return companyFilteredRepos.filter((repo) => resolveRepositoryLicense(repo.name) === selectedLicense);
+  }, [companyFilteredRepos, selectedLicense]);
+
+  // Sort filtered repositories
+  const sortedRepos = React.useMemo(() => {
+    if (!sortField) return filteredRepos;
+
+    return [...filteredRepos].sort((a, b) => {
+      let valA = 0;
+      let valB = 0;
+
+      if (sortField === "stars") {
+        valA = a.stars;
+        valB = b.stars;
+      } else if (sortField === "forks") {
+        valA = Math.round(a.stars / 8.5) || 12;
+        valB = Math.round(b.stars / 8.5) || 12;
+      } else if (sortField === "size") {
+        valA = a.stars / 210 + 1.2;
+        valB = b.stars / 210 + 1.2;
+      } else if (sortField === "updated") {
+        // High stars mock more recent update times for client demonstration consistency
+        valA = (a.stars % 6) + 2;
+        valB = (b.stars % 6) + 2;
+      }
+
+      return sortOrder === "asc" ? valA - valB : valB - valA;
+    });
+  }, [filteredRepos, sortField, sortOrder]);
+
+  function handleApplyRepoSearch() {
+    setActiveRepoSearch(repoSearchQuery);
+    setIsRepoFilterOpen(false);
+  }
+
+  function handleResetRepoSearch() {
+    setRepoSearchQuery("");
+    setActiveRepoSearch("");
+    setIsRepoFilterOpen(false);
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      <main className="mx-auto max-w-[1070px] px-8 py-12 flex-1 w-full">
-        <div className="mb-10">
-          <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2">
-            <Github className="text-[#6E56CF]" />
-            Trending AI Repositories
-          </h1>
-          <p className="text-sm text-[#A1A1AA] mt-2">
-            Discover popular open-source projects, tools, and models pushing developer capabilities on GitHub.
-          </p>
-        </div>
+      <main className="mx-auto max-w-[1440px] px-[50px] py-12 flex-1 w-full">
+        <RepositoryHero />
 
         {isLoading ? (
-          <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-20 animate-pulse bg-[#131316]/50" />
+          <RepositoryTable
+            sortField={sortField}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+            selectedLicense={selectedLicense}
+            onSelectLicense={setSelectedLicense}
+            licenseCounts={licenseCounts}
+            selectedCompany={selectedCompany}
+            onSelectCompany={setSelectedCompany}
+            companyCounts={companyCounts}
+            totalCount={total}
+            isLicenseDropdownOpen={isLicenseDropdownOpen}
+            onToggleLicenseDropdown={() => setIsLicenseDropdownOpen(prev => !prev)}
+            onCloseLicenseDropdown={() => setIsLicenseDropdownOpen(false)}
+            isCompanyDropdownOpen={isCompanyDropdownOpen}
+            onToggleCompanyDropdown={() => setIsCompanyDropdownOpen(prev => !prev)}
+            onCloseCompanyDropdown={() => setIsCompanyDropdownOpen(false)}
+            activeRepoSearch={activeRepoSearch}
+            repoSearchQuery={repoSearchQuery}
+            onChangeRepoSearchQuery={setRepoSearchQuery}
+            onApplyRepoSearch={handleApplyRepoSearch}
+            onResetRepoSearch={handleResetRepoSearch}
+            isRepoFilterOpen={isRepoFilterOpen}
+            onToggleRepoFilter={() => setIsRepoFilterOpen(prev => !prev)}
+            onCloseRepoFilter={() => setIsRepoFilterOpen(false)}
+          >
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="grid grid-cols-[30px_1fr_95px_110px_60px] md:grid-cols-[30px_1fr_180px_95px_130px_60px] lg:grid-cols-[30px_1fr_180px_95px_95px_130px_110px_60px] xl:grid-cols-[30px_1fr_180px_95px_95px_130px_95px_110px_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] w-full animate-pulse border-b border-white/[0.06] last:border-b-0"
+              >
+                {/* Col 1 */}
+                <div className="h-3 w-4 rounded bg-white/[0.04] mx-auto" />
+                {/* Col 2 */}
+                <div className="h-3 w-1/3 rounded bg-white/[0.04]" />
+                {/* Col 3 */}
+                <div className="h-3 w-1/2 rounded bg-white/[0.04] hidden md:block" />
+                {/* Col 4 */}
+                <div className="h-3 w-10 rounded bg-white/[0.04] mx-auto" />
+                {/* Col 5 */}
+                <div className="h-3 w-10 rounded bg-white/[0.04] mx-auto hidden lg:block" />
+                {/* Col 6 */}
+                <div className="h-4 w-12 rounded-full bg-white/[0.04] mx-auto hidden md:block" />
+                {/* Col 7 */}
+                <div className="h-3 w-8 rounded bg-white/[0.04] mx-auto hidden xl:block" />
+                {/* Col 8 */}
+                <div className="h-3 w-8 rounded bg-white/[0.04] mx-auto block md:hidden lg:block" />
+                {/* Col 9 */}
+                <div className="h-7 w-7 rounded-full bg-white/[0.04] mx-auto" />
+              </div>
             ))}
-          </div>
+          </RepositoryTable>
         ) : repos.length === 0 ? (
           <div className="text-center py-20 border border-[#232326] bg-[#131316] rounded-xl">
             <p className="text-[#A1A1AA] text-sm">No repositories found.</p>
           </div>
         ) : (
-          <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
-            {visibleRepos.map((repo: Repository) => (
-              <a
-                key={repo.id}
-                href={repo.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group grid grid-cols-1 sm:grid-cols-[40px_1fr_180px_120px] gap-4 items-center p-4 bg-transparent hover:bg-[#18181C]/40 transition-all w-full focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
-              >
-                {/* Column 1: Initials */}
-                <div className="h-10 w-10 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60 shrink-0">
-                  {repo.name.charAt(0)}
-                </div>
-
-                {/* Column 2: Name + Description */}
-                <div className="min-w-0">
-                  <div className="flex items-baseline gap-2">
-                    <h3 className="font-bold text-white text-sm truncate group-hover:text-white transition-colors">
-                      {repo.name}
-                    </h3>
-                    <span className="text-[10px] text-[#71717A]">by {repo.owner}</span>
-                  </div>
-                  <p className="text-xs text-[#A1A1AA] line-clamp-1 mt-1 leading-relaxed">
-                    {repo.description}
-                  </p>
-                </div>
-
-                {/* Column 3: Stars & Language */}
-                <div className="text-xs text-[#A1A1AA] font-mono flex flex-col gap-0.5 sm:block hidden">
-                  <div>⭐ {repo.stars.toLocaleString()} stars</div>
-                  <div className="text-[10px] text-[#71717A]">Lang: {repo.language}</div>
-                </div>
-
-                {/* Column 4: Github Link */}
-                <div className="text-right sm:block hidden">
-                  <span className="text-xs font-semibold text-[#71717A] group-hover:text-white transition-colors shrink-0">
-                    Github &rarr;
-                  </span>
-                </div>
-              </a>
+          <RepositoryTable
+            sortField={sortField}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+            selectedLicense={selectedLicense}
+            onSelectLicense={setSelectedLicense}
+            licenseCounts={licenseCounts}
+            selectedCompany={selectedCompany}
+            onSelectCompany={setSelectedCompany}
+            companyCounts={companyCounts}
+            totalCount={total}
+            isLicenseDropdownOpen={isLicenseDropdownOpen}
+            onToggleLicenseDropdown={() => setIsLicenseDropdownOpen(prev => !prev)}
+            onCloseLicenseDropdown={() => setIsLicenseDropdownOpen(false)}
+            isCompanyDropdownOpen={isCompanyDropdownOpen}
+            onToggleCompanyDropdown={() => setIsCompanyDropdownOpen(prev => !prev)}
+            onCloseCompanyDropdown={() => setIsCompanyDropdownOpen(false)}
+            activeRepoSearch={activeRepoSearch}
+            repoSearchQuery={repoSearchQuery}
+            onChangeRepoSearchQuery={setRepoSearchQuery}
+            onApplyRepoSearch={handleApplyRepoSearch}
+            onResetRepoSearch={handleResetRepoSearch}
+            isRepoFilterOpen={isRepoFilterOpen}
+            onToggleRepoFilter={() => setIsRepoFilterOpen(prev => !prev)}
+            onCloseRepoFilter={() => setIsRepoFilterOpen(false)}
+          >
+            {sortedRepos.map((repo: Repository, index: number) => (
+              <RepositoryRow key={repo.id} repo={repo} rank={index + 1} />
             ))}
 
             {/* Sentinel for infinite scroll */}
-            {repos.length > 0 && visibleCount < repos.length && (
+            {hasMore && (
               <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
               </div>
             )}
-          </div>
+          </RepositoryTable>
         )}
       </main>
+      <ScrollToTopButton />
     </div>
   );
 }

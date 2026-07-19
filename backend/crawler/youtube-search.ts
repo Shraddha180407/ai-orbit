@@ -19,7 +19,20 @@ const DEFAULT_QUERIES = [
   "AI agent",
   "autonomous agents AI",
   "new AI model release",
-  "open source AI model",
+  "open source AI model", 
+  "AI assistants",
+  "autonomous AI agents",
+  "agentic AI",
+  "agentic workflows",
+  "multi agent systems",
+  "tool calling",
+  "function calling",
+  "Model Context Protocol",
+  "MCP server",
+  "MCP tools",
+  "AI integrations",
+  "memory in AI agents",
+  "planning AI agents",
 ];
 
 function getQueries(): string[] {

@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Search from 'lucide-react/dist/esm/icons/search';
 import { useUser } from '@/hooks/use-user';
+import { TasksDropdown } from "@/components/search/TasksDropdown";
 
 export function Header() {
   const { user, isLoading } = useUser();
@@ -31,17 +32,15 @@ export function Header() {
             >
               AI Tools
             </Link>
+            <TasksDropdown
+              buttonClassName="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors flex items-center gap-1.5"
+              menuClassName="absolute left-0 mt-2 w-[280px] rounded-lg border border-border/20 bg-neutral-900/95 backdrop-blur-md p-2 shadow-2xl z-50 text-white"
+            />
             <Link
               href="/tasks"
               className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
             >
               Tasks
-            </Link>
-            <Link
-              href="/devices"
-              className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
-            >
-               Devices
             </Link>
             <Link
               href="/leaderboard"
@@ -54,6 +53,12 @@ export function Header() {
               className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
             >
               Models
+            </Link>
+            <Link
+              href="/devices"
+              className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
+            >
+              Devices
             </Link>
             <Link
               href="/companies"
@@ -74,7 +79,7 @@ export function Header() {
               News
             </Link>
             <Link
-              href="/video"
+              href="/videos"
               className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
             >
               Videos

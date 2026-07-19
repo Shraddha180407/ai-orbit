@@ -6,13 +6,15 @@ import {
   newsBookmarkBodySchema,
   newsBookmarkQuerySchema,
   newsCommentBodySchema,
+  newsListingQuerySchema,
+  newsDetailQuerySchema,
 } from "./news.schemas.js";
 import { NewsController } from "./news.controller.js";
 
 const router = new Hono<{ Bindings: { DATABASE_URL: string } }>();
 
-router.get("/", NewsController.getListing);
-router.get("/:slug", zValidator("param", newsSlugParamSchema), NewsController.getDetail);
+router.get("/", zValidator("query", newsListingQuerySchema), NewsController.getListing);
+router.get("/:slug", zValidator("param", newsSlugParamSchema), zValidator("query", newsDetailQuerySchema), NewsController.getDetail);
 
 router.post(
   "/:slug/vote",
