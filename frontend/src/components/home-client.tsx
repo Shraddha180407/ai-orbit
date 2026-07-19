@@ -3,17 +3,37 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Search from 'lucide-react/dist/esm/icons/search';
+import Wrench from 'lucide-react/dist/esm/icons/wrench';
+import Cpu from 'lucide-react/dist/esm/icons/cpu';
+import Building2 from 'lucide-react/dist/esm/icons/building-2';
+import FolderHeart from 'lucide-react/dist/esm/icons/folder-heart';
+import Newspaper from 'lucide-react/dist/esm/icons/newspaper';
+import GitBranch from 'lucide-react/dist/esm/icons/git-branch';
+import Smartphone from 'lucide-react/dist/esm/icons/smartphone';
+import Bot from 'lucide-react/dist/esm/icons/bot';
+import Landmark from 'lucide-react/dist/esm/icons/landmark';
 
 import { API_URL } from "@/lib/api";
 
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { HeroFeatureChips } from "@/components/HeroFeatureChips";
-import { HeroCategoryPills } from "@/components/HeroCategoryPills";
 import { SortDropdown } from "@/components/SortDropdown";
 import { ToolListView } from "@/components/ToolListView";
 
 import type { SortOption } from "@/lib/types";
+
+const DIRECTORY_CARDS = [
+  { name: "Tools", href: "/tools", description: "Browse the full AI tools directory, filter by category and pricing.", icon: Wrench, color: "#FFC53D" },
+  { name: "Models", href: "/models", description: "Compare context windows, pricing, and benchmarks across AI models.", icon: Cpu, color: "#A78BFA" },
+  { name: "Companies", href: "/companies", description: "Explore the labs and startups building the AI ecosystem.", icon: Building2, color: "#38BDF8" },
+  { name: "Collections", href: "/collections", description: "Curated bundles of tools grouped by use case.", icon: FolderHeart, color: "#34D399" },
+  { name: "News", href: "/news", description: "The latest announcements and coverage across the AI world.", icon: Newspaper, color: "#FF6B4A" },
+  { name: "Repositories", href: "/repositories", description: "Trending open-source AI repositories on GitHub.", icon: GitBranch, color: "#22D3EE" },
+  { name: "Devices", href: "/devices", description: "Hardware built for and powered by AI.", icon: Smartphone, color: "#F472B6" },
+  { name: "Robots", href: "/robots", description: "Robotics platforms and the companies behind them.", icon: Bot, color: "#2DD4BF" },
+  { name: "Investors", href: "/investors", description: "Who's funding the AI ecosystem, and where the money's going.", icon: Landmark, color: "#818CF8" },
+] as const;
 
 export function HomeClient() {
   const searchParams = useSearchParams();
@@ -123,31 +143,9 @@ export function HomeClient() {
         />
 
         <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
-          {/* Eyebrow: live signal pulse */}
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#232326]/60 bg-[#111113]/80 px-3 py-1 select-none">
-            <span className="relative flex h-1.5 w-1.5">
-              <span
-                className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
-                style={{ backgroundColor: 'var(--color-signal)' }}
-              />
-              <span
-                className="relative inline-flex h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: 'var(--color-signal)' }}
-              />
-            </span>
-            <span className="text-[11px] font-semibold tracking-wide text-[#A1A1AA]">
-              Live directory &middot; updated daily
-            </span>
-          </div>
-
-          <h1 className="max-w-[820px] text-4xl sm:text-5xl lg:text-[64px] font-black tracking-tight leading-[1.05] mb-4 select-none text-white text-balance">
+          <h1 className="max-w-[820px] text-4xl sm:text-5xl lg:text-[64px] font-black tracking-tight leading-[1.05] mb-8 select-none text-white text-balance">
             The best AI, in one signal.
           </h1>
-
-          <p className="max-w-xl text-[15px] sm:text-base text-[#A1A1AA] leading-relaxed mb-8 select-none">
-            Cut through the noise. Discover, compare, and track the AI tools,
-            models, and companies that actually matter.
-          </p>
 
           <form action="/tools" method="GET" className="relative w-full max-w-[640px] mx-auto mb-5 group">
             <div
@@ -179,30 +177,50 @@ export function HomeClient() {
           <div className="mb-3">
             <HeroFeatureChips />
           </div>
-
-          <div className="w-full flex justify-center">
-            <HeroCategoryPills />
-          </div>
         </div>
       </section>
 
       <div className="border-b border-[#232326]/40 w-full z-10 relative" />
 
-      {/* Tools Section — full width so the data table can use the whole screen */}
-      <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-        <div className="mx-auto w-full max-w-[1600px] space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[#232326]/60 pb-2">
-            <div className="space-y-0.5">
-              <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
-                Featured AI Tools
-              </h2>
-              <p className="text-[11px] text-[#A1A1AA] leading-snug">
-                Filter and sort the absolute best active AI tools in the directory database.
-              </p>
-            </div>
-            <SortDropdown />
-          </div>
+      {/* Sort control — now sits above the directory nav strip */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-8">
+        <div className="mx-auto w-full max-w-[1600px] flex justify-end">
+          <SortDropdown />
+        </div>
+      </div>
 
+      {/* Directory nav strip — single row, evenly spread, sits just above the tools list */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-3 pb-4">
+        <div className="mx-auto w-full max-w-[1600px]">
+          <div className="flex flex-nowrap items-stretch gap-3 overflow-x-auto">
+            {DIRECTORY_CARDS.map((card) => {
+              const Icon = card.icon;
+              return (
+                <a
+                  key={card.name}
+                  href={card.href}
+                  className="group relative flex flex-1 min-w-[110px] shrink-0 flex-row items-center justify-center gap-2.5 overflow-hidden rounded-xl border border-[#232326]/60 bg-[#0d0d10] px-5 py-3 text-center transition-all duration-200 hover:border-[color:var(--card-color)] hover:-translate-y-0.5"
+                  style={{ ["--card-color" as string]: card.color }}
+                >
+                  <div
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
+                    style={{ backgroundColor: `${card.color}1a`, borderColor: `${card.color}40` }}
+                  >
+                    <Icon size={15} strokeWidth={1.75} style={{ color: card.color }} />
+                  </div>
+                  <span className="text-[12.5px] font-bold tracking-tight text-white whitespace-nowrap">
+                    {card.name}
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Tools Section — full width so the data table can use the whole screen */}
+      <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
+        <div className="mx-auto w-full max-w-[1600px] space-y-3">
           <ToolListView
             tools={tools}
             loading={isLoading && page === 1}
