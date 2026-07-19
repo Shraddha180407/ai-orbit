@@ -15,6 +15,7 @@ model Company {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
   tools     Tool[]
+  models    AIModel[]
 }
 
 model User {
@@ -36,7 +37,7 @@ model User {
   sessions                           Session[]
   Task                               Task[]
   TaskBookmark                       TaskBookmark[]
-  TaskLike                           THaskLike[]
+  TaskLike                           TaskLike[]
   TaskSubscriber                     TaskSubscriber[]
   ToolHistory                        ToolHistory[]
 }
@@ -153,6 +154,10 @@ model AIModel {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @default(now()) @updatedAt
   TaskModel     TaskModel[]
+  providerId    String?
+  provider      Company?    @relation(fields: [providerId], references: [id])
+
+  @@index([providerId])
 }
 
 model Publisher {
@@ -271,6 +276,9 @@ model Repository {
   @@index([topics], type: Gin)
 }
 
+// Synced from live production DB via `prisma db pull` on 2026-07-19 — this
+// model was migrated directly to prod by another module without ever being
+// committed here. Kept verbatim; not owned by this module, do not alter.
 model Video {
   id              String   @id @default(cuid())
   title           String
