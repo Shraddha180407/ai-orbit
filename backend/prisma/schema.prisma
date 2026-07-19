@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -7,118 +7,89 @@ datasource db {
   provider = "postgresql"
 }
 
-enum PricingModel {
-  FREE
-  FREEMIUM
-  PAID
-  FREE_TRIAL
-}
-
-enum BillingFrequency {
-  MONTHLY
-  YEARLY
-  ONE_TIME
-  NA
-}
-
-// ---- Stub models owned by other modules ----
-// Module 4 (Companies) and Module 11 (Auth) will extend these.
-// Do not add fields here beyond what Module 3 needs for its relations.
-
 model Company {
   id        String   @id @default(cuid())
   slug      String   @unique
   name      String
   logoUrl   String?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-
-  tools Tool[]
+  tools     Tool[]
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String?
-  image     String?
-  role      String   @default("USER")
-  emailVerified DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  reviews   Review[]
-  bookmarks Bookmark[]
-  accounts  Account[]
-  sessions  Session[]
+  id             String           @id @default(cuid())
+  name           String?
+  email          String           @unique
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @default(now()) @updatedAt
+  emailVerified  DateTime?
+  image          String?
+  password       String?
+  role           String           @default("USER")
+  status         String           @default("ACTIVE")
+  accounts       Account[]
+  bookmarks      Bookmark[]
+  reviews        Review[]
+  sessions       Session[]
+  Task           Task[]
+  TaskBookmark   TaskBookmark[]
+  TaskLike       TaskLike[]
+  TaskSubscriber TaskSubscriber[]
 }
 
-// ---- Module 3: AI Tools ----
-
 model Tool {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
-  logoUrl     String?
-  description String
-  websiteUrl  String
-  screenshots String[] @default([])
-  features    String[] @default([])
-
-  pricingModel     PricingModel
-  pricingAmount    Decimal?         @db.Decimal(10, 2)
+  id               String           @id @default(cuid())
+  name             String
+  description      String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @default(now()) @updatedAt
+  avgRating        Float            @default(0)
   billingFrequency BillingFrequency @default(NA)
-
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id])
-
-  categories ToolCategory[]
-  tags       ToolTag[]
-
-  reviews   Review[]
-  bookmarks Bookmark[]
-
-  alternatives  Tool[] @relation("ToolAlternatives")
-  alternativeOf Tool[] @relation("ToolAlternatives")
-
-  // Denormalized for fast listing-page sort/display. Recomputed by the
-  // reviews API on every create/update/delete — see lib/reviews.ts.
-  avgRating   Float @default(0)
-  reviewCount Int   @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  companyId        String?
+  features         String[]         @default([])
+  logoUrl          String?
+  pricingAmount    Decimal?         @db.Decimal(10, 2)
+  pricingModel     PricingModel
+  reviewCount      Int              @default(0)
+  screenshots      String[]         @default([])
+  slug             String           @unique
+  websiteUrl       String
+  bookmarks        Bookmark[]
+  reviews          Review[]
+  TaskTool         TaskTool[]
+  company          Company?         @relation(fields: [companyId], references: [id])
+  categories       ToolCategory[]
+  tags             ToolTag[]
+  Tool_A           Tool[]           @relation("ToolAlternatives")
+  Tool_B           Tool[]           @relation("ToolAlternatives")
 
   @@index([companyId])
-@@index([pricingModel])
-@@index([createdAt])
-@@index([avgRating])
+  @@index([pricingModel])
+  @@index([createdAt])
+  @@index([avgRating])
 }
 
 model Category {
-  id   String @id @default(cuid())
-  slug String @unique
-  name String
-
+  id    String         @id @default(cuid())
+  slug  String         @unique
+  name  String
+  Task  Task[]
   tools ToolCategory[]
 }
 
 model Tag {
-  id   String @id @default(cuid())
-  slug String @unique
-  name String
-
+  id    String    @id @default(cuid())
+  slug  String    @unique
+  name  String
   tools ToolTag[]
 }
 
 model ToolCategory {
   toolId     String
   categoryId String
-
-  tool     Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tool       Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
 
   @@id([toolId, categoryId])
   @@index([categoryId])
@@ -127,9 +98,8 @@ model ToolCategory {
 model ToolTag {
   toolId String
   tagId  String
-
-  tool Tool @relation(fields: [toolId], references: [id], onDelete: Cascade)
-  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tool   Tool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
 
   @@id([toolId, tagId])
   @@index([tagId])
@@ -141,36 +111,32 @@ model Review {
   comment   String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-
-  toolId String
-  tool   Tool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolId    String
+  userId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([toolId, userId])
-@@index([toolId])
-@@index([userId])
-@@index([rating])
+  @@index([toolId])
+  @@index([userId])
+  @@index([rating])
 }
 
 model Bookmark {
   id        String   @id @default(cuid())
+  userId    String
   createdAt DateTime @default(now())
-
-  toolId String
-  tool   Tool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([toolId, userId])
-@@index([toolId])
-@@index([userId])
+  @@index([toolId])
+  @@index([userId])
 }
 
 model AIModel {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   name          String
   creator       String
   contextWindow String
@@ -178,11 +144,10 @@ model AIModel {
   modality      String
   releaseDate   String
   description   String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @default(now()) @updatedAt
+  TaskModel     TaskModel[]
 }
-
-// ---- News module ----
 
 model Publisher {
   id               String   @id @default(cuid())
@@ -196,8 +161,7 @@ model Publisher {
   credibilityScore Float    @default(0.8)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-
-  articles News[]
+  articles         News[]
 
   @@index([name])
 }
@@ -206,35 +170,29 @@ model Topic {
   id        String   @id @default(cuid())
   name      String   @unique
   createdAt DateTime @default(now())
-
-  articles News[]
+  articles  News[]   @relation("NewsToTopic")
 }
 
 model News {
-  id         String   @id @default(cuid())
-  slug       String   @unique
-  title      String
-  dek        String
-  aiSummary  String
-  articleUrl String   @unique
-
+  id          String         @id @default(cuid())
+  title       String
+  category    String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  aiSummary   String
+  articleUrl  String         @unique
+  dek         String
+  downvotes   Int            @default(0)
+  filterTags  String[]       @default([])
   publisherId String
-  publisher   Publisher @relation(fields: [publisherId], references: [id])
-
-  category   String
-  filterTags String[] @default([])
-  topics     Topic[]
-
+  slug        String         @unique
+  upvotes     Int            @default(0)
   publishedAt DateTime
-  upvotes     Int      @default(0)
-  downvotes   Int      @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  bookmarks NewsBookmark[]
-  votes     NewsVote[]
-  comments  NewsComment[]
+  publisher   Publisher      @relation(fields: [publisherId], references: [id])
+  bookmarks   NewsBookmark[]
+  comments    NewsComment[]
+  votes       NewsVote[]
+  topics      Topic[]        @relation("NewsToTopic")
 
   @@index([publishedAt])
   @@index([publisherId])
@@ -244,9 +202,9 @@ model News {
 model NewsBookmark {
   id        String   @id @default(cuid())
   articleId String
-  article   News     @relation(fields: [articleId], references: [id])
   clientId  String
   createdAt DateTime @default(now())
+  article   News     @relation(fields: [articleId], references: [id])
 
   @@unique([articleId, clientId])
 }
@@ -254,10 +212,10 @@ model NewsBookmark {
 model NewsVote {
   id        String   @id @default(cuid())
   articleId String
-  article   News     @relation(fields: [articleId], references: [id])
   clientId  String
   value     Int
   createdAt DateTime @default(now())
+  article   News     @relation(fields: [articleId], references: [id])
 
   @@unique([articleId, clientId])
 }
@@ -265,11 +223,11 @@ model NewsVote {
 model NewsComment {
   id         String   @id @default(cuid())
   articleId  String
-  article    News     @relation(fields: [articleId], references: [id])
   clientId   String
   authorName String   @default("Anonymous")
   body       String
   createdAt  DateTime @default(now())
+  article    News     @relation(fields: [articleId], references: [id])
 
   @@index([articleId])
 }
@@ -286,29 +244,29 @@ model Repository {
   updatedAt   DateTime @default(now()) @updatedAt
 }
 
-// Synced from live production DB via `prisma db pull` on 2026-07-12 — this
+// Synced from live production DB via `prisma db pull` on 2026-07-19 — this
 // model was migrated directly to prod by another module without ever being
 // committed here. Kept verbatim; not owned by this module, do not alter.
 model Video {
   id              String   @id @default(cuid())
-  slug            String   @unique
   title           String
-  description     String
-  toolName        String
-  toolCategory    String   // "multimodal-ai" | "robotics" | "agents" | "llm" | "general-ai"
-  youtubeId       String   @unique
-  thumbnail       String
-  durationSeconds Int
-  views           Int
-  likes           Int
-  publishedAt     String   // ISO date, YYYY-MM-DD (slice(0,10) at ingest time)
-  authorName      String
-  authorAvatar    String
-  tags            String[] @default([])
+  publishedAt     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
   accent          String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  authorAvatar    String
+  authorName      String
+  description     String
+  durationSeconds Int
+  likes           Int
+  slug            String   @unique
+  tags            String[] @default([])
+  thumbnail       String
+  toolCategory    String
+  toolName        String
+  youtubeId       String   @unique
+  views           Int
+  channelId       String?
 
   @@index([toolCategory])
   @@index([publishedAt])
@@ -316,26 +274,28 @@ model Video {
 }
 
 model Robot {
-  id           String   @id @default(cuid())
+  id           String      @id @default(cuid())
   name         String
   category     String
   manufacturer String
   year         String
   description  String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @default(now()) @updatedAt
+  TaskRobot    TaskRobot[]
 }
 
 model Device {
-  id           String   @id @default(cuid())
+  id           String       @id @default(cuid())
   name         String
   category     String
   manufacturer String
   year         String
   description  String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
-}// ---- Auth Module ----
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @default(now()) @updatedAt
+  TaskDevice   TaskDevice[]
+}
 
 model Account {
   id                String  @id @default(cuid())
@@ -350,8 +310,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -424,3 +383,138 @@ model LeaderboardTool {
   addedDate   String
 }
 
+model Task {
+  id             String           @id
+  slug           String           @unique
+  title          String
+  description    String
+  difficulty     TaskDifficulty   @default(EASY)
+  pricingModel   PricingModel     @default(FREE)
+  isFeatured     Boolean          @default(false)
+  categoryId     String
+  creatorId      String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @default(now())
+  Category       Category         @relation(fields: [categoryId], references: [id])
+  User           User?            @relation(fields: [creatorId], references: [id])
+  TaskBookmark   TaskBookmark[]
+  TaskDevice     TaskDevice[]
+  TaskLike       TaskLike[]
+  TaskModel      TaskModel[]
+  TaskResource   TaskResource[]
+  TaskRobot      TaskRobot[]
+  TaskSubscriber TaskSubscriber[]
+  TaskTool       TaskTool[]
+
+  @@index([categoryId])
+  @@index([creatorId])
+  @@index([difficulty])
+  @@index([isFeatured])
+  @@index([pricingModel])
+}
+
+model TaskBookmark {
+  id        String   @id
+  createdAt DateTime @default(now())
+  taskId    String
+  userId    String
+  Task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+}
+
+model TaskDevice {
+  taskId   String
+  deviceId String
+  Device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  Task     Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, deviceId])
+  @@index([deviceId])
+}
+
+model TaskLike {
+  taskId    String
+  userId    String
+  createdAt DateTime @default(now())
+  Task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  @@index([userId])
+}
+
+model TaskModel {
+  taskId  String
+  modelId String
+  AIModel AIModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  Task    Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, modelId])
+  @@index([modelId])
+}
+
+model TaskResource {
+  id        String   @id
+  taskId    String
+  title     String
+  url       String
+  createdAt DateTime @default(now())
+  Task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model TaskRobot {
+  taskId  String
+  robotId String
+  Robot   Robot  @relation(fields: [robotId], references: [id], onDelete: Cascade)
+  Task    Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, robotId])
+  @@index([robotId])
+}
+
+model TaskSubscriber {
+  taskId    String
+  userId    String
+  createdAt DateTime @default(now())
+  Task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  @@index([userId])
+}
+
+model TaskTool {
+  taskId String
+  toolId String
+  Task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  Tool   Tool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, toolId])
+  @@index([toolId])
+}
+
+enum PricingModel {
+  FREE
+  FREEMIUM
+  PAID
+  FREE_TRIAL
+}
+
+enum BillingFrequency {
+  MONTHLY
+  YEARLY
+  ONE_TIME
+  NA
+}
+
+enum TaskDifficulty {
+  EASY
+  MEDIUM
+  ADVANCED
+}
