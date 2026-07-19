@@ -7,13 +7,35 @@ import { VideoPlayer } from "@/components/videos/VideoPlayer";
 import { getVideoBySlug, Video } from "@/lib/videos-data";
 
 import { getChannelUrl } from "@/lib/video-types";
+export function VideoDetailsClient() {
+  const params = useParams();
+  const slug = params.slug as string;
 
+  const [video, setVideo] = useState<Video | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    getVideoBySlug(slug).then((data) => {
+      if (!data) notFound();
+      setVideo(data);
+      setLoading(false);
+    });
+  }, [slug]);
 
-export default async function VideoDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const video = await getVideoBySlug(slug);
-  if (!video) notFound();
+  if (loading) {
+    return (
+      <main className="flex h-[100dvh] items-center justify-center overflow-hidden bg-[#050506]">
+        <div
+          className="flex flex-col rounded-[22px] border border-white/[0.07] bg-[#0d0d10] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.7)]"
+          style={{ width: "81vw", aspectRatio: "16 / 9" }}
+        >
+          <div className="h-full w-full animate-pulse bg-white/5 rounded-[22px]" />
+        </div>
+      </main>
+    );
+  }
+
+  if (!video) return null;
 
   return (
     <main className="flex h-[100dvh] items-center justify-center overflow-hidden bg-[#050506]">

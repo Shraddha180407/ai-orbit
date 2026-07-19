@@ -1,14 +1,10 @@
 import Link from "next/link";
 import { VideosPageClient } from "@/components/videos/VideosPageClient";
 import { VideosShell } from "@/components/videos/VideosShell";
-<<<<<<< HEAD
-import { getAllVideos } from "@/lib/videos-data";
-=======
 import { getVideosPage, getVideosCount } from "@/lib/videos-data";
 export const runtime = 'edge';
 
 export const dynamic = "force-dynamic";
->>>>>>> pr-24
 
 const PAGE_SIZE = 24;
 
