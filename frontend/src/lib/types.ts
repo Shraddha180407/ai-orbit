@@ -192,3 +192,14 @@ export type Device = {
   description: string;
 };
 
+export type Task = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  difficulty: string;
+  creator: string;
+  pricing: string;
+  featured: boolean;
+};
