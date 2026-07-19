@@ -154,7 +154,7 @@ export function RepositoriesClient() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      <main className="mx-auto max-w-[1070px] px-8 py-12 flex-1 w-full">
+      <main className="mx-auto max-w-[1440px] px-[50px] py-12 flex-1 w-full">
         <RepositoryHero />
 
         {isLoading ? (
@@ -187,7 +187,7 @@ export function RepositoriesClient() {
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="grid grid-cols-[30px_1fr_70px_80px_50px] md:grid-cols-[30px_1fr_130px_70px_100px_50px] lg:grid-cols-[30px_1fr_130px_70px_70px_100px_80px_50px] xl:grid-cols-[30px_1fr_130px_70px_70px_100px_70px_80px_50px] gap-[10px] items-center py-[14px] px-[10px] h-[58.4px] w-full animate-pulse border-b border-[#232326]/30 last:border-b-0"
+                className="grid grid-cols-[30px_1fr_95px_110px_60px] md:grid-cols-[30px_1fr_180px_95px_130px_60px] lg:grid-cols-[30px_1fr_180px_95px_95px_130px_110px_60px] xl:grid-cols-[30px_1fr_180px_95px_95px_130px_95px_110px_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] w-full animate-pulse border-b border-white/[0.06] last:border-b-0"
               >
                 {/* Col 1 */}
                 <div className="h-3 w-4 rounded bg-white/[0.04] mx-auto" />
