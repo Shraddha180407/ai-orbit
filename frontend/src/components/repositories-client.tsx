@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Repository } from "@/lib/types";
-import { fetchAllRepos } from "@/lib/api";
+import { fetchRepositories } from "@/lib/api";
 import { RepositoryHero } from "@/components/ui/RepositoryHero";
 import { RepositoryTable } from "@/components/ui/RepositoryTable";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
@@ -15,8 +15,11 @@ export function RepositoriesClient() {
   const initialQuery = searchParams.get("q") || "";
 
   const [repos, setRepos] = useState<Repository[]>([]);
-  const [visibleCount, setVisibleCount] = useState(15);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [sortField, setSortField] = useState<"stars" | "forks" | "size" | "updated" | null>("stars");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedLicense, setSelectedLicense] = useState<string | null>(null);
@@ -29,11 +32,17 @@ export function RepositoriesClient() {
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // Initial fetch
   useEffect(() => {
     async function getRepos() {
       try {
-        const data = await fetchAllRepos();
-        setRepos(Array.isArray(data) ? data : []);
+        const data = await fetchRepositories();
+        // Defensive: guard against a malformed/unexpected response shape so
+        // this can never crash repos.forEach()/filter() downstream again.
+        setRepos(Array.isArray(data.items) ? data.items : []);
+        setNextCursor(data.nextCursor);
+        setHasMore(data.hasMore);
+        setTotal(data.total);
       } catch (e) {
         console.error("Failed to fetch repositories:", e);
       } finally {
@@ -43,13 +52,32 @@ export function RepositoriesClient() {
     getRepos();
   }, []);
 
-  // IntersectionObserver for client-side endless scroll
+  // IntersectionObserver for server-side infinite scroll
   useEffect(() => {
-    if (isLoading || visibleCount >= repos.length) return;
+    if (isLoading || isFetchingMore || !hasMore || !nextCursor) return;
 
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
-        setVisibleCount(prev => prev + 15);
+        async function fetchMore() {
+          if (isFetchingMore) return;
+          setIsFetchingMore(true);
+          try {
+            const data = await fetchRepositories(15, nextCursor);
+            setRepos((prev) => {
+              const existingIds = new Set(prev.map(r => r.id));
+              const newItems = (data.items || []).filter(r => !existingIds.has(r.id));
+              return [...prev, ...newItems];
+            });
+            setNextCursor(data.nextCursor);
+            setHasMore(data.hasMore);
+            setTotal(data.total);
+          } catch (e) {
+            console.error("Failed to fetch more repositories:", e);
+          } finally {
+            setIsFetchingMore(false);
+          }
+        }
+        fetchMore();
       }
     }, { threshold: 0.1 });
 
@@ -63,7 +91,7 @@ export function RepositoriesClient() {
         observer.unobserve(currentSentinel);
       }
     };
-  }, [isLoading, visibleCount, repos.length]);
+  }, [isLoading, isFetchingMore, hasMore, nextCursor]);
 
   function handleSort(field: "stars" | "forks" | "size" | "updated") {
     if (sortField === field) {
@@ -143,8 +171,6 @@ export function RepositoriesClient() {
     });
   }, [filteredRepos, sortField, sortOrder]);
 
-  const visibleRepos = sortedRepos.slice(0, visibleCount);
-
   function handleApplyRepoSearch() {
     setActiveRepoSearch(repoSearchQuery);
     setIsRepoFilterOpen(false);
@@ -158,7 +184,7 @@ export function RepositoriesClient() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      <main className="mx-auto max-w-[1070px] px-8 py-12 flex-1 w-full">
+      <main className="mx-auto max-w-[1440px] px-[50px] py-12 flex-1 w-full">
         <RepositoryHero />
 
         {isLoading ? (
@@ -172,7 +198,7 @@ export function RepositoriesClient() {
             selectedCompany={selectedCompany}
             onSelectCompany={setSelectedCompany}
             companyCounts={companyCounts}
-            totalCount={repos.length}
+            totalCount={total}
             isLicenseDropdownOpen={isLicenseDropdownOpen}
             onToggleLicenseDropdown={() => setIsLicenseDropdownOpen(prev => !prev)}
             onCloseLicenseDropdown={() => setIsLicenseDropdownOpen(false)}
@@ -191,7 +217,7 @@ export function RepositoriesClient() {
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="grid grid-cols-[30px_1fr_70px_80px_50px] md:grid-cols-[30px_1fr_130px_70px_100px_50px] lg:grid-cols-[30px_1fr_130px_70px_70px_100px_80px_50px] xl:grid-cols-[30px_1fr_130px_70px_70px_100px_70px_80px_50px] gap-[10px] items-center py-[14px] px-[10px] h-[58.4px] w-full animate-pulse border-b border-[#232326]/30 last:border-b-0"
+                className="grid grid-cols-[30px_1fr_95px_110px_60px] md:grid-cols-[30px_1fr_180px_95px_130px_60px] lg:grid-cols-[30px_1fr_180px_95px_95px_130px_110px_60px] xl:grid-cols-[30px_1fr_180px_95px_95px_130px_95px_110px_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] w-full animate-pulse border-b border-white/[0.06] last:border-b-0"
               >
                 {/* Col 1 */}
                 <div className="h-3 w-4 rounded bg-white/[0.04] mx-auto" />
@@ -229,7 +255,7 @@ export function RepositoriesClient() {
             selectedCompany={selectedCompany}
             onSelectCompany={setSelectedCompany}
             companyCounts={companyCounts}
-            totalCount={repos.length}
+            totalCount={total}
             isLicenseDropdownOpen={isLicenseDropdownOpen}
             onToggleLicenseDropdown={() => setIsLicenseDropdownOpen(prev => !prev)}
             onCloseLicenseDropdown={() => setIsLicenseDropdownOpen(false)}
@@ -245,12 +271,12 @@ export function RepositoriesClient() {
             onToggleRepoFilter={() => setIsRepoFilterOpen(prev => !prev)}
             onCloseRepoFilter={() => setIsRepoFilterOpen(false)}
           >
-            {visibleRepos.map((repo: Repository, index: number) => (
+            {sortedRepos.map((repo: Repository, index: number) => (
               <RepositoryRow key={repo.id} repo={repo} rank={index + 1} />
             ))}
 
             {/* Sentinel for infinite scroll */}
-            {sortedRepos.length > 0 && visibleCount < sortedRepos.length && (
+            {hasMore && (
               <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
               </div>

@@ -75,9 +75,53 @@ export async function fetchAllNews(): Promise<any[]> {
   return res.json();
 }
 
+import { Repository, RepositoryListResponse, RepositoryDetailResponse } from "./types";
 import { DUMMY_REPOSITORIES } from "./dummyRepositories";
 
-export async function fetchAllRepos(): Promise<any[]> {
+export async function fetchRepositories(limit?: number, cursor?: string | null): Promise<RepositoryListResponse> {
+  const USE_DUMMY = process.env.NEXT_PUBLIC_USE_DUMMY_REPOSITORIES === "true";
+  if (USE_DUMMY) {
+    return {
+      items: DUMMY_REPOSITORIES,
+      nextCursor: null,
+      hasMore: false,
+      total: DUMMY_REPOSITORIES.length
+    };
+  }
+
+  const url = new URL(`${API_URL}/api/v1/repositories`);
+  if (limit) url.searchParams.set("limit", limit.toString());
+  if (cursor) url.searchParams.set("cursor", cursor);
+
+  const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
+  if (!res.ok) {
+    return {
+      items: [],
+      nextCursor: null,
+      hasMore: false,
+      total: 0
+    };
+  }
+  return res.json();
+}
+
+export async function fetchRepositoryBySlug(slug: string): Promise<RepositoryDetailResponse | null> {
+  const USE_DUMMY = process.env.NEXT_PUBLIC_USE_DUMMY_REPOSITORIES === "true";
+  if (USE_DUMMY) {
+    const match = DUMMY_REPOSITORIES.find((r) => {
+      const generatedSlug = r.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      return generatedSlug === slug || r.name.toLowerCase() === slug.toLowerCase();
+    });
+    return (match as RepositoryDetailResponse) || null;
+  }
+
+  const url = `${API_URL}/api/v1/repositories/${slug}`;
+  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function fetchAllRepos(): Promise<Repository[]> {
   // Feature flag to toggle between backend API and mock data for UI testing/demonstration.
   // Set NEXT_PUBLIC_USE_DUMMY_REPOSITORIES=true in .env.local to load dummy repositories.
   const USE_DUMMY = process.env.NEXT_PUBLIC_USE_DUMMY_REPOSITORIES === "true";
@@ -85,18 +129,12 @@ export async function fetchAllRepos(): Promise<any[]> {
     return Array.isArray(DUMMY_REPOSITORIES) ? DUMMY_REPOSITORIES : [];
   }
 
-  const url = `${API_URL}/api/v1/repositories`;
   try {
-    const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-    if (!res.ok) return [];
-    const data = await res.json();
-    // The backend returns a bare array on success and `{ error: ... }` on
-    // failure (still possible to hit even when res.ok is true behind a
-    // proxy/edge cache), so normalize defensively rather than trusting the
-    // shape — this is what was crashing repos.forEach() downstream.
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data?.repositories)) return data.repositories;
-    return [];
+    const data = await fetchRepositories();
+    // Defensive: fetchRepositories() should always resolve to
+    // { items: [...] }, but guard against a malformed/unexpected response
+    // shape so this can never crash repos.forEach() downstream again.
+    return Array.isArray(data.items) ? data.items : [];
   } catch (e) {
     console.error("Failed to fetch repositories:", e);
     return [];
@@ -125,6 +163,13 @@ export async function fetchAllDevices(): Promise<any[]> {
   return res.json();
 }
 
+export async function fetchDeviceById(id: string): Promise<any | null> {
+  const url = `${API_URL}/api/v1/devices/${id}`;
+  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
+  if (!res.ok) return null;
+  return res.json();
+}
+
 // ---------------------------------------------------------------------------
 // Global search API helpers (cross-entity autocomplete + popular terms)
 // ---------------------------------------------------------------------------
@@ -135,6 +180,7 @@ export interface RealSearchSuggestion {
   title: string;
   category: string;
   slug: string | null;
+  logoUrl?: string | null;
 }
 
 export async function fetchSearchAutocomplete(q: string): Promise<RealSearchSuggestion[]> {

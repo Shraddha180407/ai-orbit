@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   CheckSquare,
@@ -126,6 +127,8 @@ interface TasksTableProps {
 export function TasksTable({ items, total }: TasksTableProps) {
   const [showTab, setShowTab] = useState<ShowTab>("All Tasks");
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: "saves", dir: "desc" });
+  const searchParams = useSearchParams();
+  const category = searchParams.get("category");
 
   const metricsById = useMemo(() => {
     const map = new Map<string, TaskMetrics>();
@@ -154,7 +157,9 @@ export function TasksTable({ items, total }: TasksTableProps) {
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-search-text-primary text-search-bg">
           <CheckSquare size={14} strokeWidth={2.5} />
         </span>
-        <h1 className="text-lg font-semibold text-search-text-primary">Tasks</h1>
+        <h1 className="text-lg font-semibold text-search-text-primary">
+          {category ? `${category} Tasks` : "Tasks"}
+        </h1>
       </div>
       <p className="mb-3 text-xs text-search-text-tertiary">{total.toLocaleString()} tasks</p>
 

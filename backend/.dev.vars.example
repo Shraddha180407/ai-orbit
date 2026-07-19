@@ -1,4 +1,4 @@
-DATABASE_URL="postgresql://neondb_owner:npg_jQtM7hODsz0T@ep-winter-cake-ai6q5tb3.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require"
+DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
 GEMINI_API_KEY=""
 GROQ_API_KEY=""
 CLOUDINARY_CLOUD_NAME=""

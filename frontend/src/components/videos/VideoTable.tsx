@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Video, formatDuration } from "@/lib/video-types";
+import { Video, formatDuration, getChannelUrl } from "@/lib/video-types";
 import { ThumbImage } from "./ThumbImage";
+import { VideoSaveButton } from "./VideoSaveButton";
 
 type SortKey = "name" | "posted" | "views";
 type SortDir = "asc" | "desc";
@@ -118,6 +119,7 @@ export function VideoTable({ videos }: { videos: Video[] }) {
             <th className="px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted">
               Channel
             </th>
+            <th className="w-12 px-4 py-[9.6px]" aria-hidden="true" />
           </tr>
         </thead>
         <tbody>
@@ -177,14 +179,35 @@ export function VideoTable({ videos }: { videos: Video[] }) {
                 </span>
               </td>
               <td className="whitespace-nowrap px-4 py-[9.6px]">
-<Link
-  href={`/videos?channel=${encodeURIComponent(v.toolName)}`}
-  className="flex items-center gap-2.5"
->
-  <span className="text-[13.5px] font-medium text-secondary transition-colors group-hover:text-primary">
-    {v.author.name}
-  </span>
-</Link>
+                <a
+                  href={getChannelUrl(v.channelId, v.author.name)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group/channel inline-flex items-center gap-1.5"
+                >
+                  <span className="text-[13.5px] font-medium text-secondary transition-colors group-hover/channel:text-primary">
+                    {v.author.name}
+                  </span>
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    style={{ flexShrink: 0, display: "block" }}
+                    className="text-secondary transition-all group-hover/channel:translate-x-0.5 group-hover/channel:-translate-y-0.5 group-hover/channel:text-primary"
+                  >
+                    <path
+                      d="M4 12L12 4M12 4H5.5M12 4V10.5"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </a>
+              </td>
+              <td className="px-4 py-[9.6px] text-right">
+                <VideoSaveButton id={v.id} />
               </td>
             </tr>
           ))}

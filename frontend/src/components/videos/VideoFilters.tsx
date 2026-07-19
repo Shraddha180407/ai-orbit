@@ -25,7 +25,7 @@ export function VideoFilters({
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none]">
         {categories.map((c) => {
           const color = c === "All" ? DEFAULT_COLOR : CATEGORY_COLORS[c];
           const label = c === "All" ? "All" : CATEGORY_LABELS[c];
@@ -82,6 +82,7 @@ export function VideoFilters({
           placeholder="Search videos or tools"
           className="w-full rounded-lg border border-border bg-bg-elevated py-2 pl-9 pr-3 text-[13.5px] text-primary placeholder:text-muted outline-none transition-colors focus:border-border-strong"
         />
+        
       </div>
     </div>
   );

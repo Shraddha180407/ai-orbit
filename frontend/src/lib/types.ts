@@ -164,6 +164,33 @@ export type Repository = {
   language: string;
   createdAt?: string;
   updatedAt?: string;
+  slug?: string;
+  ownerAvatarUrl?: string | null;
+  homepage?: string | null;
+  license?: string | null;
+  topics?: string[];
+  forks?: number;
+  openIssues?: number;
+  logoUrl?: string | null;
+  brandColor?: string | null;
+  githubCreatedAt?: string;
+  syncedAt?: string;
+  readmeHtml?: string;
+  readmeFetchedAt?: string;
+  defaultBranch?: string;
+};
+
+export type RepositoryListResponse = {
+  items: Repository[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  total: number;
+};
+
+export type RepositoryDetailResponse = Repository & {
+  readmeHtml?: string;
+  readmeFetchedAt?: string;
+  defaultBranch?: string;
 };
 
 export type Video = {
@@ -187,10 +214,24 @@ export type Robot = {
 
 export type Device = {
   id: string;
+  slug?: string;
   name: string;
   category: string;
   manufacturer: string;
   year: string;
   description: string;
+  availability?: "Available" | "Pre-order" | "Announced" | "Discontinued" | null;
+  price?: string | null;
+  month?: string | null;
+  imageUrl?: string | null;
+  manufacturerLogoUrl?: string | null;
+  mainTask?: string | null;
+  mainTaskColor?: string | null;
+  formFactor?: string | null;
+  country?: string | null;
+  ram?: string | null;
+  aiFeatures?: string[];
+  primaryUseCases?: string[];
+  additionalInfo?: string | null;
+  buyUrl?: string | null;
 };
-
