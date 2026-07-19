@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { Repository } from "@/lib/types";
-import { fetchAllRepos } from "@/lib/api";
+import { fetchRepositories } from "@/lib/api";
 import { RepositoryHero } from "@/components/ui/RepositoryHero";
 import { RepositoryTable } from "@/components/ui/RepositoryTable";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
@@ -11,8 +11,11 @@ import { resolveRepositoryLicense } from "@/lib/utils";
 
 export function RepositoriesClient() {
   const [repos, setRepos] = useState<Repository[]>([]);
-  const [visibleCount, setVisibleCount] = useState(15);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [sortField, setSortField] = useState<"stars" | "forks" | "size" | "updated" | null>("stars");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedLicense, setSelectedLicense] = useState<string | null>(null);
@@ -25,11 +28,15 @@ export function RepositoriesClient() {
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // Initial fetch
   useEffect(() => {
     async function getRepos() {
       try {
-        const data = await fetchAllRepos();
-        setRepos(data || []);
+        const data = await fetchRepositories();
+        setRepos(data.items || []);
+        setNextCursor(data.nextCursor);
+        setHasMore(data.hasMore);
+        setTotal(data.total);
       } catch (e) {
         console.error("Failed to fetch repositories:", e);
       } finally {
@@ -39,13 +46,32 @@ export function RepositoriesClient() {
     getRepos();
   }, []);
 
-  // IntersectionObserver for client-side endless scroll
+  // IntersectionObserver for server-side infinite scroll
   useEffect(() => {
-    if (isLoading || visibleCount >= repos.length) return;
+    if (isLoading || isFetchingMore || !hasMore || !nextCursor) return;
 
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
-        setVisibleCount(prev => prev + 15);
+        async function fetchMore() {
+          if (isFetchingMore) return;
+          setIsFetchingMore(true);
+          try {
+            const data = await fetchRepositories(15, nextCursor);
+            setRepos((prev) => {
+              const existingIds = new Set(prev.map(r => r.id));
+              const newItems = (data.items || []).filter(r => !existingIds.has(r.id));
+              return [...prev, ...newItems];
+            });
+            setNextCursor(data.nextCursor);
+            setHasMore(data.hasMore);
+            setTotal(data.total);
+          } catch (e) {
+            console.error("Failed to fetch more repositories:", e);
+          } finally {
+            setIsFetchingMore(false);
+          }
+        }
+        fetchMore();
       }
     }, { threshold: 0.1 });
 
@@ -59,7 +85,7 @@ export function RepositoriesClient() {
         observer.unobserve(currentSentinel);
       }
     };
-  }, [isLoading, visibleCount, repos.length]);
+  }, [isLoading, isFetchingMore, hasMore, nextCursor]);
 
   function handleSort(field: "stars" | "forks" | "size" | "updated") {
     if (sortField === field) {
@@ -139,8 +165,6 @@ export function RepositoriesClient() {
     });
   }, [filteredRepos, sortField, sortOrder]);
 
-  const visibleRepos = sortedRepos.slice(0, visibleCount);
-
   function handleApplyRepoSearch() {
     setActiveRepoSearch(repoSearchQuery);
     setIsRepoFilterOpen(false);
@@ -168,7 +192,7 @@ export function RepositoriesClient() {
             selectedCompany={selectedCompany}
             onSelectCompany={setSelectedCompany}
             companyCounts={companyCounts}
-            totalCount={repos.length}
+            totalCount={total}
             isLicenseDropdownOpen={isLicenseDropdownOpen}
             onToggleLicenseDropdown={() => setIsLicenseDropdownOpen(prev => !prev)}
             onCloseLicenseDropdown={() => setIsLicenseDropdownOpen(false)}
@@ -225,7 +249,7 @@ export function RepositoriesClient() {
             selectedCompany={selectedCompany}
             onSelectCompany={setSelectedCompany}
             companyCounts={companyCounts}
-            totalCount={repos.length}
+            totalCount={total}
             isLicenseDropdownOpen={isLicenseDropdownOpen}
             onToggleLicenseDropdown={() => setIsLicenseDropdownOpen(prev => !prev)}
             onCloseLicenseDropdown={() => setIsLicenseDropdownOpen(false)}
@@ -241,12 +265,12 @@ export function RepositoriesClient() {
             onToggleRepoFilter={() => setIsRepoFilterOpen(prev => !prev)}
             onCloseRepoFilter={() => setIsRepoFilterOpen(false)}
           >
-            {visibleRepos.map((repo: Repository, index: number) => (
+            {sortedRepos.map((repo: Repository, index: number) => (
               <RepositoryRow key={repo.id} repo={repo} rank={index + 1} />
             ))}
 
             {/* Sentinel for infinite scroll */}
-            {sortedRepos.length > 0 && visibleCount < sortedRepos.length && (
+            {hasMore && (
               <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
               </div>
@@ -258,4 +282,3 @@ export function RepositoriesClient() {
     </div>
   );
 }
-
