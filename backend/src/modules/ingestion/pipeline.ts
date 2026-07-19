@@ -73,7 +73,22 @@ export interface PipelineResult {
   skippedInvalid: number;
   /** Entry reached summarization but no real content was ever found (no RSS description, no scrapeable body, LLM waterfall exhausted) — never created rather than stored with a placeholder summary. See NO_SUMMARY_PLACEHOLDER. */
   skippedNoContent: number;
+  /** Otherwise-valid, fully-prepared entry that was never created because the run-wide MAX_NEW_ARTICLES_PER_RUN cap (see RunCap below) was already reached by this or another concurrently-running source. */
+  skippedCapReached: number;
   errors: string[];
+}
+
+/**
+ * A run-wide budget on how many new articles runIngestion() may create,
+ * shared by reference across every source — RSS sources (run concurrently,
+ * see SOURCE_CONCURRENCY) and Hacker News discovery all decrement the same
+ * counter, so the combined total across all of them stays under the cap.
+ * The check-then-decrement in ingestEntries() happens synchronously with no
+ * `await` in between, so it's safe from races despite the concurrency:
+ * JS never preempts synchronous code between two await points.
+ */
+export interface RunCap {
+  remaining: number;
 }
 
 /**
@@ -307,6 +322,7 @@ function newPipelineResult(source: string): PipelineResult {
     skippedNotAiRelevant: 0,
     skippedInvalid: 0,
     skippedNoContent: 0,
+    skippedCapReached: 0,
     errors: [],
   };
 }
@@ -321,7 +337,7 @@ const SUMMARY_CONCURRENCY = 4;
  * real content for thin/missing descriptions); (3) concurrent LLM
  * summarization; (4) sequential DB writes, original order.
  */
-async function ingestEntries(ctx: IngestionContext, entries: FeedEntry[], source: FeedSource, titleIndex: RecentTitleIndex): Promise<PipelineResult> {
+async function ingestEntries(ctx: IngestionContext, entries: FeedEntry[], source: FeedSource, titleIndex: RecentTitleIndex, runCap?: RunCap): Promise<PipelineResult> {
   const { prisma, llmKeys } = ctx;
   const result = newPipelineResult(source.name);
   result.fetched = entries.length;
@@ -367,10 +383,21 @@ async function ingestEntries(ctx: IngestionContext, entries: FeedEntry[], source
       result.skippedNoContent++;
       continue;
     }
+    if (runCap) {
+      if (runCap.remaining <= 0) {
+        result.skippedCapReached++;
+        continue;
+      }
+      // Reserve the slot synchronously, before the await below, so a
+      // concurrently-running source can't also pass this same check before
+      // this one decrements — see the RunCap doc comment.
+      runCap.remaining--;
+    }
     try {
       await finalizePrepared(prisma, ctx.cloudinary, prepared[i], summaries[i], source);
       result.created++;
     } catch (err) {
+      if (runCap) runCap.remaining++; // give the reserved slot back — this entry was never actually created
       result.errors.push(`"${prepared[i].title}": ${(err as Error).message}`);
     }
   }
@@ -378,7 +405,7 @@ async function ingestEntries(ctx: IngestionContext, entries: FeedEntry[], source
   return result;
 }
 
-export async function ingestSource(ctx: IngestionContext, source: FeedSource, limit = 30, titleIndex?: RecentTitleIndex): Promise<PipelineResult> {
+export async function ingestSource(ctx: IngestionContext, source: FeedSource, limit = 30, titleIndex?: RecentTitleIndex, runCap?: RunCap): Promise<PipelineResult> {
   const index = titleIndex ?? (await loadRecentTitleIndex(ctx.prisma));
 
   let entries: FeedEntry[];
@@ -390,7 +417,7 @@ export async function ingestSource(ctx: IngestionContext, source: FeedSource, li
     return result;
   }
 
-  return ingestEntries(ctx, entries, source, index);
+  return ingestEntries(ctx, entries, source, index, runCap);
 }
 
 /**
@@ -419,7 +446,7 @@ const HN_DISCOVERY_SOURCE: FeedSource = {
  * Cron Trigger ceiling — a single real run returned 101 raw hits, which
  * serialized through the Gemini rate gate alone is 7.5+ minutes.
  */
-export async function ingestHackerNewsDiscovery(ctx: IngestionContext, titleIndex?: RecentTitleIndex, limit?: number): Promise<PipelineResult> {
+export async function ingestHackerNewsDiscovery(ctx: IngestionContext, titleIndex?: RecentTitleIndex, limit?: number, runCap?: RunCap): Promise<PipelineResult> {
   const index = titleIndex ?? (await loadRecentTitleIndex(ctx.prisma));
 
   let entries: FeedEntry[];
@@ -431,7 +458,7 @@ export async function ingestHackerNewsDiscovery(ctx: IngestionContext, titleInde
     return result;
   }
 
-  return ingestEntries(ctx, entries, HN_DISCOVERY_SOURCE, index);
+  return ingestEntries(ctx, entries, HN_DISCOVERY_SOURCE, index, runCap);
 }
 
 /** Runs a bounded number of async jobs concurrently, sized conservatively so we don't hammer many independent publisher domains at once. */
@@ -450,7 +477,7 @@ async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T)
 
 const SOURCE_CONCURRENCY = 4;
 
-export async function ingestAll(ctx: IngestionContext, sources: FeedSource[], limit = 30, titleIndex?: RecentTitleIndex): Promise<PipelineResult[]> {
+export async function ingestAll(ctx: IngestionContext, sources: FeedSource[], limit = 30, titleIndex?: RecentTitleIndex, runCap?: RunCap): Promise<PipelineResult[]> {
   const index = titleIndex ?? (await loadRecentTitleIndex(ctx.prisma));
-  return mapWithConcurrency(sources, SOURCE_CONCURRENCY, (source) => ingestSource(ctx, source, limit, index));
+  return mapWithConcurrency(sources, SOURCE_CONCURRENCY, (source) => ingestSource(ctx, source, limit, index, runCap));
 }

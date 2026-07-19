@@ -36,6 +36,8 @@ export interface NewsArticleRecord {
   up: number;
   down: number;
   filters: string[];
+  /** Whether the current clientId has bookmarked this article, per the backend — false if no clientId was sent with the request. */
+  bookmarked: boolean;
 }
 
 /** Article shape used throughout the UI, including the derived trending score. */

@@ -59,12 +59,12 @@ async function main() {
     for (const r of summary.results) {
         console.log(`${r.source.padEnd(28)} fetched=${r.fetched} created=${r.created} duplicate=${r.skippedDuplicate} ` +
             `near-dup=${r.skippedNearDuplicate} not-ai=${r.skippedNotAiRelevant} invalid=${r.skippedInvalid} ` +
-            `no-content=${r.skippedNoContent}` +
+            `no-content=${r.skippedNoContent} cap-reached=${r.skippedCapReached}` +
             `${r.errors.length ? ` errors=${r.errors.length}` : ""}`);
         for (const err of r.errors.slice(0, 3))
             console.log(`   ! ${err}`);
     }
-    console.log(`\nDone. ${summary.totalCreated} new article(s) ingested, ${summary.pruned} pruned.`);
+    console.log(`\nDone. ${summary.totalCreated} new article(s) ingested.`);
     await prisma.$disconnect();
 }
 main().catch((err) => {

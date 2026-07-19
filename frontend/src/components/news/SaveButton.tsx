@@ -10,6 +10,16 @@ interface SaveButtonProps {
   id: string;
   /** Fixed width filling its container (no content-driven growth) — used in the mobile equal-width grid. */
   fluid?: boolean;
+  /**
+   * Authoritative initial state from the backend (article.bookmarked, from
+   * GET /api/news[/:slug]?clientId=... — see news.services.ts's
+   * loadBookmarkedIds). When provided, this — not localStorage — determines
+   * whether the button opens as "Saved", closing the gap where a
+   * cleared-localStorage/different-browser session showed "Save" despite a
+   * real NewsBookmark row existing. Falls back to the old localStorage-only
+   * read when omitted (e.g. a caller that hasn't been updated to pass it).
+   */
+  initialBookmarked?: boolean;
 }
 
 /**
@@ -17,26 +27,34 @@ interface SaveButtonProps {
  * replaces the old app's localStorage-only toggle. `id` is the article's
  * slug (see VoteButtons.tsx's comment on why NewsArticleDTO.id is a slug).
  *
- * The "is this saved" indicator itself is still read from localStorage on
- * mount, same as before — the backend does persist a real NewsBookmark row,
- * but there's no GET endpoint yet to check "is clientId X's bookmark set
- * for this article", so a cleared-localStorage/different-browser session
- * won't show the saved state even though the server-side bookmark still
- * exists. Not a bug — a known, narrower scope than votes/comments for this
- * pass; flagged rather than silently left as a gap.
+ * Initial "is this saved" state comes from `initialBookmarked` (the
+ * backend's real answer) when the caller provides it; localStorage is kept
+ * in sync alongside it purely so toggle()'s optimistic click-update (below)
+ * still has something to read/write locally between backend round-trips —
+ * it is no longer the source of truth for what renders on mount.
  */
-export function SaveButton({ id, fluid }: SaveButtonProps) {
+export function SaveButton({ id, fluid, initialBookmarked }: SaveButtonProps) {
   const key = "tas_bm_" + id;
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
+    if (initialBookmarked !== undefined) {
+      setSaved(initialBookmarked);
+      try {
+        if (initialBookmarked) window.localStorage.setItem(key, "1");
+        else window.localStorage.removeItem(key);
+      } catch {
+        // localStorage unavailable — ignore
+      }
+      return;
+    }
     try {
       setSaved(window.localStorage.getItem(key) === "1");
     } catch {
       // localStorage unavailable — ignore
     }
-  }, [key]);
+  }, [key, initialBookmarked]);
 
   const toggle = async () => {
     if (pending) return;

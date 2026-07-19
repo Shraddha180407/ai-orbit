@@ -213,6 +213,7 @@ function newPipelineResult(source) {
         skippedNotAiRelevant: 0,
         skippedInvalid: 0,
         skippedNoContent: 0,
+        skippedCapReached: 0,
         errors: [],
     };
 }
@@ -225,7 +226,7 @@ const SUMMARY_CONCURRENCY = 4;
  * real content for thin/missing descriptions); (3) concurrent LLM
  * summarization; (4) sequential DB writes, original order.
  */
-async function ingestEntries(ctx, entries, source, titleIndex) {
+async function ingestEntries(ctx, entries, source, titleIndex, runCap) {
     const { prisma, llmKeys } = ctx;
     const result = newPipelineResult(source.name);
     result.fetched = entries.length;
@@ -275,17 +276,29 @@ async function ingestEntries(ctx, entries, source, titleIndex) {
             result.skippedNoContent++;
             continue;
         }
+        if (runCap) {
+            if (runCap.remaining <= 0) {
+                result.skippedCapReached++;
+                continue;
+            }
+            // Reserve the slot synchronously, before the await below, so a
+            // concurrently-running source can't also pass this same check before
+            // this one decrements — see the RunCap doc comment.
+            runCap.remaining--;
+        }
         try {
             await finalizePrepared(prisma, ctx.cloudinary, prepared[i], summaries[i], source);
             result.created++;
         }
         catch (err) {
+            if (runCap)
+                runCap.remaining++; // give the reserved slot back — this entry was never actually created
             result.errors.push(`"${prepared[i].title}": ${err.message}`);
         }
     }
     return result;
 }
-export async function ingestSource(ctx, source, limit = 30, titleIndex) {
+export async function ingestSource(ctx, source, limit = 30, titleIndex, runCap) {
     const index = titleIndex ?? (await loadRecentTitleIndex(ctx.prisma));
     let entries;
     try {
@@ -296,7 +309,7 @@ export async function ingestSource(ctx, source, limit = 30, titleIndex) {
         result.errors.push(`feed fetch failed: ${err.message}`);
         return result;
     }
-    return ingestEntries(ctx, entries, source, index);
+    return ingestEntries(ctx, entries, source, index, runCap);
 }
 /**
  * A synthetic "source" for Hacker-News-discovered entries — not a real feed
@@ -323,7 +336,7 @@ const HN_DISCOVERY_SOURCE = {
  * Cron Trigger ceiling — a single real run returned 101 raw hits, which
  * serialized through the Gemini rate gate alone is 7.5+ minutes.
  */
-export async function ingestHackerNewsDiscovery(ctx, titleIndex, limit) {
+export async function ingestHackerNewsDiscovery(ctx, titleIndex, limit, runCap) {
     const index = titleIndex ?? (await loadRecentTitleIndex(ctx.prisma));
     let entries;
     try {
@@ -334,7 +347,7 @@ export async function ingestHackerNewsDiscovery(ctx, titleIndex, limit) {
         result.errors.push(`HN discovery failed: ${err.message}`);
         return result;
     }
-    return ingestEntries(ctx, entries, HN_DISCOVERY_SOURCE, index);
+    return ingestEntries(ctx, entries, HN_DISCOVERY_SOURCE, index, runCap);
 }
 /** Runs a bounded number of async jobs concurrently, sized conservatively so we don't hammer many independent publisher domains at once. */
 async function mapWithConcurrency(items, limit, fn) {
@@ -350,7 +363,7 @@ async function mapWithConcurrency(items, limit, fn) {
     return results;
 }
 const SOURCE_CONCURRENCY = 4;
-export async function ingestAll(ctx, sources, limit = 30, titleIndex) {
+export async function ingestAll(ctx, sources, limit = 30, titleIndex, runCap) {
     const index = titleIndex ?? (await loadRecentTitleIndex(ctx.prisma));
-    return mapWithConcurrency(sources, SOURCE_CONCURRENCY, (source) => ingestSource(ctx, source, limit, index));
+    return mapWithConcurrency(sources, SOURCE_CONCURRENCY, (source) => ingestSource(ctx, source, limit, index, runCap));
 }
