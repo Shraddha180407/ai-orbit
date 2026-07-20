@@ -91,7 +91,7 @@ export function DeviceDetailClient() {
     return (
       <div className="min-h-screen flex flex-col bg-[#000000] text-white">
         <Header />
-        <main className="mx-auto max-w-[1000px] px-4 md:px-8 py-10 w-full flex-1">
+        <main className="w-full px-6 md:px-10 py-10 flex-1">
           <div className="h-6 w-48 animate-pulse bg-[#131316] rounded mb-8" />
           <div className="grid md:grid-cols-2 gap-8">
             <div className="h-80 animate-pulse bg-[#131316] rounded-xl border border-[#232326]" />
@@ -107,7 +107,7 @@ export function DeviceDetailClient() {
     return (
       <div className="min-h-screen flex flex-col bg-[#000000] text-white">
         <Header />
-        <main className="mx-auto max-w-[1000px] px-4 md:px-8 py-20 text-center flex-1">
+        <main className="w-full px-6 md:px-12 py-20 text-center flex-1">
           <p className="text-[#52525B]">Device not found.</p>
           <Link href="/devices" className="text-[#6E56CF] text-sm mt-4 inline-block hover:underline">
             ← Back to Devices
@@ -121,7 +121,7 @@ export function DeviceDetailClient() {
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white">
       <Header />
-      <main className="mx-auto max-w-[1000px] px-4 md:px-8 py-10 w-full flex-1">
+      <main className="mx-auto max-w-[1400px] px-4 md:px-6 py-10 flex-1 w-full">
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-[#52525B] mb-8 flex-wrap">
@@ -135,14 +135,14 @@ export function DeviceDetailClient() {
         </nav>
 
         {/* Top Section */}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-6 mb-8 items-start">
           {/* Left: Image */}
-          <div className="rounded-xl border border-[#232326] bg-[#0D0D0F] overflow-hidden h-[260px] md:h-[420px]">
+          <div className="rounded-xl border border-[#232326] bg-white overflow-hidden self-start">
   {device.imageUrl ? (
     <img
       src={device.imageUrl}
       alt={device.name}
-      className="w-full h-full object-cover"
+      className="w-full object-contain p-6 max-h-[380px]"
       onError={(e) => {
         (e.target as HTMLImageElement).style.display = "none";
       }}
@@ -154,7 +154,7 @@ export function DeviceDetailClient() {
   )}
 </div>
           {/* Right: Info Card */}
-          <div className="rounded-xl border border-[#232326] bg-[#0D0D0F] p-4 md:p-6 flex flex-col gap-3 md:h-[420px] md:overflow-y-auto">
+          <div className="rounded-xl border border-[#232326] bg-[#0D0D0F] p-4 md:p-6 flex flex-col gap-3">
 
             {/* Category badge */}
             <div>
@@ -228,10 +228,10 @@ export function DeviceDetailClient() {
 
         {/* Specifications */}
         <div className="rounded-xl border border-[#232326] bg-[#0D0D0F] mb-6 overflow-hidden">
-          <div className="px-4 md:px-6 py-3 bg-[#131316] border-b border-[#232326]">
+          <div className="px-6 py-3 bg-[#131316] border-b border-[#232326]">
             <h2 className="text-xs font-bold text-[#A1A1AA] uppercase tracking-widest">Specifications</h2>
           </div>
-          <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-5">
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-5">
             {device.formFactor && <SpecRow label="Form factor" value={device.formFactor} />}
             {device.ram && <SpecRow label="RAM" value={device.ram} />}
             {device.country && <SpecRow label="Made in" value={device.country} />}
@@ -282,7 +282,7 @@ export function DeviceDetailClient() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-[#6E56CF]"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
               Similar Devices
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {similar.map((d) => (
                 <Link
                   key={d.id}
