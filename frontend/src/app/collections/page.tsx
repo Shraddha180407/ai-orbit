@@ -1,7 +1,8 @@
 import CollectionsPageClient from "./CollectionsPageClient";
 import { CategoryNav } from "@/components/CategoryNav"; 
 import type { CollectionListItem } from "@/lib/types";
-
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 export const metadata = {
   title: "Curated Collections | Tool Directory",
   description: "Explore curated lists and stack configurations by domain experts.",
@@ -88,11 +89,13 @@ export default async function CollectionsPage() {
 
   return (
     <div className="relative min-h-screen bg-[#000000] text-[#E4E4E7] antialiased">
+    <Header/>
       <CategoryNav />
       
       <main className="relative z-10 bg-[#000000]">
         <CollectionsPageClient initialCollections={initialData} />
       </main>
+      <Footer/>
     </div>
   );
 }
