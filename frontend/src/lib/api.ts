@@ -188,3 +188,31 @@ function resolveServerApiUrl(): string {
 }
 
 export const SERVER_API_URL = resolveServerApiUrl();
+
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+export async function fetchTasks(category?: string): Promise<any> {
+  const url = new URL(`${API_URL}/api/v1/tasks`);
+  if (category) url.searchParams.set("category", category);
+  
+  try {
+    const res = await fetch(url.toString());
+    if (!res.ok) return { tasks: [], total: 0 };
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to fetch tasks:", err);
+    return { tasks: [], total: 0 };
+  }
+}
+
+export async function toggleTaskSubscription(slug: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/v1/tasks/${slug}/subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("Failed to subscribe to task:", err);
+    return false;
+  }
+}
