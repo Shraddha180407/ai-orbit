@@ -1,0 +1,235 @@
+'use client';
+
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import Link from "next/link";
+import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right';
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
+
+import {
+  fetchTasks,
+  type Task,
+  type Category,
+  type Difficulty,
+  type PricingModel,
+  type SortOption,
+  type TaskListResponse,
+} from "@/lib/tasks-api";
+import { TaskFilters, type ShowFilter } from "./TaskFilters";
+import { TaskCard } from "./TaskCard";
+import { TaskSkeleton } from "./TaskSkeleton";
+import { EmptyTasks } from "./EmptyTasks";
+import { TaskErrorState } from "./TaskErrorState";
+
+type TasksClientProps = {
+  initialData: TaskListResponse;
+};
+
+const COLUMN_LABELS = ["SUBSCRIBERS", "SAVES", "TOOLS", "MODELS", "ROBOTS", "DEVICES"];
+
+export function TasksClient({ initialData }: TasksClientProps) {
+  const [tasks, setTasks] = useState<Task[]>(initialData.tasks);
+  const [categories, setCategories] = useState<Category[]>(initialData.categories);
+  const [total, setTotal] = useState(initialData.total);
+  const [page, setPage] = useState(initialData.page);
+  const [totalPages, setTotalPages] = useState(initialData.totalPages);
+
+  const [isFetching, setIsFetching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const [showFilter, setShowFilter] = useState<ShowFilter>("All Tasks");
+  const [category, setCategory] = useState("");
+  const [difficulty, setDifficulty] = useState<Difficulty | "ALL">("ALL");
+  const [pricing, setPricing] = useState<PricingModel | "ALL">("ALL");
+  const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [sort, setSort] = useState<SortOption>("newest");
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const queryParams = useMemo(
+    () => ({
+      q: search.trim() || undefined,
+      category: category || undefined,
+      difficulty: difficulty === "ALL" ? undefined : difficulty,
+      pricing: pricing === "ALL" ? undefined : pricing,
+      featuredOnly: featuredOnly || undefined,
+      sort,
+    }),
+    [search, category, difficulty, pricing, featuredOnly, sort]
+  );
+
+  const loadPage = useCallback(
+    async (pageNum: number, append: boolean) => {
+      setIsFetching(true);
+      setError(null);
+      try {
+        const data = await fetchTasks({ ...queryParams, page: pageNum });
+        setTasks((prev) => (append ? [...prev, ...data.tasks] : data.tasks));
+        setTotal(data.total);
+        setPage(data.page);
+        setTotalPages(data.totalPages);
+        if (data.categories?.length) setCategories(data.categories);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load tasks.");
+      } finally {
+        setIsFetching(false);
+      }
+    },
+    [queryParams]
+  );
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      loadPage(1, false);
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryParams]);
+
+  const loadMore = useCallback(() => {
+    if (isFetching || page >= totalPages) return;
+    loadPage(page + 1, true);
+  }, [isFetching, page, totalPages, loadPage]);
+
+  useEffect(() => {
+    if (isFetching || page >= totalPages) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore();
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentSentinel = sentinelRef.current;
+    if (currentSentinel) observer.observe(currentSentinel);
+
+    return () => {
+      if (currentSentinel) observer.unobserve(currentSentinel);
+    };
+  }, [isFetching, page, totalPages, loadMore]);
+
+  const isInitialLoading = isFetching && tasks.length === 0 && !error;
+
+  // Dynamic subtitle: "293 Tasks across all categories" vs "94 Coding Tasks"
+  const subtitle = useMemo(() => {
+    if (!category) {
+      return (
+        <>
+          <span className="text-[#A1A1AA] font-medium tabular-nums">{total.toLocaleString()}</span> Tasks across all
+          categories
+        </>
+      );
+    }
+    const activeCategory = categories.find((c) => c.slug === category);
+    const categoryName = activeCategory?.name ?? category;
+    return (
+      <>
+        <span className="text-[#A1A1AA] font-medium tabular-nums">{total.toLocaleString()}</span> {categoryName}{" "}
+        Tasks
+      </>
+    );
+  }, [category, categories, total]);
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
+      <main className="w-full max-w-none px-6 lg:px-10 xl:px-14 py-8 flex-1">
+        {/* Breadcrumb */}
+        <nav aria-label="Breadcrumb" className="mb-4">
+          <ol className="flex items-center gap-1.5 text-xs text-[#71717A] font-mono">
+            <li>
+              <Link href="/" className="hover:text-white transition-colors duration-200">
+                Home
+              </Link>
+            </li>
+            <li className="flex items-center gap-1.5">
+              <ChevronRight className="h-3 w-3" />
+              <span className="text-white">Tasks</span>
+            </li>
+          </ol>
+        </nav>
+
+        {/* Heading */}
+        <div className="mb-5 relative">
+          <div
+            className="pointer-events-none absolute -left-6 -top-10 h-40 w-40 rounded-full opacity-[0.15] blur-3xl"
+            style={{ background: "radial-gradient(circle, #6E56CF, transparent 70%)" }}
+            aria-hidden="true"
+          />
+          <div className="relative flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#18181C] to-[#0A0A0C] border border-[#232326] flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <Sparkles className="h-4 w-4 text-[#A78BFA]" aria-hidden="true" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">Tasks</h1>
+          </div>
+          <p className="text-sm text-[#71717A] mt-1.5 ml-[46px]">{subtitle}</p>
+        </div>
+
+        {/* Filters row */}
+        <div className="mb-4">
+          <TaskFilters
+            search={search}
+            onSearchChange={setSearch}
+            showFilter={showFilter}
+            onShowFilterChange={setShowFilter}
+            categories={categories}
+            category={category}
+            onCategoryChange={setCategory}
+            difficulty={difficulty}
+            onDifficultyChange={setDifficulty}
+            pricing={pricing}
+            onPricingChange={setPricing}
+            featuredOnly={featuredOnly}
+            onFeaturedOnlyChange={setFeaturedOnly}
+            sort={sort}
+            onSortChange={setSort}
+          />
+        </div>
+
+        {isInitialLoading ? (
+          <TaskSkeleton />
+        ) : error && tasks.length === 0 ? (
+          <TaskErrorState message={error} onRetry={() => loadPage(1, false)} />
+        ) : tasks.length === 0 ? (
+          <EmptyTasks />
+        ) : (
+          <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#131316]/60 to-[#0D0D10]/60 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_20px_60px_-30px_rgba(0,0,0,0.8)] ring-1 ring-[#232326]/70">
+            <div className="grid grid-cols-[48px_minmax(220px,1.6fr)_repeat(6,minmax(90px,1fr))] items-center gap-4 px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
+              <span />
+              <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A]">Task</span>
+              {COLUMN_LABELS.map((label) => (
+                <span
+                  key={label}
+                  className="text-right text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A]"
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+
+            {tasks.map((task) => (
+              <TaskCard key={task.id} task={task} />
+            ))}
+
+            {error && tasks.length > 0 && (
+              <div className="px-5 py-3 text-xs text-red-400 border-t border-[#232326]/60">
+                Failed to load more tasks: {error}
+              </div>
+            )}
+
+            {page < totalPages && (
+              <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-[#A78BFA]" />
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

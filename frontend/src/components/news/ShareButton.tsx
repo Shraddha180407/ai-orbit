@@ -7,13 +7,28 @@ import { ICONS } from "@/lib/icons";
 interface ShareButtonProps {
   /** Fixed width filling its container (no content-driven growth) — used in the mobile equal-width grid. */
   fluid?: boolean;
+  /** Article headline, passed to the native share sheet (title/text) when available — see NewsTable.tsx's NewsRowActions.share, same pattern. */
+  title?: string;
 }
 
-export function ShareButton({ fluid }: ShareButtonProps) {
+export function ShareButton({ fluid, title }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
-  const share = () => {
-    navigator.clipboard?.writeText(window.location.href).catch(() => {});
+  const share = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text: title, url });
+        return;
+      }
+    } catch {
+      // user cancelled or Web Share unsupported — fall through to clipboard
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // clipboard unavailable — ignore
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 1600);
   };

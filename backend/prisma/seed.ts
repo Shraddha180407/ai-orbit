@@ -1666,6 +1666,25 @@ const TOOLS: SeedTool[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Tasks — temporary sample data until Soumya's real dataset lands.
+// Swap TASKS for `import tasks from "./tasks.json"` once that PR merges.
+// ---------------------------------------------------------------------------
+
+interface SeedTask {
+  title: string;
+  slug: string;
+  description: string;
+  category: string;
+  difficulty: "EASY" | "MEDIUM" | "ADVANCED";
+  pricingModel: PricingModel;
+  isFeatured: boolean;
+  recommendedAITools: string[];
+}
+
+import tasksData from "./task.json" with { type: "json" };
+const TASKS: SeedTask[] = tasksData as SeedTask[];
+
+// ---------------------------------------------------------------------------
 // Reviews — a handful of realistic sample reviews spread across popular tools
 // ---------------------------------------------------------------------------
 
@@ -1817,6 +1836,58 @@ async function main() {
   }
   console.log(`Relate completed: bulk created ${categoryLinks.length} categories and ${tagLinks.length} tags.`);
 
+  console.log("Seeding tasks...");
+
+  const toolByName = new Map<string, { id: string }>();
+  for (const t of allTools) {
+    const tool = toolBySlug.get(t.slug);
+    if (tool) toolByName.set(t.name.toLowerCase(), tool);
+  }
+
+  for (const t of TASKS) {
+    const categorySlug = t.category.toLowerCase().replace(/ /g, "-");
+    const category = categoryBySlug.get(categorySlug);
+
+    if (!category) {
+      console.warn(`⚠️  Skipping task "${t.title}" — category "${t.category}" not found`);
+      continue;
+    }
+
+    const createdTask = await prisma.task.upsert({
+      where: { slug: t.slug },
+      update: {
+        title: t.title,
+        description: t.description,
+        difficulty: t.difficulty,
+        pricingModel: t.pricingModel,
+        isFeatured: t.isFeatured,
+        categoryId: category.id,
+      },
+      create: {
+        slug: t.slug,
+        title: t.title,
+        description: t.description,
+        difficulty: t.difficulty,
+        pricingModel: t.pricingModel,
+        isFeatured: t.isFeatured,
+        categoryId: category.id,
+      },
+    });
+
+    await prisma.taskTool.deleteMany({ where: { taskId: createdTask.id } });
+
+    for (const toolName of t.recommendedAITools) {
+      const tool = toolByName.get(toolName.toLowerCase());
+      if (!tool) {
+        console.warn(`   ⚠️  Tool "${toolName}" not found for task "${t.title}"`);
+        continue;
+      }
+      await prisma.taskTool.create({ data: { taskId: createdTask.id, toolId: tool.id } });
+    }
+  }
+
+  console.log(`Seeded ${TASKS.length} tasks.`);
+  
   // Curated similar mappings
   const ALTERNATIVE_PAIRS: [string, string][] = [
     ["chatgpt", "claude"],
@@ -1961,36 +2032,60 @@ async function main() {
   await prisma.repository.deleteMany({});
   const seedRepos = [
     {
+      githubId: 462220720,
+      slug: "suno-ai-bark",
       name: "bark",
       owner: "suno-ai",
       stars: 32400,
+      forks: 3800,
+      openIssues: 150,
       language: "Python",
       description: "Transformer-based audio generation model capable of highly realistic multi-lingual text-to-speech and sound effects.",
       url: "https://github.com/suno-ai/bark",
+      githubCreatedAt: new Date("2022-11-15T00:00:00Z"),
+      syncedAt: new Date(),
     },
     {
+      githubId: 159635688,
+      slug: "AUTOMATIC1111-stable-diffusion-webui",
       name: "stable-diffusion-webui",
       owner: "AUTOMATIC1111",
       stars: 131800,
+      forks: 24700,
+      openIssues: 1200,
       language: "Python",
       description: "A comprehensive browser interface built on Gradio for running Stable Diffusion text-to-image and image-to-image models.",
       url: "https://github.com/AUTOMATIC1111/stable-diffusion-webui",
+      githubCreatedAt: new Date("2022-08-22T00:00:00Z"),
+      syncedAt: new Date(),
     },
     {
+      githubId: 1575486110,
+      slug: "comfyanonymous-ComfyUI",
       name: "ComfyUI",
       owner: "comfyanonymous",
       stars: 48900,
+      forks: 5200,
+      openIssues: 800,
       language: "Python",
       description: "A powerful, modular node-based graphic interface for running diffusion models in customizable, complex workflows.",
       url: "https://github.com/comfyanonymous/ComfyUI",
+      githubCreatedAt: new Date("2023-01-10T00:00:00Z"),
+      syncedAt: new Date(),
     },
     {
+      githubId: 219676852,
+      slug: "huggingface-transformers",
       name: "transformers",
       owner: "huggingface",
       stars: 129000,
+      forks: 25400,
+      openIssues: 2100,
       language: "Python",
       description: "State-of-the-art Machine Learning architectures (BERT, GPT, LLaMA, Whisper) for PyTorch, TensorFlow, and JAX.",
       url: "https://github.com/huggingface/transformers",
+      githubCreatedAt: new Date("2018-11-01T00:00:00Z"),
+      syncedAt: new Date(),
     },
   ];
   await prisma.repository.createMany({ data: seedRepos });

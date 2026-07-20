@@ -5,6 +5,7 @@ import {
   fetchVideos,
   fetchVideoBySlug,
   fetchRelatedVideos,
+  countVideos,
 } from "./videos.services.js";
 import {
   ListQuerySchema,
@@ -35,9 +36,23 @@ export async function listVideos(c: Context) {
       return c.json({ error: "Invalid query parameters", details: result.error.format() }, 400);
     }
 
-    const { sort, limit } = result.data;
-    const videos = await fetchVideos(prisma, sort, limit);
+    const { sort, limit, offset } = result.data;
+    const videos = await fetchVideos(prisma, sort, limit, offset);
     return c.json(videos.map(toApiShape));
+  } catch (error: any) {
+    console.error("Videos API Controller Error:", error);
+    return c.json({ error: "Internal server error.", message: error.message }, 500);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+// GET /api/videos/count
+export async function getVideosCount(c: Context) {
+  const prisma = getPrisma(c);
+  try {
+    const total = await countVideos(prisma);
+    return c.json({ total });
   } catch (error: any) {
     console.error("Videos API Controller Error:", error);
     return c.json({ error: "Internal server error.", message: error.message }, 500);

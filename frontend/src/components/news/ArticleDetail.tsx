@@ -72,12 +72,13 @@ export function ArticleDetail({ article: a, related, sources, popularSources, co
               href={sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
+              title={`Opens the original article on ${source.name}`}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
                 padding: "3px 10px 3px 4px",
-                borderRadius: 999,
+                borderRadius: "var(--news-radius-md)",
                 background: `color-mix(in srgb, ${source.color} 14%, var(--bg-surface-2))`,
                 border: `1px solid color-mix(in srgb, ${source.color} 34%, transparent)`,
                 textDecoration: "none",
@@ -85,6 +86,7 @@ export function ArticleDetail({ article: a, related, sources, popularSources, co
             >
               <PublisherIcon key={source.domain} source={source} box={22} />
               <span style={{ font: "var(--fw-semibold) 13px/1 var(--font-sans)", color: "var(--text-primary)" }}>{source.name}</span>
+              <Icon path={ICONS.external} size={12} style={{ color: "var(--text-tertiary)" }} />
             </a>
             <span style={{ color: "var(--text-quaternary)" }}>·</span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "var(--fw-medium) 14px/1 var(--font-sans)", color: "var(--text-secondary)" }}>
@@ -133,8 +135,8 @@ export function ArticleDetail({ article: a, related, sources, popularSources, co
             className="hidden lg:flex"
             style={{ alignItems: "center", gap: 12, marginTop: 40, paddingTop: 24, borderTop: "1px solid var(--border-subtle)", flexWrap: "wrap" }}
           >
-            <ShareButton />
-            <SaveButton id={a.id} />
+            <ShareButton title={a.headline} />
+            <SaveButton id={a.id} initialBookmarked={a.bookmarked} />
             <div style={{ marginLeft: "auto" }}>
               <VoteButtons up={a.up} down={a.down} id={a.id} size="lg" />
             </div>
@@ -145,8 +147,8 @@ export function ArticleDetail({ article: a, related, sources, popularSources, co
             className="grid lg:hidden"
             style={{ gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 32, paddingTop: 20, borderTop: "1px solid var(--border-subtle)" }}
           >
-            <ShareButton fluid />
-            <SaveButton id={a.id} fluid />
+            <ShareButton fluid title={a.headline} />
+            <SaveButton id={a.id} fluid initialBookmarked={a.bookmarked} />
             <div style={{ gridColumn: "1 / -1" }}>
               <VoteButtons up={a.up} down={a.down} id={a.id} size="lg" fluid />
             </div>

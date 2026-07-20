@@ -56,7 +56,7 @@ export function PopularSources({ popular, sources }: PopularSourcesProps) {
                 </div>
                 <div style={{ font: "var(--fw-regular) 15px/1 var(--font-sans)", color: "var(--text-quaternary)", marginTop: 6 }}>{s.followers} followers</div>
               </div>
-              <Icon path={ICONS.chevronR} size={16} style={{ color: "var(--text-quaternary)", flex: "none" }} />
+              <Icon path={ICONS.external} size={16} style={{ color: "var(--text-quaternary)", flex: "none" }} />
             </a>
           );
         })}
