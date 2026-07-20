@@ -37,7 +37,7 @@ export function HeroFeatureChips() {
               url.hash = "tools";
               window.location.href = url.toString();
             }}
-            className={`group inline-flex items-center gap-2.5 rounded-full px-6 h-[52px] text-[15px] font-bold border-2 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.04] active:scale-[0.98] ${
+            className={`group inline-flex items-center gap-2 rounded-full px-4 h-[38px] text-[12.5px] font-bold border-2 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.04] active:scale-[0.98] ${
               isActive ? "text-black shadow-xl" : "bg-[#131316]/70"
             }`}
             style={
@@ -59,11 +59,11 @@ export function HeroFeatureChips() {
             }}
           >
             <span
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:rotate-[8deg]"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:rotate-[8deg]"
               style={{ backgroundColor: isActive ? "rgba(0,0,0,0.15)" : `${f.color}22` }}
             >
               <Icon
-                size={18}
+                size={14}
                 strokeWidth={2.25}
                 className={isActive ? "text-black" : ""}
                 style={isActive ? undefined : { color: f.color, filter: `drop-shadow(0 0 6px ${f.color}99)` }}

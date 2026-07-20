@@ -143,17 +143,17 @@ function ToolRow({
       className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none`}
     >
       {/* Column 1: Logo */}
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[#232326]/60 bg-white">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
         {tool.logoUrl ? (
           <Image
             src={tool.logoUrl}
             alt={`${tool.name} logo`}
-            width={28}
-            height={28}
-            className="h-6 w-6 object-contain"
+            width={40}
+            height={40}
+            className="h-9 w-9 object-contain"
           />
         ) : (
-          <span className="text-xs font-bold text-neutral-900">
+          <span className="text-sm font-bold text-neutral-900">
             {tool.name.charAt(0)}
           </span>
         )}
@@ -296,7 +296,7 @@ export function ToolListView({
               key={i}
               className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2.5`}
             >
-              <div className="h-8 w-8 animate-pulse rounded-md bg-[#18181C]" />
+              <div className="h-11 w-11 animate-pulse rounded-lg bg-[#18181C]" />
               <div className="space-y-1.5">
                 <div className="h-3 w-40 animate-pulse rounded bg-[#18181C]" />
                 <div className="h-2 w-64 animate-pulse rounded bg-[#18181C]" />
