@@ -17,7 +17,7 @@ export function VideoSaveButton({ id, className }: { id: string; className?: str
 
   useEffect(() => {
     try {
-      setSaved(window.localStorage.getItem(key) === "1");
+      setTimeout(() => setSaved(window.localStorage.getItem(key) === "1"), 0);
     } catch {
       // localStorage unavailable — ignore
     }

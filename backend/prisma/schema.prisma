@@ -46,7 +46,7 @@ model User {
   password      String?
   image         String?
   role          String    @default("USER")
-  status        String    @default("ACTIVE")
+  status        String    @default("ACTIVE") // ACTIVE, BLOCKED
   emailVerified DateTime?
 
   createdAt DateTime @default(now())
@@ -56,6 +56,9 @@ model User {
   bookmarks           Bookmark[]
   accounts            Account[]
   sessions            Session[]
+  reports             Report[]             @relation("Reporter")
+  reported            Report[]             @relation("ReportedUser")
+  toolHistory         ToolHistory[]
   collections         Collection[]
   collectionBookmarks CollectionBookmark[]
   taskBookmarks       TaskBookmark[]
@@ -65,6 +68,33 @@ model User {
   tasksCreated        Task[]               @relation("TaskCreator")
   taskLikes           TaskLike[]           @relation("TaskLikeUser")
   taskSubscriptions   TaskSubscriber[]     @relation("TaskSubscriberUser")
+}
+
+
+
+model Report {
+  id     String @id @default(cuid())
+  reason String
+  status String @default("PENDING") // PENDING, APPROVED, REJECTED, IGNORED
+
+  reporterId String
+  reporter   User   @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  reportedUserId String?
+  reportedUser   User?   @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
+
+  reportedToolId String?
+  reportedTool   Tool?   @relation(fields: [reportedToolId], references: [id], onDelete: SetNull)
+
+  reportedNewsId String?
+  reportedNews   News?   @relation(fields: [reportedNewsId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([reporterId])
+  @@index([status])
+
 }
 
 // ---- Module 3: AI Tools ----
@@ -93,8 +123,10 @@ model Tool {
   tags       ToolTag[]
   reports    Report[]
 
-  reviews   Review[]
-  bookmarks Bookmark[]
+  reviews     Review[]
+  bookmarks   Bookmark[]
+  reports     Report[]
+  history     ToolHistory[]
 
   alternatives  Tool[]     @relation("ToolAlternatives")
   alternativeOf Tool[]     @relation("ToolAlternatives")
@@ -499,6 +531,19 @@ model LeaderboardTool {
   addedDate   String
 }
 
+model ToolHistory {
+  id       String   @id @default(cuid())
+  userId   String
+  toolId   String
+  viewedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tool     Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, toolId])
+  @@index([userId])
+  @@index([toolId])
+}
+
 // ---- Module: Collections ----
 
 enum CreatorType {
@@ -592,7 +637,6 @@ model CollectionBookmark {
 
   @@unique([userId, collectionId])
 }
-
 // ---- Module: Tasks ----
 
 enum TaskDifficulty {
@@ -748,4 +792,3 @@ model Report {
   reportedNewsId String?
   reportedNews   News?    @relation(fields: [reportedNewsId], references: [id], onDelete: Cascade)
 }
-
