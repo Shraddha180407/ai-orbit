@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { SearchIcon } from "lucide-react";
 import { ResultsTable } from "@/components/search/ResultsTable";
 import { TrendingList } from "@/components/search/TrendingList";
@@ -33,6 +34,8 @@ const GALLERY_TABS: { label: string; sort: SortOption }[] = [
 
 export function SectionPageContent({ slug }: { slug: string }) {
   const config = getSectionBySlug(slug);
+  const searchParams = useSearchParams();
+  const activeCategory = searchParams.get("category") || "";
 
   // Only used by the "gallery" layout (Mini tools): its own sort tabs and
   // search box, independent of the global search bar.
@@ -83,8 +86,14 @@ export function SectionPageContent({ slug }: { slug: string }) {
     })
       .then((result) => {
         if (cancelled) return;
-        setItems(result.items);
-        setTotal(result.total);
+        let filteredItems = result.items;
+        if (config.slug === "tasks" && activeCategory) {
+          filteredItems = result.items.filter(
+            (item) => item.category?.toLowerCase() === activeCategory.toLowerCase()
+          );
+        }
+        setItems(filteredItems);
+        setTotal(filteredItems.length);
       })
       .catch(() => {
         if (!cancelled) setError("Something went wrong while loading this page. Please try again.");
@@ -97,7 +106,7 @@ export function SectionPageContent({ slug }: { slug: string }) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, effectiveSort, effectiveQuery, retryToken]);
+  }, [slug, effectiveSort, effectiveQuery, activeCategory, retryToken]);
 
   const data = { items, total };
 

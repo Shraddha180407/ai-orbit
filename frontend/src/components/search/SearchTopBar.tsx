@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Search, CheckSquare, Tag, Percent, ChevronDown, Sparkles } from "lucide-react";
+import { Search, Tag, Percent, Sparkles } from "lucide-react";
 import { useSearchModal } from "@/context/SearchModalContext";
+import { TasksDropdown } from "@/components/search/TasksDropdown";
 
 /**
  * The search module's own announcement banner + navbar (logo, Free mode
@@ -45,14 +46,10 @@ export function SearchTopBar() {
 
           {/* Tasks / Prompts / Deals — quick-jump pills to the most-used sections */}
           <nav className="hidden shrink-0 items-center gap-2 lg:flex">
-            <Link
-              href="/search/tasks"
-              className="flex items-center gap-1.5 rounded-full border border-search-border px-3 py-1.5 text-sm text-search-text-secondary transition-colors hover:border-search-border-hover hover:text-search-text-primary"
-            >
-              <CheckSquare size={14} />
-              Tasks
-              <ChevronDown size={13} />
-            </Link>
+            <TasksDropdown
+              buttonClassName="flex items-center gap-1.5 rounded-full border border-search-border px-3 py-1.5 text-sm text-search-text-secondary transition-colors hover:border-search-border-hover hover:text-search-text-primary bg-search-surface/50"
+              menuClassName="absolute left-0 mt-2 w-[280px] rounded-lg border border-search-border bg-search-surface p-2 shadow-2xl z-50 text-white"
+            />
             <Link
               href="/search/results?types=collection"
               className="flex items-center gap-1.5 rounded-full border border-search-border px-3 py-1.5 text-sm text-search-text-secondary transition-colors hover:border-search-border-hover hover:text-search-text-primary"

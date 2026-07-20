@@ -183,6 +183,19 @@ function daysAgo(n: number): string {
   return new Date(MOCK_DATA_REFERENCE_NOW - n * 24 * 60 * 60 * 1000).toISOString();
 }
 
+export const TASK_CATEGORIES: Record<string, string> = {
+  "Translate a webpage": "Personal",
+  "Remove background from an image": "Creativity",
+  "Generate a voiceover": "Creativity",
+  "Generate marketing copy": "Creativity",
+  "Summarize a document": "Personal",
+  "Transcribe a meeting": "Work",
+  "Write unit tests": "Work",
+  "Build a chatbot": "Work",
+  "Clean a spreadsheet": "Work",
+  "Detect anomalies in data": "Work",
+};
+
 function buildEntities(): SearchEntity[] {
   const rand = seededRandom(42);
   const entities: SearchEntity[] = [];
@@ -207,7 +220,7 @@ function buildEntities(): SearchEntity[] {
       title,
       slug: slugify(title),
       description,
-      category: pick(CATEGORIES, rand),
+      category: type === "task" ? (TASK_CATEGORIES[title] || "Work") : pick(CATEGORIES, rand),
       tags: pickMany(TAG_POOL, 2 + Math.floor(rand() * 3), rand),
       country: pick(COUNTRY_NAMES, rand),
       priceAmount,

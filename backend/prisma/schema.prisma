@@ -53,6 +53,10 @@ model User {
   bookmarks Bookmark[]
   accounts  Account[]
   sessions  Session[]
+  taskBookmarks TaskBookmark[] 
+  tasksCreated      Task[]           @relation("TaskCreator")
+  taskLikes         TaskLike[]       @relation("TaskLikeUser")
+  taskSubscriptions TaskSubscriber[] @relation("TaskSubscriberUser")
 }
 
 // ---- Module 3: AI Tools ----
@@ -82,6 +86,7 @@ model Tool {
 
   alternatives  Tool[] @relation("ToolAlternatives")
   alternativeOf Tool[] @relation("ToolAlternatives")
+  ttasks TaskTool[]
 
   // Denormalized for fast listing-page sort/display. Recomputed by the
   // reviews API on every create/update/delete — see lib/reviews.ts.
@@ -103,6 +108,7 @@ model Category {
   name String
 
   tools ToolCategory[]
+  tasks Task[]
 }
 
 model Tag {
@@ -180,6 +186,7 @@ model AIModel {
   description   String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
+  tasks TaskModel[]
 }
 
 // ---- News module ----
@@ -345,6 +352,7 @@ model Robot {
   description  String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
+  tasks TaskRobot[]
 }
 
 model Device {
@@ -356,6 +364,7 @@ model Device {
   description  String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
+  tasks TaskDevice[]
 }// ---- Auth Module ----
 
 model Account {
@@ -445,3 +454,139 @@ model LeaderboardTool {
   addedDate   String
 }
 
+// ---- Module: Tasks ----
+
+enum TaskDifficulty {
+  EASY
+  MEDIUM
+  ADVANCED
+}
+
+model Task {
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  title       String
+  description String
+  difficulty  TaskDifficulty @default(EASY)
+  pricingModel PricingModel  @default(FREE)
+  isFeatured  Boolean        @default(false)
+
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  creatorId   String?
+  creator     User?    @relation("TaskCreator", fields: [creatorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  bookmarks   TaskBookmark[]
+  likes       TaskLike[]
+  subscribers TaskSubscriber[]
+  tools       TaskTool[]
+  models      TaskModel[]
+  robots      TaskRobot[]
+  devices     TaskDevice[]
+  resources   TaskResource[]
+
+  @@index([categoryId])
+  @@index([difficulty])
+  @@index([pricingModel])
+  @@index([isFeatured])
+  @@index([creatorId])
+}
+
+model TaskLike {
+  taskId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation("TaskLikeUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  @@index([userId])
+}
+
+model TaskSubscriber {
+  taskId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation("TaskSubscriberUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  @@index([userId])
+}
+
+model TaskModel {
+  taskId  String
+  modelId String
+
+  task    Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  model   AIModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, modelId])
+  @@index([modelId])
+}
+
+model TaskRobot {
+  taskId  String
+  robotId String
+
+  task  Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  robot Robot @relation(fields: [robotId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, robotId])
+  @@index([robotId])
+}
+
+model TaskDevice {
+  taskId   String
+  deviceId String
+
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, deviceId])
+  @@index([deviceId])
+}
+
+model TaskResource {
+  id        String   @id @default(cuid())
+  taskId    String
+  title     String
+  url       String
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model TaskTool {
+  taskId String
+  toolId String
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tool Tool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, toolId])
+  @@index([toolId])
+}
+
+model TaskBookmark {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+}
