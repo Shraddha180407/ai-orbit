@@ -31,6 +31,7 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
+
 // Enable CORS middleware so the frontend Next.js can make HTTP calls
 app.use('*', cors({
   origin: (origin) => {

@@ -10,12 +10,39 @@ interface CollectionRowProps {
   collection: CollectionListItem;
   density: "compact" | "comfortable";
   visibleColumns: Record<string, boolean>;
+  isBookmarkedInitial?: boolean;
+  onBookmarkToggle?: (collectionId: string, newState: boolean) => void;
+  /** Optional callback to notify a parent virtualizer (e.g. TanStack Virtual) when row height changes */
+  onHeightChange?: () => void;
 }
 
-export function CollectionRow({ collection, density, visibleColumns }: CollectionRowProps) {
+export function CollectionRow({
+  collection,
+  density,
+  visibleColumns,
+  isBookmarkedInitial = false,
+  onBookmarkToggle,
+  onHeightChange,
+}: CollectionRowProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  
+  const [isBookmarked, setIsBookmarked] = useState(isBookmarkedInitial);
+
+  const toggleExpand = () => {
+    setIsExpanded((prev) => !prev);
+    // Notify parent list or virtualizer to re-measure row height
+    if (onHeightChange) {
+      setTimeout(onHeightChange, 0);
+    }
+  };
+
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const nextState = !isBookmarked;
+    setIsBookmarked(nextState);
+    onBookmarkToggle?.(collection.id, nextState);
+  };
+
   const formattedDate = new Date(collection.updatedAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -23,7 +50,7 @@ export function CollectionRow({ collection, density, visibleColumns }: Collectio
   });
 
   return (
-    <div 
+    <div
       className={cn(
         "group border-b border-border bg-background transition-colors hover:bg-surface-raised/30",
         density === "compact" ? "py-2.5" : "py-5"
@@ -32,8 +59,8 @@ export function CollectionRow({ collection, density, visibleColumns }: Collectio
       {/* DESKTOP VIEW LAYOUT (>= 1200px) */}
       <div className="hidden xl:flex items-center justify-between gap-6 px-6">
         <div className="flex flex-1 items-center gap-4 min-w-0">
-          <button 
-            onClick={(e) => { e.preventDefault(); setIsBookmarked(!isBookmarked); }}
+          <button
+            onClick={handleBookmark}
             className="flex h-11 w-11 shrink-0 items-center justify-center text-foreground-muted hover:text-accent transition-colors"
             aria-label={`Bookmark ${collection.title}`}
           >
@@ -42,8 +69,8 @@ export function CollectionRow({ collection, density, visibleColumns }: Collectio
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <Link 
-                href={`/collections/${collection.slug}`} 
+              <Link
+                href={`/collections/${collection.slug}`}
                 className="text-sm font-semibold text-foreground hover:text-accent truncate transition-colors"
               >
                 {collection.title}
@@ -54,7 +81,7 @@ export function CollectionRow({ collection, density, visibleColumns }: Collectio
                 </span>
               )}
             </div>
-            
+
             <div className="mt-1 flex items-center gap-1.5 text-xs text-foreground-muted">
               <span className="text-foreground-muted/60">Curated by</span>
               <span className="font-medium text-foreground-muted">{collection.curatedBy}</span>
@@ -82,7 +109,7 @@ export function CollectionRow({ collection, density, visibleColumns }: Collectio
 
             <div className="flex -space-x-1.5 overflow-hidden py-0.5">
               {collection.previewTools?.slice(0, 4).map((tool, idx) => (
-                <div 
+                <div
                   key={idx}
                   className="inline-block h-6 w-6 rounded-md bg-surface ring-2 ring-background overflow-hidden border border-border/40"
                   title={tool.name}
@@ -103,9 +130,10 @@ export function CollectionRow({ collection, density, visibleColumns }: Collectio
         {/* Date & Share */}
         <div className="flex items-center gap-4 w-36 justify-end shrink-0 text-xs">
           <span className="text-foreground-muted/60 font-mono">{formattedDate}</span>
-          <button 
+          <button
             className="flex h-11 w-11 items-center justify-center text-foreground-muted hover:text-foreground transition-colors"
             aria-label="Share bundle"
+            onClick={(e) => e.stopPropagation()}
           >
             <Share2 size={16} />
           </button>
@@ -116,8 +144,8 @@ export function CollectionRow({ collection, density, visibleColumns }: Collectio
       <div className="hidden md:flex xl:hidden flex-col gap-2 px-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <button 
-              onClick={() => setIsExpanded(!isExpanded)} 
+            <button
+              onClick={toggleExpand}
               className="p-1.5 text-foreground-muted hover:text-foreground transition-colors"
               aria-expanded={isExpanded}
             >
@@ -130,14 +158,14 @@ export function CollectionRow({ collection, density, visibleColumns }: Collectio
               {collection.category}
             </span>
           </div>
-          <button 
-            onClick={() => setIsBookmarked(!isBookmarked)} 
+          <button
+            onClick={handleBookmark}
             className="p-2 text-foreground-muted hover:text-accent"
           >
             <Bookmark size={16} className={cn(isBookmarked && "fill-accent text-accent")} />
           </button>
         </div>
-        
+
         {isExpanded && (
           <div className="pl-8 pb-1 text-xs text-foreground-muted border-t border-border/40 pt-2.5 mt-1">
             <p className="leading-relaxed mb-3 text-foreground-muted/90">{collection.description}</p>
@@ -150,11 +178,11 @@ export function CollectionRow({ collection, density, visibleColumns }: Collectio
         )}
       </div>
 
-      {/* MOBILE VIEW LAYOUT (<= 767px Stacked Accordion) */}
+      {/* MOBILE VIEW LAYOUT (<= 767px Accordion) */}
       <div className="flex md:hidden flex-col px-4">
-        <div 
+        <div
           className="flex items-center justify-between cursor-pointer py-1"
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={toggleExpand}
         >
           <div className="min-w-0 flex-1 pr-4">
             <h4 className="font-medium text-sm text-foreground truncate">{collection.title}</h4>
@@ -170,7 +198,7 @@ export function CollectionRow({ collection, density, visibleColumns }: Collectio
         {isExpanded && (
           <div className="mt-3 border-t border-border/50 pt-3 pb-2 text-xs text-foreground-muted space-y-3">
             <p className="leading-relaxed text-foreground-muted/90">{collection.description}</p>
-            
+
             <div className="bg-surface p-3 rounded-lg border border-border font-mono space-y-1 text-foreground-muted/80">
               <div>Curator: <span className="text-foreground">{collection.curatedBy}</span></div>
               <div>Last Updated: <span className="text-foreground">{formattedDate}</span></div>
@@ -179,14 +207,18 @@ export function CollectionRow({ collection, density, visibleColumns }: Collectio
             <div className="flex items-center justify-between border-t border-border/40 pt-1">
               <span className="text-[10px] text-foreground-muted/50 uppercase font-mono tracking-wider">Actions</span>
               <div className="flex -mr-2">
-                <button 
-                  onClick={() => setIsBookmarked(!isBookmarked)} 
+                <button
+                  onClick={handleBookmark}
                   className="w-11 h-11 flex items-center justify-center text-foreground-muted"
                   aria-label="Bookmark item"
                 >
                   <Bookmark size={16} className={cn(isBookmarked && "fill-accent text-accent")} />
                 </button>
-                <button className="w-11 h-11 flex items-center justify-center text-foreground-muted" aria-label="Share item">
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-11 h-11 flex items-center justify-center text-foreground-muted"
+                  aria-label="Share item"
+                >
                   <Share2 size={16} />
                 </button>
               </div>

@@ -74,9 +74,6 @@ export type SimilarToolData = {
   avgRating: number | null;
 };
 
-
-// lib/types.ts
-
 export interface CreatorProfile {
   id: string;
   name: string;
@@ -87,123 +84,41 @@ export interface CollectionCategory {
   categoryName: string;
 }
 
-export interface CollectionCounts {
-  relatedModels: number;
-  relatedCompanies: number;
-}
-
 export interface CollectionListItem {
   id: string;
   name: string;
   slug: string;
-
-  description: string;
-
+  description: string | null;
   isFeatured: boolean;
-  isCurated: boolean;
-
+  creatorType?: "EDITORIAL" | "COMMUNITY";
   toolCount: number;
-
-  // Backend sorts/filters using this.
-  // Ask backend to include it if it isn't already returned.
   updatedAt: string;
-
-  creatorType: "EDITORIAL" | "COMMUNITY";
-
   creator: CreatorProfile;
-
   categories: CollectionCategory[];
-
-  _count: CollectionCounts;
-
-  // Optional until backend sends it
-  bookmarked?: boolean;
+  _count: {
+    relatedModels: number;
+    relatedCompanies: number;
+  };
 }
 
-export interface CollectionsListResponse {
+export interface CollectionsApiResponse {
   items: CollectionListItem[];
   nextCursor: string | null;
+  error?: string;
 }
 
-export interface CollectionDetailsResponse {
-  collection: CollectionListItem & {
-    tools: any[];
-    relatedModels: any[];
-    relatedCompanies: any[];
-  };
-
-  nextToolCursor: string | null;
-}
-
-export type CollectionSortOption =
-  | "recently_updated"
-  | "oldest_updated"
-  | "name_asc"
-  | "name_desc"
-  | "most_tools"
-  | "fewest_tools"
-  | "most_bookmarked"
-  | "most_related_models"
-  | "most_related_companies"
-  | "featured_first";
-
-export const SORT_OPTIONS: {
-  value: CollectionSortOption;
-  label: string;
-}[] = [
-  {
-    value: "recently_updated",
-    label: "Recently Updated",
-  },
-  {
-    value: "oldest_updated",
-    label: "Oldest Updated",
-  },
-  {
-    value: "name_asc",
-    label: "Name (A-Z)",
-  },
-  {
-    value: "name_desc",
-    label: "Name (Z-A)",
-  },
-  {
-    value: "most_tools",
-    label: "Most Tools",
-  },
-  {
-    value: "fewest_tools",
-    label: "Fewest Tools",
-  },
-  {
-    value: "most_bookmarked",
-    label: "Most Bookmarked",
-  },
-  {
-    value: "most_related_models",
-    label: "Most Related Models",
-  },
-  {
-    value: "most_related_companies",
-    label: "Most Related Companies",
-  },
-  {
-    value: "featured_first",
-    label: "Featured First",
-  },
-];
-
-export interface CollectionsQueryParams {
+export interface CollectionFilterParams {
   search?: string;
-  sort?: SortOption;
   category?: string[];
   creatorType?: "EDITORIAL" | "COMMUNITY";
-  featured?: boolean;
   hasRelatedModels?: boolean;
   hasRelatedCompanies?: boolean;
-  updatedWithin?: "7d" | "30d" | "90d";
+  featured?: boolean;
+  updatedWithin?: string;
+  sort?: string;
   cursor?: string;
 }
+
 export type Company = {
   id: string;
   slug: string;

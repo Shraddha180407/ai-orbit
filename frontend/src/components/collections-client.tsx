@@ -1,72 +1,127 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { CategoryMenu } from "@/components/CategoryMenu";
-import { CollectionGrid } from "@/components/CollectionGrid";
-import { API_URL } from "@/lib/api";
+import React from "react";
+import { Bookmark, ChevronDown, ChevronUp } from "lucide-react";
+import type { CollectionListItem } from "@/lib/types";
 
-export function CollectionsClient() {
-  const searchParams = useSearchParams();
+interface CollectionRowProps {
+  item: CollectionListItem;
+  density: "compact" | "comfortable";
+  isBookmarked: boolean;
+  isExpanded: boolean;
+  onToggleBookmark: (id: string) => void;
+  onToggleExpand: (id: string) => void;
+  /** Ref callback used by the virtualizer to measure row height. */
+  measureRef?: (el: HTMLElement | null) => void;
+}
 
-  const [items, setItems] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
-  const [isLoading, setIsLoading] = useState(true);
-
-  const params = {
-    category: searchParams.get("category") || undefined,
-    page: searchParams.get("page") || undefined,
-  };
-
-  useEffect(() => {
-    async function fetchCollections() {
-      setIsLoading(true);
-      try {
-        const query = new URLSearchParams();
-        if (params.category) query.set("category", params.category);
-        if (params.page) query.set("page", params.page);
-
-        const res = await fetch(`${API_URL}/api/v1/collections?${query.toString()}`);
-        if (res.ok) {
-          const data = await res.json();
-          setItems(data.items || []);
-          setTotal(data.pagination?.total || 0);
-          setCategoryCounts(data.categoryCounts || {});
-        }
-      } catch (error) {
-        console.error("Failed to fetch collections:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchCollections();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams.toString()]);
-
+export default function CollectionRow({
+  item,
+  density,
+  isBookmarked,
+  isExpanded,
+  onToggleBookmark,
+  onToggleExpand,
+  measureRef,
+}: CollectionRowProps) {
   return (
-    <main className="mx-auto max-w-container px-6 py-10">
-      <header className="mb-8">
-        <h1 className="text-2xl font-semibold text-foreground">Collections</h1>
-        <p className="mt-1 text-sm text-foreground-muted">
-          {total} curated bundle{total === 1 ? "" : "s"} of the best AI tools
-        </p>
-      </header>
+    <div
+      data-index={item.id}
+      ref={measureRef}
+      className={`w-full flex flex-col border-b border-[#232326]/60 last:border-0 hover:bg-[#121214] transition-colors ${
+        density === "compact" ? "p-3" : "p-5"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-4 min-h-[44px]">
+        {/* Left: Avatar & Info */}
+        <div className="flex items-center gap-4 min-w-0 flex-1">
+          {item.creator.image ? (
+            <img
+              src={item.creator.image}
+              alt={item.creator.name}
+              className="w-10 h-10 rounded-full border border-[#232326] object-cover flex-shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-[#18181B] border border-[#232326] flex items-center justify-center font-bold text-white text-xs flex-shrink-0">
+              {item.creator.name.charAt(0)}
+            </div>
+          )}
 
-      <div className="mb-8 rounded-lg border border-border bg-surface p-5">
-        <CategoryMenu categoryCounts={categoryCounts} />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <a
+                href={`/collections/${item.slug}`}
+                className="font-bold text-white text-sm md:text-base hover:underline truncate"
+              >
+                {item.name}
+              </a>
+              {item.isFeatured && (
+                <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded font-bold uppercase">
+                  Featured
+                </span>
+              )}
+            </div>
+
+            {density === "comfortable" && item.description && (
+              <p className="text-xs text-[#A1A1AA] line-clamp-1 mb-1">
+                {item.description}
+              </p>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[#71717A]">
+              <span>
+                by <strong className="text-white">{item.creator.name}</strong>
+              </span>
+              <span>•</span>
+              <span className="text-white font-medium">{item.toolCount} tools</span>
+              {item.categories.length > 0 && (
+                <>
+                  <span>•</span>
+                  <div className="flex items-center gap-1">
+                    {item.categories.map((cat, i) => (
+                      <span
+                        key={i}
+                        className="text-[#A1A1AA] bg-[#18181B] px-1.5 py-0.5 rounded text-[10px]"
+                      >
+                        {cat.categoryName}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Actions */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onToggleBookmark(item.id)}
+            title={isBookmarked ? "Remove Bookmark" : "Bookmark Collection"}
+            className={`p-2.5 rounded-xl border flex items-center justify-center transition-colors ${
+              isBookmarked
+                ? "bg-white text-black border-white"
+                : "border-[#232326] text-[#A1A1AA] hover:text-white hover:border-neutral-500"
+            }`}
+          >
+            <Bookmark className="h-4 w-4" fill={isBookmarked ? "currentColor" : "none"} />
+          </button>
+
+          <button
+            onClick={() => onToggleExpand(item.id)}
+            className="p-2 md:hidden text-[#A1A1AA] hover:text-white"
+          >
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-40 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
-          ))}
+      {/* Mobile Expanded Drawer View */}
+      {isExpanded && item.description && (
+        <div className="mt-3 pt-3 border-t border-[#232326]/40 text-xs text-[#A1A1AA] bg-[#040405] p-3 rounded-lg md:hidden">
+          {item.description}
         </div>
-      ) : (
-        <CollectionGrid collections={items} />
       )}
-    </main>
+    </div>
   );
 }

@@ -7,7 +7,7 @@ import Image from "next/image";
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left';
 import Star from 'lucide-react/dist/esm/icons/star';
 import ExternalLink from 'lucide-react/dist/esm/icons/external-link';
-import { CollectionGrid } from "@/components/CollectionGrid";
+import { CollectionGrid } from "@/components/collections/CollectionGrid";
 import { API_URL } from "@/lib/api";
 
 export function CollectionDetailClient() {
