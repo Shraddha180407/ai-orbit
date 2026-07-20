@@ -34,8 +34,7 @@ export function CollectionsClient() {
     page: searchParams.get("page") || undefined,
   };
 
-  useEffect(() => {
-    async function fetchCollections() {
+  const fetchCollections = async () => {
       setIsLoading(true);
       try {
         const query = new URLSearchParams();
@@ -56,6 +55,9 @@ export function CollectionsClient() {
       }
     }
 
+  useEffect(() => {
+    
+
     fetchCollections();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.toString()]);
@@ -74,7 +76,7 @@ export function CollectionsClient() {
       if (!res.ok) throw new Error('Failed to save collection');
       toast.success(editingId ? 'Collection updated successfully' : 'Collection added successfully');
       setIsModalOpen(false);
-      window.location.reload();
+      fetchCollections();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -87,7 +89,7 @@ export function CollectionsClient() {
       const res = await fetch(`${API_URL}/api/admin/collections/${id}`, { method: 'DELETE', credentials: 'include' });
       if (!res.ok) throw new Error('Failed to delete collection');
       toast.success('Collection deleted successfully');
-      window.location.reload();
+      fetchCollections();
     } catch (error: any) {
       toast.error(error.message);
     }

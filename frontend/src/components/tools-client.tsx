@@ -44,8 +44,7 @@ export function ToolsClient() {
     page: searchParams.get("page") || undefined,
   };
 
-  useEffect(() => {
-    async function fetchTools() {
+  const fetchTools = async () => {
       setIsLoading(true);
       try {
         const query = new URLSearchParams();
@@ -71,6 +70,9 @@ export function ToolsClient() {
       }
     }
 
+  useEffect(() => {
+    
+
     fetchTools();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.toString()]);
@@ -89,7 +91,7 @@ export function ToolsClient() {
       if (!res.ok) throw new Error('Failed to save tool');
       toast.success(editingId ? 'Tool updated successfully' : 'Tool added successfully');
       setIsModalOpen(false);
-      window.location.reload(); // Quick refresh to see changes
+      fetchTools();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -102,7 +104,7 @@ export function ToolsClient() {
       const res = await fetch(`${API_URL}/api/admin/tools/${id}`, { method: 'DELETE', credentials: 'include' });
       if (!res.ok) throw new Error('Failed to delete tool');
       toast.success('Tool deleted successfully');
-      window.location.reload();
+      fetchTools();
     } catch (error: any) {
       toast.error(error.message);
     }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import X from 'lucide-react/dist/esm/icons/x';
 import { Pencil, Trash2, Plus, Settings2 } from "lucide-react";
 import { buildToolsUrl, cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ type TopFiltersProps = {
 export function TopFilters({ categories, params }: TopFiltersProps) {
   const { user } = useUser();
   const isAdmin = user?.role === 'ADMIN';
+  const router = useRouter();
 
   const hasActiveFilters = Boolean(params.category || params.q);
 
@@ -49,7 +51,7 @@ export function TopFilters({ categories, params }: TopFiltersProps) {
       if (!res.ok) throw new Error('Failed to save category');
       toast.success(editingId ? 'Category updated successfully' : 'Category added successfully');
       setIsModalOpen(false);
-      window.location.reload();
+      router.refresh();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -62,7 +64,7 @@ export function TopFilters({ categories, params }: TopFiltersProps) {
       const res = await fetch(`${API_URL}/api/admin/categories/${id}`, { method: 'DELETE', credentials: 'include' });
       if (!res.ok) throw new Error('Failed to delete category');
       toast.success('Category deleted successfully');
-      window.location.reload();
+      router.refresh();
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -75,7 +77,8 @@ export function TopFilters({ categories, params }: TopFiltersProps) {
   };
 
   const openEdit = (cat: any) => {
-    setEditingId(cat.id); // NOTE: TopFilters categories prop might not include id right now, we need to ensure it does.
+    if (!cat.id) { toast.error("Category ID missing"); return; }
+    setEditingId(cat.id);
     setFormData({ name: cat.name || '', slug: cat.slug || '' });
     setIsModalOpen(true);
   };
