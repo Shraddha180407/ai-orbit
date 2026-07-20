@@ -1,142 +1,95 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { CollectionGrid } from "@/components/collections/CollectionGrid";
 import { CollectionSearch } from "@/components/collections/CollectionSearch";
-import CollectionFilters from "@/components/collections/CollectionFilter";
+import CollectionFilters from "@/components/collections/CollectionFilters";
 import { CollectionsHeader } from "@/components/collections/CollectionHeader";
-import { CollectionsClosingCTA } from "@/components/CollectionsClosingCTA";
+import { CollectionsClosingCTA } from "@/components/collections/CollectionsClosingCTA";
 import { LoadMoreButton } from "@/components/collections/LoadMoreButton";
 
+import { mockCollections } from "@/lib/mockCollections";
 import type { CollectionListItem } from "@/lib/types";
 
-interface Props {
-  initialItems: CollectionListItem[];
-  initialNextCursor: string | null;
-}
-
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://localhost:8787/api/v1";
-
-export default function CollectionsPageClient({
-  initialItems,
-  initialNextCursor,
-}: Props) {
-  const [items, setItems] = useState(initialItems);
-
-  const [nextCursor, setNextCursor] =
-    useState<string | null>(initialNextCursor);
-
-  const [loading, setLoading] = useState(false);
-
+export default function CollectionsPageClient() {
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("recently_updated");
+  const [creatorType, setCreatorType] = useState("");
 
-  const [sort, setSort] =
-    useState("recently_updated");
+  // Mock data (replace with API later)
+  const items: CollectionListItem[] = useMemo(() => {
+    let filtered = [...mockCollections];
 
-  const [creatorType, setCreatorType] =
-    useState("");
+    // Search
+    if (search.trim()) {
+      const query = search.toLowerCase();
 
-  // ----------------------------
-  // Search / Filter
-  // ----------------------------
-
-  useEffect(() => {
-    async function fetchCollections() {
-      setLoading(true);
-
-      try {
-        const params = new URLSearchParams();
-
-        if (search.trim()) {
-          params.set("search", search);
-        }
-
-        if (creatorType) {
-          params.set("creatorType", creatorType);
-        }
-
-        params.set("sort", sort);
-
-        const res = await fetch(
-          `${API_BASE}/collections?${params.toString()}`
+      filtered = filtered.filter((collection) => {
+        return (
+          collection.name.toLowerCase().includes(query) ||
+          collection.description?.toLowerCase().includes(query) ||
+          collection.creator.name.toLowerCase().includes(query)
         );
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch collections");
-        }
-
-        const data = await res.json();
-
-        setItems(data.items);
-        setNextCursor(data.nextCursor);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+      });
     }
 
-    fetchCollections();
-  }, [search, creatorType, sort]);
-
-  // ----------------------------
-  // Pagination
-  // ----------------------------
-
-  async function fetchMore() {
-    if (!nextCursor) return;
-
-    setLoading(true);
-
-    try {
-      const params = new URLSearchParams();
-
-      params.set("cursor", nextCursor);
-      params.set("sort", sort);
-
-      if (search) {
-        params.set("search", search);
-      }
-
-      if (creatorType) {
-        params.set("creatorType", creatorType);
-      }
-
-      const res = await fetch(
-        `${API_BASE}/collections?${params.toString()}`
+    // Creator Type
+    if (creatorType) {
+      filtered = filtered.filter(
+        (collection) => collection.creatorType === creatorType
       );
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch more collections");
-      }
-
-      const data = await res.json();
-
-      setItems((prev) => [...prev, ...data.items]);
-
-      setNextCursor(data.nextCursor);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
     }
-  }
 
-    return (
+    // Sort
+    switch (sort) {
+      case "name_asc":
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+
+      case "name_desc":
+        filtered.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+
+      case "most_tools":
+        filtered.sort((a, b) => b.toolCount - a.toolCount);
+        break;
+
+      case "fewest_tools":
+        filtered.sort((a, b) => a.toolCount - b.toolCount);
+        break;
+
+      case "oldest_updated":
+        filtered.sort(
+          (a, b) =>
+            new Date(a.updatedAt).getTime() -
+            new Date(b.updatedAt).getTime()
+        );
+        break;
+
+      case "recently_updated":
+      default:
+        filtered.sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() -
+            new Date(a.updatedAt).getTime()
+        );
+    }
+
+    return filtered;
+  }, [search, sort, creatorType]);
+
+  return (
     <>
       <CollectionsHeader />
 
       <main className="mx-auto max-w-7xl px-6 pb-16">
-
         {/* Search */}
         <div className="mb-6">
           <CollectionSearch
-    value={search}
-    onChange={setSearch}
-/>
+            value={search}
+            onChange={setSearch}
+          />
         </div>
 
         {/* Filters */}
@@ -149,32 +102,19 @@ export default function CollectionsPageClient({
           />
         </div>
 
-        {/* Loading */}
-        {loading && items.length === 0 ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div
-                key={index}
-                className="h-64 animate-pulse rounded-2xl border border-border bg-surface"
-              />
-            ))}
-          </div>
-        ) : (
-          <>
-            <CollectionGrid collections={items} />
+        {/* Grid */}
+        <CollectionGrid collections={items} />
 
-            {nextCursor && (
-              <LoadMoreButton
-                loading={loading}
-                disabled={loading}
-                onClick={fetchMore}
-              />
-            )}
-          </>
+        {/* Hidden for mock data */}
+        {false && (
+          <LoadMoreButton
+            loading={false}
+            disabled={false}
+            onClick={() => {}}
+          />
         )}
 
         <CollectionsClosingCTA />
-
       </main>
     </>
   );

@@ -1,5 +1,6 @@
 import CollectionsPageClient from "./CollectionsPageClient";
 import type { CollectionsApiResponse } from "@/lib/types";
+import { Header } from "@/components/Header";
 export const metadata = {
   title: "Curated Collections | Tool Directory",
   description: "Explore curated lists and stack configurations by domain experts.",
@@ -30,6 +31,7 @@ export default async function CollectionsPage() {
 
   return (
     <div className="relative min-h-screen bg-[#000000] text-[#E4E4E7] antialiased">
+      <Header/>
       <main className="relative z-10">
         <CollectionsPageClient 
           initialItems={initialData.items} 

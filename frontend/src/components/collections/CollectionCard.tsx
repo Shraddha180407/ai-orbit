@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowUpRight, Boxes, Building2, Cpu } from "lucide-react";
+import Image from "next/image";
+import { Bookmark, Boxes, Building2, Cpu } from "lucide-react";
 import type { CollectionListItem } from "@/lib/types";
 
 interface Props {
@@ -7,84 +8,96 @@ interface Props {
 }
 
 export function CollectionCard({ collection }: Props) {
+  const categoryLabel = collection.categories
+    .slice(0, 3)
+    .map((c) => c.categoryName)
+    .join(" • ");
+
   return (
-    <Link
-      href={`/collections/${collection.slug}`}
-      className="group flex h-full flex-col rounded-2xl border border-border bg-surface p-6 transition-all duration-200 hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_10px_40px_rgba(124,92,252,0.15)]"
-    >
-      {/* Featured Badge */}
-      {collection.isFeatured && (
-        <div className="mb-4">
-          <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
-            Featured
-          </span>
-        </div>
-      )}
+    <div className="group relative rounded-xl border border-border bg-surface px-5 py-4 transition-all hover:border-accent/30 hover:bg-surface/70">
+      <Link
+        href={`/collections/${collection.slug}`}
+        className="flex items-start justify-between gap-4"
+      >
+        <div className="min-w-0 flex-1">
+          {/* Title */}
+          <div className="flex items-center gap-2">
+            <h2 className="truncate text-base font-semibold text-foreground group-hover:text-accent">
+              {collection.name}
+            </h2>
 
-      {/* Title */}
-      <h2 className="text-lg font-semibold text-foreground transition-colors group-hover:text-accent">
-        {collection.name}
-      </h2>
+            {collection.isFeatured && (
+              <span className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent">
+                Featured
+              </span>
+            )}
+          </div>
 
-      {/* Description */}
-      <p className="mt-3 line-clamp-3 text-sm leading-6 text-foreground-muted">
-        {collection.description}
-      </p>
+          {/* Description */}
+          {collection.description && (
+            <p className="mt-1 line-clamp-1 text-sm text-foreground-muted">
+              {collection.description}
+            </p>
+          )}
 
-      {/* Categories */}
-      {collection.categories.length > 0 && (
-        <div className="mt-5 flex flex-wrap gap-2">
-          {collection.categories.slice(0, 3).map((category) => (
-            <span
-              key={category.categoryName}
-              className="rounded-full border border-border px-2.5 py-1 text-xs text-foreground-muted"
-            >
-              {category.categoryName}
+          {/* Creator + categories */}
+          <div className="mt-2 flex items-center gap-2 text-sm">
+            {collection.creator.image ? (
+              <Image
+                src={collection.creator.image}
+                alt=""
+                width={20}
+                height={20}
+                className="rounded-full"
+              />
+            ) : (
+              <div className="h-5 w-5 shrink-0 rounded-full bg-muted" />
+            )}
+
+            <span className="font-medium text-foreground">
+              {collection.creator.name}
             </span>
-          ))}
+
+            {categoryLabel && (
+              <>
+                <span className="text-foreground-muted">•</span>
+                <span className="truncate text-foreground-muted">
+                  {categoryLabel}
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* Stats */}
+          <div className="mt-3 flex flex-wrap gap-5 text-xs text-foreground-muted">
+            <span className="flex items-center gap-1">
+              <Boxes size={14} />
+              {collection.toolCount} Tools
+            </span>
+
+            <span className="flex items-center gap-1">
+              <Cpu size={14} />
+              {collection._count.relatedModels} Models
+            </span>
+
+            <span className="flex items-center gap-1">
+              <Building2 size={14} />
+              {collection._count.relatedCompanies} Companies
+            </span>
+          </div>
         </div>
-      )}
+      </Link>
 
-      {/* Creator */}
-      <div className="mt-5 text-sm text-foreground-muted">
-        Curated by{" "}
-        <span className="font-medium text-foreground">
-          {collection.creator.name}
-        </span>
-      </div>
-
-      {/* Spacer */}
-      <div className="flex-grow" />
-
-      {/* Stats */}
-      <div className="mt-6 flex items-center gap-5 border-t border-border pt-5 text-sm text-foreground-muted">
-        <div className="flex items-center gap-1">
-          <Boxes size={15} />
-          {collection.toolCount}
-        </div>
-
-        <div className="flex items-center gap-1">
-          <Cpu size={15} />
-          {collection._count.relatedModels}
-        </div>
-
-        <div className="flex items-center gap-1">
-          <Building2 size={15} />
-          {collection._count.relatedCompanies}
-        </div>
-      </div>
-
-      {/* CTA */}
-      <div className="mt-5 flex items-center justify-between">
-        <span className="text-sm font-medium text-foreground-muted transition-colors group-hover:text-accent">
-          View Collection
-        </span>
-
-        <ArrowUpRight
-          size={18}
-          className="transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1"
-        />
-      </div>
-    </Link>
+      <button
+        type="button"
+        aria-label={`Bookmark ${collection.name}`}
+        onClick={() => {
+          // handle bookmark logic here
+        }}
+        className="absolute right-4 top-4 rounded-lg p-2 text-foreground-muted transition-colors hover:bg-muted hover:text-accent"
+      >
+        <Bookmark size={18} />
+      </button>
+    </div>
   );
 }

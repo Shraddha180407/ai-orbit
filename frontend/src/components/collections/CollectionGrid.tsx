@@ -23,15 +23,7 @@ export function CollectionGrid({ collections }: Props) {
   }
 
   return (
-    <section
-      className="
-        grid
-        grid-cols-1
-        gap-6
-        sm:grid-cols-2
-        xl:grid-cols-3
-      "
-    >
+    <section className="flex flex-col gap-4">
       {collections.map((collection) => (
         <CollectionCard
           key={collection.id}
