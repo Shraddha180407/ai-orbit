@@ -225,6 +225,7 @@ export class AdminController {
       await this.getService(c).deleteNews(id);
       return c.json({ success: true });
     } catch (error: any) {
+      console.error('DELETE NEWS ERROR:', error);
       if (error.code === 'P2003') {
         return c.json({ error: 'Cannot delete this record because it is currently in use or referenced by other items.' }, 409);
       }
