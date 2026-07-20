@@ -25,7 +25,7 @@ export function VideosClient() {
   // Admin Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ title: '', slug: '', videoUrl: '' });
+  const [formData, setFormData] = useState({ title: '', youtubeId: '', authorName: '', toolCategory: 'general-ai', description: '' });
   const [isSaving, setIsSaving] = useState(false);
 
   const getVideos = async () => {
@@ -103,13 +103,13 @@ export function VideosClient() {
 
   const openAdd = () => {
     setEditingId(null);
-    setFormData({ title: '', slug: '', videoUrl: '' });
+    setFormData({ title: '', youtubeId: '', authorName: '', toolCategory: 'general-ai', description: '' });
     setIsModalOpen(true);
   };
 
   const openEdit = (video: Video) => {
     setEditingId(video.id);
-    setFormData({ title: video.title || '', slug: video.slug || '', videoUrl: video.videoUrl || '' });
+    setFormData({ title: video.title || '', youtubeId: video.youtubeId || '', authorName: video.authorName || '', toolCategory: video.toolCategory || 'general-ai', description: video.description || '' });
     setIsModalOpen(true);
   };
 
@@ -225,9 +225,11 @@ export function VideosClient() {
         </>
       }>
         <div className="space-y-3">
-          <div><label className="text-xs text-[#8A8F98]">Title</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} /></div>
-          <div><label className="text-xs text-[#8A8F98]">Slug</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} /></div>
-          <div><label className="text-xs text-[#8A8F98]">Video URL</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.videoUrl} onChange={e => setFormData({...formData, videoUrl: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Title *</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="Video title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">YouTube ID * (e.g. dQw4w9WgXcQ)</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="YouTube video ID" value={formData.youtubeId} onChange={e => setFormData({...formData, youtubeId: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Author / Channel Name</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. Fireship" value={formData.authorName} onChange={e => setFormData({...formData, authorName: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Tool Category</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="general-ai | llm | agents | robotics | multimodal-ai" value={formData.toolCategory} onChange={e => setFormData({...formData, toolCategory: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Description</label><textarea className="w-full p-2 text-sm bg-[#111113] border border-[#1C1C1F] text-white rounded-md h-20" placeholder="Short video description..." value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} /></div>
         </div>
       </Modal>
     </div>

@@ -214,8 +214,27 @@ export class AdminService {
     await this.prisma.news.delete({ where: { id } });
   }
 
-  async createTool(data: any) { return this.prisma.tool.create({ data }); }
-  async updateTool(id: string, data: any) { return this.prisma.tool.update({ where: { id }, data }); }
+  async createTool(data: any) {
+    const slug = data.slug || data.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `tool-${Date.now()}`;
+    return this.prisma.tool.create({
+      data: {
+        slug,
+        name: data.name || 'Untitled Tool',
+        description: data.description || '',
+        websiteUrl: data.websiteUrl || '',
+        pricingModel: data.pricingModel || 'FREE',
+        logoUrl: data.logoUrl || null,
+      }
+    });
+  }
+  async updateTool(id: string, data: any) {
+    const update: any = {};
+    const fields = ['name', 'slug', 'description', 'websiteUrl', 'pricingModel', 'logoUrl'];
+    for (const f of fields) {
+      if (data[f] !== undefined) update[f] = data[f];
+    }
+    return this.prisma.tool.update({ where: { id }, data: update });
+  }
 
   async getCompanies(page: number, search: string) {
     const pageSize = 20;
@@ -275,10 +294,67 @@ export class AdminService {
     ]);
     return { videos, total, page, totalPages: Math.ceil(total / pageSize) };
   }
-  async createVideo(data: any) { return this.prisma.video.create({ data }); }
-  async updateVideo(id: string, data: any) { return this.prisma.video.update({ where: { id }, data }); }
+  async createVideo(data: any) {
+    const slug = data.slug || data.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `video-${Date.now()}`;
+    return this.prisma.video.create({
+      data: {
+        slug,
+        title: data.title || 'Untitled Video',
+        description: data.description || '',
+        toolName: data.toolName || '',
+        toolCategory: data.toolCategory || 'general-ai',
+        youtubeId: data.youtubeId || `manual-${Date.now()}`,
+        thumbnail: data.thumbnail || '',
+        durationSeconds: Number(data.durationSeconds) || 0,
+        views: Number(data.views) || 0,
+        likes: Number(data.likes) || 0,
+        publishedAt: data.publishedAt || new Date().toISOString().slice(0, 10),
+        authorName: data.authorName || 'Unknown',
+        authorAvatar: data.authorAvatar || '',
+        channelId: data.channelId || null,
+        tags: Array.isArray(data.tags) ? data.tags : [],
+        accent: data.accent || '#6E56CF',
+      }
+    });
+  }
+  async updateVideo(id: string, data: any) {
+    const update: any = {};
+    const fields = ['title', 'description', 'toolName', 'toolCategory', 'thumbnail', 'durationSeconds', 'views', 'likes', 'publishedAt', 'authorName', 'authorAvatar', 'channelId', 'tags', 'accent', 'slug'];
+    for (const f of fields) {
+      if (data[f] !== undefined) update[f] = data[f];
+    }
+    return this.prisma.video.update({ where: { id }, data: update });
+  }
   async deleteVideo(id: string) { await this.prisma.video.delete({ where: { id } }); }
 
-  async createNews(data: any) { return this.prisma.news.create({ data }); }
-  async updateNews(id: string, data: any) { return this.prisma.news.update({ where: { id }, data }); }
+  async createNews(data: any) {
+    // Find or use first publisher as fallback
+    const publisher = await this.prisma.publisher.findFirst({ orderBy: { createdAt: 'asc' } });
+    if (!publisher) throw new Error('No publisher found. Please create a publisher first.');
+    const slug = data.slug || data.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `news-${Date.now()}`;
+    return this.prisma.news.create({
+      data: {
+        slug,
+        title: data.title || 'Untitled',
+        dek: data.dek || data.summary || '',
+        aiSummary: data.aiSummary || data.summary || '',
+        articleUrl: data.articleUrl || `https://placeholder.com/${slug}-${Date.now()}`,
+        publisherId: data.publisherId || publisher.id,
+        category: data.category || 'general',
+        filterTags: Array.isArray(data.filterTags) ? data.filterTags : [],
+        publishedAt: data.publishedAt ? new Date(data.publishedAt) : new Date(),
+      }
+    });
+  }
+  async updateNews(id: string, data: any) {
+    const update: any = {};
+    const fields = ['title', 'dek', 'aiSummary', 'articleUrl', 'category', 'filterTags', 'publishedAt', 'slug'];
+    for (const f of fields) {
+      if (data[f] !== undefined) update[f] = data[f];
+    }
+    // Allow updating summary -> dek/aiSummary shorthand
+    if (data.summary && !data.dek) update.dek = data.summary;
+    if (data.summary && !data.aiSummary) update.aiSummary = data.summary;
+    return this.prisma.news.update({ where: { id }, data: update });
+  }
 }

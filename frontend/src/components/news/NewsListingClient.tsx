@@ -61,7 +61,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   // Admin Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ title: '', slug: '', summary: '' });
+  const [formData, setFormData] = useState({ title: '', slug: '', articleUrl: '', category: 'general', summary: '' });
   const [isSaving, setIsSaving] = useState(false);
 
   const [articles, setArticles] = useState<NewsArticle[]>([]);
@@ -211,13 +211,13 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
   const openAdd = () => {
     setEditingId(null);
-    setFormData({ title: '', slug: '', summary: '' });
+    setFormData({ title: '', slug: '', articleUrl: '', category: 'general', summary: '' });
     setIsModalOpen(true);
   };
 
   const openEdit = (news: any) => {
     setEditingId(news.id);
-    setFormData({ title: news.title || '', slug: news.slug || '', summary: news.summary || '' });
+    setFormData({ title: news.title || '', slug: news.slug || '', articleUrl: news.articleUrl || '', category: news.category || 'general', summary: news.dek || news.aiSummary || '' });
     setIsModalOpen(true);
   };
 
@@ -454,9 +454,11 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
         </>
       }>
         <div className="space-y-3">
-          <div><label className="text-xs text-[#8A8F98]">Title</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} /></div>
-          <div><label className="text-xs text-[#8A8F98]">Slug</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} /></div>
-          <div><label className="text-xs text-[#8A8F98]">Summary</label><textarea className="w-full p-2 text-sm bg-[#111113] border border-[#1C1C1F] text-white rounded-md h-20" value={formData.summary} onChange={e => setFormData({...formData, summary: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Title *</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="Article headline" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Slug (auto-generated from title if blank)</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="article-url-slug" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Article URL</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="https://..." value={formData.articleUrl} onChange={e => setFormData({...formData, articleUrl: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Category</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. general, llm, robotics" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Summary / Dek</label><textarea className="w-full p-2 text-sm bg-[#111113] border border-[#1C1C1F] text-white rounded-md h-20" placeholder="Brief description of the article..." value={formData.summary} onChange={e => setFormData({...formData, summary: e.target.value})} /></div>
         </div>
       </Modal>
     </div>
