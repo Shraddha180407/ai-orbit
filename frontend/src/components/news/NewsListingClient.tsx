@@ -188,7 +188,8 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       if (!res.ok) throw new Error('Failed to save news');
       toast.success(editingId ? 'News updated successfully' : 'News added successfully');
       setIsModalOpen(false);
-      window.location.reload();
+      if (mode === "paginated") loadPage(1, false);
+      else loadFull();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -201,7 +202,8 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       const res = await fetch(`${API_URL}/api/admin/news/${id}`, { method: 'DELETE', credentials: 'include' });
       if (!res.ok) throw new Error('Failed to delete news');
       toast.success('News deleted successfully');
-      window.location.reload();
+      if (mode === "paginated") loadPage(1, false);
+      else loadFull();
     } catch (error: any) {
       toast.error(error.message);
     }
