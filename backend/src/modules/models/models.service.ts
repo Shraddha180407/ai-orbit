@@ -70,9 +70,9 @@ export class ModelsService {
         provider: {
           select: { id: true, slug: true, name: true, logoUrl: true },
         },
-        TaskModel: {
+        tasks: {
           include: {
-            Task: { select: { id: true, slug: true, title: true } },
+            task: { select: { id: true, slug: true, title: true } },
           },
         },
       },
