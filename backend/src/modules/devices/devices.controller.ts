@@ -3,9 +3,13 @@ import { getPrisma } from '../../lib/prisma.js';
 import { DevicesService } from './devices.service.js';
 
 export class DevicesController {
-  async listDevices(c: Context) {
+  private createService(c: Context) {
     const prisma = getPrisma(c.env);
-    const service = new DevicesService(prisma);
+    return { prisma, service: new DevicesService(prisma) };
+  }
+
+  async listDevices(c: Context) {
+    const { prisma, service } = this.createService(c);
 
     try {
       const devices = await service.listDevices();
@@ -18,8 +22,7 @@ export class DevicesController {
   }
 
   async getDeviceById(c: Context) {
-    const prisma = getPrisma(c.env);
-    const service = new DevicesService(prisma);
+    const { prisma, service } = this.createService(c);
     const id = c.req.param('id');
 
     if (!id) {
@@ -42,8 +45,7 @@ export class DevicesController {
   }
 
   async getDeviceBySlug(c: Context) {
-    const prisma = getPrisma(c.env);
-    const service = new DevicesService(prisma);
+    const { prisma, service } = this.createService(c);
     const slug = c.req.param('slug');
 
     if (!slug) {
