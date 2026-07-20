@@ -210,7 +210,22 @@ export class AdminService {
     return { news, total, page, totalPages: Math.ceil(total / pageSize) };
   }
 
-  async deleteNews(id: string) {
+  async deleteNews(idOrSlug: string) {
+    const article = await this.prisma.news.findFirst({
+      where: {
+        OR: [
+          { id: idOrSlug },
+          { slug: idOrSlug }
+        ]
+      }
+    });
+
+    if (!article) {
+      throw new Error("News article not found");
+    }
+
+    const id = article.id;
+
     await this.prisma.$transaction([
       this.prisma.newsBookmark.deleteMany({ where: { articleId: id } }),
       this.prisma.newsVote.deleteMany({ where: { articleId: id } }),
