@@ -190,11 +190,11 @@ export function VideoCard({
             <p className="mt-2 line-clamp-2 text-[12.5px] leading-relaxed text-secondary">
               {video.description}
             </p>
-            <div className="mt-[9.6px] flex flex-wrap gap-1.5">
+            <div className="mt-[9.6px] flex flex-wrap gap-2.5">
               {video.tags.slice(0, 3).map((t) => (
                 <span
                   key={t}
-                  className="rounded-full border border-border px-2 py-0.5 text-[11px] text-secondary"
+                  className="rounded-full border border-border px-2.5 py-0.5 text-[11px] text-secondary"
                 >
                   #{t}
                 </span>

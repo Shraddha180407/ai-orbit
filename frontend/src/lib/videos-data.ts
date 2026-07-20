@@ -32,6 +32,15 @@ export async function getAllVideos(): Promise<Video[]> {
   return (await fetchJson<Video[]>(`/api/videos?sort=latest`)) ?? [];
 }
 
+export async function getVideosPage(limit: number, offset: number): Promise<Video[]> {
+  return (await fetchJson<Video[]>(`/api/videos?sort=latest&limit=${limit}&offset=${offset}`)) ?? [];
+}
+
+export async function getVideosCount(): Promise<number> {
+  const result = await fetchJson<{ total: number }>(`/api/videos/count`);
+  return result?.total ?? 0;
+}
+
 export async function getVideoBySlug(slug: string): Promise<Video | null> {
   return fetchJson<Video>(`/api/videos/${slug}`);
 }

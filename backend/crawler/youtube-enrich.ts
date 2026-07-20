@@ -17,6 +17,40 @@ function parseIsoDuration(iso: string | undefined | null): number {
   return (Number(h) || 0) * 3600 + (Number(m) || 0) * 60 + (Number(s) || 0);
 }
 
+export const MIN_DURATION_SECONDS = 120; // drop Shorts / sub-2-minute clips
+
+/**
+ * Unicode ranges for non-Latin scripts. Used as a fallback signal when
+ * YouTube doesn't report defaultAudioLanguage/defaultLanguage (very common
+ * — most uploaders never set it), since we can't call a translation/
+ * language-detection API per video without adding real cost and latency.
+ */
+const NON_LATIN_SCRIPT_RE =
+  /[\u0400-\u04FF\u0600-\u06FF\u0900-\u097F\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\u0E00-\u0E7F\u0590-\u05FF\u0530-\u058F\u10A0-\u10FF]/g;
+
+/**
+ * True if the video is very likely English. Prefers YouTube's own language
+ * metadata when present (reliable); falls back to a lightweight script
+ * heuristic on the title when it's not (common, since most uploaders never
+ * set defaultAudioLanguage/defaultLanguage).
+ */
+export function isLikelyEnglish(
+  title: string,
+  description: string,
+  defaultAudioLanguage?: string | null,
+  defaultLanguage?: string | null
+): boolean {
+  const declared = defaultAudioLanguage ?? defaultLanguage;
+  if (declared) return declared.toLowerCase().startsWith("en");
+
+  const text = `${title} ${description}`;
+  const letters = text.replace(/[^\p{L}]/gu, "");
+  if (letters.length === 0) return true; // nothing to judge, don't wrongly drop it
+
+  const nonLatinCount = (text.match(NON_LATIN_SCRIPT_RE) ?? []).length;
+  return nonLatinCount / letters.length < 0.15; // mostly Latin script -> treat as English
+}
+
 function slugify(title: string, videoId: string) {
   const base = title
     .toLowerCase()
@@ -69,6 +103,21 @@ export async function enrichVideos(videoIds: string[]): Promise<Video[]> {
       const description: string = item.snippet.description ?? "";
 
       if (!isLikelyAiRelated(title, description)) continue;
+
+      const durationSeconds = parseIsoDuration(item.contentDetails?.duration);
+      if (durationSeconds > 0 && durationSeconds < MIN_DURATION_SECONDS) continue; // Shorts / <2min
+
+      if (
+        !isLikelyEnglish(
+          title,
+          description,
+          item.snippet.defaultAudioLanguage,
+          item.snippet.defaultLanguage
+        )
+      ) {
+        continue;
+      }
+
       const toolCategory = categorize(title, description);
 
       results.push({
@@ -89,7 +138,7 @@ export async function enrichVideos(videoIds: string[]): Promise<Video[]> {
           "",
         // contentDetails can be missing (live streams, some restricted
         // videos) — parseIsoDuration handles undefined/null safely.
-        durationSeconds: parseIsoDuration(item.contentDetails?.duration),
+        durationSeconds,
         views: Number(item.statistics?.viewCount ?? 0),
         likes: Number(item.statistics?.likeCount ?? 0),
         publishedAt: (item.snippet.publishedAt ?? new Date().toISOString()).slice(0, 10),
@@ -97,6 +146,7 @@ export async function enrichVideos(videoIds: string[]): Promise<Video[]> {
           name: item.snippet.channelTitle ?? "Unknown",
           avatar: (item.snippet.channelTitle ?? "??").slice(0, 2).toUpperCase(),
         },
+        channelId: item.snippet.channelId ?? null,
         tags: [toolCategory],
         accent: accentFor(videoId),
       });
