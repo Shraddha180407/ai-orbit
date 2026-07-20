@@ -50,23 +50,16 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-<<<<<<< HEAD
   reviews             Review[]
   bookmarks           Bookmark[]
   accounts            Account[]
   sessions            Session[]
   collections         Collection[]
   collectionBookmarks CollectionBookmark[]
-=======
-  reviews   Review[]
-  bookmarks Bookmark[]
-  accounts  Account[]
-  sessions  Session[]
-  taskBookmarks TaskBookmark[] 
-  tasksCreated      Task[]           @relation("TaskCreator")
-  taskLikes         TaskLike[]       @relation("TaskLikeUser")
-  taskSubscriptions TaskSubscriber[] @relation("TaskSubscriberUser")
->>>>>>> main
+  taskBookmarks       TaskBookmark[]
+  tasksCreated        Task[]               @relation("TaskCreator")
+  taskLikes           TaskLike[]           @relation("TaskLikeUser")
+  taskSubscriptions   TaskSubscriber[]     @relation("TaskSubscriberUser")
 }
 
 // ---- Module 3: AI Tools ----
@@ -94,9 +87,9 @@ model Tool {
   reviews   Review[]
   bookmarks Bookmark[]
 
-  alternatives  Tool[] @relation("ToolAlternatives")
-  alternativeOf Tool[] @relation("ToolAlternatives")
-  ttasks TaskTool[]
+  alternatives  Tool[]     @relation("ToolAlternatives")
+  alternativeOf Tool[]     @relation("ToolAlternatives")
+  ttasks        TaskTool[]
 
   // Denormalized for fast listing-page sort/display. Recomputed by the
   // reviews API on every create/update/delete — see lib/reviews.ts.
@@ -188,22 +181,18 @@ model Bookmark {
 }
 
 model AIModel {
-  id            String   @id @default(cuid())
-  name          String
-  creator       String
-  contextWindow String
-  parameterSize String
-  modality      String
-  releaseDate   String
-  description   String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
-<<<<<<< HEAD
-
+  id               String            @id @default(cuid())
+  name             String
+  creator          String
+  contextWindow    String
+  parameterSize    String
+  modality         String
+  releaseDate      String
+  description      String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
   collectionModels CollectionModel[]
-=======
-  tasks TaskModel[]
->>>>>>> main
+  tasks            TaskModel[]
 }
 
 // ---- News module ----
@@ -299,30 +288,30 @@ model NewsComment {
 }
 
 model Repository {
-  id               String    @id @default(cuid())
-  githubId         Int       @unique
-  slug             String    @unique
-  name             String
-  owner            String
-  ownerAvatarUrl   String?
-  description      String?
-  url              String
-  homepage         String?
-  language         String?
-  license          String?
-  topics           String[]
-  stars            Int
-  forks            Int
-  openIssues       Int
-  defaultBranch    String    @default("main")
-  logoUrl          String?
-  brandColor       String?
-  readmeHtml       String?
-  readmeFetchedAt  DateTime?
-  githubCreatedAt  DateTime
-  syncedAt         DateTime
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  githubId        Int       @unique
+  slug            String    @unique
+  name            String
+  owner           String
+  ownerAvatarUrl  String?
+  description     String?
+  url             String
+  homepage        String?
+  language        String?
+  license         String?
+  topics          String[]
+  stars           Int
+  forks           Int
+  openIssues      Int
+  defaultBranch   String    @default("main")
+  logoUrl         String?
+  brandColor      String?
+  readmeHtml      String?
+  readmeFetchedAt DateTime?
+  githubCreatedAt DateTime
+  syncedAt        DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([stars])
   @@index([language])
@@ -361,33 +350,30 @@ model Video {
 }
 
 model Robot {
-  id           String   @id @default(cuid())
+  id           String      @id @default(cuid())
   name         String
   category     String
   manufacturer String
   year         String
   description  String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
-  tasks TaskRobot[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @default(now()) @updatedAt
+  tasks        TaskRobot[]
 }
 
 model Device {
-  id           String   @id @default(cuid())
+  id           String       @id @default(cuid())
   name         String
   category     String
   manufacturer String
   year         String
   description  String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
-<<<<<<< HEAD
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @default(now()) @updatedAt
+  tasks        TaskDevice[]
 }
+
 // ---- Auth Module ----
-=======
-  tasks TaskDevice[]
-}// ---- Auth Module ----
->>>>>>> main
 
 model Account {
   id                String  @id @default(cuid())
@@ -476,7 +462,6 @@ model LeaderboardTool {
   addedDate   String
 }
 
-<<<<<<< HEAD
 // ---- Module: Collections ----
 
 enum CreatorType {
@@ -564,7 +549,13 @@ model CollectionBookmark {
 
   collectionId String
   collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-=======
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, collectionId])
+}
+
 // ---- Module: Tasks ----
 
 enum TaskDifficulty {
@@ -574,19 +565,19 @@ enum TaskDifficulty {
 }
 
 model Task {
-  id          String         @id @default(cuid())
-  slug        String         @unique
-  title       String
-  description String
-  difficulty  TaskDifficulty @default(EASY)
-  pricingModel PricingModel  @default(FREE)
-  isFeatured  Boolean        @default(false)
+  id           String         @id @default(cuid())
+  slug         String         @unique
+  title        String
+  description  String
+  difficulty   TaskDifficulty @default(EASY)
+  pricingModel PricingModel   @default(FREE)
+  isFeatured   Boolean        @default(false)
 
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
 
-  creatorId   String?
-  creator     User?    @relation("TaskCreator", fields: [creatorId], references: [id])
+  creatorId String?
+  creator   User?   @relation("TaskCreator", fields: [creatorId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -635,8 +626,8 @@ model TaskModel {
   taskId  String
   modelId String
 
-  task    Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  model   AIModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  task  Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  model AIModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
 
   @@id([taskId, modelId])
   @@index([modelId])
@@ -693,17 +684,11 @@ model TaskBookmark {
 
   taskId String
   task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
->>>>>>> main
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-<<<<<<< HEAD
-  @@unique([userId, collectionId])
-}
-=======
   @@unique([taskId, userId])
   @@index([taskId])
   @@index([userId])
 }
->>>>>>> main
