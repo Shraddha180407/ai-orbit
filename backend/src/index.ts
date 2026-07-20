@@ -14,6 +14,7 @@ import { tasksRouter } from './modules/tasks/tasks.routes.js'
 import { modelsRouter } from './modules/models/models.routes.js'
 import { repositoriesRouter } from './modules/repositories/repositories.routes.js'
 import { robotsRouter } from './modules/robots/robots.routes.js'
+import { userRouter } from './modules/user/user.routes.js'
 import { homepageRouter } from './modules/homepage/homepage.routes.js'
 import { toolsRouter } from './modules/tools/tools.routes.js'
 import { getPrisma } from './lib/prisma.js'
@@ -54,6 +55,8 @@ app.route('/api/videos', videosRouter)
 app.route('/api/news', newsRouter)
 app.route('/api/ingestion', ingestionRouter)
 app.route('/logos/publishers', logosRouter)
+import { adminRouter } from './modules/admin/admin.routes.js'
+
 app.route('/api/auth', authRoutes)
 app.route('/api/v1/leaderboard', leaderboardRouter)
 app.route('/api/v1/companies', companiesRouter)
@@ -62,6 +65,8 @@ app.route('/api/v1/devices', devicesRouter)
 app.route('/api/v1/models', modelsRouter)
 app.route('/api/v1/repositories', repositoriesRouter)
 app.route('/api/v1/robots', robotsRouter)
+app.route('/api/admin', adminRouter)
+app.route('/api/user', userRouter)
 app.route('/api/v1/tasks', tasksRouter)
 app.route('/api/v1/homepage', homepageRouter)
 app.route('/api/v1/tools', toolsRouter)

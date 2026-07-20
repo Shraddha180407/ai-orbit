@@ -12,12 +12,15 @@ interface NewsListProps {
   sort: SortState;
   onSort: (key: SortKey) => void;
   filters: NewsTableFilters;
+  isAdmin?: boolean;
+  onEdit?: (news: any) => void;
+  onDelete?: (id: string) => void;
 }
 
 /** Renders the discovery table, or the empty/no-results state when the feed has nothing to show. */
-export function NewsList({ articles, sources, emptyKind, sort, onSort, filters }: NewsListProps) {
+export function NewsList({ articles, sources, emptyKind, sort, onSort, filters, isAdmin, onEdit, onDelete }: NewsListProps) {
   if (!articles.length) {
     return emptyKind === "search" ? <NoResultsState /> : <EmptyState />;
   }
-  return <NewsTable articles={articles} sources={sources} sort={sort} onSort={onSort} filters={filters} />;
+  return <NewsTable articles={articles} sources={sources} sort={sort} onSort={onSort} filters={filters} isAdmin={isAdmin} onEdit={onEdit} onDelete={onDelete} />;
 }

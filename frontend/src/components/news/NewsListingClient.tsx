@@ -13,6 +13,12 @@ import { API_URL } from "@/lib/api";
 import { getClientId } from "@/lib/clientId";
 import { applySearch, buildSourceOptions, buildTopicOptions, nextSortState, sortArticles } from "@/lib/news/news";
 import type { NewsArticle, NewsCategory, NewsFilterChip, NewsSource, SortState } from "@/types/news";
+import { useUser } from "@/hooks/use-user";
+import { Modal } from "@/components/ui/modal";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/shadcn-button";
 
 const PAGE_SIZE = 25;
 
@@ -43,11 +49,20 @@ interface NewsListingClientProps {
  * loaded, it doesn't drop back to paginated fetching.
  */
 export function NewsListingClient({ category, initialTopic }: NewsListingClientProps) {
+  const { user } = useUser();
+  const isAdmin = user?.role === 'ADMIN';
+
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [selectedTopics, setSelectedTopics] = useState<string[]>(initialTopic ? [initialTopic] : []);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [sort, setSort] = useState<SortState>({ key: "date", dir: "desc" });
+
+  // Admin Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ title: '', slug: '', summary: '' });
+  const [isSaving, setIsSaving] = useState(false);
 
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [sources, setSources] = useState<Record<string, NewsSource>>({});
@@ -116,6 +131,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   }, []);
 
   // Initial load, once.
+
   useEffect(() => {
     if (category || initialTopic) loadFull();
     else loadPage(1, false);
@@ -157,6 +173,51 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     setSelectedTopics((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
   const toggleSource = (v: string) =>
     setSelectedSources((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const url = editingId ? `${API_URL}/api/admin/news/${editingId}` : `${API_URL}/api/admin/news`;
+      const method = editingId ? 'PATCH' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Failed to save news');
+      toast.success(editingId ? 'News updated successfully' : 'News added successfully');
+      setIsModalOpen(false);
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/news/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to delete news');
+      toast.success('News deleted successfully');
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const openAdd = () => {
+    setEditingId(null);
+    setFormData({ title: '', slug: '', summary: '' });
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (news: any) => {
+    setEditingId(news.id);
+    setFormData({ title: news.title || '', slug: news.slug || '', summary: news.summary || '' });
+    setIsModalOpen(true);
+  };
 
   const tableFilters = {
     topicOptions,
@@ -273,6 +334,11 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
             </p>
           )}
         </div>
+        {isAdmin && (
+          <Button className="mt-4 bg-white text-black hover:bg-neutral-200" onClick={openAdd}>
+            <Plus className="h-4 w-4 mr-2" /> Add News
+          </Button>
+        )}
       </header>
 
       <div className="mt-4 sm:mt-5 md:mt-6 lg:mt-8">
@@ -341,7 +407,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
           paddingBottom: 12,
         }}
       >
-        <NewsList articles={restList} sources={sources} emptyKind={emptyKind} sort={sort} onSort={onSort} filters={tableFilters} />
+        <NewsList articles={restList} sources={sources} emptyKind={emptyKind} sort={sort} onSort={onSort} filters={tableFilters} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
 
         {mode === "paginated" && restList.length > 0 && (
           <div ref={sentinelRef} style={{ padding: "18px 0 8px" }}>
@@ -378,6 +444,19 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
           </div>
         )}
       </div>
+      
+      <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? 'Edit News' : 'Add News'} footer={
+        <>
+          <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+          <Button onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save'}</Button>
+        </>
+      }>
+        <div className="space-y-3">
+          <div><label className="text-xs text-[#8A8F98]">Title</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Slug</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Summary</label><textarea className="w-full p-2 text-sm bg-[#111113] border border-[#1C1C1F] text-white rounded-md h-20" value={formData.summary} onChange={e => setFormData({...formData, summary: e.target.value})} /></div>
+        </div>
+      </Modal>
     </div>
   );
 }
