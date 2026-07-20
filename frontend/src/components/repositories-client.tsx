@@ -7,7 +7,13 @@ import { RepositoryHero } from "@/components/ui/RepositoryHero";
 import { RepositoryTable } from "@/components/ui/RepositoryTable";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 import { RepositoryRow } from "@/components/ui/RepositoryRow";
-import { resolveRepositoryLicense } from "@/lib/utils";
+
+const getBackendSortValue = (field: string | null, order: "asc" | "desc"): string | undefined => {
+  if (field === "stars" && order === "desc") return "stars_desc";
+  if (field === "updated") return "newest";
+  if (field === "name" && order === "asc") return "name_asc";
+  return undefined;
+};
 
 export function RepositoriesClient() {
   const [repos, setRepos] = useState<Repository[]>([]);
@@ -28,22 +34,30 @@ export function RepositoriesClient() {
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // Helper to fetch the initial/reset list based on current filters/sorting from page 1
+  const fetchInitialRepos = async (searchQuery: string, field: typeof sortField, order: typeof sortOrder) => {
+    setIsLoading(true);
+    try {
+      const backendSort = getBackendSortValue(field, order);
+      const data = await fetchRepositories({
+        q: searchQuery || undefined,
+        sort: backendSort,
+        limit: 15
+      });
+      setRepos(data.items || []);
+      setNextCursor(data.nextCursor);
+      setHasMore(data.hasMore);
+      setTotal(data.total);
+    } catch (e) {
+      console.error("Failed to fetch repositories:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Initial fetch
   useEffect(() => {
-    async function getRepos() {
-      try {
-        const data = await fetchRepositories();
-        setRepos(data.items || []);
-        setNextCursor(data.nextCursor);
-        setHasMore(data.hasMore);
-        setTotal(data.total);
-      } catch (e) {
-        console.error("Failed to fetch repositories:", e);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    getRepos();
+    fetchInitialRepos("", "stars", "desc");
   }, []);
 
   // IntersectionObserver for server-side infinite scroll
@@ -56,7 +70,13 @@ export function RepositoriesClient() {
           if (isFetchingMore) return;
           setIsFetchingMore(true);
           try {
-            const data = await fetchRepositories(15, nextCursor);
+            const backendSort = getBackendSortValue(sortField, sortOrder);
+            const data = await fetchRepositories({
+              limit: 15,
+              cursor: nextCursor,
+              q: activeRepoSearch || undefined,
+              sort: backendSort
+            });
             setRepos((prev) => {
               const existingIds = new Set(prev.map(r => r.id));
               const newItems = (data.items || []).filter(r => !existingIds.has(r.id));
@@ -85,14 +105,21 @@ export function RepositoriesClient() {
         observer.unobserve(currentSentinel);
       }
     };
-  }, [isLoading, isFetchingMore, hasMore, nextCursor]);
+  }, [isLoading, isFetchingMore, hasMore, nextCursor, activeRepoSearch, sortField, sortOrder]);
 
   function handleSort(field: "stars" | "forks" | "size" | "updated") {
+    let newOrder: "asc" | "desc" = "desc";
     if (sortField === field) {
-      setSortOrder(prev => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortOrder("desc");
+      newOrder = sortOrder === "asc" ? "desc" : "asc";
+    }
+
+    setSortField(field);
+    setSortOrder(newOrder);
+
+    // If there is a backend equivalent, trigger a refetch from page 1
+    const backendSort = getBackendSortValue(field, newOrder);
+    if (backendSort) {
+      fetchInitialRepos(activeRepoSearch, field, newOrder);
     }
   }
 
@@ -100,7 +127,7 @@ export function RepositoriesClient() {
   const licenseCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
     repos.forEach((repo) => {
-      const license = resolveRepositoryLicense(repo.name);
+      const license = repo.license;
       if (license) {
         counts[license] = (counts[license] || 0) + 1;
       }
@@ -119,7 +146,7 @@ export function RepositoriesClient() {
     return counts;
   }, [repos]);
 
-  // Filter repositories by name
+  // Filter repositories by name (unsupported filters stay client-side)
   const nameFilteredRepos = React.useMemo(() => {
     if (!activeRepoSearch) return repos;
     const query = activeRepoSearch.toLowerCase();
@@ -135,7 +162,7 @@ export function RepositoriesClient() {
   // Filter repositories by license
   const filteredRepos = React.useMemo(() => {
     if (!selectedLicense) return companyFilteredRepos;
-    return companyFilteredRepos.filter((repo) => resolveRepositoryLicense(repo.name) === selectedLicense);
+    return companyFilteredRepos.filter((repo) => repo.license === selectedLicense);
   }, [companyFilteredRepos, selectedLicense]);
 
   // Sort filtered repositories
@@ -150,15 +177,14 @@ export function RepositoriesClient() {
         valA = a.stars;
         valB = b.stars;
       } else if (sortField === "forks") {
-        valA = Math.round(a.stars / 8.5) || 12;
-        valB = Math.round(b.stars / 8.5) || 12;
+        valA = a.forks ?? 0;
+        valB = b.forks ?? 0;
       } else if (sortField === "size") {
         valA = a.stars / 210 + 1.2;
         valB = b.stars / 210 + 1.2;
       } else if (sortField === "updated") {
-        // High stars mock more recent update times for client demonstration consistency
-        valA = (a.stars % 6) + 2;
-        valB = (b.stars % 6) + 2;
+        valA = new Date(a.syncedAt || a.githubCreatedAt || 0).getTime();
+        valB = new Date(b.syncedAt || b.githubCreatedAt || 0).getTime();
       }
 
       return sortOrder === "asc" ? valA - valB : valB - valA;
@@ -168,12 +194,14 @@ export function RepositoriesClient() {
   function handleApplyRepoSearch() {
     setActiveRepoSearch(repoSearchQuery);
     setIsRepoFilterOpen(false);
+    fetchInitialRepos(repoSearchQuery, sortField, sortOrder);
   }
 
   function handleResetRepoSearch() {
     setRepoSearchQuery("");
     setActiveRepoSearch("");
     setIsRepoFilterOpen(false);
+    fetchInitialRepos("", sortField, sortOrder);
   }
 
   return (

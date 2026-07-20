@@ -78,20 +78,57 @@ export async function fetchAllNews(): Promise<any[]> {
 import { Repository, RepositoryListResponse, RepositoryDetailResponse } from "./types";
 import { DUMMY_REPOSITORIES } from "./dummyRepositories";
 
-export async function fetchRepositories(limit?: number, cursor?: string | null): Promise<RepositoryListResponse> {
+export interface FetchRepositoriesOptions {
+  limit?: number;
+  cursor?: string | null;
+  sort?: string;
+  language?: string;
+  topic?: string;
+  q?: string;
+}
+
+export async function fetchRepositories(options: FetchRepositoriesOptions = {}): Promise<RepositoryListResponse> {
+  const { limit, cursor, sort, language, topic, q } = options;
   const USE_DUMMY = process.env.NEXT_PUBLIC_USE_DUMMY_REPOSITORIES === "true";
+  
   if (USE_DUMMY) {
+    let items = [...DUMMY_REPOSITORIES];
+    if (q) {
+      const search = q.toLowerCase();
+      items = items.filter(r => r.name.toLowerCase().includes(search) || r.owner.toLowerCase().includes(search));
+    }
+    if (sort === "stars_desc") {
+      items.sort((a, b) => b.stars - a.stars);
+    } else if (sort === "newest") {
+      items.sort((a, b) => {
+        const dateA = new Date(a.syncedAt || a.githubCreatedAt || 0).getTime();
+        const dateB = new Date(b.syncedAt || b.githubCreatedAt || 0).getTime();
+        return dateB - dateA;
+      });
+    } else if (sort === "name_asc") {
+      items.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    const limitNum = limit || 15;
+    const cursorIndex = cursor ? parseInt(cursor, 10) : 0;
+    const sliced = items.slice(cursorIndex, cursorIndex + limitNum);
+    const nextCursorVal = cursorIndex + limitNum < items.length ? (cursorIndex + limitNum).toString() : null;
+
     return {
-      items: DUMMY_REPOSITORIES,
-      nextCursor: null,
-      hasMore: false,
-      total: DUMMY_REPOSITORIES.length
+      items: sliced,
+      nextCursor: nextCursorVal,
+      hasMore: nextCursorVal !== null,
+      total: items.length
     };
   }
 
   const url = new URL(`${API_URL}/api/v1/repositories`);
   if (limit) url.searchParams.set("limit", limit.toString());
   if (cursor) url.searchParams.set("cursor", cursor);
+  if (sort) url.searchParams.set("sort", sort);
+  if (language) url.searchParams.set("language", language);
+  if (topic) url.searchParams.set("topic", topic);
+  if (q) url.searchParams.set("q", q);
 
   const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) {

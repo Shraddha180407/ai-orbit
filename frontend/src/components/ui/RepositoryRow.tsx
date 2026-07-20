@@ -1,22 +1,11 @@
 'use client';
 
 import React from "react";
+import Link from "next/link";
 import Github from "lucide-react/dist/esm/icons/github";
 import Star from "lucide-react/dist/esm/icons/star";
 import GitFork from "lucide-react/dist/esm/icons/git-fork";
-import { resolveRepositoryLicense, resolveCompanyLogoBg } from "@/lib/utils";
-
-interface Repository {
-  id: string;
-  url: string;
-  name: string;
-  owner: string;
-  description: string;
-  stars: number;
-  language: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import { Repository } from "@/lib/types";
 
 interface RepositoryRowProps {
   repo: Repository;
@@ -41,43 +30,40 @@ function GithubIconButton({ size, className = "" }: { size: number; className?: 
   );
 }
 
+const getRelativeTime = (dateStr?: string | null) => {
+  if (!dateStr) return null;
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return null;
+    const diffMs = Date.now() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    if (diffMins < 60) return `${diffMins || 1}m`;
+    const diffHrs = Math.floor(diffMins / 60);
+    if (diffHrs < 24) return `${diffHrs}h`;
+    const diffDays = Math.floor(diffHrs / 24);
+    if (diffDays < 7) return `${diffDays}d`;
+    const diffWeeks = Math.floor(diffDays / 7);
+    return `${diffWeeks}w`;
+  } catch {
+    return null;
+  }
+};
+
 export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: RepositoryRowProps) {
-  // Stable derived placeholder metadata since DB modifications are deferred
   const starCount = repo.stars;
-  const forksCount = Math.round(repo.stars / 8.5) || 12;
+  const forksCount = repo.forks !== undefined && repo.forks !== null ? repo.forks : 0;
   const sizeText = `${(repo.stars / 210 + 1.2).toFixed(1)} MB`;
   
-  // Resolve license and logo properties using shared utilities
-  const licenseText = resolveRepositoryLicense(repo.name);
-  const logoBg = resolveCompanyLogoBg(repo.owner);
-  
-  // Format updated time using backend updatedAt field if available, fallback to mock formula
-  const getUpdatedText = () => {
-    if (!repo.updatedAt) return `${(repo.stars % 6) + 2}h`;
-    try {
-      const date = new Date(repo.updatedAt);
-      if (isNaN(date.getTime())) return `${(repo.stars % 6) + 2}h`;
-      const diffMs = Date.now() - date.getTime();
-      const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-      if (diffHrs < 1) return "1h";
-      if (diffHrs < 24) return `${diffHrs}h`;
-      const diffDays = Math.floor(diffHrs / 24);
-      return `${diffDays}d`;
-    } catch {
-      return `${(repo.stars % 6) + 2}h`;
-    }
-  };
-  const updateHours = getUpdatedText();
-
+  const licenseText = repo.license || null;
+  const avatarUrl = repo.logoUrl || repo.ownerAvatarUrl;
+  const updateHours = getRelativeTime(repo.syncedAt) || getRelativeTime(repo.githubCreatedAt) || "—";
 
   return (
     <>
       {/* Desktop & Tablet Grid Row */}
-      <a
-        href={repo.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`Open ${repo.name} repository on GitHub in a new tab`}
+      <Link
+        href={`/repositories/${repo.slug || repo.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+        aria-label={`View details for ${repo.name} repository`}
         style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
         className="hidden sm:grid grid-cols-[30px_1fr_95px_110px_60px] md:grid-cols-[30px_1fr_180px_95px_130px_60px] lg:grid-cols-[30px_1fr_180px_95px_95px_130px_110px_60px] xl:grid-cols-[30px_1fr_180px_95px_95px_130px_95px_110px_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none group border-b border-white/[0.06] last:border-b-0"
       >
@@ -93,8 +79,14 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
 
         {/* Column 3: Company / Owner */}
         <div className="min-w-0 flex items-center gap-[6px] text-[13px] text-[#A1A1AA] font-semibold hidden md:flex text-left">
-          {logoBg && (
-            <div className={`h-[20px] w-[20px] rounded-[3px] shrink-0 ${logoBg} flex items-center justify-center text-[10px] font-black text-white`}>
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={`${repo.owner} logo`}
+              className="h-[20px] w-[20px] rounded-[3px] shrink-0 object-cover"
+            />
+          ) : (
+            <div className="h-[20px] w-[20px] rounded-[3px] shrink-0 bg-neutral-800 flex items-center justify-center text-[10px] font-black text-white">
               {repo.owner.charAt(0).toUpperCase()}
             </div>
           )}
@@ -138,14 +130,12 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
         <div className="flex justify-center items-center w-full">
           <GithubIconButton size={20} className="group-hover:text-white group-hover:bg-[#232329] transition-colors" />
         </div>
-      </a>
+      </Link>
 
       {/* Mobile Card List Row */}
-      <a
-        href={repo.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`Open ${repo.name} repository by ${repo.owner} on GitHub in a new tab`}
+      <Link
+        href={`/repositories/${repo.slug || repo.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+        aria-label={`View details for ${repo.name} repository`}
         style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
         className="block sm:hidden p-[12px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none flex justify-between items-center gap-[10px] border-b border-white/[0.06] last:border-b-0"
       >
@@ -183,9 +173,8 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
 
         {/* Far Right Action Icon */}
         <GithubIconButton size={16} />
-      </a>
+      </Link>
     </>
   );
 
 });
-

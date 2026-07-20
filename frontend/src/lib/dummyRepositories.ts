@@ -1,14 +1,4 @@
-export interface Repository {
-  id: string;
-  url: string;
-  name: string;
-  owner: string;
-  description: string;
-  stars: number;
-  language: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import { Repository } from "./types";
 
 const FAMOUS_REPOS: Omit<Repository, "id" | "createdAt" | "updatedAt">[] = [
   {
