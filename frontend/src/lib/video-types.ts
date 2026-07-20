@@ -17,6 +17,7 @@ export type Video = {
   likes: number;
   publishedAt: string; // ISO date
   author: { name: string; avatar: string };
+  channelId: string | null;
   tags: string[];
   /** Deterministic fallback gradient shown if the thumbnail URL ever fails to load. */
   accent: string;
@@ -54,6 +55,15 @@ export const BLUR_DATA_URL =
   Buffer.from(
     '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="#151619"/></svg>'
   ).toString("base64");
+
+// Shared by VideoTable.tsx and app/videos/[slug]/page.tsx — both linked to the
+// channel directly when we have a channelId, else fell back to a YouTube
+// search for the author name. Previously duplicated inline in both places.
+export function getChannelUrl(channelId: string | null | undefined, authorName: string): string {
+  return channelId
+    ? `https://www.youtube.com/channel/${channelId}`
+    : `https://www.youtube.com/results?search_query=${encodeURIComponent(authorName)}`;
+}
 
 export function formatDuration(seconds: number) {
   const m = Math.floor(seconds / 60);
