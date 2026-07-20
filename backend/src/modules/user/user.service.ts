@@ -28,7 +28,6 @@ export class UserService {
   }
 
   async removeSavedTool(id: string, userId: string) {
-    const user = await this.getOrCreateDemoUser();
     // Verify ownership before deleting
     const bookmark = await this.prisma.bookmark.findUnique({ where: { id } });
     if (!bookmark || bookmark.userId !== userId) return { success: false };

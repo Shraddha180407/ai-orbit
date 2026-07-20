@@ -38,7 +38,8 @@ export class ToolsController {
     const slug = c.req.param('slug') || '';
 
     try {
-      const result = await service.getToolDetails(slug);
+      const user = c.get('user');
+      const result = await service.getToolDetails(slug, user?.id);
       if (!result) {
         return c.json({ error: 'Tool not found' }, 404);
       }
@@ -63,7 +64,8 @@ export class ToolsController {
         return c.json({ error: 'Invalid input data', details: parsed.error.issues }, 400);
       }
 
-      await service.createOrUpdateReview(parsed.data.toolId, parsed.data.rating, parsed.data.comment);
+      const user = c.get('user');
+      await service.createOrUpdateReview(parsed.data.toolId, user.id, parsed.data.rating, parsed.data.comment);
       return c.json({ status: 'success', message: 'Thanks — your review is live.' });
     } catch (error: any) {
       return c.json({ error: error.message }, 500);
@@ -84,7 +86,8 @@ export class ToolsController {
         return c.json({ error: 'Invalid input data', details: parsed.error.issues }, 400);
       }
 
-      const bookmarked = await service.toggleBookmark(parsed.data.toolId);
+      const user = c.get('user');
+      const bookmarked = await service.toggleBookmark(parsed.data.toolId, user.id);
       return c.json({ bookmarked });
     } catch (error: any) {
       return c.json({ error: error.message }, 500);
