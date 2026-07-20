@@ -25,7 +25,7 @@ export function ModelsClient() {
   // Admin Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', slug: '', description: '' });
+  const [formData, setFormData] = useState({ name: '', creator: '', contextWindow: '', parameterSize: '', modality: '', releaseDate: '', description: '' });
   const [isSaving, setIsSaving] = useState(false);
 
   const getModels = async () => {
@@ -103,13 +103,13 @@ export function ModelsClient() {
 
   const openAdd = () => {
     setEditingId(null);
-    setFormData({ name: '', slug: '', description: '' });
+    setFormData({ name: '', creator: '', contextWindow: '', parameterSize: '', modality: '', releaseDate: '', description: '' });
     setIsModalOpen(true);
   };
 
   const openEdit = (model: any) => {
     setEditingId(model.id);
-    setFormData({ name: model.name || '', slug: model.slug || '', description: model.description || '' });
+    setFormData({ name: model.name || '', creator: model.creator || '', contextWindow: model.contextWindow || '', parameterSize: model.parameterSize || '', modality: model.modality || '', releaseDate: model.releaseDate || '', description: model.description || '' });
     setIsModalOpen(true);
   };
 
@@ -229,9 +229,17 @@ export function ModelsClient() {
         </>
       }>
         <div className="space-y-3">
-          <div><label className="text-xs text-[#8A8F98]">Name</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} /></div>
-          <div><label className="text-xs text-[#8A8F98]">Slug</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} /></div>
-          <div><label className="text-xs text-[#8A8F98]">Description</label><textarea className="w-full p-2 text-sm bg-[#111113] border border-[#1C1C1F] text-white rounded-md h-20" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Name *</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. GPT-4o" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Creator *</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. OpenAI" value={formData.creator} onChange={e => setFormData({...formData, creator: e.target.value})} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-[#8A8F98]">Context Window *</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. 128k" value={formData.contextWindow} onChange={e => setFormData({...formData, contextWindow: e.target.value})} /></div>
+            <div><label className="text-xs text-[#8A8F98]">Parameter Size *</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. 70B" value={formData.parameterSize} onChange={e => setFormData({...formData, parameterSize: e.target.value})} /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-[#8A8F98]">Modality *</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. Text, Multimodal" value={formData.modality} onChange={e => setFormData({...formData, modality: e.target.value})} /></div>
+            <div><label className="text-xs text-[#8A8F98]">Release Date *</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. 2024-05" value={formData.releaseDate} onChange={e => setFormData({...formData, releaseDate: e.target.value})} /></div>
+          </div>
+          <div><label className="text-xs text-[#8A8F98]">Description *</label><textarea className="w-full p-2 text-sm bg-[#111113] border border-[#1C1C1F] text-white rounded-md h-20" placeholder="Short description of the model..." value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} /></div>
         </div>
       </Modal>
     </div>

@@ -237,8 +237,22 @@ export class AdminService {
     ]);
     return { models, total, page, totalPages: Math.ceil(total / pageSize) };
   }
-  async createModel(data: any) { return this.prisma.aIModel.create({ data }); }
-  async updateModel(id: string, data: any) { return this.prisma.aIModel.update({ where: { id }, data }); }
+  async createModel(data: any) {
+    const { name, creator, contextWindow, parameterSize, modality, releaseDate, description } = data;
+    return this.prisma.aIModel.create({ data: { name, creator, contextWindow, parameterSize, modality, releaseDate, description } });
+  }
+  async updateModel(id: string, data: any) {
+    const { name, creator, contextWindow, parameterSize, modality, releaseDate, description } = data;
+    const update: any = {};
+    if (name !== undefined) update.name = name;
+    if (creator !== undefined) update.creator = creator;
+    if (contextWindow !== undefined) update.contextWindow = contextWindow;
+    if (parameterSize !== undefined) update.parameterSize = parameterSize;
+    if (modality !== undefined) update.modality = modality;
+    if (releaseDate !== undefined) update.releaseDate = releaseDate;
+    if (description !== undefined) update.description = description;
+    return this.prisma.aIModel.update({ where: { id }, data: update });
+  }
   async deleteModel(id: string) { await this.prisma.aIModel.delete({ where: { id } }); }
 
   async getVideos(page: number, search: string) {
