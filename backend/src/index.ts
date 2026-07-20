@@ -8,6 +8,7 @@ import logosRouter from './modules/ingestion/logos.routes.js'
 import authRoutes from './modules/auth/auth.routes.js'
 import { leaderboardRouter } from './modules/leaderboard/leaderboard.routes.js'
 import { companiesRouter } from './modules/companies/companies.routes.js'
+import { collectionsRouter } from './modules/collections/collections.routes.js'
 import { devicesRouter } from './modules/devices/devices.routes.js'
 import { tasksRouter } from './modules/tasks/tasks.routes.js'
 import { modelsRouter } from './modules/models/models.routes.js'
@@ -55,6 +56,7 @@ app.route('/logos/publishers', logosRouter)
 app.route('/api/auth', authRoutes)
 app.route('/api/v1/leaderboard', leaderboardRouter)
 app.route('/api/v1/companies', companiesRouter)
+app.route('/api/v1/collections', collectionsRouter)
 app.route('/api/v1/devices', devicesRouter)
 app.route('/api/v1/models', modelsRouter)
 app.route('/api/v1/repositories', repositoriesRouter)
