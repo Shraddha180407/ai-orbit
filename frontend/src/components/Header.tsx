@@ -35,6 +35,12 @@ export function Header() {
               menuClassName="absolute left-0 mt-2 w-[280px] rounded-lg border border-border/20 bg-neutral-900/95 backdrop-blur-md p-2 shadow-2xl z-50 text-white"
             />
             <Link
+              href="/tasks"
+              className="text-[13px] font-medium text-foreground-muted hover:text-white transition-colors"
+            >
+              Tasks
+            </Link>
+            <Link
               href="/leaderboard"
               className="text-[13px] font-medium text-[#6E56CF] hover:text-white transition-colors font-semibold"
             >

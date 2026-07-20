@@ -1,8 +1,6 @@
 "use client";
 
-export const runtime = 'edge';
-
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, notFound } from "next/navigation";
 import { 
@@ -20,8 +18,7 @@ import {
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { MOCK_ENTITIES } from "@/lib/mockData";
-import { TASK_CATEGORIES } from "@/lib/mockData";
+import { API_URL } from "@/lib/api";
 
 // Topic chips mapping for each category to match TAAFT layout
 const CATEGORY_TOPICS: Record<string, string[]> = {
@@ -45,6 +42,13 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   "General": "📁"
 };
 
+// Map real backend tool category names to task categories
+const TASK_CATEGORY_MAP: Record<string, string[]> = {
+  personal: ["Productivity", "Writing", "Audio", "Customer Support", "Research"],
+  work: ["Coding", "Writing", "Data Analysis", "Customer Support", "Research", "Productivity"],
+  creativity: ["Image Generation", "Video", "Audio", "Marketing", "Design"]
+};
+
 // Sub-tabs shown below header
 const FILTER_TABS = ["All", "SOTA (State of the Art)", "Mini Tools", "Popular", "New"] as const;
 type FilterTab = typeof FILTER_TABS[number];
@@ -65,44 +69,62 @@ export default function TaskCategoryPage() {
   const [subscribed, setSubscribed] = useState(false);
   const [activeTab, setActiveTab] = useState<FilterTab>("All");
   const [savedTools, setSavedTools] = useState<Record<string, boolean>>({});
+  
+  // Real backend tool state
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  const [backendTools, setBackendTools] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Filter tasks belonging to this category
-  const categoryTasks = useMemo(() => {
-    return Object.keys(TASK_CATEGORIES).filter(
-      (taskName) => TASK_CATEGORIES[taskName].toLowerCase() === categoryKey
-    );
-  }, [categoryKey]);
+  // Fetch real tools from the backend on load
+  useEffect(() => {
+    async function loadBackendData() {
+      setIsLoading(true);
+      try {
+        const res = await fetch(`${API_URL}/api/v1/tools?limit=100`);
+        if (res.ok) {
+          const data = await res.json();
+          setBackendTools(data.tools || []);
+        }
+      } catch (err) {
+        console.error("Failed to load backend tools:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadBackendData();
+  }, []);
 
-  // Find and sort all tools associated with those tasks
+  // Filter tools belonging to this category from backend
   const categoryTools = useMemo(() => {
-    let tools = MOCK_ENTITIES.filter((entity) => {
-      if (entity.type !== "tool") return false;
-      const toolTask = entity.meta?.task as string;
-      return toolTask && categoryTasks.includes(toolTask);
+    const allowedCategories = TASK_CATEGORY_MAP[categoryKey] || [];
+    const tools = backendTools.filter((tool) => {
+      // Check first category in categories list or fallback category property
+      const toolCatName = tool.categories?.[0]?.category?.name || tool.category;
+      return toolCatName && allowedCategories.includes(toolCatName);
     });
 
     // Apply active sub-tab filters/sorting
     if (activeTab === "SOTA (State of the Art)") {
-      return [...tools].sort((a, b) => b.popularityScore - a.popularityScore).slice(0, 4);
+      return [...tools].sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0)).slice(0, 4);
     }
     if (activeTab === "Mini Tools") {
       return tools.slice(0, Math.ceil(tools.length / 2));
     }
     if (activeTab === "Popular") {
-      return [...tools].sort((a, b) => b.popularityScore - a.popularityScore);
+      return [...tools].sort((a, b) => (b._count?.bookmarks || 0) - (a._count?.bookmarks || 0));
     }
     if (activeTab === "New") {
       return [...tools].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
 
     return tools;
-  }, [categoryTasks, activeTab]);
+  }, [backendTools, categoryKey, activeTab]);
 
   // Group tools by their respective sub-categories
   const groupedTools = useMemo(() => {
     const groups: Record<string, typeof categoryTools> = {};
     categoryTools.forEach((tool) => {
-      const cat = tool.category || "General";
+      const cat = tool.categories?.[0]?.category?.name || tool.category || "General";
       if (!groups[cat]) {
         groups[cat] = [];
       }
@@ -126,6 +148,19 @@ export default function TaskCategoryPage() {
       ...prev,
       [id]: !prev[id]
     }));
+  };
+
+  // Toggle backend subscription for task category
+  const handleSubscribe = async () => {
+    setSubscribed(!subscribed);
+    try {
+      await fetch(`${API_URL}/api/v1/tasks/${categoryKey}/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+    } catch (e) {
+      console.error("Failed to toggle subscription on backend:", e);
+    }
   };
 
   const topicChips = CATEGORY_TOPICS[categoryKey] || [];
@@ -167,7 +202,7 @@ export default function TaskCategoryPage() {
             <div className="flex items-center gap-2.5">
               <button
                 type="button"
-                onClick={() => setSubscribed(!subscribed)}
+                onClick={handleSubscribe}
                 className={`flex h-10 items-center justify-center rounded-xl px-5 text-xs font-bold transition-all ${
                   subscribed 
                     ? "bg-neutral-800 text-neutral-300 border border-neutral-700 hover:bg-neutral-700" 
@@ -239,7 +274,13 @@ export default function TaskCategoryPage() {
         </div>
 
         {/* Grouped Tool Sections (Respective Columns) */}
-        {categoryTools.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            {[1,2,3,4,5,6,7,8].map((i) => (
+              <div key={i} className="h-[240px] animate-pulse rounded-2xl border border-white/[0.05] bg-white/[0.01]" />
+            ))}
+          </div>
+        ) : categoryTools.length > 0 ? (
           <div className="space-y-12">
             {Object.entries(groupedTools).map(([groupName, tools]) => {
               const emoji = CATEGORY_EMOJIS[groupName] || "📁";
@@ -262,11 +303,12 @@ export default function TaskCategoryPage() {
                   {/* Responsive 4-Column Tool Grid for this specific Category */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                     {tools.map((tool) => {
-                      const hasLogo = !!tool.imageUrl;
+                      const hasLogo = !!tool.logoUrl || !!tool.imageUrl;
+                      const logoSrc = tool.logoUrl || tool.imageUrl;
                       const isSaved = !!savedTools[tool.id];
                       
-                      const seededRating = (4.3 + (tool.popularityScore % 7) * 0.1).toFixed(1);
-                      const seededSaves = (240 + (tool.popularityScore % 140) * 8).toLocaleString();
+                      const rating = tool.avgRating ? Number(tool.avgRating).toFixed(1) : "4.5";
+                      const savesCount = tool._count?.bookmarks ? tool._count.bookmarks : (100 + (tool.id.length * 7));
 
                       return (
                         <Link
@@ -280,13 +322,13 @@ export default function TaskCategoryPage() {
                               <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white border border-white/[0.08] p-2 shrink-0 shadow-sm">
                                 {hasLogo ? (
                                   <img
-                                    src={tool.imageUrl}
-                                    alt={`${tool.title} logo`}
+                                    src={logoSrc}
+                                    alt={`${tool.name} logo`}
                                     className="h-full w-full object-contain"
                                   />
                                 ) : (
                                   <span className="text-sm font-black text-black">
-                                    {tool.title.charAt(0)}
+                                    {(tool.name || tool.title).charAt(0)}
                                   </span>
                                 )}
                               </div>
@@ -306,17 +348,17 @@ export default function TaskCategoryPage() {
                             </div>
 
                             <h3 className="mt-4 text-sm font-bold text-white/95 group-hover:text-white transition-colors truncate">
-                              {tool.title}
+                              {tool.name || tool.title}
                             </h3>
                             
                             {/* Stars and Saves Row */}
                             <div className="flex items-center gap-2 mt-1.5 text-[10px] text-neutral-400 font-semibold">
                               <span className="flex items-center gap-0.5 text-amber-400">
                                 <Star size={11} fill="currentColor" />
-                                {seededRating}
+                                {rating}
                               </span>
                               <span className="h-1 w-1 rounded-full bg-neutral-700" />
-                              <span>{seededSaves} saves</span>
+                              <span>{savesCount} saves</span>
                             </div>
 
                             <p className="mt-3 text-xs text-neutral-400 line-clamp-3 leading-relaxed">
@@ -326,7 +368,7 @@ export default function TaskCategoryPage() {
 
                           <div className="mt-6 border-t border-white/[0.05] pt-3 flex items-center justify-between text-[11px] text-neutral-500">
                             <span className="font-semibold text-neutral-300 bg-white/[0.04] border border-white/[0.04] px-2 py-0.5 rounded">
-                              {tool.meta?.pricing || "Freemium"}
+                              {tool.pricingModel || tool.meta?.pricing || "Freemium"}
                             </span>
                             <span className="group-hover:text-white font-medium transition-colors flex items-center gap-0.5">
                               Details &rarr;
@@ -352,3 +394,5 @@ export default function TaskCategoryPage() {
     </div>
   );
 }
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
