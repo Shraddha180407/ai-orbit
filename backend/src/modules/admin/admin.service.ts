@@ -211,7 +211,12 @@ export class AdminService {
   }
 
   async deleteNews(id: string) {
-    await this.prisma.news.delete({ where: { id } });
+    await this.prisma.$transaction([
+      this.prisma.newsBookmark.deleteMany({ where: { articleId: id } }),
+      this.prisma.newsVote.deleteMany({ where: { articleId: id } }),
+      this.prisma.newsComment.deleteMany({ where: { articleId: id } }),
+      this.prisma.news.delete({ where: { id } }),
+    ]);
   }
 
   async createTool(data: any) {
