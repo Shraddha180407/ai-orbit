@@ -130,25 +130,27 @@ export class AdminService {
     return { collections };
   }
 
-  async createCollection(data: any) {
+  async createCollection(data: any, creatorId: string) {
     const collection = await this.prisma.collection.create({
       data: {
-        title: data.title,
+        name: data.name,
         slug: data.slug,
         description: data.description,
+        creatorType: 'EDITORIAL',
+        creatorId,
       }
     });
     return collection;
   }
 
   async updateCollection(id: string, data: any) {
+    const update: any = {};
+    if (data.name !== undefined) update.name = data.name;
+    if (data.slug !== undefined) update.slug = data.slug;
+    if (data.description !== undefined) update.description = data.description;
     const collection = await this.prisma.collection.update({
       where: { id },
-      data: {
-        title: data.title,
-        slug: data.slug,
-        description: data.description,
-      }
+      data: update,
     });
     return collection;
   }
@@ -224,8 +226,17 @@ export class AdminService {
     ]);
     return { companies, total, page, totalPages: Math.ceil(total / pageSize) };
   }
-  async createCompany(data: any) { return this.prisma.company.create({ data }); }
-  async updateCompany(id: string, data: any) { return this.prisma.company.update({ where: { id }, data }); }
+  async createCompany(data: any) {
+    const { name, slug, logoUrl } = data;
+    return this.prisma.company.create({ data: { name, slug, logoUrl: logoUrl || null } });
+  }
+  async updateCompany(id: string, data: any) {
+    const update: any = {};
+    if (data.name !== undefined) update.name = data.name;
+    if (data.slug !== undefined) update.slug = data.slug;
+    if (data.logoUrl !== undefined) update.logoUrl = data.logoUrl || null;
+    return this.prisma.company.update({ where: { id }, data: update });
+  }
   async deleteCompany(id: string) { await this.prisma.company.delete({ where: { id } }); }
 
   async getModels(page: number, search: string) {

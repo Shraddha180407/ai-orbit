@@ -27,7 +27,7 @@ export function CompaniesClient() {
   // Admin Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', slug: '', description: '' });
+  const [formData, setFormData] = useState({ name: '', slug: '', logoUrl: '' });
   const [isSaving, setIsSaving] = useState(false);
 
   const getCompanies = async () => {
@@ -105,13 +105,13 @@ export function CompaniesClient() {
 
   const openAdd = () => {
     setEditingId(null);
-    setFormData({ name: '', slug: '', description: '' });
+    setFormData({ name: '', slug: '', logoUrl: '' });
     setIsModalOpen(true);
   };
 
   const openEdit = (company: any) => {
     setEditingId(company.id);
-    setFormData({ name: company.name || '', slug: company.slug || '', description: company.description || '' });
+    setFormData({ name: company.name || '', slug: company.slug || '', logoUrl: company.logoUrl || '' });
     setIsModalOpen(true);
   };
 
@@ -230,9 +230,9 @@ export function CompaniesClient() {
         </>
       }>
         <div className="space-y-3">
-          <div><label className="text-xs text-[#8A8F98]">Name</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} /></div>
-          <div><label className="text-xs text-[#8A8F98]">Slug</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} /></div>
-          <div><label className="text-xs text-[#8A8F98]">Description</label><textarea className="w-full p-2 text-sm bg-[#111113] border border-[#1C1C1F] text-white rounded-md h-20" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Name *</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. OpenAI" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Slug * (unique, lowercase, no spaces)</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. openai" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Logo URL (optional)</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="https://..." value={formData.logoUrl} onChange={e => setFormData({...formData, logoUrl: e.target.value})} /></div>
         </div>
       </Modal>
     </div>

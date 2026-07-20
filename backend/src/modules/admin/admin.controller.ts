@@ -131,7 +131,8 @@ export class AdminController {
   async createCollection(c: Context) {
     try {
       const body = await c.req.json();
-      const data = await this.getService(c).createCollection(body);
+      const user = c.get('user');
+      const data = await this.getService(c).createCollection(body, user.id);
       return c.json(data);
     } catch (error: any) {
       return c.json({ error: error.message }, 500);
