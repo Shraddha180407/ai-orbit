@@ -81,7 +81,7 @@ export function Footer() {
               The premium discovery engine for tools, models, and the global AI ecosystem.
             </p>
 
-            <form onSubmit={handleSubscribe} className="max-w-[280px]">
+            <form id="newsletter" onSubmit={handleSubscribe} className="max-w-[280px] scroll-mt-24">
               <label
                 htmlFor="footer-email"
                 className="block mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-[#71717A]"

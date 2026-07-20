@@ -8,18 +8,18 @@ import Gift from 'lucide-react/dist/esm/icons/gift';
 import Trophy from 'lucide-react/dist/esm/icons/trophy';
 
 const FILTERS = [
-  { name: "Trending", icon: Flame, param: "sort", value: "rating" },
-  { name: "Popular", icon: Star, param: "sort", value: "rating" },
-  { name: "New", icon: Sparkles, param: "sort", value: "newest" },
-  { name: "Free", icon: Gift, param: "pricing", value: "FREE" },
-  { name: "Top Rated", icon: Trophy, param: "sort", value: "rating" },
+  { name: "Trending", icon: Flame, param: "sort", value: "rating", color: "#FF6B4A" },
+  { name: "Popular", icon: Star, param: "sort", value: "rating", color: "#FFC53D" },
+  { name: "New", icon: Sparkles, param: "sort", value: "newest", color: "#A78BFA" },
+  { name: "Free", icon: Gift, param: "pricing", value: "FREE", color: "#34D399" },
+  { name: "Top Rated", icon: Trophy, param: "sort", value: "rating", color: "#38BDF8" },
 ] as const;
 
 export function HeroFeatureChips() {
   const [activeFilter, setActiveFilter] = useState<string>("");
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-1.5 max-w-3xl relative z-10 select-none">
+    <div className="flex flex-wrap items-center justify-center gap-3 max-w-4xl relative z-10 select-none">
       {FILTERS.map((f) => {
         const isActive = activeFilter === f.name;
         const Icon = f.icon;
@@ -37,19 +37,39 @@ export function HeroFeatureChips() {
               url.hash = "tools";
               window.location.href = url.toString();
             }}
-            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 h-[28px] text-[11px] font-medium border transition-colors duration-150 ${
-              isActive
-                ? "border-transparent text-black"
-                : "bg-[#131316]/60 border-[#232326]/50 text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
+            className={`group inline-flex items-center gap-2.5 rounded-full px-6 h-[52px] text-[15px] font-bold border-2 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.04] active:scale-[0.98] ${
+              isActive ? "text-black shadow-xl" : "bg-[#131316]/70"
             }`}
-            style={isActive ? { backgroundColor: "var(--color-signal)" } : undefined}
+            style={
+              isActive
+                ? { backgroundColor: f.color, borderColor: f.color, boxShadow: `0 10px 30px -6px ${f.color}88` }
+                : { borderColor: `${f.color}55` }
+            }
+            onMouseEnter={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.boxShadow = `0 10px 24px -8px ${f.color}77`;
+                e.currentTarget.style.borderColor = f.color;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.boxShadow = "";
+                e.currentTarget.style.borderColor = `${f.color}55`;
+              }
+            }}
           >
-            <Icon
-              size={12}
-              strokeWidth={2}
-              className={isActive ? "text-black" : "text-[#71717A]"}
-            />
-            <span>{f.name}</span>
+            <span
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:rotate-[8deg]"
+              style={{ backgroundColor: isActive ? "rgba(0,0,0,0.15)" : `${f.color}22` }}
+            >
+              <Icon
+                size={18}
+                strokeWidth={2.25}
+                className={isActive ? "text-black" : ""}
+                style={isActive ? undefined : { color: f.color, filter: `drop-shadow(0 0 6px ${f.color}99)` }}
+              />
+            </span>
+            <span style={isActive ? undefined : { color: f.color }}>{f.name}</span>
           </button>
         );
       })}
