@@ -4,6 +4,8 @@ import { fetchTask, fetchTasks } from "@/lib/tasks-api";
 import { TaskDetail } from "@/components/TaskDetail";
 import { TaskErrorState } from "@/components/TaskErrorState";
 
+export const runtime = "edge";
+
 type TaskPageProps = {
   params: Promise<{ slug: string }>;
 };

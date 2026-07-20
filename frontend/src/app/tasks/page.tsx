@@ -3,6 +3,8 @@ import { fetchTasks } from "@/lib/tasks-api";
 import { TasksClient } from "@/components/tasks-client";
 import { TaskErrorState } from "@/components/TaskErrorState";
 
+export const runtime = "edge";
+
 export const metadata = {
   title: "Tasks | AI Orbit",
   description: "Browse AI tasks by category — tools, models, and devices for every use case.",
