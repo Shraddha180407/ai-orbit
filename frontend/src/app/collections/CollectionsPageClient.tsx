@@ -8,9 +8,9 @@ import CollectionFilters from "@/components/collections/CollectionFilters";
 import { CollectionsHeader } from "@/components/collections/CollectionHeader";
 import { CollectionsClosingCTA } from "@/components/collections/CollectionsClosingCTA";
 import { LoadMoreButton } from "@/components/collections/LoadMoreButton";
-
 import { mockCollections } from "@/lib/mockCollections";
 import type { CollectionListItem } from "@/lib/types";
+
 
 export default function CollectionsPageClient() {
   const [search, setSearch] = useState("");
