@@ -34,8 +34,9 @@ model Company {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  tools               Tool[]
   collectionCompanies CollectionCompany[]
+  tools                Tool[]
+  aiModels             AIModel[]
 }
 
 model User {
@@ -45,6 +46,7 @@ model User {
   password      String?
   image         String?
   role          String    @default("USER")
+  status        String    @default("ACTIVE")
   emailVerified DateTime?
 
   createdAt DateTime @default(now())
@@ -60,6 +62,7 @@ model User {
   tasksCreated        Task[]               @relation("TaskCreator")
   taskLikes           TaskLike[]           @relation("TaskLikeUser")
   taskSubscriptions   TaskSubscriber[]     @relation("TaskSubscriberUser")
+  
 }
 
 // ---- Module 3: AI Tools ----
@@ -77,6 +80,7 @@ model Tool {
   pricingModel     PricingModel
   pricingAmount    Decimal?         @db.Decimal(10, 2)
   billingFrequency BillingFrequency @default(NA)
+
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
@@ -193,6 +197,11 @@ model AIModel {
   updatedAt        DateTime          @default(now()) @updatedAt
   collectionModels CollectionModel[]
   tasks            TaskModel[]
+
+  providerId String?
+  provider   Company? @relation(fields: [providerId], references: [id])
+
+  @@index([providerId])
 }
 
 // ---- News module ----
@@ -320,6 +329,7 @@ model Repository {
 }
 
 // Synced from live production DB via `prisma db pull` on 2026-07-12 — this
+// Synced from live production DB via `prisma db pull` on 2026-07-19 — this
 // model was migrated directly to prod by another module without ever being
 // committed here. Kept verbatim; not owned by this module, do not alter.
 model Video {
