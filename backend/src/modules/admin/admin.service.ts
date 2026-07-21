@@ -156,7 +156,12 @@ export class AdminService {
   }
 
   async deleteCollection(id: string) {
-    await this.prisma.collection.delete({ where: { id } });
+    try {
+      await this.prisma.collection.delete({ where: { id } });
+    } catch (e: any) {
+      if (e.code === 'P2003') throw new Error('Cannot delete this collection because it is referenced by other items.');
+      throw e;
+    }
   }
 
   async getTools(page: number, search: string) {
@@ -185,7 +190,12 @@ export class AdminService {
   }
 
   async deleteTool(id: string) {
-    await this.prisma.tool.delete({ where: { id } });
+    try {
+      await this.prisma.tool.delete({ where: { id } });
+    } catch (e: any) {
+      if (e.code === 'P2003') throw new Error('Cannot delete this tool because it is referenced by other items.');
+      throw e;
+    }
   }
 
   async getNews(page: number, search: string) {
@@ -276,7 +286,14 @@ export class AdminService {
     if (data.logoUrl !== undefined) update.logoUrl = data.logoUrl || null;
     return this.prisma.company.update({ where: { id }, data: update });
   }
-  async deleteCompany(id: string) { await this.prisma.company.delete({ where: { id } }); }
+  async deleteCompany(id: string) {
+    try {
+      await this.prisma.company.delete({ where: { id } });
+    } catch (e: any) {
+      if (e.code === 'P2003') throw new Error('Cannot delete this company because it is referenced by other items.');
+      throw e;
+    }
+  }
 
   async getModels(page: number, search: string) {
     const pageSize = 20;
@@ -303,7 +320,14 @@ export class AdminService {
     if (description !== undefined) update.description = description;
     return this.prisma.aIModel.update({ where: { id }, data: update });
   }
-  async deleteModel(id: string) { await this.prisma.aIModel.delete({ where: { id } }); }
+  async deleteModel(id: string) {
+    try {
+      await this.prisma.aIModel.delete({ where: { id } });
+    } catch (e: any) {
+      if (e.code === 'P2003') throw new Error('Cannot delete this AI model because it is referenced by other items.');
+      throw e;
+    }
+  }
 
   async getVideos(page: number, search: string) {
     const pageSize = 20;
@@ -345,7 +369,14 @@ export class AdminService {
     }
     return this.prisma.video.update({ where: { id }, data: update });
   }
-  async deleteVideo(id: string) { await this.prisma.video.delete({ where: { id } }); }
+  async deleteVideo(id: string) {
+    try {
+      await this.prisma.video.delete({ where: { id } });
+    } catch (e: any) {
+      if (e.code === 'P2003') throw new Error('Cannot delete this video because it is referenced by other items.');
+      throw e;
+    }
+  }
 
   async createNews(data: any) {
     // Find or use first publisher as fallback
