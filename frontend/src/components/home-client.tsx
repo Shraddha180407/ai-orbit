@@ -147,22 +147,22 @@ export function HomeClient() {
         />
 
         <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
-          <h1 className="max-w-[820px] text-4xl sm:text-5xl lg:text-[64px] font-black tracking-tight leading-[1.05] mb-8 select-none text-white text-balance">
+          <h1 className="max-w-[820px] text-3xl sm:text-5xl lg:text-[64px] font-black tracking-tight leading-[1.05] mb-6 sm:mb-8 select-none text-white text-balance">
             The best AI, in one signal.
           </h1>
 
-          <form action="/tools" method="GET" className="relative w-full max-w-[640px] mx-auto mb-5 group">
+          <form action="/tools" method="GET" className="relative w-full max-w-[640px] mx-auto mb-4 sm:mb-5 group">
             <div
-              className="relative w-full rounded-xl border border-[#232326]/70 bg-[#111113] h-[52px] flex items-center px-5 pr-[4.5rem] transition-colors duration-150"
+              className="relative w-full rounded-xl border border-[#232326]/70 bg-[#111113] h-[44px] sm:h-[52px] flex items-center px-4 sm:px-5 pr-[4.5rem] transition-colors duration-150"
               style={{ borderColor: undefined }}
             >
-              <Search size={16} className="mr-3 text-[#71717A] shrink-0" />
+              <Search size={15} className="mr-2.5 sm:mr-3 text-[#71717A] shrink-0" />
               <input
                 type="text"
                 name="q"
                 defaultValue={params.q}
                 placeholder="Search AI tools, models, companies…"
-                className="w-full bg-transparent text-[14px] text-white placeholder:text-[#71717A] focus:outline-none"
+                className="w-full bg-transparent text-[13px] sm:text-[14px] text-white placeholder:text-[#71717A] focus:outline-none"
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                 <kbd className="hidden sm:inline-flex h-6 select-none items-center gap-0.5 rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 font-mono text-[10px] text-[#71717A] pointer-events-none">
@@ -196,14 +196,14 @@ export function HomeClient() {
       {/* Directory nav strip — single row, evenly spread, sits just above the tools list */}
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
         <div className="mx-auto w-full max-w-[1600px]">
-          <div className="flex flex-nowrap items-stretch gap-2 overflow-x-auto">
+          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto">
             {DIRECTORY_CARDS.map((card) => {
               const Icon = card.icon;
               return (
                 <a
                   key={card.name}
                   href={card.href}
-                  className="group flex flex-1 min-w-[92px] shrink-0 flex-row items-center justify-center gap-2 rounded-lg border border-[#232326]/60 bg-[#0d0d10] px-3.5 py-2 text-center transition-colors duration-200"
+                  className="group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-[#232326]/60 bg-[#0d0d10] px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-colors duration-200"
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = card.color;
                     e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
@@ -214,12 +214,12 @@ export function HomeClient() {
                   }}
                 >
                   <div
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border"
+                    className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border"
                     style={{ backgroundColor: `${card.color}1a`, borderColor: `${card.color}40` }}
                   >
-                    <Icon size={12} strokeWidth={1.75} style={{ color: card.color }} />
+                    <Icon size={10} strokeWidth={1.75} style={{ color: card.color }} />
                   </div>
-                  <span className="text-[11.5px] font-bold tracking-tight text-white whitespace-nowrap">
+                  <span className="text-[10px] sm:text-[11.5px] font-bold tracking-tight text-white whitespace-nowrap">
                     {card.name}
                   </span>
                 </a>
