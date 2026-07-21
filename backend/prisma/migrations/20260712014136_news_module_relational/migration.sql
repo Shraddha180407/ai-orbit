@@ -1,44 +1,5 @@
 BEGIN;
 
--- CreateTable: News (original shape before relational refactor)
-CREATE TABLE "News" (
-    "id" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "category" TEXT NOT NULL,
-    "url" TEXT NOT NULL,
-    "source" TEXT NOT NULL,
-    "summary" TEXT NOT NULL,
-    "readTime" TEXT NOT NULL,
-    "publishedAt" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "News_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable: AIModel (needed by tasks module later)
-CREATE TABLE "AIModel" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "creator" TEXT NOT NULL,
-    "contextWindow" TEXT NOT NULL,
-    "parameterSize" TEXT NOT NULL,
-    "modality" TEXT NOT NULL,
-    "releaseDate" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "providerId" TEXT,
-
-    CONSTRAINT "AIModel_pkey" PRIMARY KEY ("id")
-);
-
--- CreateIndex
-CREATE INDEX "AIModel_providerId_idx" ON "AIModel"("providerId");
-
--- AddForeignKey
-ALTER TABLE "AIModel" ADD CONSTRAINT "AIModel_providerId_fkey" FOREIGN KEY ("providerId") REFERENCES "Company"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
 -- Clear the 4 rows of old placeholder mock data (approved: disposable
 -- homepage-teaser data, not real content) so the NOT NULL columns below
 -- can be added.
@@ -183,3 +144,4 @@ ALTER TABLE "_NewsToTopic" ADD CONSTRAINT "_NewsToTopic_A_fkey" FOREIGN KEY ("A"
 ALTER TABLE "_NewsToTopic" ADD CONSTRAINT "_NewsToTopic_B_fkey" FOREIGN KEY ("B") REFERENCES "Topic"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 COMMIT;
+

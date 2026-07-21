@@ -165,11 +165,6 @@ app.post('/:id/bookmark', async (c) => {
   const collectionId = c.req.param('id')
 
   try {
-    const collection = await prisma.collection.findUnique({ where: { id: collectionId }, select: { id: true } })
-    if (!collection) {
-      return c.json({ error: 'Collection not found' }, 404)
-    }
-
     // TODO: auth middleware should set c.var.userId. For now, we fallback to the demo user.
     // const userId = c.get('userId');
     const demoUser = await getOrCreateDemoUser(prisma)
@@ -199,11 +194,6 @@ app.delete('/:id/bookmark', async (c) => {
   const collectionId = c.req.param('id')
 
   try {
-    const collection = await prisma.collection.findUnique({ where: { id: collectionId }, select: { id: true } })
-    if (!collection) {
-      return c.json({ error: 'Collection not found' }, 404)
-    }
-
     // TODO: auth middleware should set c.var.userId. For now, we fallback to the demo user.
     // const userId = c.get('userId');
     const demoUser = await getOrCreateDemoUser(prisma)

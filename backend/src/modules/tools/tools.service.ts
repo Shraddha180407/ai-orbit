@@ -67,9 +67,6 @@ export class ToolsService {
       tags: { select: { tag: { select: { slug: true, name: true } } } },
       _count: { select: { reviews: true, bookmarks: true } },
       company: { select: { slug: true, name: true } },
-      createdAt: true,
-      isOpenSource: true,
-      isTrending: true,
     };
 
     const [tools, total, categoriesList] = await Promise.all([
@@ -96,7 +93,6 @@ export class ToolsService {
         ...t,
         pricingAmount: t.pricingAmount?.toString() ?? null,
         avgRating: t.avgRating > 0 ? t.avgRating : null,
-        createdAt: t.createdAt.toISOString(),
       })),
       total,
       page: pageNum,
@@ -124,8 +120,6 @@ export class ToolsService {
         avgRating: true,
         reviewCount: true,
         createdAt: true,
-        isOpenSource: true,
-        isTrending: true,
         company: { select: { slug: true, name: true, logoUrl: true } },
         categories: { select: { category: { select: { slug: true, name: true } } } },
         tags: { select: { tag: { select: { slug: true, name: true } } } },
@@ -163,9 +157,6 @@ export class ToolsService {
         tags: { select: { tag: { select: { slug: true, name: true } } } },
         _count: { select: { reviews: true, bookmarks: true } },
         company: { select: { slug: true, name: true } },
-        createdAt: true,
-        isOpenSource: true,
-        isTrending: true,
       };
 
       const curated = alternativeIds.length
@@ -213,13 +204,11 @@ export class ToolsService {
         ...tool,
         pricingAmount: tool.pricingAmount?.toString() ?? null,
         avgRating: tool.avgRating > 0 ? tool.avgRating : null,
-        createdAt: tool.createdAt.toISOString(),
       },
       similarTools: similarTools.map((t: any) => ({
         ...t,
         pricingAmount: t.pricingAmount?.toString() ?? null,
         avgRating: t.avgRating > 0 ? t.avgRating : null,
-        createdAt: t.createdAt.toISOString(),
       })),
       reviews: reviews.map((r: any) => ({
         ...r,
