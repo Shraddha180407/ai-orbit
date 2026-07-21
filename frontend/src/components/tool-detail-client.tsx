@@ -245,7 +245,7 @@ export function ToolDetailClient() {
                       <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-foreground-muted">
                         <span className="flex items-center gap-1">
                           <span className="text-signal text-[10px]">★</span>
-                          <span>{similar.avgRating > 0 ? similar.avgRating.toFixed(1) : 'New'}</span>
+                          <span>{similar.avgRating !== null && similar.avgRating > 0 ? similar.avgRating.toFixed(1) : 'New'}</span>
                         </span>
                         {similar.categories[0] && (
                           <>
