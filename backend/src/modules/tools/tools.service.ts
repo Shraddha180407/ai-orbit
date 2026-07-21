@@ -69,10 +69,7 @@ export class ToolsService {
       categories: { select: { category: { select: { slug: true, name: true } } } },
       tags: { select: { tag: { select: { slug: true, name: true } } } },
       _count: { select: { reviews: true, bookmarks: true } },
-      company: { select: { slug: true, name: true } },
-      createdAt: true,
-      isOpenSource: true,
-      isTrending: true,
+      company: { select: { slug: true, name: true } }
     };
 
     const [tools, total, categoriesList] = await Promise.all([
@@ -168,11 +165,8 @@ export class ToolsService {
         categories: { select: { category: { select: { slug: true, name: true } } } },
         tags: { select: { tag: { select: { slug: true, name: true } } } },
         _count: { select: { reviews: true, bookmarks: true } },
-        company: { select: { slug: true, name: true } },
-        createdAt: true,
-        isOpenSource: true,
-        isTrending: true,
-      };
+        company: { select: { slug: true, name: true } }
+    };
 
       const curated = alternativeIds.length
         ? await this.prisma.tool.findMany({ where: { id: { in: alternativeIds } }, select: cardSelect })

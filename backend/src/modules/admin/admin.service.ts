@@ -90,32 +90,12 @@ export class AdminService {
 
   async getReports(page: number, status: string) {
     const pageSize = 20;
-    const where: Prisma.ReportWhereInput = status !== 'ALL' ? { status } : {};
-
-    const [reports, total] = await Promise.all([
-      this.prisma.report.findMany({
-        where,
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          reporter: { select: { id: true, name: true, email: true } },
-          reportedUser: { select: { id: true, name: true, email: true } },
-          reportedTool: { select: { id: true, name: true } },
-          reportedNews: { select: { id: true, title: true } }
-        }
-      }),
-      this.prisma.report.count({ where })
-    ]);
-
-    return { reports, total, page, totalPages: Math.ceil(total / pageSize) };
+    const reports: any[] = []; const total = 0;
+    return { reports, total, page, totalPages: 1 };
   }
 
   async updateReport(id: string, status: string) {
-    await this.prisma.report.update({
-      where: { id },
-      data: { status }
-    });
+    throw new Error('Report model removed');
   }
 
   async getCollections() {
