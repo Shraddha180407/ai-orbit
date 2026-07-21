@@ -35,8 +35,8 @@ model Company {
   updatedAt DateTime @default(now()) @updatedAt
 
   collectionCompanies CollectionCompany[]
-  tools                Tool[]
-  aiModels             AIModel[]
+  tools               Tool[]
+  aiModels            AIModel[]
 }
 
 model User {
@@ -62,7 +62,6 @@ model User {
   tasksCreated        Task[]               @relation("TaskCreator")
   taskLikes           TaskLike[]           @relation("TaskLikeUser")
   taskSubscriptions   TaskSubscriber[]     @relation("TaskSubscriberUser")
-  
 }
 
 // ---- Module 3: AI Tools ----
@@ -81,6 +80,8 @@ model Tool {
   pricingAmount    Decimal?         @db.Decimal(10, 2)
   billingFrequency BillingFrequency @default(NA)
 
+  isOpenSource Boolean @default(false)
+  isTrending   Boolean @default(false)
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])

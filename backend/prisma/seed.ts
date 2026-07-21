@@ -131,6 +131,8 @@ interface SeedTool {
   features: string[];
   categorySlugs: string[];
   tagSlugs: string[];
+  isOpenSource?: boolean;
+  isTrending?: boolean;
 }
 
 const TOOLS: SeedTool[] = [
@@ -147,6 +149,7 @@ const TOOLS: SeedTool[] = [
     features: ["Web browsing", "Code interpreter", "Custom GPTs", "Voice mode"],
     categorySlugs: ["chatbots", "productivity", "writing", "coding", "research", "customer-support", "marketing"],
     tagSlugs: ["api", "free-trial", "mobile-app"],
+    isTrending: true,
   },
   {
     slug: "claude",
@@ -160,6 +163,7 @@ const TOOLS: SeedTool[] = [
     features: ["Long context window", "Artifacts", "Code execution", "MCP connectors"],
     categorySlugs: ["chatbots", "productivity", "writing", "coding", "research", "customer-support", "marketing"],
     tagSlugs: ["api", "enterprise", "mobile-app"],
+    isOpenSource: true,
   },
   {
     slug: "gemini",
@@ -1783,6 +1787,8 @@ async function main() {
         pricingAmount: t.pricingAmount,
         billingFrequency: t.billingFrequency,
         features: t.features,
+        isOpenSource: t.isOpenSource ?? false,
+        isTrending: t.isTrending ?? false,
       },
       create: {
         slug: t.slug,
@@ -1795,6 +1801,8 @@ async function main() {
         pricingAmount: t.pricingAmount,
         billingFrequency: t.billingFrequency,
         features: t.features,
+        isOpenSource: t.isOpenSource ?? false,
+        isTrending: t.isTrending ?? false,
       },
     });
 

@@ -15,21 +15,8 @@ import type { ToolCardData } from "@/lib/types";
 
 const MAX_COMPARE = 2;
 
-/**
- * Loose tool shape — extends `ToolCardData` with optional fields the backend
- * may or may not return. Optional fields default to safe values so the row
- * renders even if the API doesn't include them yet.
- */
-type ListTool = ToolCardData & {
-  createdAt?: string | null;
-  isOpenSource?: boolean;
-  openSource?: boolean;
-  isTrending?: boolean;
-  trending?: boolean;
-};
-
 type ToolListViewProps = {
-  tools: ListTool[];
+  tools: ToolCardData[];
   loading?: boolean;
   skeletonRows?: number;
 };
@@ -122,14 +109,14 @@ function ToolRow({
   isCompareFull,
   onToggleCompare,
 }: {
-  tool: ListTool;
+  tool: ToolCardData;
   isSelected: boolean;
   isCompareFull: boolean;
-  onToggleCompare: (tool: ListTool) => void;
+  onToggleCompare: (tool: ToolCardData) => void;
 }) {
   const primaryCategory = tool.categories[0]?.category;
-  const isOpenSource = isTruthy(tool.isOpenSource, tool.openSource);
-  const isTrending = isTruthy(tool.isTrending, tool.trending);
+  const isOpenSource = tool.isOpenSource;
+  const isTrending = tool.isTrending;
   const reviewCount = tool._count?.reviews ?? 0;
   const showAmount =
     tool.pricingModel !== "FREE" &&
@@ -267,9 +254,9 @@ export function ToolListView({
   skeletonRows = 4,
 }: ToolListViewProps) {
   const router = useRouter();
-  const [compareSet, setCompareSet] = useState<ListTool[]>([]);
+  const [compareSet, setCompareSet] = useState<ToolCardData[]>([]);
 
-  const toggleCompare = (tool: ListTool) => {
+  const toggleCompare = (tool: ToolCardData) => {
     setCompareSet((prev) => {
       const exists = prev.some((t) => t.id === tool.id);
       if (exists) return prev.filter((t) => t.id !== tool.id);
