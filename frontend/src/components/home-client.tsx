@@ -147,7 +147,7 @@ export function HomeClient() {
         />
 
         <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
-          <h1 className="max-w-[820px] text-3xl sm:text-5xl lg:text-[64px] font-black tracking-tight leading-[1.05] mb-6 sm:mb-8 select-none text-white text-balance">
+          <h1 className="max-w-[820px] text-2xl sm:text-4xl lg:text-[48px] font-black tracking-tight leading-[1.1] mb-6 sm:mb-8 select-none text-white text-balance">
             The best AI, in one signal.
           </h1>
 

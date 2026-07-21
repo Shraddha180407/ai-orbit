@@ -14,19 +14,19 @@ export function Header() {
       <nav className="hidden md:flex items-center gap-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
         <Link
           href="/leaderboard"
-          className="text-[16px] font-bold text-[#6E56CF] hover:text-white transition-colors text-center"
+          className="text-[13px] font-bold text-[#6E56CF] hover:text-white transition-colors text-center"
         >
           Leaderboard
         </Link>
         <Link
           href="/#newsletter"
-          className="text-[16px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
+          className="text-[13px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
         >
           Newsletter
         </Link>
         <Link
           href="/tools"
-          className="text-[16px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
+          className="text-[13px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
         >
           Resources
         </Link>
