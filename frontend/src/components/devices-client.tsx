@@ -44,34 +44,41 @@ function mergeWithDummy(apiDevices: Device[]): DeviceData[] {
       buyUrl: api.buyUrl || dummy?.buyUrl || null,
     } as DeviceData;
   });
-  // Add dummy devices not matched by name or id
   const apiNames = apiDevices.map((d) => d.name.toLowerCase());
-  const extraDummy = DEVICES_DATA.filter(
-    (d) => !apiNames.includes(d.name.toLowerCase())
-  );
+  const extraDummy = DEVICES_DATA.filter((d) => !apiNames.includes(d.name.toLowerCase()));
   return [...merged, ...extraDummy];
 }
 
 type SortKey = "release" | "name" | "availability" | "price";
+const PAGE_SIZE = 20;
 
 export function DevicesClient() {
   const [devices, setDevices] = useState<DeviceData[]>(DEVICES_DATA);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 20;
-  const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  // Filters
+  const [nameSearch, setNameSearch] = useState("");
+  const [nameInput, setNameInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
   const [selectedAvailability, setSelectedAvailability] = useState("All");
   const [sortKey, setSortKey] = useState<SortKey>("release");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [priceMin, setPriceMin] = useState<number>(0);
-  const [priceMax, setPriceMax] = useState<number>(10000);
+  const [priceMin, setPriceMin] = useState(0);
+  const [priceMax, setPriceMax] = useState(10000);
   const [activePriceFilter, setActivePriceFilter] = useState(false);
 
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    fetchAllDevices()
+      .then((data) => setDevices(mergeWithDummy(data || [])))
+      .catch(() => setDevices(DEVICES_DATA))
+      .finally(() => setIsLoading(false));
+  }, []);
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -82,27 +89,43 @@ export function DevicesClient() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    fetchAllDevices()
-      .then((data) => setDevices(mergeWithDummy(data || [])))
-      .catch(() => setDevices(DEVICES_DATA))
-      .finally(() => setIsLoading(false));
-  }, []);
+  const hasActiveFilters = nameSearch || selectedCategory !== ALL_CATEGORIES || selectedAvailability !== "All" || activePriceFilter;
+
+  function clearAllFilters() {
+    setNameSearch("");
+    setNameInput("");
+    setSelectedCategory(ALL_CATEGORIES);
+    setSelectedAvailability("All");
+    setPriceMin(0);
+    setPriceMax(10000);
+    setActivePriceFilter(false);
+    setCurrentPage(1);
+  }
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    devices.forEach((d) => { counts[d.category] = (counts[d.category] || 0) + 1; });
+    return counts;
+  }, [devices]);
+
+  const availabilityCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    devices.forEach((d) => { if (d.availability) counts[d.availability] = (counts[d.availability] || 0) + 1; });
+    return counts;
+  }, [devices]);
 
   const categories = useMemo(() => {
     const cats = Array.from(new Set(devices.map((d) => d.category).filter(Boolean)));
-    return [ALL_CATEGORIES, ...cats.sort()];
+    return cats.sort();
   }, [devices]);
 
   const filtered = useMemo(() => {
     let list = [...devices];
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(
-        (d) =>
-          d.name.toLowerCase().includes(q) ||
-          d.manufacturer?.toLowerCase().includes(q) ||
-          d.category?.toLowerCase().includes(q)
+    if (nameSearch.trim()) {
+      const q = nameSearch.toLowerCase();
+      list = list.filter((d) =>
+        d.name.toLowerCase().includes(q) ||
+        d.manufacturer?.toLowerCase().includes(q)
       );
     }
     if (selectedCategory !== ALL_CATEGORIES) {
@@ -126,16 +149,18 @@ export function DevicesClient() {
         const pa = parseFloat((a.price || "0").replace(/[^0-9.]/g, "")) || 0;
         const pb = parseFloat((b.price || "0").replace(/[^0-9.]/g, "")) || 0;
         cmp = pa - pb;
+      } else {
+        cmp = (b.year || "").localeCompare(a.year || "");
       }
-      else cmp = (b.year || "").localeCompare(a.year || "");
       return sortDir === "asc" ? cmp : -cmp;
     });
     return list;
-  }, [devices, search, selectedCategory, selectedAvailability, sortKey, sortDir, priceMin, priceMax, activePriceFilter]);
+  }, [devices, nameSearch, selectedCategory, selectedAvailability, sortKey, sortDir, priceMin, priceMax, activePriceFilter]);
+
+  useEffect(() => { setCurrentPage(1); }, [nameSearch, selectedCategory, selectedAvailability, sortKey, sortDir, activePriceFilter]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
 
   function handleSort(key: SortKey) {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -143,60 +168,43 @@ export function DevicesClient() {
   }
 
   function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return <span className="text-[#3a3a3a]"> ↕</span>;
-    return <span className="text-[#6E56CF]">{sortDir === "desc" ? " ↓" : " ↑"}</span>;
+    if (sortKey !== col) return <span className="text-[#3a3a3a] text-[10px]">↕</span>;
+    return <span className="text-[#6E56CF] text-[10px]">{sortDir === "desc" ? "↓" : "↑"}</span>;
+  }
+
+  function FilterIcon({ active }: { active?: boolean }) {
+    return (
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+        className={active ? "text-[#6E56CF]" : "text-[#52525B] hover:text-white"}>
+        <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+      </svg>
+    );
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 md:px-8 py-10 flex-1 w-full">
+    <main className="w-full px-6 md:px-10 py-8 flex-1">
       {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-white tracking-tight">Devices</h1>
-        <p className="text-sm text-[#71717A] mt-1">
-          Total devices{" "}
-          <span className="text-white font-semibold">{isLoading ? "…" : filtered.length}</span>
-          {"  ·  "}Categories{" "}
-          <span className="text-white font-semibold">{isLoading ? "…" : categories.length - 1}</span>
-        </p>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-5 items-center">
-        <input
-          type="text"
-          placeholder="Search devices..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); setSelectedAvailability("All"); }}
-          className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 w-56 placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF]"
-        />
-        <select
-          value={selectedCategory}
-          onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
-          className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF]"
-        >
-          {categories.map((c) => <option key={c}>{c}</option>)}
-        </select>
-        <select
-          value={selectedAvailability}
-          onChange={(e) => { setSelectedAvailability(e.target.value); setCurrentPage(1); }}
-          className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF]"
-        >
-          {["All", "Available", "Pre-order", "Announced", "Discontinued"].map((a) => (
-            <option key={a}>{a}</option>
-          ))}
-        </select>
-        
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={() => setViewMode("list")}
-            className={`p-2 rounded-lg border transition-colors ${viewMode === "list" ? "border-[#6E56CF] bg-[#6E56CF]/10 text-[#6E56CF]" : "border-[#232326] text-[#52525B] hover:text-white"}`}
-          >
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-black text-white tracking-tight">Devices</h1>
+          <p className="text-sm text-[#71717A] mt-1">
+            Total devices <span className="text-white font-semibold">{isLoading ? "…" : devices.length}</span>
+            {"  ·  "}Categories <span className="text-white font-semibold">{isLoading ? "…" : categories.length}</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {hasActiveFilters && (
+            <button onClick={clearAllFilters}
+              className="text-xs text-[#A1A1AA] hover:text-white border border-[#232326] hover:border-[#6E56CF] px-3 py-1.5 rounded-lg transition-colors">
+              Clear filters
+            </button>
+          )}
+          <button onClick={() => setViewMode("list")}
+            className={`p-2 rounded-lg border transition-colors ${viewMode === "list" ? "border-[#6E56CF] bg-[#6E56CF]/10 text-[#6E56CF]" : "border-[#232326] text-[#52525B] hover:text-white"}`}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           </button>
-          <button
-            onClick={() => setViewMode("grid")}
-            className={`p-2 rounded-lg border transition-colors ${viewMode === "grid" ? "border-[#6E56CF] bg-[#6E56CF]/10 text-[#6E56CF]" : "border-[#232326] text-[#52525B] hover:text-white"}`}
-          >
+          <button onClick={() => setViewMode("grid")}
+            className={`p-2 rounded-lg border transition-colors ${viewMode === "grid" ? "border-[#6E56CF] bg-[#6E56CF]/10 text-[#6E56CF]" : "border-[#232326] text-[#52525B] hover:text-white"}`}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
           </button>
         </div>
@@ -210,11 +218,8 @@ export function DevicesClient() {
               <div key={i} className="h-64 animate-pulse bg-[#131316] rounded-xl border border-[#232326]" />
             ))
           ) : visible.map((device) => (
-            <Link
-              key={device.id}
-              href={`/devices/${device.slug || device.id}`}
-              className="rounded-xl border border-[#232326] bg-[#0D0D0F] hover:border-[#6E56CF]/40 transition-all group overflow-hidden"
-            >
+            <Link key={device.id} href={`/devices/${device.slug || device.id}`}
+              className="rounded-xl border border-[#232326] bg-[#0D0D0F] hover:border-[#6E56CF]/40 transition-all group overflow-hidden">
               <div className="relative h-44 bg-[#18181C] flex items-center justify-center overflow-hidden">
                 {device.imageUrl ? (
                   <img src={device.imageUrl} alt={device.name} className="w-full h-full object-cover"
@@ -248,276 +253,303 @@ export function DevicesClient() {
         </div>
       )}
 
-      {/* Table */}
-      {viewMode === "list" && <div className="rounded-xl border border-[#232326] overflow-x-auto">
-        <div className="min-w-[1100px]">
-        {/* Table Header */}
-        <div ref={dropdownRef} className="grid grid-cols-[48px_44px_1fr_180px_160px_120px_100px_130px_120px] gap-3 px-4 py-2.5 bg-[#0D0D0F] border-b border-[#232326] text-[11px] font-semibold text-[#52525B] uppercase tracking-wider select-none relative">
-          <div>ID</div>
-          <div></div>
+      {/* List View */}
+      {viewMode === "list" && (
+        <div className="rounded-xl border border-[#232326] overflow-x-auto">
+          <div className="min-w-[900px] relative min-h-[400px]" ref={dropdownRef}>
 
-          {/* NAME */}
-          <div className="flex items-center gap-1">
-            <button className="hover:text-white transition-colors" onClick={() => handleSort("name")}>
-              NAME <SortIcon col="name" />
-            </button>
-          </div>
+            {/* Table Header */}
+            <div className="grid grid-cols-[64px_1.8fr_1.2fr_1.2fr_1fr_0.8fr_1fr_1fr] bg-[#0D0D0F] border-b border-[#232326] text-[11px] font-semibold text-[#52525B] uppercase tracking-wider">
 
-          {/* COMPANY */}
-          <div>COMPANY</div>
+              {/* Logo */}
+              <div className="px-5 py-3" />
 
-          {/* CATEGORY with filter */}
-          <div className="relative flex items-center gap-1">
-            <span>CATEGORY</span>
-            <button onClick={() => setOpenDropdown(openDropdown === "category" ? null : "category")}
-              className="hover:text-white transition-colors">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
-            </button>
-            {openDropdown === "category" && (
-              <div className="absolute top-6 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-2 min-w-[160px] max-h-48 overflow-y-auto">
-                {categories.map((c) => (
-                  <button key={c} onClick={() => { setSelectedCategory(c); setCurrentPage(1); setOpenDropdown(null); }}
-                    className={`w-full text-left px-3 py-1.5 text-xs rounded hover:bg-[#232326] transition-colors ${selectedCategory === c ? "text-[#6E56CF] font-bold" : "text-[#A1A1AA]"}`}>
-                    {c}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* AVAILABILITY with filter */}
-          <div className="relative flex items-center gap-1">
-            <button className="hover:text-white transition-colors" onClick={() => handleSort("availability")}>
-              AVAILABILITY <SortIcon col="availability" />
-            </button>
-            <button onClick={() => setOpenDropdown(openDropdown === "availability" ? null : "availability")}
-              className="hover:text-white transition-colors">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
-            </button>
-            {openDropdown === "availability" && (
-              <div className="absolute top-6 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-2 min-w-[160px]">
-                {["All", "Available", "Pre-order", "Announced", "Discontinued"].map((a) => (
-                  <button key={a} onClick={() => { setSelectedAvailability(a); setCurrentPage(1); setOpenDropdown(null); }}
-                    className={`w-full text-left px-3 py-1.5 text-xs rounded hover:bg-[#232326] transition-colors ${selectedAvailability === a ? "text-[#6E56CF] font-bold" : "text-[#A1A1AA]"}`}>
-                    {a}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* PRICE with slider */}
-          <div className="relative flex items-center gap-1">
-            <button className="hover:text-white transition-colors flex items-center gap-1" onClick={() => handleSort("price")}>
-              PRICE <SortIcon col="price" />
-            </button>
-            <button onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
-              className={`hover:text-white transition-colors ${activePriceFilter ? "text-[#6E56CF]" : ""}`}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
-            </button>
-            {openDropdown === "price" && (
-              <div className="absolute top-6 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-4 min-w-[240px]">
-                <div className="flex justify-between text-[10px] text-[#A1A1AA] mb-4">
-                  <span>Min: <span className="text-white font-bold">${priceMin.toLocaleString()}</span></span>
-                  <span>Max: <span className="text-white font-bold">${priceMax.toLocaleString()}</span></span>
-                </div>
-
-                {/* Dual range slider */}
-                <div className="relative h-5 mb-4">
-                  {/* Track background */}
-                  <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-[#232326] rounded-full" />
-                  {/* Active track */}
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 h-1 bg-[#6E56CF] rounded-full"
-                    style={{
-                      left: `${(priceMin / 10000) * 100}%`,
-                      right: `${100 - (priceMax / 10000) * 100}%`,
-                    }}
-                  />
-                  {/* Min thumb */}
-                  <input
-                    type="range" min={0} max={10000} step={10}
-                    value={priceMin}
-                    onChange={(e) => {
-                      const val = Math.min(Number(e.target.value), priceMax - 10);
-                      setPriceMin(val);
-                      setActivePriceFilter(true);
-                      setCurrentPage(1);
-                    }}
-                    className="absolute w-full h-full opacity-0 cursor-pointer"
-                    style={{ zIndex: priceMin > 9000 ? 5 : 3 }}
-                  />
-                  {/* Max thumb */}
-                  <input
-                    type="range" min={0} max={10000} step={10}
-                    value={priceMax}
-                    onChange={(e) => {
-                      const val = Math.max(Number(e.target.value), priceMin + 10);
-                      setPriceMax(val);
-                      setActivePriceFilter(true);
-                      setCurrentPage(1);
-                    }}
-                    className="absolute w-full h-full opacity-0 cursor-pointer"
-                    style={{ zIndex: 4 }}
-                  />
-                  {/* Min handle dot */}
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
-                    style={{ left: `calc(${(priceMin / 10000) * 100}% - 7px)` }}
-                  />
-                  {/* Max handle dot */}
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
-                    style={{ left: `calc(${(priceMax / 10000) * 100}% - 7px)` }}
-                  />
-                </div>
-
-                {/* Sort buttons */}
-                <div className="flex gap-2 pt-3 border-t border-[#232326]">
-                  <button onClick={() => { setSortKey("price"); setSortDir("asc"); setCurrentPage(1); }}
-                    className={`flex-1 text-[10px] px-2 py-1.5 rounded transition-colors border ${sortKey === "price" && sortDir === "asc" ? "border-[#6E56CF] text-[#6E56CF]" : "border-[#232326] text-[#A1A1AA] hover:text-white"}`}>
-                    Low → High
-                  </button>
-                  <button onClick={() => { setSortKey("price"); setSortDir("desc"); setCurrentPage(1); }}
-                    className={`flex-1 text-[10px] px-2 py-1.5 rounded transition-colors border ${sortKey === "price" && sortDir === "desc" ? "border-[#6E56CF] text-[#6E56CF]" : "border-[#232326] text-[#A1A1AA] hover:text-white"}`}>
-                    High → Low
-                  </button>
-                </div>
-
-                <button onClick={() => {
-                  setPriceMin(0); setPriceMax(10000);
-                  setActivePriceFilter(false); setCurrentPage(1); setOpenDropdown(null);
-                }} className="w-full mt-2 text-[10px] border border-[#232326] text-[#52525B] hover:text-white px-2 py-1.5 rounded transition-colors">
-                  Reset
+              {/* NAME */}
+              <div className="relative px-4 py-3 flex items-center gap-2 border-l border-[#232326]">
+                <button onClick={() => handleSort("name")} className="hover:text-white transition-colors flex items-center gap-1.5">
+                  NAME <SortIcon col="name" />
                 </button>
-              </div>
-            )}
-          </div>
-
-          {/* RELEASE DATE */}
-          <button className="text-left hover:text-white transition-colors text-[#6E56CF] flex items-center gap-1" onClick={() => handleSort("release")}>
-            RELEASE DATE <SortIcon col="release" />
-          </button>
-
-          {/* MAIN TASK */}
-          <div>MAIN TASK</div>
-        </div>
-
-        {isLoading ? (
-          <div>
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-14 animate-pulse bg-[#131316]/50 border-b border-[#232326]/40" />
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="py-20 text-center text-[#52525B] text-sm">No devices found.</div>
-        ) : (
-          <div>
-            {visible.map((device, idx) => (
-              <Link
-                key={device.id}
-                href={`/devices/${device.slug || device.id}`}
-                className="grid grid-cols-[48px_44px_1fr_180px_160px_120px_100px_130px_120px] gap-3 px-4 py-3 border-b border-[#232326]/40 hover:bg-[#131316]/60 transition-colors items-center group"
-              >
-                <div className="text-xs text-[#52525B] font-mono">{idx + 1}</div>
-
-                <div className="h-9 w-9 rounded-md bg-[#18181C] border border-[#232326] flex items-center justify-center shrink-0 overflow-hidden">
-                  {device.manufacturerLogoUrl ? (
-                    <img src={device.manufacturerLogoUrl} alt={device.manufacturer} className="h-6 w-6 object-contain"
-                      onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(device.name)}&background=232326&color=fff&size=36&bold=true&length=1`; }} />
-                  ) : (
-                    <span className="text-xs font-bold text-white uppercase">{device.name.charAt(0)}</span>
-                  )}
-                </div>
-
-                <div className="min-w-0 flex items-center">
-                  <div className="font-semibold text-white text-sm truncate group-hover:text-[#6E56CF] transition-colors">
-                    {device.name}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 min-w-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                    <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                  </svg>
-                  <span className="text-sm text-[#A1A1AA] truncate">{device.manufacturer || "—"}</span>
-                </div>
-
-                <div className="text-sm text-[#A1A1AA] truncate flex items-center">{device.category || "—"}</div>
-
-                <div className="flex items-center">
-                  {device.availability ? (
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${AVAILABILITY_STYLES[device.availability] || "bg-[#232326] text-[#A1A1AA]"}`}>
-                      {device.availability}
-                    </span>
-                  ) : <span className="text-[#52525B]">—</span>}
-                </div>
-
-                <div className="text-sm flex items-center">
-                  {device.price ? <span className="text-white font-medium">{device.price}</span> : <span className="text-[#52525B]">N/A</span>}
-                </div>
-
-                <div className="text-sm text-[#A1A1AA] flex items-center">{device.month || device.year || "—"}</div>
-
-                <div className="flex items-center">
-                  {device.mainTask ? (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded"
-                      style={{ backgroundColor: `${device.mainTaskColor}33`, color: device.mainTaskColor, border: `1px solid ${device.mainTaskColor}55` }}>
-                      {device.mainTask}
-                    </span>
-                  ) : <span className="text-[#52525B]">—</span>}
-                </div>
-              </Link>
-            ))}
-
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 px-4 py-4 border-t border-[#232326]">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 text-xs rounded-lg border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  ← Prev
+                <button onClick={() => setOpenDropdown(openDropdown === "name" ? null : "name")}
+                  className="hover:text-white transition-colors ml-1">
+                  <FilterIcon active={nameSearch.length > 0} />
                 </button>
-
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
-                  .reduce<(number | string)[]>((acc, p, i, arr) => {
-                    if (i > 0 && (p as number) - (arr[i - 1] as number) > 1) acc.push("...");
-                    acc.push(p);
-                    return acc;
-                  }, [])
-                  .map((p, i) =>
-                    p === "..." ? (
-                      <span key={`ellipsis-${i}`} className="text-[#52525B] text-xs px-1">...</span>
-                    ) : (
+                {openDropdown === "name" && (
+                  <div className="absolute top-10 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-3 min-w-[210px]">
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Filter by name..."
+                      value={nameInput}
+                      onChange={(e) => setNameInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { setNameSearch(nameInput); setOpenDropdown(null); setCurrentPage(1); } }}
+                      className="w-full bg-[#131316] border border-[#232326] text-white text-xs rounded px-2 py-1.5 placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF]"
+                    />
+                    <div className="flex gap-2 mt-2">
                       <button
-                        key={p}
-                        onClick={() => setCurrentPage(p as number)}
-                        className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                          currentPage === p
-                            ? "border-[#6E56CF] bg-[#6E56CF] text-white"
-                            : "border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF]"
-                        }`}
-                      >
-                        {p}
+                        onClick={() => { setNameSearch(nameInput); setOpenDropdown(null); setCurrentPage(1); }}
+                        className="flex-1 text-[10px] bg-[#6E56CF] hover:bg-[#7C66DF] text-white py-1.5 rounded transition-colors font-semibold">
+                        Apply
                       </button>
-                    )
-                  )}
+                      {nameSearch && (
+                        <button
+                          onClick={() => { setNameSearch(""); setNameInput(""); setOpenDropdown(null); setCurrentPage(1); }}
+                          className="flex-1 text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors">
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 text-xs rounded-lg border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  Next →
+              {/* COMPANY */}
+              <div className="px-4 py-3 border-l border-[#232326]">COMPANY</div>
+
+              {/* CATEGORY */}
+              <div className="relative px-4 py-3 flex items-center gap-2 border-l border-[#232326]">
+                <span className={selectedCategory !== ALL_CATEGORIES ? "text-[#6E56CF]" : ""}>CATEGORY</span>
+                <button onClick={() => setOpenDropdown(openDropdown === "category" ? null : "category")}
+                  className="hover:text-white transition-colors">
+                  <FilterIcon active={selectedCategory !== ALL_CATEGORIES} />
                 </button>
+                {openDropdown === "category" && (
+                  <div className="absolute top-10 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-2 min-w-[200px] max-h-56 overflow-y-auto">
+                    <button onClick={() => { setSelectedCategory(ALL_CATEGORIES); setCurrentPage(1); setOpenDropdown(null); }}
+                      className={`w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-[#232326] transition-colors ${selectedCategory === ALL_CATEGORIES ? "text-[#6E56CF] font-bold" : "text-[#A1A1AA]"}`}>
+                      <span>All Categories</span>
+                      <span className="text-[#52525B]">{devices.length}</span>
+                    </button>
+                    {categories.map((c) => (
+                      <button key={c} onClick={() => { setSelectedCategory(c); setCurrentPage(1); setOpenDropdown(null); }}
+                        className={`w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-[#232326] transition-colors ${selectedCategory === c ? "text-[#6E56CF] font-bold" : "text-[#A1A1AA]"}`}>
+                        <span>{c}</span>
+                        <span className="text-[#52525B]">{categoryCounts[c] || 0}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* AVAILABILITY */}
+              <div className="relative px-4 py-3 flex items-center gap-2 border-l border-[#232326]">
+                <button onClick={() => handleSort("availability")} className="hover:text-white transition-colors flex items-center gap-1.5">
+                  AVAIL. <SortIcon col="availability" />
+                </button>
+                <button onClick={() => setOpenDropdown(openDropdown === "availability" ? null : "availability")}
+                  className="hover:text-white transition-colors">
+                  <FilterIcon active={selectedAvailability !== "All"} />
+                </button>
+                {openDropdown === "availability" && (
+                  <div className="absolute top-10 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-2 min-w-[190px]">
+                    <button onClick={() => { setSelectedAvailability("All"); setCurrentPage(1); setOpenDropdown(null); }}
+                      className={`w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-[#232326] transition-colors ${selectedAvailability === "All" ? "text-[#6E56CF] font-bold" : "text-[#A1A1AA]"}`}>
+                      <span>All</span>
+                      <span className="text-[#52525B]">{devices.length}</span>
+                    </button>
+                    {["Available", "Pre-order", "Announced", "Discontinued"].map((a) => (
+                      <button key={a} onClick={() => { setSelectedAvailability(a); setCurrentPage(1); setOpenDropdown(null); }}
+                        className={`w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-[#232326] transition-colors ${selectedAvailability === a ? "text-[#6E56CF] font-bold" : "text-[#A1A1AA]"}`}>
+                        <span>{a}</span>
+                        <span className="text-[#52525B]">{availabilityCounts[a] || 0}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* PRICE */}
+              <div className="relative px-4 py-3 flex items-center gap-2 border-l border-[#232326]">
+                <button onClick={() => handleSort("price")} className="hover:text-white transition-colors flex items-center gap-1.5">
+                  PRICE <SortIcon col="price" />
+                </button>
+                <button onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
+                  className="hover:text-white transition-colors">
+                  <FilterIcon active={activePriceFilter} />
+                </button>
+                {openDropdown === "price" && (
+                  <div className="absolute top-10 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-4 min-w-[220px]">
+                    <div className="flex justify-between text-[10px] text-[#A1A1AA] mb-3">
+                      <span>Min: <span className="text-white font-bold">${priceMin.toLocaleString()}</span></span>
+                      <span>Max: <span className="text-white font-bold">${priceMax.toLocaleString()}</span></span>
+                    </div>
+                    <div className="relative h-5 mb-4">
+                      <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-[#232326] rounded-full" />
+                      <div className="absolute top-1/2 -translate-y-1/2 h-1 bg-[#6E56CF] rounded-full"
+                        style={{ left: `${(priceMin / 10000) * 100}%`, right: `${100 - (priceMax / 10000) * 100}%` }} />
+                      <input type="range" min={0} max={10000} step={10} value={priceMin}
+                        onChange={(e) => { const val = Math.min(Number(e.target.value), priceMax - 10); setPriceMin(val); setActivePriceFilter(true); setCurrentPage(1); }}
+                        className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: priceMin > 9000 ? 5 : 3 }} />
+                      <input type="range" min={0} max={10000} step={10} value={priceMax}
+                        onChange={(e) => { const val = Math.max(Number(e.target.value), priceMin + 10); setPriceMax(val); setActivePriceFilter(true); setCurrentPage(1); }}
+                        className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: 4 }} />
+                      <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
+                        style={{ left: `calc(${(priceMin / 10000) * 100}% - 7px)` }} />
+                      <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
+                        style={{ left: `calc(${(priceMax / 10000) * 100}% - 7px)` }} />
+                    </div>
+                    <div className="flex gap-2 pt-2 border-t border-[#232326]">
+                      <button onClick={() => { setSortKey("price"); setSortDir("asc"); setCurrentPage(1); }}
+                        className={`flex-1 text-[10px] px-2 py-1.5 rounded border transition-colors ${sortKey === "price" && sortDir === "asc" ? "border-[#6E56CF] text-[#6E56CF]" : "border-[#232326] text-[#A1A1AA] hover:text-white"}`}>
+                        Low → High
+                      </button>
+                      <button onClick={() => { setSortKey("price"); setSortDir("desc"); setCurrentPage(1); }}
+                        className={`flex-1 text-[10px] px-2 py-1.5 rounded border transition-colors ${sortKey === "price" && sortDir === "desc" ? "border-[#6E56CF] text-[#6E56CF]" : "border-[#232326] text-[#A1A1AA] hover:text-white"}`}>
+                        High → Low
+                      </button>
+                    </div>
+                    <button onClick={() => { setPriceMin(0); setPriceMax(10000); setActivePriceFilter(false); setCurrentPage(1); setOpenDropdown(null); }}
+                      className="w-full mt-2 text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors">
+                      Reset
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* RELEASE DATE */}
+              <div className="px-4 py-3 border-l border-[#232326]">
+                <button onClick={() => handleSort("release")} className="text-[#6E56CF] hover:text-white transition-colors flex items-center gap-1.5">
+                  RELEASE DATE <SortIcon col="release" />
+                </button>
+              </div>
+
+              {/* MAIN TASK */}
+              <div className="px-4 py-3 border-l border-[#232326]">MAIN TASK</div>
+            </div>
+
+            {/* Rows */}
+            {isLoading ? (
+              <div>
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="h-14 animate-pulse bg-[#131316]/50 border-b border-[#232326]/40" />
+                ))}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="py-20 text-center text-[#52525B] text-sm">No devices found.</div>
+            ) : (
+              <div>
+                {visible.map((device) => (
+                  <Link
+                    key={device.id}
+                    href={`/devices/${device.slug || device.id}`}
+                    className="grid grid-cols-[64px_1.8fr_1.2fr_1.2fr_1fr_0.8fr_1fr_1fr] border-b border-[#232326]/40 items-center group relative transition-all"
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = `${device.mainTaskColor || '#6E56CF'}0f`;
+                      (e.currentTarget as HTMLElement).style.borderLeft = `3px solid ${device.mainTaskColor || '#6E56CF'}`;
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = '';
+                      (e.currentTarget as HTMLElement).style.borderLeft = '';
+                    }}
+                  >
+                    {/* Logo */}
+                    <div className="px-5 py-3 flex items-center justify-center">
+                      <div className="h-12 w-12 rounded-lg bg-[#18181C] border border-[#232326] flex items-center justify-center overflow-hidden shrink-0">
+                        {device.manufacturerLogoUrl ? (
+                          <img src={device.manufacturerLogoUrl} alt={device.manufacturer} className="h-10 w-10 object-contain"
+                            onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(device.name)}&background=232326&color=fff&size=48&bold=true&length=1`; }} />
+                        ) : (
+                          <span className="text-base font-bold text-white uppercase">{device.name.charAt(0)}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Name */}
+                    <div className="px-4 py-3 min-w-0 border-l border-[#232326]/40">
+                      <span className="font-semibold text-white text-sm truncate block transition-colors group-hover:text-white"
+                        style={{}}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = device.mainTaskColor || '#6E56CF'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = ''; }}>
+                        {device.name}
+                      </span>
+                    </div>
+
+                    {/* Company */}
+                    <div className="px-4 py-3 flex items-center gap-2 min-w-0 border-l border-[#232326]/40">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2" className="shrink-0">
+                        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                      </svg>
+                      <span className="text-sm text-[#A1A1AA] truncate">{device.manufacturer || "—"}</span>
+                    </div>
+
+                    {/* Category */}
+                    <div className="px-4 py-3 text-sm text-[#A1A1AA] truncate border-l border-[#232326]/40">
+                      {device.category || "—"}
+                    </div>
+
+                    {/* Availability */}
+                    <div className="px-4 py-3 border-l border-[#232326]/40">
+                      {device.availability ? (
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${AVAILABILITY_STYLES[device.availability] || "bg-[#232326] text-[#A1A1AA]"}`}>
+                          {device.availability}
+                        </span>
+                      ) : <span className="text-[#52525B]">—</span>}
+                    </div>
+
+                    {/* Price */}
+                    <div className="px-4 py-3 text-sm border-l border-[#232326]/40">
+                      {device.price
+                        ? <span className="text-white font-medium">{device.price}</span>
+                        : <span className="text-[#52525B]">N/A</span>}
+                    </div>
+
+                    {/* Release Date */}
+                    <div className="px-4 py-3 text-sm text-[#A1A1AA] border-l border-[#232326]/40">
+                      {device.month || device.year || "—"}
+                    </div>
+
+                    {/* Main Task */}
+                    <div className="px-4 py-3 border-l border-[#232326]/40">
+                      {device.mainTask ? (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded"
+                          style={{ backgroundColor: `${device.mainTaskColor}33`, color: device.mainTaskColor, border: `1px solid ${device.mainTaskColor}55` }}>
+                          {device.mainTask}
+                        </span>
+                      ) : <span className="text-[#52525B]">—</span>}
+                    </div>
+                  </Link>
+                ))}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 px-4 py-4 border-t border-[#232326]">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 text-xs rounded-lg border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      ← Prev
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+                      .reduce<(number | string)[]>((acc, p, i, arr) => {
+                        if (i > 0 && (p as number) - (arr[i - 1] as number) > 1) acc.push("...");
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((p, i) =>
+                        p === "..." ? (
+                          <span key={`e-${i}`} className="text-[#52525B] text-xs px-1">...</span>
+                        ) : (
+                          <button key={p} onClick={() => setCurrentPage(p as number)}
+                            className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${currentPage === p ? "border-[#6E56CF] bg-[#6E56CF] text-white" : "border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF]"}`}>
+                            {p}
+                          </button>
+                        )
+                      )}
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 text-xs rounded-lg border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
-      </div>
-      </div>}
+        </div>
+      )}
     </main>
   );
 }

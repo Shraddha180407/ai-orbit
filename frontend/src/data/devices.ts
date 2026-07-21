@@ -11,6 +11,7 @@ export type DeviceData = {
   month?: string;
   description: string;
   imageUrl: string;
+  images?: string[];
   manufacturerLogoUrl: string;
   mainTask: string;
   mainTaskColor: string;
@@ -109,7 +110,7 @@ export const DEVICES_DATA: DeviceData[] = [
     year: "2024",
     month: "Feb, 2024",
     description: "Spatial computing device that blends digital content with the physical world using eye, hand, and voice inputs.",
-    imageUrl: "https://images.unsplash.com/photo-1717862802941-0a7a3f7b74d5?w=400&q=80",
+    imageUrl: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh0M-xMVNKOim3tbWKFD18A7LnR-TakTjNAMuZUea7aHi59t-n2Dl8SJ61C8h6zRc8H00_GUybGptIJaojH21cwmYOsvgOaEzi5fAlprcAWNqsSgM5vkWMzAIlMPkU33rd6mbF3sC_dDKZOgTNoGk029rLE9row-adJmAVVKaxNWI9QdzLbvWSSTcUsSPd5/s1629/appple%202.PNG",
 
     manufacturerLogoUrl: "https://www.google.com/s2/favicons?sz=64&domain=apple.com",
     mainTask: "Computing",
