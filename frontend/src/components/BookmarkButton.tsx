@@ -12,6 +12,7 @@ type BookmarkButtonProps = {
   initialCount: number;
   size?: "sm" | "md";
   className?: string;
+  iconOnly?: boolean;
 };
 
 export function BookmarkButton({
@@ -21,12 +22,16 @@ export function BookmarkButton({
   initialCount,
   size = "md",
   className,
+  iconOnly = false,
 }: BookmarkButtonProps) {
   const [bookmarked, setBookmarked] = useState(initialBookmarked);
   const [count, setCount] = useState(initialCount);
   const [isPending, startTransition] = useTransition();
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     // Optimistic update — reconciled with the server action's result.
     const nextBookmarked = !bookmarked;
     setBookmarked(nextBookmarked);
@@ -54,16 +59,25 @@ export function BookmarkButton({
       aria-pressed={bookmarked}
       aria-label={bookmarked ? "Remove bookmark" : "Save tool"}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-60",
+        "inline-flex items-center justify-center rounded-md transition-colors disabled:opacity-60",
+        iconOnly ? "p-1.5" : "border gap-1.5 px-3 py-1.5 text-sm font-medium",
         bookmarked
-          ? "border-accent bg-accent-muted text-accent"
-          : "border-border text-foreground-muted hover:border-accent hover:text-foreground",
+          ? iconOnly
+            ? "text-accent hover:text-accent-hover"
+            : "border-accent/30 bg-accent/10 text-accent hover:bg-accent/20 hover:border-accent/50"
+          : iconOnly
+            ? "text-foreground-faint hover:text-foreground"
+            : "border-border text-foreground-muted hover:border-accent/50 hover:text-foreground",
         className
       )}
     >
       <Bookmark size={iconSize} className={cn(bookmarked && "fill-accent")} aria-hidden="true" />
-      {bookmarked ? "Saved" : "Save"}
-      <span className="text-xs text-foreground-faint">{count}</span>
+      {!iconOnly && (
+        <>
+          {bookmarked ? "Saved" : "Save"}
+          <span className="text-xs text-foreground-faint">{count}</span>
+        </>
+      )}
     </button>
   );
 }

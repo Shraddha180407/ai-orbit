@@ -27,7 +27,7 @@ export function SearchTopBar() {
       <header className="sticky top-0 z-40 border-b border-search-border bg-search-bg">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <Link
-            href="/search"
+            href="/"
             className="flex shrink-0 items-center gap-2 text-sm font-semibold tracking-tight text-search-text-primary"
           >
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-search-accent text-white">

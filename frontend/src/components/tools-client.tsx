@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import { TopFilters } from "@/components/TopFilters";
 import { SortDropdown } from "@/components/SortDropdown";
@@ -61,6 +63,14 @@ export function ToolsClient() {
 
   return (
     <main className="mx-auto max-w-[1070px] px-6 py-10">
+      <Link
+        href="/"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-foreground-muted hover:text-white transition-colors"
+      >
+        <ArrowLeft size={16} />
+        Back to Home
+      </Link>
+
       <header className="mb-8 flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">AI Tools</h1>
