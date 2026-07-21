@@ -373,6 +373,48 @@ function getServiceLogoUrl(name: string, domain: string): string {
   return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 }
 
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours cache
+
+const hfCache = new Map<string, { value: HuggingFaceModelStats | null; expiresAt: number }>();
+const npmCache = new Map<string, { value: NpmToolStats | null; expiresAt: number }>();
+const hnCache = new Map<string, { value: HnBuzzStats | null; expiresAt: number }>();
+
+async function getCachedHuggingFaceModelStats(name: string, creator: string): Promise<HuggingFaceModelStats | null> {
+  const cacheKey = `${creator.toLowerCase()}:${name.toLowerCase()}`;
+  const now = Date.now();
+  const cached = hfCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.value;
+  }
+  const value = await fetchHuggingFaceModelStats(name, creator);
+  hfCache.set(cacheKey, { value, expiresAt: now + CACHE_TTL_MS });
+  return value;
+}
+
+async function getCachedNpmToolStats(slug: string, websiteDomain: string): Promise<NpmToolStats | null> {
+  const cacheKey = `${slug.toLowerCase()}:${websiteDomain.toLowerCase()}`;
+  const now = Date.now();
+  const cached = npmCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.value;
+  }
+  const value = await fetchNpmToolStats(slug, websiteDomain);
+  npmCache.set(cacheKey, { value, expiresAt: now + CACHE_TTL_MS });
+  return value;
+}
+
+async function getCachedHnBuzzStats(name: string, toolUrl: string): Promise<HnBuzzStats | null> {
+  const cacheKey = `${name.toLowerCase()}:${toolUrl.toLowerCase()}`;
+  const now = Date.now();
+  const cached = hnCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.value;
+  }
+  const value = await fetchHnBuzzStats(name, toolUrl);
+  hnCache.set(cacheKey, { value, expiresAt: now + CACHE_TTL_MS });
+  return value;
+}
+
 export class LeaderboardService {
   private prisma: PrismaClient;
 
@@ -402,13 +444,13 @@ export class LeaderboardService {
     // Face lookup: one HTTP round-trip per tool would otherwise serialize
     // the whole request behind N npm calls.
     const toolDomains = tools.map((t) => extractDomain(t.websiteUrl));
-    const npmStats = await Promise.all(tools.map((t, i) => fetchNpmToolStats(t.slug, toolDomains[i])));
+    const npmStats = await Promise.all(tools.map((t, i) => getCachedNpmToolStats(t.slug, toolDomains[i])));
     // HN Algolia is a weaker fallback signal than npm (see fetchHnBuzzStats'
     // own comment), so it's only queried for tools npm found nothing for —
     // no reason to spend the extra round-trip, or risk overriding, a
     // stronger real-usage number that's already been found.
     const hnStats = await Promise.all(
-      tools.map((t, i) => (npmStats[i] ? null : fetchHnBuzzStats(t.name, t.websiteUrl)))
+      tools.map((t, i) => (npmStats[i] ? null : getCachedHnBuzzStats(t.name, t.websiteUrl)))
     );
 
     const mapped = tools.map((t, i) => {
@@ -508,7 +550,7 @@ export class LeaderboardService {
 
     // Concurrent, not sequential — one HTTP round-trip per model would
     // otherwise serialize the whole request behind N Hugging Face calls.
-    const hfStats = await Promise.all(models.map((m) => fetchHuggingFaceModelStats(m.name, m.creator)));
+    const hfStats = await Promise.all(models.map((m) => getCachedHuggingFaceModelStats(m.name, m.creator)));
 
     const mapped = models.map((m, i) => {
       const charSum = m.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);

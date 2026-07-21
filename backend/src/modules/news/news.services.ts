@@ -10,6 +10,9 @@ const ARTICLE_INCLUDE = { publisher: true, topics: true } as const;
 const DYNAMIC_CHIP_WINDOW_MS = 48 * 60 * 60 * 1000;
 const MAX_DYNAMIC_CHIPS = 5;
 
+let filterChipsCache: { value: NewsFilterChip[]; expiresAt: number } | null = null;
+const CHIPS_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes cache
+
 /** Logs how long each query takes — shows up in `wrangler tail`, same reason the old app logged it in Vercel's function logs (see /news's multi-second loads). */
 async function withTiming<T>(label: string, fn: () => Promise<T>): Promise<T> {
   const start = Date.now();
@@ -203,6 +206,11 @@ export class NewsService {
    * company in a filter chip on a general AI aggregator reads as favoritism.
    */
   async getFilterChips(): Promise<NewsFilterChip[]> {
+    const now = Date.now();
+    if (filterChipsCache && filterChipsCache.expiresAt > now) {
+      return filterChipsCache.value;
+    }
+
     const since = new Date(Date.now() - DYNAMIC_CHIP_WINDOW_MS);
     const rows = await withTiming(
       "getFilterChips db query",
@@ -222,7 +230,9 @@ export class NewsService {
       .slice(0, MAX_DYNAMIC_CHIPS)
       .map((r) => ({ id: r.name, label: r.name }));
 
-    return [{ id: "all", label: "All News" }, { id: "trending", label: "Trending" }, ...dynamicChips];
+    const result = [{ id: "all", label: "All News" }, { id: "trending", label: "Trending" }, ...dynamicChips];
+    filterChipsCache = { value: result, expiresAt: now + CHIPS_CACHE_TTL_MS };
+    return result;
   }
 
   /** Top 5 publishers by article count — a real popularity signal instead of a hardcoded list. */
