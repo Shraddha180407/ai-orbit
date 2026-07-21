@@ -134,7 +134,7 @@ export function HomeClient() {
 
       {/* 2. Hero Section */}
       <section
-        className="relative w-full flex flex-col items-center pt-16 pb-10 px-6 overflow-hidden"
+        className="relative w-full flex flex-col items-center pt-6 pb-10 px-6 overflow-hidden"
         style={{
           backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
@@ -187,23 +187,23 @@ export function HomeClient() {
       <div className="border-b border-[#232326]/40 w-full z-10 relative" />
 
       {/* Sort control — now sits above the directory nav strip */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-4">
         <div className="mx-auto w-full max-w-[1600px] flex justify-end">
           <SortDropdown />
         </div>
       </div>
 
       {/* Directory nav strip — single row, evenly spread, sits just above the tools list */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 pt-3 pb-4">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
         <div className="mx-auto w-full max-w-[1600px]">
-          <div className="flex flex-nowrap items-stretch gap-3 overflow-x-auto">
+          <div className="flex flex-nowrap items-stretch gap-2 overflow-x-auto">
             {DIRECTORY_CARDS.map((card) => {
               const Icon = card.icon;
               return (
                 <a
                   key={card.name}
                   href={card.href}
-                  className="group flex flex-1 min-w-[110px] shrink-0 flex-row items-center justify-center gap-2.5 rounded-xl border border-[#232326]/60 bg-[#0d0d10] px-5 py-3 text-center transition-colors duration-200"
+                  className="group flex flex-1 min-w-[92px] shrink-0 flex-row items-center justify-center gap-2 rounded-lg border border-[#232326]/60 bg-[#0d0d10] px-3.5 py-2 text-center transition-colors duration-200"
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = card.color;
                     e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
@@ -214,12 +214,12 @@ export function HomeClient() {
                   }}
                 >
                   <div
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border"
                     style={{ backgroundColor: `${card.color}1a`, borderColor: `${card.color}40` }}
                   >
-                    <Icon size={15} strokeWidth={1.75} style={{ color: card.color }} />
+                    <Icon size={12} strokeWidth={1.75} style={{ color: card.color }} />
                   </div>
-                  <span className="text-[12.5px] font-bold tracking-tight text-white whitespace-nowrap">
+                  <span className="text-[11.5px] font-bold tracking-tight text-white whitespace-nowrap">
                     {card.name}
                   </span>
                 </a>
