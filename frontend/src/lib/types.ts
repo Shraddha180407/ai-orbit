@@ -206,6 +206,11 @@ export type Video = {
   duration: string;
   views: string;
   publishedAt: string;
+  // Optional backend fields
+  youtubeId?: string;
+  authorName?: string;
+  toolCategory?: string;
+  description?: string;
 };
 
 export type Robot = {
