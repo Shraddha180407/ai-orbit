@@ -1,6 +1,7 @@
 'use client';
 
 import React from "react";
+import Link from "next/link";
 import Github from "lucide-react/dist/esm/icons/github";
 import Star from "lucide-react/dist/esm/icons/star";
 import GitFork from "lucide-react/dist/esm/icons/git-fork";
@@ -78,21 +79,20 @@ export function RepositoryHeroCard({ repo }: RepositoryHeroCardProps) {
             href={repo.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex w-full md:w-[170px] justify-center items-center gap-2 rounded-lg bg-[#2d2e39] hover:bg-[#232329] px-4 py-2.5 text-sm font-semibold text-white border border-[#444c5b] shadow-lg shadow-black/20 transition-all hover:-translate-y-0.5"
+            className="inline-flex w-full md:w-[170px] justify-center items-center gap-2 rounded-lg bg-[#2d2e39] hover:bg-[#232329] px-4 py-2.5 text-sm font-semibold text-white border border-[#444c5b] hover:border-blue-500 shadow-lg shadow-black/20 transition-all duration-200 hover:-translate-y-0.5"
           >
             <Github size={16} />
-            View on GitHub
+            Repository Page
           </a>
           {repo.homepage && (
             <a
               href={repo.homepage}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex w-full md:w-[170px] justify-center items-center gap-2 rounded-lg bg-transparent hover:bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-[#A1A1AA] hover:text-white border border-white/[0.08] transition-all hover:-translate-y-0.5"
+              className="inline-flex w-full md:w-[170px] justify-center items-center gap-2 rounded-lg bg-[#2d2e39] hover:bg-[#232329] px-4 py-2.5 text-sm font-semibold text-white border border-[#444c5b] hover:border-blue-500 shadow-lg shadow-black/20 transition-all duration-200 hover:-translate-y-0.5"
             >
               <Globe size={16} />
               Visit Website
-              <ArrowUpRight size={14} className="text-white/40" />
             </a>
           )}
         </div>
@@ -138,12 +138,13 @@ export function RepositoryHeroCard({ repo }: RepositoryHeroCardProps) {
       {repo.topics && repo.topics.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 mt-2">
           {repo.topics.map((topic) => (
-            <span
+            <Link
               key={topic}
-              className="text-[11px] font-medium text-white/60 px-[10px] py-[3px] rounded-full border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] transition-colors whitespace-nowrap"
+              href={`/repositories?topic=${topic}`}
+              className="text-[11px] font-semibold text-white/80 px-[10px] py-[3px] rounded-full border border-white/[0.06] bg-white/[0.02] hover:bg-white/10 hover:text-white border border-white/[0.08] transition-all whitespace-nowrap cursor-pointer"
             >
               {topic}
-            </span>
+            </Link>
           ))}
         </div>
       )}

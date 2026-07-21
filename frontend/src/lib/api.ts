@@ -76,7 +76,6 @@ export async function fetchAllNews(): Promise<any[]> {
 }
 
 import { Repository, RepositoryListResponse, RepositoryDetailResponse } from "./types";
-import { DUMMY_REPOSITORIES } from "./dummyRepositories";
 
 export interface FetchRepositoriesOptions {
   limit?: number;
@@ -89,38 +88,6 @@ export interface FetchRepositoriesOptions {
 
 export async function fetchRepositories(options: FetchRepositoriesOptions = {}): Promise<RepositoryListResponse> {
   const { limit, cursor, sort, language, topic, q } = options;
-  const USE_DUMMY = process.env.NEXT_PUBLIC_USE_DUMMY_REPOSITORIES === "true";
-  
-  if (USE_DUMMY) {
-    let items = [...DUMMY_REPOSITORIES];
-    if (q) {
-      const search = q.toLowerCase();
-      items = items.filter(r => r.name.toLowerCase().includes(search) || r.owner.toLowerCase().includes(search));
-    }
-    if (sort === "stars_desc") {
-      items.sort((a, b) => b.stars - a.stars);
-    } else if (sort === "newest") {
-      items.sort((a, b) => {
-        const dateA = new Date(a.syncedAt || a.githubCreatedAt || 0).getTime();
-        const dateB = new Date(b.syncedAt || b.githubCreatedAt || 0).getTime();
-        return dateB - dateA;
-      });
-    } else if (sort === "name_asc") {
-      items.sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    const limitNum = limit || 15;
-    const cursorIndex = cursor ? parseInt(cursor, 10) : 0;
-    const sliced = items.slice(cursorIndex, cursorIndex + limitNum);
-    const nextCursorVal = cursorIndex + limitNum < items.length ? (cursorIndex + limitNum).toString() : null;
-
-    return {
-      items: sliced,
-      nextCursor: nextCursorVal,
-      hasMore: nextCursorVal !== null,
-      total: items.length
-    };
-  }
 
   const url = new URL(`${API_URL}/api/v1/repositories`);
   if (limit) url.searchParams.set("limit", limit.toString());
@@ -143,15 +110,6 @@ export async function fetchRepositories(options: FetchRepositoriesOptions = {}):
 }
 
 export async function fetchRepositoryBySlug(slug: string): Promise<RepositoryDetailResponse | null> {
-  const USE_DUMMY = process.env.NEXT_PUBLIC_USE_DUMMY_REPOSITORIES === "true";
-  if (USE_DUMMY) {
-    const match = DUMMY_REPOSITORIES.find((r) => {
-      const generatedSlug = r.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      return generatedSlug === slug || r.name.toLowerCase() === slug.toLowerCase();
-    });
-    return (match as RepositoryDetailResponse) || null;
-  }
-
   const url = `${API_URL}/api/v1/repositories/${slug}`;
   const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) return null;
@@ -159,13 +117,6 @@ export async function fetchRepositoryBySlug(slug: string): Promise<RepositoryDet
 }
 
 export async function fetchAllRepos(): Promise<Repository[]> {
-  // Feature flag to toggle between backend API and mock data for UI testing/demonstration.
-  // Set NEXT_PUBLIC_USE_DUMMY_REPOSITORIES=true in .env.local to load dummy repositories.
-  const USE_DUMMY = process.env.NEXT_PUBLIC_USE_DUMMY_REPOSITORIES === "true";
-  if (USE_DUMMY) {
-    return DUMMY_REPOSITORIES;
-  }
-
   try {
     const data = await fetchRepositories();
     return data.items;

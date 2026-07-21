@@ -12,7 +12,7 @@ export default async function Page({ params }: PageProps) {
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white">
       <Header />
-      <main className="mx-auto max-w-[1440px] px-[50px] py-12 flex-1 w-full">
+      <main className="mx-auto max-w-[1440px] px-8 pt-0 pb-12 flex-1 w-full">
         <RepositoryDetailPage slug={slug} />
       </main>
       <Footer />

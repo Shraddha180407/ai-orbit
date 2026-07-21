@@ -49,7 +49,12 @@ export function RepositoryDetailPage({ slug }: RepositoryDetailPageProps) {
     <div className="flex flex-col gap-6">
       <RepositoryBreadcrumb owner={repo.owner} name={repo.name} />
       <RepositoryHeroCard repo={repo} />
-      <RepositoryReadme readmeHtml={repo.readmeHtml} />
+      <RepositoryReadme 
+        readmeHtml={repo.readmeHtml} 
+        repoOwner={repo.owner}
+        repoName={repo.name}
+        repoDefaultBranch={repo.defaultBranch}
+      />
     </div>
   );
 }

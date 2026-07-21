@@ -1,7 +1,7 @@
 'use client';
 
 import React from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Github from "lucide-react/dist/esm/icons/github";
 import Star from "lucide-react/dist/esm/icons/star";
 import GitFork from "lucide-react/dist/esm/icons/git-fork";
@@ -50,6 +50,8 @@ const getRelativeTime = (dateStr?: string | null) => {
 };
 
 export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: RepositoryRowProps) {
+  const router = useRouter();
+  
   const starCount = repo.stars;
   const forksCount = repo.forks !== undefined && repo.forks !== null ? repo.forks : 0;
   const sizeText = `${(repo.stars / 210 + 1.2).toFixed(1)} MB`;
@@ -58,14 +60,26 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
   const avatarUrl = repo.logoUrl || repo.ownerAvatarUrl;
   const updateHours = getRelativeTime(repo.syncedAt) || getRelativeTime(repo.githubCreatedAt) || "—";
 
+  const handleRowClick = () => {
+    router.push(`/repositories/${repo.slug || repo.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`);
+  };
+
   return (
     <>
       {/* Desktop & Tablet Grid Row */}
-      <Link
-        href={`/repositories/${repo.slug || repo.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+      <div
+        role="link"
+        tabIndex={0}
+        onClick={handleRowClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleRowClick();
+          }
+        }}
         aria-label={`View details for ${repo.name} repository`}
         style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
-        className="hidden sm:grid grid-cols-[30px_1fr_95px_110px_60px] md:grid-cols-[30px_1fr_180px_95px_130px_60px] lg:grid-cols-[30px_1fr_180px_95px_95px_130px_110px_60px] xl:grid-cols-[30px_1fr_180px_95px_95px_130px_95px_110px_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none group border-b border-white/[0.06] last:border-b-0"
+        className="hidden sm:grid grid-cols-[30px_minmax(0,2.5fr)_minmax(0,1.8fr)_minmax(0,1.5fr)_60px] md:grid-cols-[30px_minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] lg:grid-cols-[30px_minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] xl:grid-cols-[30px_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none group border-b border-white/[0.06] last:border-b-0 cursor-pointer"
       >
         {/* Column 1: Rank */}
         <div className="text-[11px] text-[#71717A] font-mono text-center shrink-0">
@@ -128,16 +142,33 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
 
         {/* Column 9: Action Link */}
         <div className="flex justify-center items-center w-full">
-          <GithubIconButton size={20} className="group-hover:text-white group-hover:bg-[#232329] transition-colors" />
+          <a
+            href={repo.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Open ${repo.name} repository on GitHub`}
+            className="z-10 cursor-pointer"
+          >
+            <GithubIconButton size={20} className="hover:text-white hover:bg-[#232329] transition-all" />
+          </a>
         </div>
-      </Link>
+      </div>
 
       {/* Mobile Card List Row */}
-      <Link
-        href={`/repositories/${repo.slug || repo.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+      <div
+        role="link"
+        tabIndex={0}
+        onClick={handleRowClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleRowClick();
+          }
+        }}
         aria-label={`View details for ${repo.name} repository`}
         style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
-        className="block sm:hidden p-[12px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none flex justify-between items-center gap-[10px] border-b border-white/[0.06] last:border-b-0"
+        className="block sm:hidden p-[12px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none flex justify-between items-center gap-[10px] border-b border-white/[0.06] last:border-b-0 cursor-pointer"
       >
         <div className="flex-1 min-w-0">
           {/* Row 1: Title & Owner */}
@@ -172,9 +203,17 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
         </div>
 
         {/* Far Right Action Icon */}
-        <GithubIconButton size={16} />
-      </Link>
+        <a
+          href={repo.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          aria-label={`Open ${repo.name} repository on GitHub`}
+          className="z-10 cursor-pointer"
+        >
+          <GithubIconButton size={16} className="hover:text-white hover:bg-[#232329] transition-all" />
+        </a>
+      </div>
     </>
   );
-
 });

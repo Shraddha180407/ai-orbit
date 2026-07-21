@@ -10,8 +10,8 @@ export function Header() {
   const { user, isLoading } = useUser();
   
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/20 bg-background/50 backdrop-blur-md py-4">
-      <div className="mx-auto max-w-[1440px] px-8 flex items-center justify-between">
+    <header className="sticky top-0 z-50 w-full h-[68px] border-b border-border/20 bg-background/50 backdrop-blur-md flex items-center">
+      <div className="mx-auto max-w-[1440px] px-8 flex items-center justify-between w-full">
         {/* Left: The AI Signal Logo */}
         <Link href="/" className="flex items-center gap-2.5 group shrink-0">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black font-black text-base transition-transform group-hover:scale-105 active:scale-95 border border-border">
