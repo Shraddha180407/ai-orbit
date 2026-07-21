@@ -29,6 +29,11 @@ export class ModelsController {
 
   async getModel(c: Context) {
     const id = c.req.param('id');
+    
+    if (!id) {
+      return c.json({ error: "Model ID is required" }, 400);
+    }
+
     const prisma = getPrisma(c.env);
     const service = new ModelsService(prisma);
 
