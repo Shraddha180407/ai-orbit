@@ -307,9 +307,68 @@
 .tas-row:hover .tas-row-title { color: var(--text-primary); }
 .tas-row:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--border-focus); border-radius: var(--news-radius-md); }
 
+/* card feed hover (mobile/tablet card layout + hero story — see NewsCard.tsx
+   and FeaturedStory.tsx). A tactile lift, distinct from the desktop table
+   row's flat inset-highlight hover above, since a bordered card with its
+   own background reads more like a physical object than a table row. */
+.tas-card { transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), border-color var(--dur-fast) var(--ease-standard); }
+.tas-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--border-strong); }
+.tas-card:hover .tas-row-title { color: var(--text-primary); }
+.tas-card:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
 /* chips / links hover */
-.tas-chip:not([data-active]):hover { background: var(--bg-hover); border-color: var(--border-strong); color: var(--text-primary); }
-.tas-topic:hover { color: var(--text-primary); border-color: var(--border-strong); background: var(--bg-hover); }
+.tas-chip { transition: var(--transition-colors), transform var(--dur-fast) var(--ease-out); }
+.tas-chip:not([data-active]) { color: var(--text-primary); background: var(--bg-elevated); border: 1px solid var(--border-default); box-shadow: var(--highlight-top); }
+.tas-chip[data-active] { color: #fff; background: var(--purple); border: 1px solid transparent; }
+.tas-chip:not([data-active]):hover { background: var(--bg-hover); border-color: var(--border-strong); color: var(--text-primary); transform: translateY(-1px); }
+.tas-chip[data-active]:hover { background: var(--purple-hover); transform: translateY(-1px); }
+.tas-chip:active { transform: translateY(0); }
+.tas-chip:not([data-active]) .tas-chip-icon { color: var(--purple-text); }
+.tas-chip[data-active] .tas-chip-icon { color: #fff; }
+
+/* Topic/source pill (TopicChip.tsx) — every color value lives here now,
+   not inline, specifically so :hover/:active/[data-active] actually take
+   effect (see the doc comment in TopicChip.tsx for why inline styles were
+   silently defeating these rules before). `--chip-accent` is an optional
+   custom property set by the component when a publisher/topic brand color
+   should tint the pill; falls back to the plain neutral palette below when
+   unset. */
+.tas-topic {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  transition: var(--transition-colors), transform var(--dur-fast) var(--ease-out);
+}
+.tas-topic[data-compact] {
+  color: var(--text-secondary);
+  background: var(--bg-surface-2);
+  border-color: var(--border-default);
+}
+.tas-topic:hover {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--chip-accent, var(--border-strong)) 55%, var(--border-strong));
+  background: color-mix(in srgb, var(--chip-accent, transparent) 12%, var(--bg-hover));
+  transform: translateY(-1px);
+}
+.tas-topic:active { transform: translateY(0); }
+.tas-topic:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.tas-topic[data-active] {
+  color: var(--purple-text);
+  background: var(--purple-soft);
+  border-color: var(--purple-border);
+}
+.tas-topic[data-active]:hover {
+  background: color-mix(in srgb, var(--purple) 22%, var(--purple-soft));
+  border-color: var(--purple);
+}
+.tas-topic-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--chip-accent, var(--purple-text));
+}
+
 .tas-vote:not([data-on]):hover { color: var(--text-secondary); border-color: var(--border-strong); background: var(--bg-hover); }
 .tas-page:not([data-current]):not(:disabled):hover { background: var(--bg-hover); border-color: var(--border-strong); color: var(--text-primary); }
 .tas-crumb:hover { color: var(--text-secondary); }
@@ -318,15 +377,25 @@
 .tas-related:hover { background: var(--bg-hover); }
 
 /* table header sort + filter */
-.tas-sort:not([data-active]):hover { color: var(--text-secondary); }
-.tas-funnel:not([data-active]):hover { color: var(--text-secondary); background: var(--bg-hover); }
+.tas-sort { transition: var(--transition-colors); }
+.tas-sort:not([data-active]) { color: var(--text-secondary); }
+.tas-sort[data-active] { color: var(--text-primary); }
+.tas-sort:not([data-active]):hover { color: var(--text-primary); }
+.tas-funnel { transition: var(--transition-colors); }
+.tas-funnel:not([data-active]) { color: var(--text-secondary); background: transparent; }
+.tas-funnel[data-active] { color: var(--text-primary); background: var(--bg-active); }
+.tas-funnel:not([data-active]):hover { color: var(--text-primary); background: var(--bg-hover); }
 
 /* filter dropdown options */
 .tas-opt:hover { background: var(--bg-hover); }
 
 /* row inline actions */
 .tas-act:hover { color: var(--text-primary); background: var(--bg-hover); }
-.tas-act-box:hover { color: var(--text-primary); border-color: var(--border-strong); background: var(--bg-hover); }
+.tas-act-box { transition: var(--transition-colors); border: 1px solid transparent; }
+.tas-act-box:not([data-on]) { color: var(--text-tertiary); background: transparent; }
+.tas-act-box[data-on] { color: var(--purple-text); background: var(--purple-soft); }
+.tas-act-box:not([data-on]):hover { color: var(--text-primary); border-color: var(--border-strong); background: var(--bg-hover); }
+.tas-act-box[data-on]:hover { background: color-mix(in srgb, var(--purple) 22%, var(--purple-soft)); border-color: var(--purple-border); }
 
 /* search bar + header buttons */
 .tas-search { transition: border-color 240ms var(--ease-standard), box-shadow 240ms var(--ease-standard); }
@@ -337,9 +406,37 @@
 .tas-scroll-x { scrollbar-width: none; -ms-overflow-style: none; }
 .tas-scroll-x::-webkit-scrollbar { display: none; }
 
+/* Edge fade hint for horizontally-scrolling strips (filter chips) that
+   actually overflow — toggled via data attributes set by useScrollFade
+   (see hooks/useScrollFade.ts), not applied unconditionally, since a
+   static mask would keep fading the last chip even once there's nothing
+   left to scroll to (content narrower than/scrolled to the end of its
+   container). */
+.tas-scroll-fade[data-fade-start] {
+  mask-image: linear-gradient(to right, transparent 0%, black 24px);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 24px);
+}
+.tas-scroll-fade[data-fade-end] {
+  mask-image: linear-gradient(to right, black calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 24px), transparent 100%);
+}
+.tas-scroll-fade[data-fade-start][data-fade-end] {
+  mask-image: linear-gradient(to right, transparent 0%, black 24px, black calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 24px, black calc(100% - 24px), transparent 100%);
+}
+
 /* sticky title column (mobile/tablet scroll table) — keep hover tint in sync with the row */
 .tas-row:hover .tas-sticky-cell { background: var(--bg-hover); }
-.tas-hbtn:hover { color: var(--text-primary); border-color: var(--border-strong); background: var(--bg-hover); }
+
+/* Mobile sort/filter toolbar buttons (MobileSortMenu.tsx, NewsTable.tsx's
+   "Filter" button) — resting/active/hover colors all live here (see the
+   TopicChip.tsx doc comment for why: these buttons previously set color
+   inline, which silently defeated this same :hover rule). */
+.tas-hbtn { transition: var(--transition-colors); }
+.tas-hbtn:not([data-active]) { color: var(--text-primary); background: var(--bg-elevated); border: 1px solid var(--border-default); }
+.tas-hbtn[data-active] { color: var(--purple-text); background: var(--purple-soft); border: 1px solid var(--purple-border); }
+.tas-hbtn:not([data-active]):hover { color: var(--text-primary); border-color: var(--border-strong); background: var(--bg-hover); }
+.tas-hbtn[data-active]:hover { background: color-mix(in srgb, var(--purple) 22%, var(--purple-soft)); }
 
 /* detail: sidebar rows + back link */
 .tas-simcard:hover { border-color: var(--border-strong); background: var(--bg-surface-2); }

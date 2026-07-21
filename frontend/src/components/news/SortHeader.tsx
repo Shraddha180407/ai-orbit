@@ -43,9 +43,7 @@ export function SortHeader({ label, sortKey, sort, onSort, onFilter, filterActiv
           font: "var(--fw-semibold) var(--fs-xs)/1 var(--font-sans)",
           letterSpacing: "0.12em",
           textTransform: "uppercase",
-          color: active ? "var(--text-primary)" : "var(--text-secondary)",
           cursor: "pointer",
-          transition: "var(--transition-colors)",
         }}
       >
         {label}
@@ -64,10 +62,7 @@ export function SortHeader({ label, sortKey, sort, onSort, onFilter, filterActiv
             width: 22,
             height: 22,
             borderRadius: "var(--news-radius-sm)",
-            color: filterActive ? "var(--text-primary)" : "var(--text-secondary)",
-            background: filterActive ? "var(--bg-active)" : "transparent",
             cursor: "pointer",
-            transition: "var(--transition-colors)",
             flex: "none",
           }}
         >

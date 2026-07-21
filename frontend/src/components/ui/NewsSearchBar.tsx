@@ -26,7 +26,7 @@ export function NewsSearchBar({ value, onChange, placeholder = "Search AI newsâ€
 
   return (
     <div
-      className="tas-search h-[52px]"
+      className="tas-search h-12 sm:h-[50px] md:h-[52px]"
       style={{
         position: "relative",
         display: "flex",
