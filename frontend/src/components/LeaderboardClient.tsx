@@ -581,41 +581,6 @@ export function LeaderboardClient() {
 
   return (
     <div className="w-full flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white min-h-screen">
-      {/* Top Header Logo & Navigation Bar */}
-      <div className="border-b border-[#1B1B1F] bg-[#000000] sticky top-0 z-50">
-        <div className="mx-auto max-w-[1440px] px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            {/* Exactly AS box Logo from screenshot */}
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-white text-black font-black text-sm select-none shadow">
-              AS
-            </div>
-            <span className="text-sm font-black tracking-wider text-white">
-              {_("title")}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* Language dropdown switch */}
-            <div className="relative inline-flex items-center">
-              <Globe size={13} className="absolute left-2.5 text-[#71717A] pointer-events-none" />
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value as "en" | "hi")}
-                className="appearance-none rounded-lg border border-[#232326] bg-[#131316] pl-7 pr-7 py-1 text-xs font-semibold text-[#A1A1AA] hover:text-white hover:border-neutral-500 focus:outline-none transition-all cursor-pointer h-7"
-              >
-                <option value="en">{_("english")}</option>
-                <option value="hi">{_("hindi")}</option>
-              </select>
-              <ChevronDown size={11} className="absolute right-2 text-[#71717A] pointer-events-none" />
-            </div>
-
-            <button className="rounded-md bg-white px-4 py-1.5 text-xs font-semibold text-black hover:bg-neutral-200 transition-all active:scale-95 whitespace-nowrap">
-              {_("login")}
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Main Leaderboard Content Frame */}
       <div className="mx-auto max-w-[1440px] w-full px-6 py-6 flex-1 flex flex-col">
         {/* Navigation Tabs */}
@@ -720,8 +685,23 @@ export function LeaderboardClient() {
             })}
           </div>
 
-          {/* Sort dropdown Prefix formatting inside options */}
+          {/* Controls toolbar: Language and Sort dropdowns */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Language dropdown switch */}
+            <div className="relative inline-flex items-center">
+              <Globe size={13} className="absolute left-2.5 text-[#71717A] pointer-events-none" />
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value as "en" | "hi")}
+                className="appearance-none rounded-lg border border-[#232326] bg-[#131316] pl-7 pr-7 py-1.5 text-[13px] font-semibold text-[#A1A1AA] hover:text-white hover:border-neutral-500 focus:outline-none transition-all cursor-pointer h-8"
+              >
+                <option value="en">EN</option>
+                <option value="hi">हिंदी</option>
+              </select>
+              <ChevronDown size={11} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
+            </div>
+
+            {/* Sort select */}
             <div className="relative inline-flex items-center">
               <select
                 value={sortBy}
