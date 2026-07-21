@@ -1,15 +1,13 @@
 "use client";
-
 import React from "react";
+import type { CreatorType } from "@/lib/types";
 import { X } from "lucide-react";
-
-export type CreatorType = "ALL" | "EDITORIAL" | "COMMUNITY";
 
 export interface FilterDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  creatorType: CreatorType;
-  onCreatorTypeChange: (type: CreatorType) => void;
+  creatorType?: CreatorType;
+  onCreatorTypeChange: (type: CreatorType | undefined) => void;
   updatedWithin: string;
   onUpdatedWithinChange: (value: string) => void;
   featuredOnly: boolean;
@@ -18,14 +16,17 @@ export interface FilterDrawerProps {
   onHasRelatedModelsChange: (value: boolean) => void;
   hasRelatedCompanies: boolean;
   onHasRelatedCompaniesChange: (value: boolean) => void;
-  // --- Category Support Props ---
   selectedCategories?: string[];
   onCategoriesChange?: (categories: string[]) => void;
-  availableCategories?: string[]; // Optional preset list of categories to toggle
+  availableCategories?: string[];
   onReset: () => void;
 }
 
-const CREATOR_TYPES: CreatorType[] = ["ALL", "EDITORIAL", "COMMUNITY"];
+const CREATOR_TYPES: { label: string; value: CreatorType | undefined }[] = [
+  { label: "All", value: undefined },
+  { label: "Editorial", value: "EDITORIAL" },
+  { label: "Community", value: "COMMUNITY" },
+];
 
 export default function CollectionFilters({
   isOpen,
@@ -79,15 +80,15 @@ export default function CollectionFilters({
               <div className="grid grid-cols-3 gap-2">
                 {CREATOR_TYPES.map((type) => (
                   <button
-                    key={type}
-                    onClick={() => onCreatorTypeChange(type)}
+                    key={type.label}
+                    onClick={() => onCreatorTypeChange(type.value)}
                     className={`h-9 text-xs rounded-lg border font-semibold capitalize ${
-                      creatorType === type
+                      creatorType === type.value
                         ? "bg-white text-black border-white"
                         : "bg-[#18181B] border-[#232326] text-[#A1A1AA] hover:border-neutral-500"
                     }`}
                   >
-                    {type.toLowerCase()}
+                    {type.label}
                   </button>
                 ))}
               </div>

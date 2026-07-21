@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CollectionGrid } from "@/components/collections/CollectionGrid";
 import { CollectionSearch } from "@/components/collections/CollectionSearch";
@@ -8,109 +8,177 @@ import CollectionFilters from "@/components/collections/CollectionFilters";
 import { CollectionsHeader } from "@/components/collections/CollectionHeader";
 import { CollectionsClosingCTA } from "@/components/collections/CollectionsClosingCTA";
 import { LoadMoreButton } from "@/components/collections/LoadMoreButton";
-import { mockCollections } from "@/lib/mockCollections";
-import type { CollectionListItem } from "@/lib/types";
+import { fetchCollections } from "@/lib/collections";
+import type { CollectionListItem, CreatorType } from "@/lib/types";
 
+// Delay before firing a search request, so we don't hit the API on every keystroke
+const SEARCH_DEBOUNCE_MS = 350;
 
 export default function CollectionsPageClient() {
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sort, setSort] = useState("recently_updated");
-  const [creatorType, setCreatorType] = useState("");
 
-  // Mock data (replace with API later)
-  const items: CollectionListItem[] = useMemo(() => {
-    let filtered = [...mockCollections];
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [creatorType, setCreatorType] = useState<CreatorType | undefined>(undefined);
+  const [updatedWithin, setUpdatedWithin] = useState("");
+  const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [hasRelatedModels, setHasRelatedModels] = useState(false);
+  const [hasRelatedCompanies, setHasRelatedCompanies] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-    // Search
-    if (search.trim()) {
-      const query = search.toLowerCase();
+  const [items, setItems] = useState<CollectionListItem[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-      filtered = filtered.filter((collection) => {
-        return (
-          collection.name.toLowerCase().includes(query) ||
-          collection.description?.toLowerCase().includes(query) ||
-          collection.creator.name.toLowerCase().includes(query)
-        );
-      });
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Debounce search input
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
+  const filterParams = useMemo(
+    () => ({
+      search: debouncedSearch || undefined,
+      creatorType,
+      hasRelatedModels: hasRelatedModels || undefined,
+      hasRelatedCompanies: hasRelatedCompanies || undefined,
+      featured: featuredOnly || undefined,
+      updatedWithin: updatedWithin || undefined,
+      category: selectedCategories.length ? selectedCategories : undefined,
+      sort,
+    }),
+    [
+      debouncedSearch,
+      creatorType,
+      hasRelatedModels,
+      hasRelatedCompanies,
+      featuredOnly,
+      updatedWithin,
+      selectedCategories,
+      sort,
+    ]
+  );
+
+  // Fetch first page whenever filters/search/sort change
+  useEffect(() => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setLoading(true);
+    setError(null);
+
+    fetchCollections(filterParams, controller.signal)
+      .then((data) => {
+        setItems(data.items);
+        setCursor(data.nextCursor);
+      })
+      .catch((err) => {
+        if (err.name !== "AbortError") setError(err.message);
+      })
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, [filterParams]);
+
+  const handleLoadMore = async () => {
+    if (!cursor) return;
+    setLoadingMore(true);
+    setError(null);
+
+    try {
+      const data = await fetchCollections({ ...filterParams, cursor });
+      setItems((prev) => [...prev, ...data.items]);
+      setCursor(data.nextCursor);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoadingMore(false);
     }
+  };
 
-    // Creator Type
-    if (creatorType) {
-      filtered = filtered.filter(
-        (collection) => collection.creatorType === creatorType
-      );
-    }
-
-    // Sort
-    switch (sort) {
-      case "name_asc":
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-
-      case "name_desc":
-        filtered.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-
-      case "most_tools":
-        filtered.sort((a, b) => b.toolCount - a.toolCount);
-        break;
-
-      case "fewest_tools":
-        filtered.sort((a, b) => a.toolCount - b.toolCount);
-        break;
-
-      case "oldest_updated":
-        filtered.sort(
-          (a, b) =>
-            new Date(a.updatedAt).getTime() -
-            new Date(b.updatedAt).getTime()
-        );
-        break;
-
-      case "recently_updated":
-      default:
-        filtered.sort(
-          (a, b) =>
-            new Date(b.updatedAt).getTime() -
-            new Date(a.updatedAt).getTime()
-        );
-    }
-
-    return filtered;
-  }, [search, sort, creatorType]);
+  const resetFilters = () => {
+    setCreatorType(undefined);
+    setUpdatedWithin("");
+    setFeaturedOnly(false);
+    setHasRelatedModels(false);
+    setHasRelatedCompanies(false);
+    setSelectedCategories([]);
+  };
 
   return (
     <>
       <CollectionsHeader />
 
       <main className="mx-auto max-w-7xl px-6 pb-16">
-        {/* Search */}
-        <div className="mb-6">
-          <CollectionSearch
-            value={search}
-            onChange={setSearch}
-          />
+        <div className="mb-6 flex items-center gap-3">
+          <CollectionSearch value={search} onChange={setSearch} />
+
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="h-10 rounded-lg border border-[#232326] bg-[#18181B] px-3 text-xs text-white"
+          >
+            <option value="recently_updated">Recently Updated</option>
+            <option value="oldest_updated">Oldest Updated</option>
+            <option value="name_asc">Name A–Z</option>
+            <option value="name_desc">Name Z–A</option>
+            <option value="most_tools">Most Tools</option>
+            <option value="fewest_tools">Fewest Tools</option>
+            <option value="most_bookmarked">Most Bookmarked</option>
+            <option value="featured_first">Featured First</option>
+          </select>
+
+          <button
+            onClick={() => setIsFilterOpen(true)}
+            className="h-10 rounded-lg border border-[#232326] bg-[#18181B] px-4 text-xs font-semibold text-white"
+          >
+            Filters
+          </button>
         </div>
 
-        {/* Filters */}
-        <div className="mb-10">
-          <CollectionFilters
-            sort={sort}
-            setSort={setSort}
-            creatorType={creatorType}
-            setCreatorType={setCreatorType}
-          />
-        </div>
+        <CollectionFilters
+          isOpen={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          creatorType={creatorType}
+          onCreatorTypeChange={setCreatorType}
+          updatedWithin={updatedWithin}
+          onUpdatedWithinChange={setUpdatedWithin}
+          featuredOnly={featuredOnly}
+          onFeaturedOnlyChange={setFeaturedOnly}
+          hasRelatedModels={hasRelatedModels}
+          onHasRelatedModelsChange={setHasRelatedModels}
+          hasRelatedCompanies={hasRelatedCompanies}
+          onHasRelatedCompaniesChange={setHasRelatedCompanies}
+          selectedCategories={selectedCategories}
+          onCategoriesChange={setSelectedCategories}
+          onReset={resetFilters}
+        />
 
-        {/* Grid */}
-        <CollectionGrid collections={items} />
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            {error}
+          </div>
+        )}
 
-        {/* Hidden for mock data */}
-        {false && (
+        {loading ? (
+          <div className="py-16 text-center text-sm text-[#A1A1AA]">
+            Loading collections…
+          </div>
+        ) : (
+          <CollectionGrid collections={items} />
+        )}
+
+        {cursor && !loading && (
           <LoadMoreButton
-            loading={false}
-            disabled={false}
-            onClick={() => {}}
+            loading={loadingMore}
+            disabled={loadingMore}
+            onClick={handleLoadMore}
           />
         )}
 

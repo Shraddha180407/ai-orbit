@@ -95,11 +95,12 @@ export interface CollectionListItem {
   slug: string;
   description: string | null;
   isFeatured: boolean;
-  creatorType?: "EDITORIAL" | "COMMUNITY";
+  creatorType: "EDITORIAL" | "COMMUNITY";
   toolCount: number;
   updatedAt: string;
   creator: CreatorProfile;
   categories: CollectionCategory[];
+  isBookmarked?: boolean;   // ← add this
   _count: {
     relatedModels: number;
     relatedCompanies: number;
@@ -250,3 +251,16 @@ export type Device = {
 };
 
 
+export type CreatorType = "EDITORIAL" | "COMMUNITY";
+
+export type CollectionSort =
+  | "recently_updated"
+  | "oldest_updated"
+  | "name_asc"
+  | "name_desc"
+  | "most_tools"
+  | "fewest_tools"
+  | "most_bookmarked"
+  | "most_related_models"
+  | "most_related_companies"
+  | "featured_first";

@@ -1,17 +1,39 @@
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Bookmark, Boxes, Building2, Cpu } from "lucide-react";
 import type { CollectionListItem } from "@/lib/types";
+import { toggleBookmark } from "@/lib/collections";
+
+
 
 interface Props {
   collection: CollectionListItem;
 }
 
 export function CollectionCard({ collection }: Props) {
+  const [bookmarked, setBookmarked] = useState(collection.isBookmarked ?? false);
+  const [pending, setPending] = useState(false);
+
   const categoryLabel = collection.categories
     .slice(0, 3)
     .map((c) => c.categoryName)
     .join(" • ");
+
+  const handleBookmark = async () => {
+    if (pending) return;
+    const next = !bookmarked;
+    setBookmarked(next); // optimistic
+    setPending(true);
+    try {
+      const confirmed = await toggleBookmark(collection.id, bookmarked);
+      setBookmarked(confirmed);
+    } catch {
+      setBookmarked(!next); // revert on failure
+    } finally {
+      setPending(false);
+    }
+  };
 
   return (
     <div className="group relative rounded-xl border border-border bg-surface px-5 py-4 transition-all hover:border-accent/30 hover:bg-surface/70">
