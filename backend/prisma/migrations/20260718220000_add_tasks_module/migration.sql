@@ -1,3 +1,31 @@
+-- CreateTable: Robot
+CREATE TABLE "Robot" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "category" TEXT NOT NULL,
+    "manufacturer" TEXT NOT NULL,
+    "year" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Robot_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable: Device
+CREATE TABLE "Device" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "category" TEXT NOT NULL,
+    "manufacturer" TEXT NOT NULL,
+    "year" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Device_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateEnum
 CREATE TYPE "TaskDifficulty" AS ENUM ('EASY', 'MEDIUM', 'ADVANCED');
 
@@ -187,4 +215,3 @@ ALTER TABLE "TaskBookmark" ADD CONSTRAINT "TaskBookmark_taskId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "TaskBookmark" ADD CONSTRAINT "TaskBookmark_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
