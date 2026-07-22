@@ -14,6 +14,8 @@ import Smartphone from 'lucide-react/dist/esm/icons/smartphone';
 import Bot from 'lucide-react/dist/esm/icons/bot';
 import Plug from 'lucide-react/dist/esm/icons/plug';
 import PlayCircle from 'lucide-react/dist/esm/icons/play-circle';
+import UserCircle from 'lucide-react/dist/esm/icons/user-circle';
+import Palette from 'lucide-react/dist/esm/icons/palette';
 
 import { API_URL } from "@/lib/api";
 
@@ -37,6 +39,8 @@ const DIRECTORY_CARDS = [
   { name: "Repositories", href: "/repositories", description: "Trending open-source AI repositories on GitHub.", icon: GitBranch, color: "#22D3EE" },
   { name: "MCP", href: "/tools", description: "Model Context Protocol servers and integrations.", icon: Plug, color: "#818CF8" },
   { name: "Collections", href: "/collections", description: "Curated bundles of tools grouped by use case.", icon: FolderHeart, color: "#34D399" },
+  { name: "Personal", href: "/tools?category=personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
+  { name: "Creativity", href: "/tools?category=creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
 
 export function HomeClient() {
@@ -219,7 +223,7 @@ export function HomeClient() {
                   >
                     <Icon size={10} strokeWidth={1.75} style={{ color: card.color }} />
                   </div>
-                  <span className="text-[10px] sm:text-[11.5px] font-bold tracking-tight text-white whitespace-nowrap">
+                  <span className="text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
                     {card.name}
                   </span>
                 </a>

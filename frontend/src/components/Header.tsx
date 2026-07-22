@@ -13,22 +13,28 @@ export function Header() {
       {/* Center: Nav links, centered against the full page width, not just the inner container */}
       <nav className="hidden md:flex items-center gap-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
         <Link
+          href="/tools?category=business"
+          className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
+        >
+          Business AI
+        </Link>
+        <Link
           href="/leaderboard"
-          className="text-[13px] font-bold text-[#6E56CF] hover:text-white transition-colors text-center"
+          className="text-[12px] font-bold text-[#6E56CF] hover:text-white transition-colors text-center"
         >
           Leaderboard
         </Link>
         <Link
-          href="/#newsletter"
-          className="text-[13px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
-        >
-          Newsletter
-        </Link>
-        <Link
           href="/tools"
-          className="text-[13px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
+          className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
         >
           Resources
+        </Link>
+        <Link
+          href="/#newsletter"
+          className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
+        >
+          Newsletter
         </Link>
       </nav>
 
