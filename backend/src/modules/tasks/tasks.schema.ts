@@ -9,6 +9,7 @@ export const GetTasksQuerySchema = z.object({
   featuredOnly: z.string().optional(),
   sort: z.enum(['newest', 'oldest', 'alphabetical', 'popular']).optional().default('newest'),
   page: z.string().optional().default('1'),
+  filter: z.enum(['all', 'for-you', 'following']).optional().default('all'),
 });
 
 export const ToggleTaskBookmarkSchema = z.object({
