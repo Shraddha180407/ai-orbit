@@ -311,7 +311,7 @@ export function NewsTable({ articles, sources, sort, onSort, filters, isAdmin, o
             transition: "all 0.2s",
           }}
         >
-          <Icon name={ICONS.filters} size={14} className="opacity-70" />
+          <Icon path={ICONS.filter} size={14} className="opacity-70" />
           <span>Filters</span>
           {activeMobileFilters > 0 && (
             <span style={{
@@ -334,9 +334,8 @@ export function NewsTable({ articles, sources, sort, onSort, filters, isAdmin, o
       </div>
 
       <MobileFilterSheet
-        open={mobileFilterOpen}
-        onOpenChange={setMobileFilterOpen}
         filters={filters}
+        onClose={() => setMobileFilterOpen(false)}
       />
 
       {/* Card feed — phones (1 col), large phones/small tablets (2 cols from sm:), roomier gap from md: */}
