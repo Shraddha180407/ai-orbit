@@ -2,6 +2,11 @@
  * Data transformation utilities for Device module
  */
 
+const MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
+
 /**
  * Generates a URL-friendly slug from a device name
  * @param name - The device name
@@ -56,15 +61,42 @@ export function formatPrice(price: string | number | null, currency: string = '$
  * @returns Formatted month string (e.g., "Jan, 2024") or null
  */
 export function formatMonth(month: Date | string | null): string | null {
-  if (month === null || month === undefined || month === '') {
+  if (!month) {
     return null;
   }
 
   let date: Date;
+
   if (month instanceof Date) {
     date = month;
   } else if (typeof month === 'string') {
-    date = new Date(month);
+    const trimmed = month.trim();
+
+    // 1. Handle "Jan, 2024" or "January 2024" format
+    const textMatch = trimmed.match(/^([A-Za-z]+)[,\s]+(\d{4})$/);
+    if (textMatch) {
+      // Grab first 3 letters to match our array (e.g., "Jan" from "January")
+      const monthStr = textMatch[1].substring(0, 3).toLowerCase();
+      const year = parseInt(textMatch[2], 10);
+      const monthIndex = MONTH_NAMES.findIndex(name => name.toLowerCase() === monthStr);
+      
+      if (monthIndex !== -1) {
+        // Construct as local time to prevent timezone shift issues
+        date = new Date(year, monthIndex, 1);
+      } else {
+        return null;
+      }
+    } 
+    // 2. Handle standard "YYYY-MM" or "YYYY-MM-DD" database strings safely
+    else if (/^\d{4}-\d{2}/.test(trimmed)) {
+      const [year, m] = trimmed.split('-');
+      // Construct as local time: Month is 0-indexed in JS Date
+      date = new Date(parseInt(year, 10), parseInt(m, 10) - 1, 1);
+    } 
+    // 3. Fallback for completely unknown formats
+    else {
+      date = new Date(trimmed);
+    }
   } else {
     return null;
   }
@@ -73,12 +105,7 @@ export function formatMonth(month: Date | string | null): string | null {
     return null;
   }
 
-  const monthNames = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-  ];
-
-  return `${monthNames[date.getMonth()]}, ${date.getFullYear()}`;
+  return `${MONTH_NAMES[date.getMonth()]}, ${date.getFullYear()}`;
 }
 
 /**

@@ -16,7 +16,16 @@ export class DevicesService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return devices.map(transformDeviceForListing);
+    // flatMap allows us to return an array of 1 item (success) or 0 items (error).
+    // This safely removes broken database records from the API response.
+    return devices.flatMap(device => {
+      try {
+        return [transformDeviceForListing(device)];
+      } catch (error: any) {
+        console.error(`Error transforming device ${device.id}:`, error.message);
+        return []; 
+      }
+    });
   }
 
   async getDeviceById(id: string) {
