@@ -76,22 +76,26 @@ export async function fetchAllNews(): Promise<any[]> {
 }
 
 import { Repository, RepositoryListResponse, RepositoryDetailResponse } from "./types";
-import { DUMMY_REPOSITORIES } from "./dummyRepositories";
 
-export async function fetchRepositories(limit?: number, cursor?: string | null): Promise<RepositoryListResponse> {
-  const USE_DUMMY = process.env.NEXT_PUBLIC_USE_DUMMY_REPOSITORIES === "true";
-  if (USE_DUMMY) {
-    return {
-      items: DUMMY_REPOSITORIES,
-      nextCursor: null,
-      hasMore: false,
-      total: DUMMY_REPOSITORIES.length
-    };
-  }
+export interface FetchRepositoriesOptions {
+  limit?: number;
+  cursor?: string | null;
+  sort?: string;
+  language?: string;
+  topic?: string;
+  q?: string;
+}
+
+export async function fetchRepositories(options: FetchRepositoriesOptions = {}): Promise<RepositoryListResponse> {
+  const { limit, cursor, sort, language, topic, q } = options;
 
   const url = new URL(`${API_URL}/api/v1/repositories`);
   if (limit) url.searchParams.set("limit", limit.toString());
   if (cursor) url.searchParams.set("cursor", cursor);
+  if (sort) url.searchParams.set("sort", sort);
+  if (language) url.searchParams.set("language", language);
+  if (topic) url.searchParams.set("topic", topic);
+  if (q) url.searchParams.set("q", q);
 
   const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) {
@@ -106,15 +110,6 @@ export async function fetchRepositories(limit?: number, cursor?: string | null):
 }
 
 export async function fetchRepositoryBySlug(slug: string): Promise<RepositoryDetailResponse | null> {
-  const USE_DUMMY = process.env.NEXT_PUBLIC_USE_DUMMY_REPOSITORIES === "true";
-  if (USE_DUMMY) {
-    const match = DUMMY_REPOSITORIES.find((r) => {
-      const generatedSlug = r.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      return generatedSlug === slug || r.name.toLowerCase() === slug.toLowerCase();
-    });
-    return (match as RepositoryDetailResponse) || null;
-  }
-
   const url = `${API_URL}/api/v1/repositories/${slug}`;
   const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) return null;
@@ -122,13 +117,6 @@ export async function fetchRepositoryBySlug(slug: string): Promise<RepositoryDet
 }
 
 export async function fetchAllRepos(): Promise<Repository[]> {
-  // Feature flag to toggle between backend API and mock data for UI testing/demonstration.
-  // Set NEXT_PUBLIC_USE_DUMMY_REPOSITORIES=true in .env.local to load dummy repositories.
-  const USE_DUMMY = process.env.NEXT_PUBLIC_USE_DUMMY_REPOSITORIES === "true";
-  if (USE_DUMMY) {
-    return DUMMY_REPOSITORIES;
-  }
-
   try {
     const data = await fetchRepositories();
     return data.items;

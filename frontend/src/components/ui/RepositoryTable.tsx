@@ -67,7 +67,7 @@ export function RepositoryTable({
     >
       {/* Sticky Table Header */}
       <div className="sticky top-navbar z-30 bg-[#000000] border-b border-[#232326]/60 px-[9px] py-[12px] h-[48.8px] select-none hidden sm:flex items-center rounded-t-xl">
-        <div className="grid grid-cols-[30px_1fr_95px_110px_60px] md:grid-cols-[30px_1fr_180px_95px_130px_60px] lg:grid-cols-[30px_1fr_180px_95px_95px_130px_110px_60px] xl:grid-cols-[30px_1fr_180px_95px_95px_130px_95px_110px_60px] gap-[10px] items-center text-[10px] font-semibold tracking-[0.4px] text-[#71717A] w-full">
+        <div className="grid grid-cols-[30px_minmax(0,2.5fr)_minmax(0,1.8fr)_minmax(0,1.5fr)_60px] md:grid-cols-[30px_minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] lg:grid-cols-[30px_minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] xl:grid-cols-[30px_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_60px] gap-[10px] items-center text-[10px] font-semibold tracking-[0.4px] text-[#71717A] w-full">
           {/* Rank Column Header */}
           <div className="uppercase text-center">
             #
@@ -149,7 +149,7 @@ export function RepositoryTable({
           </button>
 
           {/* License Column Header with Dropdown */}
-          <div className="relative hidden md:block text-center flex justify-center">
+          <div className="relative hidden md:flex items-center justify-center">
             <button
               onClick={onToggleLicenseDropdown}
               aria-haspopup="listbox"
