@@ -1,6 +1,6 @@
 'use client';
 
-import React from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
 import Bell from 'lucide-react/dist/esm/icons/bell';
 import Bookmark from 'lucide-react/dist/esm/icons/bookmark';
@@ -15,7 +15,6 @@ type TaskCardProps = {
   task: Task;
 };
 
-// Only "—" for null/undefined. Zero is a real value and must render as 0.
 function formatCount(value: number | null | undefined): string {
   if (value === null || value === undefined) return "—";
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`;
@@ -24,7 +23,10 @@ function formatCount(value: number | null | undefined): string {
 }
 
 export function TaskCard({ task }: TaskCardProps) {
-  const CategoryIcon = getCategoryIcon(task.category?.slug);
+  // useMemo keeps the icon reference stable across re-renders — required
+  // by the react-hooks/static-components rule, since a dynamically-chosen
+  // component must not be recreated on every render.
+  const CategoryIcon = useMemo(() => getCategoryIcon(task.category?.slug), [task.category?.slug]);
 
   return (
     <Link
