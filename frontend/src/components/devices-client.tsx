@@ -184,14 +184,17 @@ export function DevicesClient() {
   return (
     <main className="w-full px-6 md:px-10 py-8 flex-1">
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Devices</h1>
-          <p className="text-sm text-[#71717A] mt-1">
-            Total devices <span className="text-white font-semibold">{isLoading ? "…" : devices.length}</span>
-            {"  ·  "}Categories <span className="text-white font-semibold">{isLoading ? "…" : categories.length}</span>
-          </p>
+      <div className="flex flex-col items-center text-center mb-6">
+        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-2">
+          AI Devices & Wearables
+        </h1>
+        <div className="flex items-center gap-4 text-sm text-[#52525B] mt-2">
+          <span><span className="text-white font-semibold">{isLoading ? "…" : devices.length}</span> Devices</span>
+          <span>·</span>
+          <span><span className="text-white font-semibold">{isLoading ? "…" : categories.length}</span> Categories</span>
         </div>
+      </div>
+      <div className="flex justify-end mb-1">
         <div className="flex items-center gap-2">
           {hasActiveFilters && (
             <button onClick={clearAllFilters}
@@ -212,6 +215,118 @@ export function DevicesClient() {
 
       {/* Grid View */}
       {viewMode === "grid" && (
+        <div>
+          {/* Grid Filters */}
+          <div className="flex flex-wrap gap-3 mb-5 items-center">
+            {/* Name search */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Search by name..."
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { setNameSearch(nameInput); setCurrentPage(1); } }}
+                className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 w-48 placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF]"
+              />
+              <button
+                onClick={() => { setNameSearch(nameInput); setCurrentPage(1); }}
+                className="text-xs bg-[#6E56CF] hover:bg-[#7C66DF] text-white px-3 py-2 rounded-lg transition-colors font-semibold">
+                Apply
+              </button>
+              {nameSearch && (
+                <button
+                  onClick={() => { setNameSearch(""); setNameInput(""); setCurrentPage(1); }}
+                  className="text-xs border border-[#232326] text-[#52525B] hover:text-white px-3 py-2 rounded-lg transition-colors">
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {/* Category */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
+              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF]"
+            >
+              <option value={ALL_CATEGORIES}>All Categories</option>
+              {categories.map((c) => <option key={c}>{c}</option>)}
+            </select>
+
+            {/* Availability */}
+            <select
+              value={selectedAvailability}
+              onChange={(e) => { setSelectedAvailability(e.target.value); setCurrentPage(1); }}
+              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF]"
+            >
+              {["All", "Available", "Pre-order", "Announced", "Discontinued"].map((a) => (
+                <option key={a}>{a}</option>
+              ))}
+            </select>
+
+            {/* Sort */}
+            <select
+              value={`${sortKey}-${sortDir}`}
+              onChange={(e) => {
+                const [key, dir] = e.target.value.split("-");
+                setSortKey(key as SortKey);
+                setSortDir(dir as "asc" | "desc");
+                setCurrentPage(1);
+              }}
+              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF]"
+            >
+              <option value="release-desc">Release Date ↓</option>
+              <option value="release-asc">Release Date ↑</option>
+              <option value="name-asc">Name A→Z</option>
+              <option value="name-desc">Name Z→A</option>
+              <option value="price-asc">Price Low→High</option>
+              <option value="price-desc">Price High→Low</option>
+            </select>
+
+            {/* Price Range */}
+            <div className="relative">
+              <button
+                onClick={() => setOpenDropdown(openDropdown === "grid-price" ? null : "grid-price")}
+                className={`flex items-center gap-1.5 bg-[#131316] border text-sm rounded-lg px-3 py-2 transition-colors ${activePriceFilter ? "border-[#6E56CF] text-[#6E56CF]" : "border-[#232326] text-[#A1A1AA] hover:text-white"}`}
+              >
+                Price {activePriceFilter ? `$${priceMin}–$${priceMax}` : "Range"}
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              {openDropdown === "grid-price" && (
+                <div className="absolute top-10 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-4 min-w-[220px]">
+                  <div className="flex justify-between text-[10px] text-[#A1A1AA] mb-3">
+                    <span>Min: <span className="text-white font-bold">${priceMin.toLocaleString()}</span></span>
+                    <span>Max: <span className="text-white font-bold">${priceMax.toLocaleString()}</span></span>
+                  </div>
+                  <div className="relative h-5 mb-4">
+                    <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-[#232326] rounded-full" />
+                    <div className="absolute top-1/2 -translate-y-1/2 h-1 bg-[#6E56CF] rounded-full"
+                      style={{ left: `${(priceMin / 10000) * 100}%`, right: `${100 - (priceMax / 10000) * 100}%` }} />
+                    <input type="range" min={0} max={10000} step={10} value={priceMin}
+                      onChange={(e) => { const val = Math.min(Number(e.target.value), priceMax - 10); setPriceMin(val); setActivePriceFilter(true); setCurrentPage(1); }}
+                      className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: priceMin > 9000 ? 5 : 3 }} />
+                    <input type="range" min={0} max={10000} step={10} value={priceMax}
+                      onChange={(e) => { const val = Math.max(Number(e.target.value), priceMin + 10); setPriceMax(val); setActivePriceFilter(true); setCurrentPage(1); }}
+                      className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: 4 }} />
+                    <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
+                      style={{ left: `calc(${(priceMin / 10000) * 100}% - 7px)` }} />
+                    <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
+                      style={{ left: `calc(${(priceMax / 10000) * 100}% - 7px)` }} />
+                  </div>
+                  <button onClick={() => { setPriceMin(0); setPriceMax(10000); setActivePriceFilter(false); setCurrentPage(1); setOpenDropdown(null); }}
+                    className="w-full text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors">
+                    Reset
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {hasActiveFilters && (
+              <button onClick={clearAllFilters}
+                className="text-xs text-[#A1A1AA] hover:text-white border border-[#232326] hover:border-[#6E56CF] px-3 py-2 rounded-lg transition-colors">
+                Clear all
+              </button>
+            )}
+          </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
           {isLoading ? (
             [...Array(8)].map((_, i) => (
@@ -251,11 +366,13 @@ export function DevicesClient() {
             </Link>
           ))}
         </div>
+        </div>
       )}
 
-      {/* List View */}
+        {/* List View */}
       {viewMode === "list" && (
-        <div className="rounded-xl border border-[#232326] overflow-x-auto">
+        <div>
+        <div className="rounded-xl border border-[#232326] overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar]:block">
           <div className="min-w-[900px] relative min-h-[400px]" ref={dropdownRef}>
 
             {/* Table Header */}
@@ -500,7 +617,7 @@ export function DevicesClient() {
                     {/* Main Task */}
                     <div className="px-4 py-3 border-l border-[#232326]/40">
                       {device.mainTask ? (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded"
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded whitespace-nowrap"
                           style={{ backgroundColor: `${device.mainTaskColor}33`, color: device.mainTaskColor, border: `1px solid ${device.mainTaskColor}55` }}>
                           {device.mainTask}
                         </span>
@@ -548,6 +665,7 @@ export function DevicesClient() {
               </div>
             )}
           </div>
+        </div>
         </div>
       )}
     </main>

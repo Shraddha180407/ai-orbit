@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
 import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right';
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left';
@@ -6,7 +6,6 @@ import Bell from 'lucide-react/dist/esm/icons/bell';
 import Bookmark from 'lucide-react/dist/esm/icons/bookmark';
 import Wrench from 'lucide-react/dist/esm/icons/wrench';
 import Brain from 'lucide-react/dist/esm/icons/brain';
-import Bot from 'lucide-react/dist/esm/icons/bot';
 import Monitor from 'lucide-react/dist/esm/icons/monitor';
 import Link2 from 'lucide-react/dist/esm/icons/link-2';
 import Heart from 'lucide-react/dist/esm/icons/heart';
@@ -24,7 +23,6 @@ type TaskDetailProps = {
   subscribed: boolean;
 };
 
-// Only "—" for null/undefined. Zero is a real value and must render as 0.
 function formatCount(value: number | null | undefined): string {
   if (value === null || value === undefined) return "—";
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`;
@@ -32,7 +30,7 @@ function formatCount(value: number | null | undefined): string {
   return value.toLocaleString();
 }
 
-function difficultyBadgeClasses(difficulty: Task["difficulty"]): string {
+function difficultyBadgeClasses(difficulty: Task["difficulty"] | undefined): string {
   switch (difficulty) {
     case "EASY":
       return "bg-emerald-500/10 text-emerald-400 ring-emerald-500/30";
@@ -45,7 +43,7 @@ function difficultyBadgeClasses(difficulty: Task["difficulty"]): string {
   }
 }
 
-function pricingBadgeClasses(pricing: Task["pricingModel"]): string {
+function pricingBadgeClasses(pricing: Task["pricingModel"] | undefined): string {
   switch (pricing) {
     case "FREE":
       return "bg-emerald-500/10 text-emerald-400 ring-emerald-500/30";
@@ -60,15 +58,14 @@ function pricingBadgeClasses(pricing: Task["pricingModel"]): string {
   }
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string | undefined): string {
+  if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch (e) {
-    return iso;
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  } catch {
+    return "—";
   }
 }
 
@@ -87,12 +84,17 @@ const STAT_ITEMS: {
 ];
 
 export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }: TaskDetailProps) {
-  const CategoryIcon = getCategoryIcon(task.category?.slug);
+  const categoryName = task.category?.name ?? "Uncategorized";
+  const categorySlug = task.category?.slug;
+  // useMemo keeps this stable across re-renders — required by
+  // react-hooks/static-components.
+  const CategoryIcon = useMemo(() => getCategoryIcon(categorySlug), [categorySlug]);
+  const title = task.title ?? "Untitled Task";
+  const description = task.description ?? "";
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <main className="w-full max-w-none px-6 lg:px-10 xl:px-14 py-8 flex-1">
-        {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="mb-4">
           <ol className="flex items-center flex-wrap gap-1.5 text-xs text-[#71717A] font-mono">
             <li>
@@ -108,11 +110,11 @@ export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }
             </li>
             <li className="flex items-center gap-1.5">
               <ChevronRight className="h-3 w-3" />
-              <span className="text-white">{task.category.name}</span>
+              <span className="text-white">{categoryName}</span>
             </li>
             <li className="flex items-center gap-1.5">
               <ChevronRight className="h-3 w-3" />
-              <span className="text-white">{task.title}</span>
+              <span className="text-white">{title}</span>
             </li>
           </ol>
         </nav>
@@ -125,7 +127,6 @@ export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }
           Back to Tasks
         </Link>
 
-        {/* Header card */}
         <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#131316]/70 to-[#0D0D10]/70 ring-1 ring-[#232326]/70 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_30px_80px_-40px_rgba(0,0,0,0.9)] p-6 sm:p-9 mb-6">
           <div
             className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full opacity-[0.12] blur-3xl"
@@ -140,7 +141,7 @@ export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">{task.title}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">{title}</h1>
                   {task.isFeatured && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#6E56CF]/10 text-[#A78BFA] text-[9px] ring-1 ring-[#6E56CF]/30 font-mono uppercase tracking-wide">
                       <Star className="h-2.5 w-2.5 fill-[#A78BFA]" aria-hidden="true" />
@@ -150,15 +151,19 @@ export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mt-2.5">
                   <span className="px-2.5 py-1 rounded-md bg-[#18181C]/80 text-[11px] text-[#A1A1AA] ring-1 ring-[#232326]/70 font-mono">
-                    {task.category.name}
+                    {categoryName}
                   </span>
-                  <span className={`px-2.5 py-1 rounded-md text-[11px] ring-1 font-mono ${difficultyBadgeClasses(task.difficulty)}`}>
-                    {task.difficulty}
-                  </span>
-                  <span className={`px-2.5 py-1 rounded-md text-[11px] ring-1 font-mono ${pricingBadgeClasses(task.pricingModel)}`}>
-                    {task.pricingModel}
-                  </span>
-                  {task.creator && (
+                  {task.difficulty && (
+                    <span className={`px-2.5 py-1 rounded-md text-[11px] ring-1 font-mono ${difficultyBadgeClasses(task.difficulty)}`}>
+                      {task.difficulty}
+                    </span>
+                  )}
+                  {task.pricingModel && (
+                    <span className={`px-2.5 py-1 rounded-md text-[11px] ring-1 font-mono ${pricingBadgeClasses(task.pricingModel)}`}>
+                      {task.pricingModel}
+                    </span>
+                  )}
+                  {task.creator?.name && (
                     <span className="px-2.5 py-1 rounded-md bg-[#18181C]/80 text-[11px] text-[#A1A1AA] ring-1 ring-[#232326]/70 font-mono">
                       by <strong className="text-white font-medium">{task.creator.name}</strong>
                     </span>
@@ -173,7 +178,7 @@ export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }
             <TaskDetailActions
               slug={task.slug}
               taskId={task.id}
-              taskTitle={task.title}
+              taskTitle={title}
               initialLiked={liked}
               initialSubscribed={subscribed}
               initialBookmarked={bookmarked}
@@ -182,10 +187,8 @@ export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }
             />
           </div>
 
-          {/* Description */}
-          <p className="relative text-sm text-[#A1A1AA] mt-6 leading-relaxed max-w-2xl">{task.description}</p>
+          {description && <p className="relative text-sm text-[#A1A1AA] mt-6 leading-relaxed max-w-2xl">{description}</p>}
 
-          {/* Stat cards */}
           <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-3 mt-7">
             {STAT_ITEMS.map(({ key, label, icon: Icon }) => (
               <div
@@ -201,17 +204,20 @@ export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }
             ))}
           </div>
 
-          {/* Related tags */}
           <div className="relative flex flex-wrap items-center gap-2 mt-7 pt-7 border-t border-[#232326]/60">
             <span className="inline-flex items-center rounded-full bg-[#0A0A0C]/60 ring-1 ring-[#232326]/60 px-3.5 py-1.5 text-xs text-[#D4D4D8]">
-              {task.category.name}
+              {categoryName}
             </span>
-            <span className="inline-flex items-center rounded-full bg-[#0A0A0C]/60 ring-1 ring-[#232326]/60 px-3.5 py-1.5 text-xs text-[#D4D4D8]">
-              {task.difficulty}
-            </span>
-            <span className="inline-flex items-center rounded-full bg-[#0A0A0C]/60 ring-1 ring-[#232326]/60 px-3.5 py-1.5 text-xs text-[#D4D4D8]">
-              {task.pricingModel}
-            </span>
+            {task.difficulty && (
+              <span className="inline-flex items-center rounded-full bg-[#0A0A0C]/60 ring-1 ring-[#232326]/60 px-3.5 py-1.5 text-xs text-[#D4D4D8]">
+                {task.difficulty}
+              </span>
+            )}
+            {task.pricingModel && (
+              <span className="inline-flex items-center rounded-full bg-[#0A0A0C]/60 ring-1 ring-[#232326]/60 px-3.5 py-1.5 text-xs text-[#D4D4D8]">
+                {task.pricingModel}
+              </span>
+            )}
             {task.isFeatured && (
               <span className="inline-flex items-center gap-1 rounded-full bg-[#6E56CF]/10 ring-1 ring-[#6E56CF]/30 px-3.5 py-1.5 text-xs text-[#A78BFA]">
                 <Star className="h-3 w-3 fill-[#A78BFA]" aria-hidden="true" />
@@ -221,7 +227,6 @@ export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }
           </div>
         </div>
 
-        {/* Related tasks */}
         {relatedTasks.length > 0 && (
           <div>
             <h2 className="text-lg font-bold text-white mb-4">Related Tasks</h2>

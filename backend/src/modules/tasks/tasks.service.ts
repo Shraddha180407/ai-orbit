@@ -1,5 +1,4 @@
 import { PrismaClient, Prisma, PricingModel, TaskDifficulty } from '@prisma/client';
-import { getOrCreateDemoUser } from '../../lib/prisma.js';
 
 export class TasksService {
   private prisma: PrismaClient;
@@ -16,6 +15,8 @@ export class TasksService {
     featuredOnly?: boolean;
     sort?: string;
     page?: number;
+    filterMode?: 'all' | 'for-you' | 'following';
+    userId?: string;
   }) {
     const pageNum = Math.max(1, filters.page || 1);
     const limit = 12;
@@ -34,42 +35,59 @@ export class TasksService {
     if (filters.pricing) where.pricingModel = filters.pricing;
     if (filters.featuredOnly) where.isFeatured = true;
 
+    if (filters.filterMode === 'following' && filters.userId) {
+      where.subscribers = { some: { userId: filters.userId } };
+    }
+
+    if (filters.filterMode === 'for-you' && filters.userId) {
+      const [liked, saved] = await Promise.all([
+        this.prisma.taskLike.findMany({
+          where: { userId: filters.userId },
+          select: { task: { select: { categoryId: true } } },
+        }),
+        this.prisma.taskBookmark.findMany({
+          where: { userId: filters.userId },
+          select: { task: { select: { categoryId: true } } },
+        }),
+      ]);
+
+      const categoryIds = [
+        ...new Set([...liked.map((l) => l.task.categoryId), ...saved.map((s) => s.task.categoryId)]),
+      ];
+
+      if (categoryIds.length === 0) {
+        return {
+          tasks: [],
+          total: 0,
+          page: pageNum,
+          totalPages: 1,
+          sort: filters.sort || 'newest',
+          categories: await this.prisma.category.findMany({
+            orderBy: { name: 'asc' },
+            select: { slug: true, name: true, _count: { select: { tasks: true } } },
+          }),
+        };
+      }
+
+      where.categoryId = { in: categoryIds };
+      where.likes = { none: { userId: filters.userId } };
+      where.bookmarks = { none: { userId: filters.userId } };
+    }
+
     let orderBy: Prisma.TaskOrderByWithRelationInput = { createdAt: 'desc' };
     switch (filters.sort) {
-      case 'oldest':
-        orderBy = { createdAt: 'asc' };
-        break;
-      case 'alphabetical':
-        orderBy = { title: 'asc' };
-        break;
-      case 'popular':
-        orderBy = { likes: { _count: 'desc' } };
-        break;
+      case 'oldest': orderBy = { createdAt: 'asc' }; break;
+      case 'alphabetical': orderBy = { title: 'asc' }; break;
+      case 'popular': orderBy = { likes: { _count: 'desc' } }; break;
     }
 
     const selectFields = {
-      id: true,
-      slug: true,
-      title: true,
-      description: true,
-      difficulty: true,
-      pricingModel: true,
-      isFeatured: true,
+      id: true, slug: true, title: true, description: true, difficulty: true,
+      pricingModel: true, isFeatured: true,
       category: { select: { slug: true, name: true } },
       creator: { select: { id: true, name: true, image: true } },
       createdAt: true,
-      _count: {
-        select: {
-          likes: true,
-          subscribers: true,
-          bookmarks: true,
-          resources: true,
-          tools: true,
-          models: true,
-          robots: true,
-          devices: true,
-        },
-      },
+      _count: { select: { likes: true, subscribers: true, bookmarks: true, resources: true, tools: true, models: true, robots: true, devices: true } },
     };
 
     const [tasks, total, categoriesList] = await Promise.all([
@@ -91,7 +109,7 @@ export class TasksService {
     };
   }
 
-  async getTaskDetails(slug: string) {
+  async getTaskDetails(slug: string, userId?: string) {
     const task = await this.prisma.task.findUnique({
       where: { slug },
       select: {
@@ -122,18 +140,25 @@ export class TasksService {
 
     if (!task) return null;
 
-    const demoUser = await getOrCreateDemoUser(this.prisma);
+    if (!userId) {
+      return {
+        task: this.serializeTask(task),
+        bookmarked: false,
+        liked: false,
+        subscribed: false,
+      };
+    }
 
     const [bookmark, liked, subscribed] = await Promise.all([
       this.prisma.taskBookmark.findUnique({
-        where: { taskId_userId: { taskId: task.id, userId: demoUser.id } },
+        where: { taskId_userId: { taskId: task.id, userId } },
         select: { id: true },
       }),
       this.prisma.taskLike.findUnique({
-        where: { taskId_userId: { taskId: task.id, userId: demoUser.id } },
+        where: { taskId_userId: { taskId: task.id, userId } },
       }),
       this.prisma.taskSubscriber.findUnique({
-        where: { taskId_userId: { taskId: task.id, userId: demoUser.id } },
+        where: { taskId_userId: { taskId: task.id, userId } },
       }),
     ]);
 
@@ -145,45 +170,43 @@ export class TasksService {
     };
   }
 
-  async toggleBookmark(taskId: string) {
-    return this.toggleJoinRow(this.prisma.taskBookmark, taskId);
+  async toggleBookmark(taskId: string, userId: string) {
+    return this.toggleJoinRow(this.prisma.taskBookmark, taskId, userId);
   }
 
-  async toggleLike(taskId: string) {
-    return this.toggleJoinRow(this.prisma.taskLike, taskId, true);
+  async toggleLike(taskId: string, userId: string) {
+    return this.toggleJoinRow(this.prisma.taskLike, taskId, userId, true);
   }
 
-  async toggleSubscribe(taskId: string) {
-    return this.toggleJoinRow(this.prisma.taskSubscriber, taskId, true);
+  async toggleSubscribe(taskId: string, userId: string) {
+    return this.toggleJoinRow(this.prisma.taskSubscriber, taskId, userId, true);
   }
 
   // Shared helper — TaskBookmark uses its own `id` primary key,
   // while TaskLike/TaskSubscriber use a composite (taskId, userId) key.
   // The `compositeKey` flag switches between the two lookup styles.
-  private async toggleJoinRow(model: any, taskId: string, compositeKey = false) {
-    const demoUser = await getOrCreateDemoUser(this.prisma);
-
+  private async toggleJoinRow(model: any, taskId: string, userId: string, compositeKey = false) {
     if (compositeKey) {
       const existing = await model.findUnique({
-        where: { taskId_userId: { taskId, userId: demoUser.id } },
+        where: { taskId_userId: { taskId, userId } },
       });
       if (existing) {
-        await model.delete({ where: { taskId_userId: { taskId, userId: demoUser.id } } });
+        await model.delete({ where: { taskId_userId: { taskId, userId } } });
         return false;
       } else {
-        await model.create({ data: { taskId, userId: demoUser.id } });
+        await model.create({ data: { taskId, userId } });
         return true;
       }
     } else {
       const existing = await model.findUnique({
-        where: { taskId_userId: { taskId, userId: demoUser.id } },
+        where: { taskId_userId: { taskId, userId } },
         select: { id: true },
       });
       if (existing) {
         await model.delete({ where: { id: existing.id } });
         return false;
       } else {
-        await model.create({ data: { taskId, userId: demoUser.id } });
+        await model.create({ data: { taskId, userId } });
         return true;
       }
     }

@@ -39,40 +39,40 @@ export function TaskDetailActions({
 
   const handleSubscribe = useCallback(async () => {
     const next = !subscribed;
-    setSubscribed(next); // optimistic
+    setSubscribed(next);
     try {
       const res = await toggleSubscribe(slug);
       setSubscribed(res.subscribed);
     } catch (e) {
       console.error("Failed to toggle subscribe:", e);
-      setSubscribed(!next); // revert
+      setSubscribed(!next);
     }
   }, [subscribed, slug]);
 
   const handleLike = useCallback(async () => {
     const next = !liked;
-    setLiked(next); // optimistic
+    setLiked(next);
     setLikeCount((prev) => prev + (next ? 1 : -1));
     try {
       const res = await toggleLike(slug);
       setLiked(res.liked);
     } catch (e) {
       console.error("Failed to toggle like:", e);
-      setLiked(!next); // revert
+      setLiked(!next);
       setLikeCount((prev) => prev + (next ? -1 : 1));
     }
   }, [liked, slug]);
 
   const handleBookmark = useCallback(async () => {
     const next = !bookmarked;
-    setBookmarked(next); // optimistic
+    setBookmarked(next);
     setSaveCount((prev) => prev + (next ? 1 : -1));
     try {
       const res = await toggleBookmark(slug, taskId);
       setBookmarked(res.bookmarked);
     } catch (e) {
       console.error("Failed to toggle bookmark:", e);
-      setBookmarked(!next); // revert
+      setBookmarked(!next);
       setSaveCount((prev) => prev + (next ? -1 : 1));
     }
   }, [bookmarked, slug, taskId]);
@@ -100,8 +100,9 @@ export function TaskDetailActions({
       try {
         await navigator.share({ title: taskTitle, url });
         return;
-      } catch (e) {
-        return; // user cancelled share sheet
+      } catch {
+        // User cancelled the native share sheet — not an error worth logging.
+        return;
       }
     }
     handleCopy();

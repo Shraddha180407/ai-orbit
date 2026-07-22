@@ -5,5 +5,7 @@ const router = new Hono();
 const controller = new DevicesController();
 
 router.get('/', (c) => controller.listDevices(c));
+router.get('/slug/:slug', (c) => controller.getDeviceBySlug(c));
+router.get('/:id', (c) => controller.getDeviceById(c));
 
 export { router as devicesRouter };

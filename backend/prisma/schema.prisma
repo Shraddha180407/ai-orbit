@@ -35,8 +35,8 @@ model Company {
   updatedAt DateTime @default(now()) @updatedAt
 
   collectionCompanies CollectionCompany[]
-  tools                Tool[]
-  aiModels             AIModel[]
+  tools               Tool[]
+  aiModels            AIModel[]
 }
 
 model User {
@@ -62,7 +62,6 @@ model User {
   tasksCreated        Task[]               @relation("TaskCreator")
   taskLikes           TaskLike[]           @relation("TaskLikeUser")
   taskSubscriptions   TaskSubscriber[]     @relation("TaskSubscriberUser")
-  
 }
 
 // ---- Module 3: AI Tools ----
@@ -81,6 +80,8 @@ model Tool {
   pricingAmount    Decimal?         @db.Decimal(10, 2)
   billingFrequency BillingFrequency @default(NA)
 
+  isOpenSource Boolean @default(false)
+  isTrending   Boolean @default(false)
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
@@ -372,15 +373,29 @@ model Robot {
 }
 
 model Device {
-  id           String       @id @default(cuid())
-  name         String
-  category     String
-  manufacturer String
-  year         String
-  description  String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @default(now()) @updatedAt
-  tasks        TaskDevice[]
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  manufacturer      String
+  category          String
+  availability      String
+  price             String?
+  year              String
+  month             String?
+  description       String
+  imageUrl          String?
+  manufacturerLogoUrl String?
+  mainTask          String?
+  formFactor        String?
+  country           String?
+  ram               String?
+  aiFeatures        String[] @default([])
+  primaryUseCases   String[] @default([])
+  additionalInfo    String?
+  buyUrl            String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+  tasks              TaskDevice[]
 }
 
 // ---- Auth Module ----
