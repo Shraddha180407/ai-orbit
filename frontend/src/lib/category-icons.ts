@@ -1,10 +1,3 @@
-// ============================================================
-// CATEGORY ICON MAPPING
-// ============================================================
-// Maps task.category.slug -> a lucide-react icon component.
-// No icon data comes from the backend — this is purely a
-// frontend presentational lookup.
-
 import Code2 from 'lucide-react/dist/esm/icons/code-2';
 import FileText from 'lucide-react/dist/esm/icons/file-text';
 import Search from 'lucide-react/dist/esm/icons/search';
@@ -35,10 +28,6 @@ const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   chatbots: MessageSquare,
 };
 
-/**
- * Returns the mapped icon for a category slug, falling back to
- * Sparkles for unknown or missing categories.
- */
 export function getCategoryIcon(categorySlug: string | undefined | null): LucideIcon {
   if (!categorySlug) return Sparkles;
   return CATEGORY_ICON_MAP[categorySlug] ?? Sparkles;

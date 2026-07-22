@@ -1,5 +1,5 @@
 import React from "react";
-import { fetchTasks } from "@/lib/tasks-api";
+import { fetchTasks, type TaskListResponse } from "@/lib/tasks-api";
 import { TasksClient } from "@/components/tasks-client";
 import { TaskErrorState } from "@/components/TaskErrorState";
 
@@ -11,14 +11,21 @@ export const metadata = {
 };
 
 export default async function TasksPage() {
+  let initialData: TaskListResponse | null = null;
+
   try {
-    const initialData = await fetchTasks({ page: 1, sort: "newest" });
-    return <TasksClient initialData={initialData} />;
-  } catch (e) {
+    initialData = await fetchTasks({ page: 1, sort: "newest" });
+  } catch {
+    initialData = null;
+  }
+
+  if (!initialData) {
     return (
       <div className="min-h-screen bg-[#000000] px-6 lg:px-10 xl:px-14 py-8">
         <TaskErrorState message="We couldn't load the Tasks directory right now." />
       </div>
     );
   }
+
+  return <TasksClient initialData={initialData} />;
 }

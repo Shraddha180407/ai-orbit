@@ -24,7 +24,9 @@ type TaskFiltersProps = {
   onSortChange: (value: SortOption) => void;
 };
 
+// Backend now supports ?filter=all|for-you|following — all three enabled.
 const SHOW_OPTIONS: ShowFilter[] = ["All Tasks", "For You", "Following"];
+
 const selectClasses =
   "rounded-lg bg-[#0A0A0C]/60 ring-1 ring-[#232326]/60 text-xs text-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#6E56CF]/60 transition-all duration-200 appearance-none cursor-pointer hover:ring-[#3A3A3E]";
 
@@ -50,20 +52,20 @@ export function TaskFilters({
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-xs text-[#71717A] font-mono uppercase tracking-[0.08em]">Show:</span>
         <div className="flex items-center gap-1.5 rounded-full bg-[#0A0A0C]/60 ring-1 ring-[#232326]/60 p-1">
-          {SHOW_OPTIONS.map((option) => {
-            const isActive = option === showFilter;
+          {SHOW_OPTIONS.map((value) => {
+            const isActive = value === showFilter;
             return (
               <button
-                key={option}
+                key={value}
                 type="button"
-                onClick={() => onShowFilterChange(option)}
+                onClick={() => onShowFilterChange(value)}
                 className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF]/60 ${
                   isActive
                     ? "bg-white text-black shadow-[0_2px_10px_-2px_rgba(255,255,255,0.3)]"
                     : "text-[#A1A1AA] hover:text-white"
                 }`}
               >
-                {option}
+                {value}
               </button>
             );
           })}
