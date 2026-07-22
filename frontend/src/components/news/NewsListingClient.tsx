@@ -6,6 +6,7 @@ import { NewsSearchBar } from "@/components/ui/NewsSearchBar";
 import { FilterChips } from "./FilterChips";
 import { TopicChip } from "./TopicChip";
 import { NewsList } from "./NewsList";
+import { FeaturedStory } from "./FeaturedStory";
 import { LoadingSkeleton } from "./LoadingSkeleton";
 import { ErrorState } from "./ErrorState";
 import { API_URL } from "@/lib/api";
@@ -181,6 +182,15 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   if (selectedSources.length) list = list.filter((a) => selectedSources.includes(a.source));
   list = sortArticles(list, sort, sources);
 
+  // Hero/featured story: only the top-ranked article of the default,
+  // unfiltered feed's first page — never while a category/search/filter/
+  // non-default sort is active (isDefaultView already guarantees list[0]
+  // is the newest article, date-desc). Sliced out of `list` below it so it
+  // isn't shown twice.
+  const showFeatured = isDefaultView && list.length > 0;
+  const featured = showFeatured ? list[0] : null;
+  const restList = showFeatured ? list.slice(1) : list;
+
   const emptyKind: "search" | "empty" = query || selectedTopics.length || selectedSources.length ? "search" : "empty";
   const total = mode === "paginated" ? serverTotal : list.length;
 
@@ -215,28 +225,48 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
       <header>
         <div style={{ minWidth: 0 }}>
+          {!category && (
+            <div
+              className="gap-1.5 px-2.5 h-[22px] mb-2.5 sm:gap-2 sm:h-6 sm:mb-3 md:mb-4"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                borderRadius: "var(--radius-pill)",
+                background: "var(--purple-soft)",
+                border: "1px solid var(--purple-border)",
+              }}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--purple-text)", flex: "none" }} />
+              <span
+                className="text-[10px] sm:text-[11px]"
+                style={{ font: "var(--fw-semibold) inherit/1 var(--font-sans)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--purple-text)" }}
+              >
+                Live feed
+              </span>
+            </div>
+          )}
           <h1
-            className="text-[40px] leading-[1.1] lg:text-[54px] lg:leading-[1.05]"
+            className="text-[30px] leading-[1.15] sm:text-[36px] sm:leading-[1.1] md:text-[46px] md:leading-[1.08] lg:text-[54px] lg:leading-[1.05]"
             style={{ fontFamily: "var(--font-display)", fontWeight: "var(--fw-bold)", letterSpacing: "-0.03em", color: "var(--text-primary)", margin: 0 }}
           >
             {category ? catLabel ?? category : "AI News"}
           </h1>
           {category ? (
             <p
-              className="text-[18px] leading-[1.3] mt-[10px] lg:text-[24px] lg:leading-[1.2] lg:mt-[14px]"
+              className="text-base leading-[1.35] mt-2 sm:text-lg sm:mt-2.5 md:text-xl md:leading-[1.25] md:mt-3 lg:text-2xl lg:leading-[1.2] lg:mt-[14px]"
               style={{ fontFamily: "var(--font-sans)", fontWeight: "var(--fw-medium)", letterSpacing: "-0.02em", color: "var(--text-secondary)" }}
             >
               {total} {catLabel ?? category} stories across the AI ecosystem
             </p>
           ) : (
             <p
-              className="text-[15px] leading-[1.5] mt-3 lg:text-[18px] lg:leading-[1.65] lg:mt-4"
+              className="text-sm leading-[1.5] mt-2 sm:text-[15px] sm:mt-2.5 md:text-base md:leading-[1.6] md:mt-3.5 lg:text-lg lg:leading-[1.65] lg:mt-4"
               style={{
                 fontFamily: "var(--font-sans)",
                 fontWeight: "var(--fw-regular)",
                 letterSpacing: "-0.01em",
                 color: "var(--text-secondary)",
-                maxWidth: 940,
+                maxWidth: 780,
               }}
             >
               Curated news covering the most critical breakthroughs, investments, research, and models across the artificial intelligence landscape.
@@ -245,16 +275,16 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
         </div>
       </header>
 
-      <div className="mt-5 lg:mt-8">
+      <div className="mt-4 sm:mt-5 md:mt-6 lg:mt-8">
         <NewsSearchBar value={query} onChange={setQuery} />
       </div>
 
-      <div className="mt-4 lg:mt-7">
+      <div className="mt-3 sm:mt-4 md:mt-5 lg:mt-7">
         <FilterChips items={filterChips} value={filter} onChange={setFilter} />
       </div>
 
       {(selectedTopics.length > 0 || selectedSources.length > 0) && (
-        <div className="mt-3 lg:mt-4" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <div className="mt-2.5 sm:mt-3 md:mt-3.5 lg:mt-4" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           {selectedTopics.map((t) => (
             <TopicChip key={"t" + t} active onClick={() => toggleTopic(t)}>
               {t} ✕
@@ -279,7 +309,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
       {list.length > 0 && (
         <div
-          className="mt-4 mb-[10px] lg:mt-7 lg:mb-5"
+          className="mt-4 mb-2 sm:mt-5 sm:mb-2.5 md:mt-6 lg:mt-7 lg:mb-5"
           style={{
             font: "var(--fw-semibold) var(--fs-xs)/1 var(--font-sans)",
             letterSpacing: "0.08em",
@@ -294,6 +324,12 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
       <div style={{ height: list.length ? 8 : 20 }} />
 
+      {featured && sources[featured.source] && (
+        <div className="mb-3 sm:mb-4 lg:mb-6">
+          <FeaturedStory article={featured} source={sources[featured.source]} onTopic={toggleTopic} />
+        </div>
+      )}
+
       <div
         className="px-3 lg:px-5"
         style={{
@@ -305,9 +341,9 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
           paddingBottom: 12,
         }}
       >
-        <NewsList articles={list} sources={sources} emptyKind={emptyKind} sort={sort} onSort={onSort} filters={tableFilters} />
+        <NewsList articles={restList} sources={sources} emptyKind={emptyKind} sort={sort} onSort={onSort} filters={tableFilters} />
 
-        {mode === "paginated" && list.length > 0 && (
+        {mode === "paginated" && restList.length > 0 && (
           <div ref={sentinelRef} style={{ padding: "18px 0 8px" }}>
             {isLoadingMore && (
               <div style={{ display: "flex", justifyContent: "center", padding: "12px 0" }}>

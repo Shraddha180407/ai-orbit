@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SortHeader } from "./SortHeader";
 import { FilterDropdown } from "./FilterDropdown";
 import { PublisherIcon } from "./PublisherIcon";
 import { TopicChip } from "./TopicChip";
+import { NewsRowActions } from "./NewsRowActions";
+import { NewsCard } from "./NewsCard";
+import { MobileFilterSheet } from "./MobileFilterSheet";
+import { MobileSortMenu } from "./MobileSortMenu";
 import { Icon } from "@/components/ui/Icon";
 import { ICONS } from "@/lib/icons";
 import { publishedLabel } from "@/lib/news/format";
@@ -23,9 +27,9 @@ export interface NewsTableFilters {
   onClearSources: () => void;
 }
 
-// One table for every viewport: Title | Source | Topics | Published | Actions. No column is
-// pinned — on narrow screens the table's natural min-width exceeds the viewport and the whole
-// thing scrolls horizontally together (see the wrapping .tas-scroll-x div in NewsTable below).
+// Desktop-only (lg: and up) table grid: Title | Source | Topics | Published | Actions. Below
+// that breakpoint the table is replaced entirely by a card feed (see NewsCard.tsx) — no
+// horizontal scrolling of a squeezed table on phones/tablets anymore.
 const GRID = "minmax(320px,2.2fr) minmax(120px,0.7fr) minmax(120px,0.6fr) 90px 84px";
 
 const eyebrowStyle = {
@@ -117,84 +121,6 @@ function NewsTableHead({ sort, onSort, filters, openFilter, setOpenFilter }: New
   );
 }
 
-/** Bookmark + share row actions. */
-function NewsRowActions({ article }: { article: NewsArticle }) {
-  const key = "tas_bm_" + article.id;
-  const [saved, setSaved] = useState(false);
-  const [shared, setShared] = useState(false);
-
-  useEffect(() => {
-    try {
-      setSaved(window.localStorage.getItem(key) === "1");
-    } catch {
-      // localStorage unavailable — ignore
-    }
-  }, [key]);
-
-  const toggle = (e: MouseEvent) => {
-    e.stopPropagation();
-    const next = !saved;
-    setSaved(next);
-    try {
-      if (next) window.localStorage.setItem(key, "1");
-      else window.localStorage.removeItem(key);
-    } catch {
-      // localStorage unavailable — ignore
-    }
-  };
-
-  const share = async (e: MouseEvent) => {
-    e.stopPropagation();
-    const url = `${window.location.origin}/news/${article.id}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: article.headline, text: article.headline, url });
-        return;
-      }
-    } catch {
-      // user cancelled or Web Share unsupported — fall through to clipboard
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      // clipboard unavailable — ignore
-    }
-    setShared(true);
-    setTimeout(() => setShared(false), 1400);
-  };
-
-  const box = (on: boolean, onClick: (e: MouseEvent) => void, path: string, label: string) => (
-    <button
-      onClick={onClick}
-      className="tas-act-box w-9 h-9"
-      data-on={on ? "" : undefined}
-      aria-label={label}
-      title={label}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flex: "none",
-        borderRadius: "var(--news-radius-sm)",
-        cursor: "pointer",
-        transition: "var(--transition-colors)",
-        color: on ? "var(--purple-text)" : "var(--text-tertiary)",
-        background: on ? "var(--purple-soft)" : "transparent",
-        border: "1px solid transparent",
-      }}
-    >
-      <Icon path={path} size={15} fill={on} />
-    </button>
-  );
-
-  return (
-    <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }} onClick={(e) => e.stopPropagation()}>
-      {box(saved, toggle, ICONS.bookmark, saved ? "Saved" : "Save")}
-      {box(shared, share, shared ? ICONS.check : ICONS.share, shared ? "Link copied" : "Share")}
-    </div>
-  );
-}
-
 interface NewsRowProps {
   article: NewsArticle;
   index: number;
@@ -207,6 +133,7 @@ function NewsRow({ article, index, sources, onTopic }: NewsRowProps) {
   const source = sources[article.source];
   const go = () => router.push(`/news/${article.id}`);
   const [primaryTopic] = article.topics;
+  const accent = source.color || "#5E5CE6";
 
   return (
     <div
@@ -224,12 +151,26 @@ function NewsRow({ article, index, sources, onTopic }: NewsRowProps) {
         alignItems: "center",
         padding: "18px 14px",
         borderBottom: "1px solid var(--border-subtle)",
+        borderLeft: `2px solid ${accent}`,
         cursor: "pointer",
         animationDelay: Math.min(index, 12) * 24 + "ms",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-        <PublisherIcon source={source} box={32} />
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flex: "none",
+            width: 36,
+            height: 36,
+            borderRadius: "var(--news-radius-sm)",
+            background: `color-mix(in srgb, ${accent} 14%, transparent)`,
+          }}
+        >
+          <PublisherIcon source={source} box={32} />
+        </span>
         <h3
           className="tas-row-title"
           style={{
@@ -263,7 +204,7 @@ function NewsRow({ article, index, sources, onTopic }: NewsRowProps) {
         </a>
       </div>
       <div style={{ minWidth: 0 }}>
-        <TopicChip maxWidth={130} onClick={onTopic ? () => onTopic(primaryTopic) : undefined}>
+        <TopicChip maxWidth={130} accent={accent} onClick={onTopic ? () => onTopic(primaryTopic) : undefined}>
           {primaryTopic}
         </TopicChip>
       </div>
@@ -293,17 +234,63 @@ interface NewsTableProps {
   filters: NewsTableFilters;
 }
 
+/**
+ * Renders two entirely different layouts for the same data, swapped by CSS
+ * breakpoint (no JS media-query, so there's no layout flash/mismatch risk):
+ *  - below `lg:`: a card feed (1 column on phones, 2 columns from `md:` up
+ *    — see NewsCard.tsx) with its own compact sort/filter toolbar, since the
+ *    per-column SortHeader/FilterDropdown UI has nothing to anchor to
+ *    without table header cells.
+ *  - `lg:` and up: the original sortable/filterable table, unchanged.
+ * Both consume the exact same `filters`/`sort`/`onSort` props from
+ * NewsListingClient, so switching viewport width never desyncs state.
+ */
 export function NewsTable({ articles, sources, sort, onSort, filters }: NewsTableProps) {
   const [openFilter, setOpenFilter] = useState<"topics" | "source" | null>(null);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const activeMobileFilters = filters.selectedSources.length + filters.selectedTopics.length;
 
   return (
-    <div className="tas-scroll-x" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-      <div style={{ minWidth: 820 }}>
-        <NewsTableHead sort={sort} onSort={onSort} filters={filters} openFilter={openFilter} setOpenFilter={setOpenFilter} />
-        <div>
-          {articles.map((a, i) => (
-            <NewsRow key={a.id} article={a} index={i} sources={sources} onTopic={filters.onToggleTopic} />
-          ))}
+    <div>
+      {/* Mobile/tablet toolbar — stands in for the desktop header's sort/filter controls */}
+      <div className="flex lg:hidden gap-2 sm:gap-2.5" style={{ alignItems: "center", padding: "4px 2px 12px" }}>
+        <MobileSortMenu sort={sort} onSort={onSort} />
+        <button
+          onClick={() => setMobileFilterOpen(true)}
+          className="tas-hbtn"
+          data-active={activeMobileFilters > 0 ? "" : undefined}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            height: 36,
+            padding: "0 12px",
+            borderRadius: "var(--news-radius-sm)",
+            font: "var(--fw-medium) var(--fs-sm)/1 var(--font-sans)",
+          }}
+        >
+          <Icon path={ICONS.filter} size={13} />
+          Filter{activeMobileFilters > 0 ? ` (${activeMobileFilters})` : ""}
+        </button>
+      </div>
+      {mobileFilterOpen && <MobileFilterSheet filters={filters} onClose={() => setMobileFilterOpen(false)} />}
+
+      {/* Card feed — phones (1 col), large phones/small tablets (2 cols from sm:), roomier gap from md: */}
+      <div className="grid lg:hidden gap-2.5 sm:grid-cols-2 sm:gap-3 md:gap-4" style={{ gridTemplateColumns: "1fr" }}>
+        {articles.map((a, i) => (
+          <NewsCard key={a.id} article={a} index={i} sources={sources} onTopic={filters.onToggleTopic} />
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden lg:block tas-scroll-x" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <div style={{ minWidth: 820 }}>
+          <NewsTableHead sort={sort} onSort={onSort} filters={filters} openFilter={openFilter} setOpenFilter={setOpenFilter} />
+          <div>
+            {articles.map((a, i) => (
+              <NewsRow key={a.id} article={a} index={i} sources={sources} onTopic={filters.onToggleTopic} />
+            ))}
+          </div>
         </div>
       </div>
     </div>
