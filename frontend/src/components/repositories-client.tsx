@@ -1,19 +1,26 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Repository } from "@/lib/types";
 import { fetchRepositories } from "@/lib/api";
 import { RepositoryHero } from "@/components/ui/RepositoryHero";
 import { RepositoryTable } from "@/components/ui/RepositoryTable";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 import { RepositoryRow } from "@/components/ui/RepositoryRow";
-import { resolveRepositoryLicense } from "@/lib/utils";
+
+const getBackendSortValue = (field: string | null, order: "asc" | "desc"): string | undefined => {
+  if (field === "stars" && order === "desc") return "stars_desc";
+  if (field === "updated") return "newest";
+  if (field === "name" && order === "asc") return "name_asc";
+  return undefined;
+};
 
 export function RepositoriesClient() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
-
+  const router = useRouter();
+  
   const [repos, setRepos] = useState<Repository[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -29,28 +36,43 @@ export function RepositoriesClient() {
   const [repoSearchQuery, setRepoSearchQuery] = useState(initialQuery);
   const [activeRepoSearch, setActiveRepoSearch] = useState(initialQuery);
   const [isRepoFilterOpen, setIsRepoFilterOpen] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Initial fetch
-  useEffect(() => {
-    async function getRepos() {
-      try {
-        const data = await fetchRepositories();
-        // Defensive: guard against a malformed/unexpected response shape so
-        // this can never crash repos.forEach()/filter() downstream again.
-        setRepos(Array.isArray(data.items) ? data.items : []);
-        setNextCursor(data.nextCursor);
-        setHasMore(data.hasMore);
-        setTotal(data.total);
-      } catch (e) {
-        console.error("Failed to fetch repositories:", e);
-      } finally {
-        setIsLoading(false);
-      }
+  // Helper to fetch the initial/reset list based on current filters/sorting from page 1
+  const fetchInitialRepos = async (
+    searchQuery: string,
+    field: typeof sortField,
+    order: typeof sortOrder,
+    topicFilter: string | null = selectedTopic
+  ) => {
+    setIsLoading(true);
+    try {
+      const backendSort = getBackendSortValue(field, order);
+      const data = await fetchRepositories({
+        q: searchQuery || undefined,
+        sort: backendSort,
+        topic: topicFilter || undefined,
+        limit: 15
+      });
+      setRepos(data.items || []);
+      setNextCursor(data.nextCursor);
+      setHasMore(data.hasMore);
+      setTotal(data.total);
+    } catch (e) {
+      console.error("Failed to fetch repositories:", e);
+    } finally {
+      setIsLoading(false);
     }
-    getRepos();
-  }, []);
+  };
+
+  // Initial fetch and query param sync
+  useEffect(() => {
+    const initialTopic = searchParams.get("topic") || null;
+    setSelectedTopic(initialTopic);
+    fetchInitialRepos(activeRepoSearch, sortField, sortOrder, initialTopic);
+  }, [searchParams]);
 
   // IntersectionObserver for server-side infinite scroll
   useEffect(() => {
@@ -62,7 +84,14 @@ export function RepositoriesClient() {
           if (isFetchingMore) return;
           setIsFetchingMore(true);
           try {
-            const data = await fetchRepositories(15, nextCursor);
+            const backendSort = getBackendSortValue(sortField, sortOrder);
+            const data = await fetchRepositories({
+              limit: 15,
+              cursor: nextCursor,
+              q: activeRepoSearch || undefined,
+              sort: backendSort,
+              topic: selectedTopic || undefined
+            });
             setRepos((prev) => {
               const existingIds = new Set(prev.map(r => r.id));
               const newItems = (data.items || []).filter(r => !existingIds.has(r.id));
@@ -91,14 +120,21 @@ export function RepositoriesClient() {
         observer.unobserve(currentSentinel);
       }
     };
-  }, [isLoading, isFetchingMore, hasMore, nextCursor]);
+  }, [isLoading, isFetchingMore, hasMore, nextCursor, activeRepoSearch, sortField, sortOrder, selectedTopic]);
 
   function handleSort(field: "stars" | "forks" | "size" | "updated") {
+    let newOrder: "asc" | "desc" = "desc";
     if (sortField === field) {
-      setSortOrder(prev => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortOrder("desc");
+      newOrder = sortOrder === "asc" ? "desc" : "asc";
+    }
+
+    setSortField(field);
+    setSortOrder(newOrder);
+
+    // If there is a backend equivalent, trigger a refetch from page 1
+    const backendSort = getBackendSortValue(field, newOrder);
+    if (backendSort) {
+      fetchInitialRepos(activeRepoSearch, field, newOrder, selectedTopic);
     }
   }
 
@@ -106,7 +142,7 @@ export function RepositoriesClient() {
   const licenseCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
     repos.forEach((repo) => {
-      const license = resolveRepositoryLicense(repo.name);
+      const license = repo.license;
       if (license) {
         counts[license] = (counts[license] || 0) + 1;
       }
@@ -125,7 +161,7 @@ export function RepositoriesClient() {
     return counts;
   }, [repos]);
 
-  // Filter repositories by name
+  // Filter repositories by name (unsupported filters stay client-side)
   const nameFilteredRepos = React.useMemo(() => {
     if (!activeRepoSearch) return repos;
     const query = activeRepoSearch.toLowerCase();
@@ -141,7 +177,7 @@ export function RepositoriesClient() {
   // Filter repositories by license
   const filteredRepos = React.useMemo(() => {
     if (!selectedLicense) return companyFilteredRepos;
-    return companyFilteredRepos.filter((repo) => resolveRepositoryLicense(repo.name) === selectedLicense);
+    return companyFilteredRepos.filter((repo) => repo.license === selectedLicense);
   }, [companyFilteredRepos, selectedLicense]);
 
   // Sort filtered repositories
@@ -156,15 +192,14 @@ export function RepositoriesClient() {
         valA = a.stars;
         valB = b.stars;
       } else if (sortField === "forks") {
-        valA = Math.round(a.stars / 8.5) || 12;
-        valB = Math.round(b.stars / 8.5) || 12;
+        valA = a.forks ?? 0;
+        valB = b.forks ?? 0;
       } else if (sortField === "size") {
         valA = a.stars / 210 + 1.2;
         valB = b.stars / 210 + 1.2;
       } else if (sortField === "updated") {
-        // High stars mock more recent update times for client demonstration consistency
-        valA = (a.stars % 6) + 2;
-        valB = (b.stars % 6) + 2;
+        valA = new Date(a.syncedAt || a.githubCreatedAt || 0).getTime();
+        valB = new Date(b.syncedAt || b.githubCreatedAt || 0).getTime();
       }
 
       return sortOrder === "asc" ? valA - valB : valB - valA;
@@ -174,18 +209,42 @@ export function RepositoriesClient() {
   function handleApplyRepoSearch() {
     setActiveRepoSearch(repoSearchQuery);
     setIsRepoFilterOpen(false);
+    fetchInitialRepos(repoSearchQuery, sortField, sortOrder, selectedTopic);
   }
 
   function handleResetRepoSearch() {
     setRepoSearchQuery("");
     setActiveRepoSearch("");
     setIsRepoFilterOpen(false);
+    fetchInitialRepos("", sortField, sortOrder, selectedTopic);
+  }
+
+  function handleClearTopic() {
+    const params = new URLSearchParams(window.location.search);
+    params.delete("topic");
+    router.push(`/repositories?${params.toString()}`);
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      <main className="mx-auto max-w-[1440px] px-[50px] py-12 flex-1 w-full">
+      <main className="mx-auto max-w-[1440px] px-8 py-12 flex-1 w-full">
         <RepositoryHero />
+
+        {/* Active Topic Filter Chip */}
+        {selectedTopic && (
+          <div className="flex items-center gap-2 mb-6 bg-white/[0.02] border border-white/[0.08] px-3.5 py-2 rounded-lg w-fit shadow-md animate-fade-in">
+            <span className="text-xs text-white/50">Active Topic:</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white/[0.08] text-white">
+              {selectedTopic}
+            </span>
+            <button
+              onClick={handleClearTopic}
+              className="text-xs text-red-400 hover:text-red-300 transition-colors ml-2 cursor-pointer font-medium"
+            >
+              Clear
+            </button>
+          </div>
+        )}
 
         {isLoading ? (
           <RepositoryTable
@@ -217,7 +276,7 @@ export function RepositoriesClient() {
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="grid grid-cols-[30px_1fr_95px_110px_60px] md:grid-cols-[30px_1fr_180px_95px_130px_60px] lg:grid-cols-[30px_1fr_180px_95px_95px_130px_110px_60px] xl:grid-cols-[30px_1fr_180px_95px_95px_130px_95px_110px_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] w-full animate-pulse border-b border-white/[0.06] last:border-b-0"
+                className="grid grid-cols-[30px_minmax(0,2.5fr)_minmax(0,1.8fr)_minmax(0,1.5fr)_60px] md:grid-cols-[30px_minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] lg:grid-cols-[30px_minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] xl:grid-cols-[30px_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] w-full animate-pulse border-b border-white/[0.06] last:border-b-0"
               >
                 {/* Col 1 */}
                 <div className="h-3 w-4 rounded bg-white/[0.04] mx-auto" />

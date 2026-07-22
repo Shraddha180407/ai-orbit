@@ -197,7 +197,7 @@ export function ToolDetailClient() {
             href={tool.websiteUrl}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 sm:py-2 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover hover:-translate-y-0.5"
+            className="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 sm:py-2 text-sm font-semibold text-neutral-950 shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover hover:-translate-y-0.5"
           >
             Visit Website
             <ArrowUpRight size={16} aria-hidden="true" />
@@ -223,10 +223,49 @@ export function ToolDetailClient() {
               Similar Tools
             </h2>
 
-            <div role="list" className="flex flex-col gap-4">
+            <div role="list" className="flex flex-col gap-3">
               {similarTools.map((similar) => (
-                <div key={similar.id} role="listitem">
-                  <ToolCard tool={similar} />
+                <div
+                  key={similar.id}
+                  className="group relative flex rounded-xl border border-border/40 bg-surface/20 hover:bg-surface/60 hover:border-border transition-colors"
+                >
+                  <Link
+                    href={`/tools/${similar.slug}`}
+                    className="flex flex-1 gap-3 p-3 pr-10 min-w-0"
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white p-1.5">
+                      {similar.logoUrl ? (
+                        <Image src={similar.logoUrl} alt={similar.name} width={40} height={40} className="object-contain" />
+                      ) : (
+                        <span className="font-bold text-neutral-900">{similar.name.charAt(0)}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col justify-center min-w-0">
+                      <h3 className="font-semibold text-sm text-foreground group-hover:text-accent transition-colors truncate">{similar.name}</h3>
+                      <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-foreground-muted">
+                        <span className="flex items-center gap-1">
+                          <span className="text-signal text-[10px]">★</span>
+                          <span>{similar.avgRating !== null && similar.avgRating > 0 ? similar.avgRating.toFixed(1) : 'New'}</span>
+                        </span>
+                        {similar.categories[0] && (
+                          <>
+                            <span className="h-1 w-1 rounded-full bg-border" />
+                            <span className="truncate">{similar.categories[0].category.name}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="absolute top-2.5 right-2.5 z-10">
+                    <BookmarkButton
+                      toolId={similar.id}
+                      toolSlug={similar.slug}
+                      initialBookmarked={false}
+                      initialCount={similar._count?.bookmarks || 0}
+                      iconOnly={true}
+                      size="sm"
+                    />
+                  </div>
                 </div>
               ))}
             </div>

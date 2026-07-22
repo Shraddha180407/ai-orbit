@@ -24,6 +24,13 @@ export class HomepageService {
       this.prisma.news.findMany({
         take: 4,
         orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          publishedAt: true,
+          publisher: { select: { name: true } },
+        },
       }),
     ]);
 

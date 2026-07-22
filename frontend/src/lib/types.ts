@@ -15,6 +15,9 @@ export type ToolCardData = {
   _count: { reviews: number; bookmarks: number };
   avgRating: number | null;
   company: { slug: string; name: string } | null;
+  createdAt: string;
+  isOpenSource: boolean;
+  isTrending: boolean;
 };
 
 export type SortOption = "newest" | "oldest" | "name-asc" | "name-desc" | "rating";
@@ -62,6 +65,8 @@ export type ToolDetailData = {
   categories: { category: { slug: string; name: string } }[];
   tags: { tag: { slug: string; name: string } }[];
   _count: { reviews: number; bookmarks: number };
+  isOpenSource: boolean;
+  isTrending: boolean;
 };
 
 export type SimilarToolData = {

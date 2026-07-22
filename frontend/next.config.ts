@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/:type(collections|countries|devices|fundraises|investors|models|news|repositories|robots|tasks|tools|videos)/:slug",
+        source: "/:type(collections|countries|devices|fundraises|investors|models|news|robots|tasks|tools|videos)/:slug",
         destination: "/p/:type/:slug",
       },
     ];

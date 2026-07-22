@@ -65,7 +65,6 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     fundraises: "fundraise",
     investors: "investor",
     models: "model",
-    repositories: "repository",
     robots: "robot",
     tasks: "task"
   };
