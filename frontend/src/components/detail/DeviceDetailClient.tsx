@@ -231,14 +231,14 @@ export function DeviceDetailClient() {
           <div className="px-6 py-3 bg-[#131316] border-b border-[#232326]">
             <h2 className="text-xs font-bold text-[#A1A1AA] uppercase tracking-widest">Specifications</h2>
           </div>
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-5">
-            {device.formFactor && <SpecRow label="Form factor" value={device.formFactor} />}
-            {device.ram && <SpecRow label="RAM" value={device.ram} />}
-            {device.country && <SpecRow label="Made in" value={device.country} />}
-            <SpecRow label="Release date" value={device.month || device.year || "—"} />
+          <div className="divide-y divide-[#232326]">
+            {device.formFactor && <SpecRowDivider label="Form factor" value={device.formFactor} />}
+            {device.ram && <SpecRowDivider label="RAM" value={device.ram} />}
+            {device.country && <SpecRowDivider label="Made in" value={device.country} />}
+            <SpecRowDivider label="Release date" value={device.month || device.year || "—"} />
             {device.aiFeatures && device.aiFeatures.length > 0 && (
-              <div className="md:col-span-2">
-                <p className="text-sm text-[#52525B] mb-2">AI features</p>
+              <div className="flex items-start gap-4 px-6 py-4">
+                <span className="text-sm text-[#52525B] w-36 shrink-0">AI features</span>
                 <div className="flex flex-wrap gap-2">
                   {device.aiFeatures.map((f) => (
                     <span key={f} className="text-xs bg-[#18181C] border border-[#232326] text-[#A1A1AA] px-3 py-1 rounded-full">
@@ -249,8 +249,8 @@ export function DeviceDetailClient() {
               </div>
             )}
             {device.primaryUseCases && device.primaryUseCases.length > 0 && (
-              <div className="md:col-span-2">
-                <p className="text-sm text-[#52525B] mb-2">Primary use cases</p>
+              <div className="flex items-start gap-4 px-6 py-4">
+                <span className="text-sm text-[#52525B] w-36 shrink-0">Primary use cases</span>
                 <div className="flex flex-wrap gap-2">
                   {device.primaryUseCases.map((u) => (
                     <span key={u} className="text-xs bg-[#18181C] border border-[#232326] text-[#A1A1AA] px-3 py-1 rounded-full">
@@ -277,20 +277,23 @@ export function DeviceDetailClient() {
 
         {/* Similar Devices */}
         {similar.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2 uppercase tracking-widest">
+          <div className="mt-8 rounded-xl border border-[#232326] bg-[#0D0D0F] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#232326] flex items-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-[#6E56CF]"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
-              Similar Devices
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <h2 className="text-xs font-bold text-[#A1A1AA] uppercase tracking-widest">Similar Devices</h2>
+            </div>
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {similar.map((d) => (
                 <Link
                   key={d.id}
                   href={`/devices/${d.slug || d.id}`}
-                  className="rounded-xl border border-[#232326] bg-[#0D0D0F] hover:border-[#6E56CF]/40 transition-all group overflow-hidden"
+                  className="rounded-xl border border-[#232326] bg-[#0D0D0F] transition-all group overflow-hidden"
+                  style={{}}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = `${d.mainTaskColor || '#6E56CF'}60`; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}
                 >
                   {/* Image with overlays */}
-                  <div className="relative h-40 bg-[#18181C] flex items-center justify-center overflow-hidden">
+                  <div className="relative h-52 bg-[#18181C] flex items-center justify-center overflow-hidden">
                     {d.imageUrl ? (
                       <img
                         src={d.imageUrl}
@@ -303,7 +306,11 @@ export function DeviceDetailClient() {
                     )}
                     {/* Name overlay bottom left */}
                     <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                      <p className="text-xs font-bold text-white truncate">{d.name}</p>
+                      <p className="text-xs font-bold text-white truncate group-hover:text-white transition-colors"
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = d.mainTaskColor || '#6E56CF'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'white'; }}>
+                        {d.name}
+                      </p>
                       <p className="text-[10px] text-[#A1A1AA]">{d.category} · {d.manufacturer}</p>
                     </div>
                     {/* Date badge top right */}
@@ -345,6 +352,15 @@ function SpecRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start gap-4">
       <span className="text-sm text-[#52525B] w-28 shrink-0">{label}</span>
+      <span className="text-sm text-white">{value}</span>
+    </div>
+  );
+}
+
+function SpecRowDivider({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-4 px-6 py-4">
+      <span className="text-sm text-[#52525B] w-36 shrink-0">{label}</span>
       <span className="text-sm text-white">{value}</span>
     </div>
   );
