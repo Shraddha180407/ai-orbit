@@ -31,6 +31,14 @@ export class DevicesService {
   async getDeviceById(id: string) {
     const device = await this.prisma.device.findUnique({
       where: { id },
+      // Fetch related tasks through the TaskDevice join table
+      include: {
+        tasks: {
+          include: {
+            task: true,
+          }
+        }
+      }
     });
 
     if (!device) {
@@ -43,6 +51,14 @@ export class DevicesService {
   async getDeviceBySlug(slug: string) {
     const device = await this.prisma.device.findUnique({
       where: { slug },
+      // Fetch related tasks through the TaskDevice join table
+      include: {
+        tasks: {
+          include: {
+            task: true,
+          }
+        }
+      }
     });
 
     if (!device) {
