@@ -7,6 +7,14 @@ const MONTH_NAMES = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
 
+// Mappings for UI colors based on task types
+const TASK_COLORS: Record<string, string> = {
+  "Gaming": "text-purple-500 bg-purple-100",
+  "Productivity": "text-blue-500 bg-blue-100",
+  "Creative": "text-pink-500 bg-pink-100",
+  "Default": "text-gray-500 bg-gray-100"
+};
+
 /**
  * Generates a URL-friendly slug from a device name
  * @param name - The device name
@@ -20,20 +28,6 @@ export function generateSlug(name: string): string {
     .replace(/[\s_]+/g, '-') // Replace spaces and underscores with hyphens
     .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
     .replace(/^-+|-+$/g, ''); // Remove leading and trailing hyphens
-}
-
-/**
- * Validates and formats availability status
- * @param availability - The availability status
- * @returns A validated availability string
- * @throws Error if availability is not one of the allowed values
- */
-export function validateAvailability(availability: string): string {
-  const validAvailabilities = ['Available', 'Pre-order', 'Announced', 'Discontinued'];
-  if (!validAvailabilities.includes(availability)) {
-    throw new Error(`Invalid availability status. Must be one of: ${validAvailabilities.join(', ')}`);
-  }
-  return availability;
 }
 
 /**
@@ -153,15 +147,25 @@ export function transformDeviceForListing(device: any): any {
     slug: device.slug,
     name: device.name,
     manufacturer: device.manufacturer,
+    
+    // NEW: Generated UI Fields
+    manufacturerSlug: generateSlug(device.manufacturer),
+    
     category: device.category,
-    availability: validateAvailability(device.availability),
+    availability: device.availability, // Safely passed through from Prisma Enum
     price: formatPrice(device.price),
     year: device.year,
     month: formatMonth(device.month),
     description: device.description,
-    imageUrl: validateImageUrl(device.imageUrl),
-    manufacturerLogoUrl: validateImageUrl(device.manufacturerLogoUrl),
+    
+    // REQUIRED: Fallback to original string so it never returns null
+    imageUrl: validateImageUrl(device.imageUrl) || device.imageUrl || '',
+    images: device.imageUrl ? [device.imageUrl] : [], // NEW: Wrapped in array
+    manufacturerLogoUrl: validateImageUrl(device.manufacturerLogoUrl) || device.manufacturerLogoUrl || '',
+    
     mainTask: device.mainTask,
+    mainTaskColor: TASK_COLORS[device.mainTask] || TASK_COLORS["Default"], // NEW: Mapped UI color
+    
     formFactor: device.formFactor,
     country: device.country,
     aiFeatures: device.aiFeatures || [],
@@ -180,9 +184,8 @@ export function transformDeviceForDetail(device: any): any {
   return {
     ...listingData,
     ram: device.ram,
-    aiFeatures: device.aiFeatures || [],
-    primaryUseCases: device.primaryUseCases || [],
     additionalInfo: device.additionalInfo,
-    buyUrl: validateImageUrl(device.buyUrl),
+    buyUrl: validateImageUrl(device.buyUrl), // Optional field, so null is fine here
+    tasks: device.tasks || [] // Include relational tasks if fetched from DB
   };
 }

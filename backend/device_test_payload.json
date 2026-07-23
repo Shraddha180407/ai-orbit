@@ -1,0 +1,36 @@
+{
+  "devices": [
+    {
+      "slug": "orbit-pad-pro",
+      "name": "Orbit Pad Pro",
+      "manufacturer": "Orbit Inc",
+      "category": "Tablet",
+      "availability": "Available",
+      "price": "$999",
+      "year": "2026",
+      "month": "July",
+      "description": "A high-performance tablet for AI developers.",
+      "imageUrl": "https://example.com/orbit-pad.png",
+      "manufacturerLogoUrl": "https://example.com/orbit-logo.png",
+      "mainTask": "Generative Design",
+      "formFactor": "Slate",
+      "country": "USA",
+      "ram": "16GB",
+      "aiFeatures": ["On-device LLM", "Image generation"],
+      "primaryUseCases": ["Prototyping", "Media creation"],
+      "additionalInfo": "Includes an active stylus.",
+      "buyUrl": "https://orbit-pad-pro.example.com/buy",
+      "tasks": [
+        {
+          "slug": "on-device-image-generation",
+          "title": "On-Device Image Generation",
+          "description": "Generating images without an internet connection using local LLMs.",
+          "category": {
+            "slug": "design",
+            "name": "Design"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -372,20 +372,27 @@ model Robot {
   tasks        TaskRobot[]
 }
 
+enum Availability {
+  Available
+  PreOrder     @map("Pre-order")
+  Announced
+  Discontinued
+}
+
 model Device {
   id                String   @id @default(cuid())
   name              String
   slug              String   @unique
   manufacturer      String
   category          String
-  availability      String
+  availability      Availability @default(Announced)
   price             String?
   year              String
   month             String?
   description       String
-  imageUrl          String?
-  manufacturerLogoUrl String?
-  mainTask          String?
+  imageUrl          String
+  manufacturerLogoUrl String
+  mainTask          String
   formFactor        String?
   country           String?
   ram               String?

@@ -24,7 +24,7 @@ import { TaskErrorState } from "./TaskErrorState";
 import { TaskAuthRequired } from "./TaskAuthRequired";
 
 type TasksClientProps = {
-  initialData: TaskListResponse;
+  initialData?: TaskListResponse;
 };
 
 const COLUMN_LABELS = ["SUBSCRIBERS", "SAVES", "TOOLS", "MODELS", "ROBOTS", "DEVICES"];
@@ -42,11 +42,11 @@ function showFilterToApiFilter(show: ShowFilter): FilterOption {
 }
 
 export function TasksClient({ initialData }: TasksClientProps) {
-  const [tasks, setTasks] = useState<Task[]>(initialData.tasks);
-  const [categories, setCategories] = useState<Category[]>(initialData.categories);
-  const [total, setTotal] = useState(initialData.total);
-  const [page, setPage] = useState(initialData.page);
-  const [totalPages, setTotalPages] = useState(initialData.totalPages);
+  const [tasks, setTasks] = useState<Task[]>(initialData?.tasks ?? []);
+const [categories, setCategories] = useState<Category[]>(initialData?.categories ?? []);
+const [total, setTotal] = useState(initialData?.total ?? 0);
+const [page, setPage] = useState(initialData?.page ?? 1);
+const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
 
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,16 +104,20 @@ export function TasksClient({ initialData }: TasksClientProps) {
   );
 
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      loadPage(1, false);
-    }, 300);
+  if (initialData && search === "" && !category) {
+    return;
+  }
 
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryParams]);
+  if (debounceRef.current) clearTimeout(debounceRef.current);
+
+  debounceRef.current = setTimeout(() => {
+    loadPage(1, false);
+  }, 300);
+
+  return () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+  };
+}, [queryParams]);
 
   const loadMore = useCallback(() => {
     if (isFetching || page >= totalPages) return;
@@ -138,7 +142,11 @@ export function TasksClient({ initialData }: TasksClientProps) {
     };
   }, [isFetching, page, totalPages, loadMore, authRequired]);
 
-  const isInitialLoading = isFetching && tasks.length === 0 && !error && !authRequired;
+  const isInitialLoading =
+  isFetching &&
+  tasks.length === 0 &&
+  !error &&
+  !authRequired;
 
   const subtitle = useMemo(() => {
     if (authRequired) return null;
