@@ -236,7 +236,14 @@ export function DevicesClient() {
   return (
     <main className="w-full px-6 md:px-10 py-8 flex-1">
       {/* Page Header */}
-      <div className="flex flex-col items-center text-center mb-6">
+<div className="relative flex flex-col items-center text-center mb-6 py-10 overflow-hidden">
+  {/* Glow blobs */}
+  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[250px] rounded-full blur-[120px] opacity-25 pointer-events-none"
+    style={{ background: "radial-gradient(ellipse, #E91E8C 0%, transparent 70%)" }} />
+  <div className="absolute top-4 left-1/3 w-[350px] h-[180px] rounded-full blur-[100px] opacity-15 pointer-events-none"
+    style={{ background: "radial-gradient(ellipse, #FF1F8C 0%, transparent 70%)" }} />
+  <div className="absolute top-4 right-1/3 w-[350px] h-[180px] rounded-full blur-[100px] opacity-15 pointer-events-none"
+    style={{ background: "radial-gradient(ellipse, #C2185B 0%, transparent 70%)" }} />
         <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-2">
           AI Devices & Wearables
         </h1>
