@@ -40,7 +40,12 @@ function SignInForm() {
         const data = await res.json().catch(() => ({}));
         setError(data.error || 'Invalid email or password.');
       } else {
-        window.location.href = '/dashboard';
+        const data = await res.json();
+        if (data.user?.role === 'ADMIN') {
+          window.location.href = '/admin';
+        } else {
+          window.location.href = '/dashboard';
+        }
       }
     } catch {
       setError('An error occurred during sign in.');

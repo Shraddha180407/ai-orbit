@@ -279,6 +279,18 @@ export function getDeviceBySlug(slug: string): DeviceData | null {
   return DEVICES_DATA.find((d) => d.slug === slug || d.id === slug) || null;
 }
 
+const MAIN_TASK_COLORS = [
+  "#6E56CF", "#E85D4A", "#0082FB", "#34A853", "#FF9900",
+  "#E91E8C", "#00BCD4", "#FF6B35", "#8BC34A", "#9C27B0",
+];
+
+export function getMainTaskColor(mainTask: string): string {
+  if (!mainTask) return MAIN_TASK_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < mainTask.length; i++) hash = mainTask.charCodeAt(i) + ((hash << 5) - hash);
+  return MAIN_TASK_COLORS[Math.abs(hash) % MAIN_TASK_COLORS.length];
+}
+
 export function getSimilarDevices(device: DeviceData, count = 4): DeviceData[] {
   return DEVICES_DATA.filter(
     (d) => d.id !== device.id && d.category === device.category

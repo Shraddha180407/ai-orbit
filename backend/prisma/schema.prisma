@@ -59,6 +59,9 @@ model User {
   collections         Collection[]
   collectionBookmarks CollectionBookmark[]
   taskBookmarks       TaskBookmark[]
+
+  reportsMade         Report[] @relation("Reporter")
+  reportsAgainst      Report[] @relation("ReportedUser")
   tasksCreated        Task[]               @relation("TaskCreator")
   taskLikes           TaskLike[]           @relation("TaskLikeUser")
   taskSubscriptions   TaskSubscriber[]     @relation("TaskSubscriberUser")
@@ -88,6 +91,7 @@ model Tool {
 
   categories ToolCategory[]
   tags       ToolTag[]
+  reports    Report[]
 
   reviews   Review[]
   bookmarks Bookmark[]
@@ -258,6 +262,7 @@ model News {
   bookmarks NewsBookmark[]
   votes     NewsVote[]
   comments  NewsComment[]
+  reports   Report[]
 
   @@index([publishedAt])
   @@index([publisherId])
@@ -724,3 +729,23 @@ model TaskBookmark {
   @@index([taskId])
   @@index([userId])
 }
+
+model Report {
+  id             String   @id @default(cuid())
+  status         String   @default("OPEN")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  reporterId     String
+  reporter       User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  reportedUserId String?
+  reportedUser   User?    @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  reportedToolId String?
+  reportedTool   Tool?    @relation(fields: [reportedToolId], references: [id], onDelete: Cascade)
+
+  reportedNewsId String?
+  reportedNews   News?    @relation(fields: [reportedNewsId], references: [id], onDelete: Cascade)
+}
+

@@ -11,9 +11,17 @@ import { ToolGrid } from "@/components/ToolGrid";
 import { Pagination } from "@/components/Pagination";
 import { API_URL } from "@/lib/api";
 import type { SortOption } from "@/lib/types";
+import { useUser } from "@/hooks/use-user";
+import { Button } from "@/components/ui/shadcn-button";
+import { Plus } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export function ToolsClient() {
   const searchParams = useSearchParams();
+  const { user } = useUser();
+  const isAdmin = user?.role === 'ADMIN';
 
   const [tools, setTools] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
@@ -21,6 +29,12 @@ export function ToolsClient() {
   const [totalPages, setTotalPages] = useState(1);
   const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Admin Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ name: '', slug: '', description: '', websiteUrl: '', pricingModel: 'FREE' });
+  const [isSaving, setIsSaving] = useState(false);
 
   const params = {
     q: searchParams.get("q") || undefined,
@@ -30,8 +44,7 @@ export function ToolsClient() {
     page: searchParams.get("page") || undefined,
   };
 
-  useEffect(() => {
-    async function fetchTools() {
+  const fetchTools = async () => {
       setIsLoading(true);
       try {
         const query = new URLSearchParams();
@@ -57,9 +70,57 @@ export function ToolsClient() {
       }
     }
 
+  useEffect(() => {
+    
+
     fetchTools();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.toString()]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const url = editingId ? `${API_URL}/api/admin/tools/${editingId}` : `${API_URL}/api/admin/tools`;
+      const method = editingId ? 'PATCH' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Failed to save tool');
+      toast.success(editingId ? 'Tool updated successfully' : 'Tool added successfully');
+      setIsModalOpen(false);
+      fetchTools();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/tools/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to delete tool');
+      toast.success('Tool deleted successfully');
+      fetchTools();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const openAdd = () => {
+    setEditingId(null);
+    setFormData({ name: '', slug: '', description: '', websiteUrl: '', pricingModel: 'FREE' });
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (tool: any) => {
+    setEditingId(tool.id);
+    setFormData({ name: tool.name || '', slug: tool.slug || '', description: tool.description || '', websiteUrl: tool.websiteUrl || '', pricingModel: tool.pricingModel || 'FREE' });
+    setIsModalOpen(true);
+  };
 
   return (
     <main className="mx-auto max-w-[1070px] px-6 py-10">
@@ -72,11 +133,18 @@ export function ToolsClient() {
       </Link>
 
       <header className="mb-8 flex flex-col gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">AI Tools</h1>
-          <p className="mt-1 text-sm text-foreground-muted">
-            {total} tool{total === 1 ? "" : "s"} across every category
-          </p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">AI Tools</h1>
+            <p className="mt-1 text-sm text-foreground-muted">
+              {total} tool{total === 1 ? "" : "s"} across every category
+            </p>
+          </div>
+          {isAdmin && (
+            <Button className="bg-white text-black hover:bg-neutral-200" onClick={openAdd}>
+              <Plus className="h-4 w-4 mr-2" /> Add Tool
+            </Button>
+          )}
         </div>
         <SearchBar defaultValue={params.q} />
       </header>
@@ -96,11 +164,26 @@ export function ToolsClient() {
           </div>
         ) : (
           <>
-            <ToolGrid tools={tools} />
+            <ToolGrid tools={tools} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
             <Pagination page={page} totalPages={totalPages} params={params} />
           </>
         )}
       </div>
+
+      <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? 'Edit Tool' : 'Add Tool'} footer={
+        <>
+          <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+          <Button onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save'}</Button>
+        </>
+      }>
+        <div className="space-y-3">
+          <div><label className="text-xs text-[#8A8F98]">Name</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Slug</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Website URL</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" value={formData.websiteUrl} onChange={e => setFormData({...formData, websiteUrl: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Pricing Model</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="FREE, FREEMIUM, etc." value={formData.pricingModel} onChange={e => setFormData({...formData, pricingModel: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Description</label><textarea className="w-full p-2 text-sm bg-[#111113] border border-[#1C1C1F] text-white rounded-md h-20" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} /></div>
+        </div>
+      </Modal>
     </main>
   );
 }

@@ -30,11 +30,13 @@ const nextConfig: NextConfig = {
   // included in each edge-function bundle (critical on free plan: 3 MiB cap).
   experimental: {
     optimizePackageImports: [
+
       "lucide-react",          // 1000+ icons — biggest win: ~1 MiB per function
       "@tanstack/react-query",
       "sonner",
       "clsx",
       "tailwind-merge",
+      "recharts",
     ],
   },
   
