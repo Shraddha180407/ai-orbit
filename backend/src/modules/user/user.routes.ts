@@ -2,8 +2,11 @@ import { Hono } from 'hono';
 import { UserController } from './user.controller.js';
 import { UserService } from './user.service.js';
 import { getPrisma } from '../../lib/prisma.js';
+import { jwtMiddleware } from '../../middleware/jwt.js';
 
 export const userRouter = new Hono();
+
+userRouter.use('*', jwtMiddleware);
 
 // We initialize the controller inside the route handlers to get access to context Prisma
 userRouter.get('/saved-tools', (c) => {

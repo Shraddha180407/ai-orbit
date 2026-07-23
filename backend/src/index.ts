@@ -16,6 +16,7 @@ import { repositoriesRouter } from './modules/repositories/repositories.routes.j
 import { robotsRouter } from './modules/robots/robots.routes.js'
 import { homepageRouter } from './modules/homepage/homepage.routes.js'
 import { toolsRouter } from './modules/tools/tools.routes.js'
+import { userRouter } from './modules/user/user.routes.js'
 import { getPrisma } from './lib/prisma.js'
 import { runIngestion } from './modules/ingestion/ingestion.service.js'
 import type { IngestionContext } from './modules/ingestion/pipeline.js'
@@ -55,6 +56,7 @@ app.route('/api/news', newsRouter)
 app.route('/api/ingestion', ingestionRouter)
 app.route('/logos/publishers', logosRouter)
 import { adminRouter } from './modules/admin/admin.routes.js'
+import { bookmarksRouter } from './modules/bookmarks/bookmarks.routes.js'
 
 app.route('/api/auth', authRoutes)
 app.route('/api/v1/leaderboard', leaderboardRouter)
@@ -68,6 +70,8 @@ app.route('/api/admin', adminRouter)
 app.route('/api/v1/tasks', tasksRouter)
 app.route('/api/v1/homepage', homepageRouter)
 app.route('/api/v1/tools', toolsRouter)
+app.route('/api/user', userRouter)
+app.route('/api/bookmarks', bookmarksRouter)
 
 app.get('/', (c) => {
   return c.json({

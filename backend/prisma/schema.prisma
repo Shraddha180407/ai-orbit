@@ -56,12 +56,11 @@ model User {
   bookmarks           Bookmark[]
   accounts            Account[]
   sessions            Session[]
-  reports             Report[]             @relation("Reporter")
-  reported            Report[]             @relation("ReportedUser")
   toolHistory         ToolHistory[]
   collections         Collection[]
   collectionBookmarks CollectionBookmark[]
   taskBookmarks       TaskBookmark[]
+    linkBookmarks       LinkBookmark[]
 
   reportsMade         Report[] @relation("Reporter")
   reportsAgainst      Report[] @relation("ReportedUser")
@@ -71,31 +70,6 @@ model User {
 }
 
 
-
-model Report {
-  id     String @id @default(cuid())
-  reason String
-  status String @default("PENDING") // PENDING, APPROVED, REJECTED, IGNORED
-
-  reporterId String
-  reporter   User   @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-
-  reportedUserId String?
-  reportedUser   User?   @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
-
-  reportedToolId String?
-  reportedTool   Tool?   @relation(fields: [reportedToolId], references: [id], onDelete: SetNull)
-
-  reportedNewsId String?
-  reportedNews   News?   @relation(fields: [reportedNewsId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([reporterId])
-  @@index([status])
-
-}
 
 // ---- Module 3: AI Tools ----
 
@@ -121,7 +95,6 @@ model Tool {
 
   categories ToolCategory[]
   tags       ToolTag[]
-  reports    Report[]
 
   reviews     Review[]
   bookmarks   Bookmark[]
@@ -791,4 +764,17 @@ model Report {
 
   reportedNewsId String?
   reportedNews   News?    @relation(fields: [reportedNewsId], references: [id], onDelete: Cascade)
+}
+
+model LinkBookmark {
+  id        String   @id @default(cuid())
+  title     String?
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

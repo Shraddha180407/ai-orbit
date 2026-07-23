@@ -29,6 +29,9 @@ export function HistoryClient() {
       if (!res.ok) return [];
       return res.json();
     },
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    staleTime: 0,
   });
 
   if (isLoading) {
