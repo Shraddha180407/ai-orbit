@@ -22,6 +22,8 @@ import Plus from 'lucide-react/dist/esm/icons/plus';
 import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2';
 import Circle from 'lucide-react/dist/esm/icons/circle';
 import Clock4 from 'lucide-react/dist/esm/icons/clock-4';
+import Users from 'lucide-react/dist/esm/icons/users';
+import Flag from 'lucide-react/dist/esm/icons/flag';
 import { useUser } from '@/hooks/use-user';
 
 interface ShellProps {
@@ -41,6 +43,12 @@ const navYourTeams = [
   { href: '/dashboard/saved-tools', label: 'Saved Tools', icon: PenTool },
   { href: '/dashboard/bookmarks', label: 'Bookmarks', icon: Bookmark },
   { href: '/dashboard/history', label: 'History', icon: Clock },
+];
+
+const navAdmin = [
+  { href: '/admin', label: 'Dashboard Analytics', icon: LayoutDashboard },
+  { href: '/admin/users', label: 'User Management', icon: Users },
+  { href: '/admin/reports', label: 'Reports System', icon: Flag },
 ];
 
 export function Shell({ children, title, description, actions }: ShellProps) {
@@ -132,6 +140,36 @@ export function Shell({ children, title, description, actions }: ShellProps) {
               })}
             </div>
           </div>
+
+          {/* Admin Console Section */}
+          {user?.role === 'ADMIN' && (
+            <div className="mb-6">
+              <div className="px-3 mb-2 text-xs font-semibold text-[#8A8F98] uppercase tracking-wider">
+                Admin
+              </div>
+              <div className="space-y-[1px] px-2">
+                {navAdmin.map((item) => {
+                  const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={cn(
+                        'group flex items-center gap-3 rounded-md px-3 py-[5px] text-[13px] transition-colors duration-150 ease-out',
+                        isActive
+                          ? 'bg-red-500/10 text-red-500 font-medium'
+                          : 'text-[#a1a1aa] hover:bg-white/[0.04] hover:text-[#e8e8e8] font-medium'
+                      )}
+                    >
+                      <item.icon className={cn("h-[14px] w-[14px]", isActive ? "text-red-500" : "text-[#8A8F98] group-hover:text-[#a1a1aa]")} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </nav>
 
         {user ? (

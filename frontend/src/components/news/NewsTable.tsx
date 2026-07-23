@@ -126,9 +126,15 @@ interface NewsRowProps {
   index: number;
   sources: Record<string, NewsSource>;
   onTopic?: (topic: string) => void;
+  isAdmin?: boolean;
+  onEdit?: (news: any) => void;
+  onDelete?: (id: string) => void;
 }
 
-function NewsRow({ article, index, sources, onTopic }: NewsRowProps) {
+import { Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/shadcn-button";
+
+function NewsRow({ article, index, sources, onTopic, isAdmin, onEdit, onDelete }: NewsRowProps) {
   const router = useRouter();
   const source = sources[article.source];
   const go = () => router.push(`/news/${article.id}`);
@@ -219,8 +225,36 @@ function NewsRow({ article, index, sources, onTopic }: NewsRowProps) {
       >
         {publishedLabel(article.hours)}
       </div>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "8px" }}>
         <NewsRowActions article={article} />
+        {isAdmin && (
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 px-2 bg-white/5 border border-white/10 hover:bg-white/10"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.(article);
+              }}
+            >
+              <Pencil className="w-3 h-3" />
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 px-2 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm("Delete this news?")) {
+                  onDelete?.(article.id);
+                }
+              }}
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -232,6 +266,9 @@ interface NewsTableProps {
   sort: SortState;
   onSort: (key: SortKey) => void;
   filters: NewsTableFilters;
+  isAdmin?: boolean;
+  onEdit?: (news: any) => void;
+  onDelete?: (id: string) => void;
 }
 
 /**
@@ -245,7 +282,7 @@ interface NewsTableProps {
  * Both consume the exact same `filters`/`sort`/`onSort` props from
  * NewsListingClient, so switching viewport width never desyncs state.
  */
-export function NewsTable({ articles, sources, sort, onSort, filters }: NewsTableProps) {
+export function NewsTable({ articles, sources, sort, onSort, filters, isAdmin, onEdit, onDelete }: NewsTableProps) {
   const [openFilter, setOpenFilter] = useState<"topics" | "source" | null>(null);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const activeMobileFilters = filters.selectedSources.length + filters.selectedTopics.length;
@@ -267,13 +304,39 @@ export function NewsTable({ articles, sources, sort, onSort, filters }: NewsTabl
             padding: "0 12px",
             borderRadius: "var(--news-radius-sm)",
             font: "var(--fw-medium) var(--fs-sm)/1 var(--font-sans)",
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-default)",
+            color: "var(--text-secondary)",
+            cursor: "pointer",
+            transition: "all 0.2s",
           }}
         >
-          <Icon path={ICONS.filter} size={13} />
-          Filter{activeMobileFilters > 0 ? ` (${activeMobileFilters})` : ""}
+          <Icon path={ICONS.filter} size={14} className="opacity-70" />
+          <span>Filters</span>
+          {activeMobileFilters > 0 && (
+            <span style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 18,
+              height: 18,
+              borderRadius: 9,
+              background: "var(--text-primary)",
+              color: "var(--bg-base)",
+              fontSize: 10,
+              fontWeight: 700,
+              marginLeft: 2
+            }}>
+              {activeMobileFilters}
+            </span>
+          )}
         </button>
       </div>
-      {mobileFilterOpen && <MobileFilterSheet filters={filters} onClose={() => setMobileFilterOpen(false)} />}
+
+      <MobileFilterSheet
+        filters={filters}
+        onClose={() => setMobileFilterOpen(false)}
+      />
 
       {/* Card feed — phones (1 col), large phones/small tablets (2 cols from sm:), roomier gap from md: */}
       <div className="grid lg:hidden gap-2.5 sm:grid-cols-2 sm:gap-3 md:gap-4" style={{ gridTemplateColumns: "1fr" }}>
@@ -288,7 +351,7 @@ export function NewsTable({ articles, sources, sort, onSort, filters }: NewsTabl
           <NewsTableHead sort={sort} onSort={onSort} filters={filters} openFilter={openFilter} setOpenFilter={setOpenFilter} />
           <div>
             {articles.map((a, i) => (
-              <NewsRow key={a.id} article={a} index={i} sources={sources} onTopic={filters.onToggleTopic} />
+              <NewsRow key={a.id} article={a} index={i} sources={sources} onTopic={filters.onToggleTopic} isAdmin={isAdmin} onEdit={onEdit} onDelete={onDelete} />
             ))}
           </div>
         </div>
