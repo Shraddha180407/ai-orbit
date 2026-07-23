@@ -7,7 +7,8 @@
     "deploy": "wrangler deploy",
     "postinstall": "prisma generate",
     "ingest": "tsx scripts/ingest.ts",
-    "sync-repos": "tsx scripts/sync-repositories.ts"
+    "sync-repos": "tsx scripts/sync-repositories.ts",
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.8.0",
