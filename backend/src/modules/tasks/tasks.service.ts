@@ -170,16 +170,25 @@ export class TasksService {
     };
   }
 
-  async toggleBookmark(taskId: string, userId: string) {
-    return this.toggleJoinRow(this.prisma.taskBookmark, taskId, userId);
+  // ---- Slug-based toggles (used by routes — slug in URL is sufficient,
+  // no need for the client to also send taskId in the body) ----
+
+  async toggleBookmarkBySlug(slug: string, userId: string) {
+    const task = await this.prisma.task.findUnique({ where: { slug }, select: { id: true } });
+    if (!task) return null;
+    return this.toggleJoinRow(this.prisma.taskBookmark, task.id, userId);
   }
 
-  async toggleLike(taskId: string, userId: string) {
-    return this.toggleJoinRow(this.prisma.taskLike, taskId, userId, true);
+  async toggleLikeBySlug(slug: string, userId: string) {
+    const task = await this.prisma.task.findUnique({ where: { slug }, select: { id: true } });
+    if (!task) return null;
+    return this.toggleJoinRow(this.prisma.taskLike, task.id, userId, true);
   }
 
-  async toggleSubscribe(taskId: string, userId: string) {
-    return this.toggleJoinRow(this.prisma.taskSubscriber, taskId, userId, true);
+  async toggleSubscribeBySlug(slug: string, userId: string) {
+    const task = await this.prisma.task.findUnique({ where: { slug }, select: { id: true } });
+    if (!task) return null;
+    return this.toggleJoinRow(this.prisma.taskSubscriber, task.id, userId, true);
   }
 
   // Shared helper — TaskBookmark uses its own `id` primary key,
