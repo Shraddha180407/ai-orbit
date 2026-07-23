@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { Device } from "@/lib/types";
 import { fetchAllDevices } from "@/lib/api";
-import { DEVICES_DATA, DeviceData } from "@/data/devices";
+import { DEVICES_DATA, DeviceData, getMainTaskColor } from "@/data/devices";
 
 const ALL_CATEGORIES = "All Categories";
 
@@ -15,15 +15,28 @@ const AVAILABILITY_STYLES: Record<string, string> = {
   Discontinued: "bg-[#3a1a1a] text-[#f87171] border border-[#5a2a2a]",
 };
 
+function getFaviconUrl(manufacturer: string, slug: string): string {
+  const domain = slug
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "")
+    .split("-")[0];
+  const mfr = (manufacturer || "").toLowerCase().replace(/\s+/g, "");
+  const guess = mfr || domain;
+  return `https://www.google.com/s2/favicons?sz=64&domain=${guess}.com`;
+}
+
 function mergeWithDummy(apiDevices: Device[]): DeviceData[] {
   if (!apiDevices || apiDevices.length === 0) return DEVICES_DATA;
   const merged = apiDevices.map((api) => {
     const dummy = DEVICES_DATA.find((d) => d.id === api.id || d.slug === api.slug);
+    const mainTask = api.mainTask || dummy?.mainTask || "Device";
+    const slug = dummy?.slug || api.slug || api.id;
+    const manufacturer = api.manufacturer || dummy?.manufacturer || "—";
     return {
       id: api.id,
-      slug: dummy?.slug || api.slug || api.id,
+      slug,
       name: api.name,
-      manufacturer: api.manufacturer || dummy?.manufacturer || "—",
+      manufacturer,
       manufacturerSlug: dummy?.manufacturerSlug || "",
       category: api.category || dummy?.category || "Other",
       availability: api.availability || dummy?.availability || "Announced",
@@ -32,9 +45,9 @@ function mergeWithDummy(apiDevices: Device[]): DeviceData[] {
       month: dummy?.month || api.month || api.year || "—",
       description: api.description || dummy?.description || "",
       imageUrl: api.imageUrl || dummy?.imageUrl || "",
-      manufacturerLogoUrl: dummy?.manufacturerLogoUrl || "",
-      mainTask: api.mainTask || dummy?.mainTask || "Device",
-      mainTaskColor: dummy?.mainTaskColor || "#6E56CF",
+      manufacturerLogoUrl: dummy?.manufacturerLogoUrl || getFaviconUrl(manufacturer, slug),
+      mainTask,
+      mainTaskColor: getMainTaskColor(mainTask),
       formFactor: api.formFactor || dummy?.formFactor || null,
       country: api.country || dummy?.country || null,
       ram: api.ram || dummy?.ram || null,
@@ -44,12 +57,51 @@ function mergeWithDummy(apiDevices: Device[]): DeviceData[] {
       buyUrl: api.buyUrl || dummy?.buyUrl || null,
     } as DeviceData;
   });
-  const apiNames = apiDevices.map((d) => d.name.toLowerCase());
-  const extraDummy = DEVICES_DATA.filter((d) => !apiNames.includes(d.name.toLowerCase()));
-  return [...merged, ...extraDummy];
+  return merged;
 }
 
 type SortKey = "release" | "name" | "availability" | "price";
+
+function GridImageCell({ name, imageUrl, color }: { name: string; imageUrl: string; color: string }) {
+  const [failed, setFailed] = React.useState(false);
+  if (!imageUrl || failed) {
+    return (
+      <div className="w-full h-full flex items-center justify-center"
+        style={{ background: `${color}22` }}>
+        <span className="text-5xl font-black uppercase" style={{ color }}>
+          {name.charAt(0)}
+        </span>
+      </div>
+    );
+  }
+  return (
+    <img
+      src={imageUrl}
+      alt={name}
+      className="w-full h-full object-cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function LogoCell({ name, logoUrl, color }: { name: string; logoUrl: string; color: string }) {
+  const [failed, setFailed] = React.useState(false);
+  if (!logoUrl || failed) {
+    return (
+      <span className="text-xl font-black uppercase" style={{ color }}>
+        {name.charAt(0)}
+      </span>
+    );
+  }
+  return (
+    <img
+      src={logoUrl}
+      alt={name}
+      className="h-13 w-13 object-contain"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 const PAGE_SIZE = 20;
 
 export function DevicesClient() {
@@ -331,12 +383,7 @@ export function DevicesClient() {
             <Link key={device.id} href={`/devices/${device.slug || device.id}`}
               className="rounded-xl border border-[#232326] bg-[#0D0D0F] hover:border-[#6E56CF]/40 transition-all group overflow-hidden">
               <div className="relative h-56 bg-[#18181C] flex items-center justify-center overflow-hidden">
-                {device.imageUrl ? (
-                  <img src={device.imageUrl} alt={device.name} className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                ) : (
-                  <span className="text-4xl font-black text-white uppercase">{device.name.charAt(0)}</span>
-                )}
+                <GridImageCell name={device.name} imageUrl={device.imageUrl} color={device.mainTaskColor} />
                 <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
                   <p className="text-sm font-bold text-white truncate transition-colors"
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = device.mainTaskColor || '#6E56CF'; }}
@@ -372,16 +419,16 @@ export function DevicesClient() {
       {viewMode === "list" && (
         <div>
         <div className="rounded-xl border border-[#232326] overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar]:block">
-          <div className="min-w-[900px] relative min-h-[400px]" ref={dropdownRef}>
+          <div className="min-w-[980px] relative min-h-[400px]" ref={dropdownRef}>
 
             {/* Table Header */}
-            <div className="grid grid-cols-[64px_1.8fr_1.2fr_1.2fr_1fr_0.8fr_1fr_1fr] bg-[#0D0D0F] border-b border-[#232326] text-[11px] font-semibold text-[#52525B] uppercase tracking-wider">
+            <div className="grid grid-cols-[72px_2.2fr_1.2fr_1.3fr_1.1fr_0.9fr_1.1fr_1.5fr] bg-[#0D0D0F] border-b border-[#232326] text-[12px] font-semibold text-[#52525B] uppercase tracking-wider divide-x divide-[#232326] h-[48px]">
 
               {/* Logo */}
-              <div className="px-5 py-3" />
+              <div className="py-2.5" />
 
               {/* NAME */}
-              <div className="relative px-4 py-3 flex items-center gap-2 border-l border-[#232326]">
+              <div className="relative px-4 flex items-center gap-2">
                 <button onClick={() => handleSort("name")} className="hover:text-white transition-colors flex items-center gap-1.5">
                   NAME <SortIcon col="name" />
                 </button>
@@ -419,10 +466,10 @@ export function DevicesClient() {
               </div>
 
               {/* COMPANY */}
-              <div className="px-4 py-3 border-l border-[#232326]">COMPANY</div>
+              <div className="px-4 flex items-center">COMPANY</div>
 
               {/* CATEGORY */}
-              <div className="relative px-4 py-3 flex items-center gap-2 border-l border-[#232326]">
+              <div className="relative px-4 flex items-center gap-2">
                 <span className={selectedCategory !== ALL_CATEGORIES ? "text-[#6E56CF]" : ""}>CATEGORY</span>
                 <button onClick={() => setOpenDropdown(openDropdown === "category" ? null : "category")}
                   className="hover:text-white transition-colors">
@@ -447,7 +494,7 @@ export function DevicesClient() {
               </div>
 
               {/* AVAILABILITY */}
-              <div className="relative px-4 py-3 flex items-center gap-2 border-l border-[#232326]">
+              <div className="relative px-4 flex items-center gap-2">
                 <button onClick={() => handleSort("availability")} className="hover:text-white transition-colors flex items-center gap-1.5">
                   AVAIL. <SortIcon col="availability" />
                 </button>
@@ -474,7 +521,7 @@ export function DevicesClient() {
               </div>
 
               {/* PRICE */}
-              <div className="relative px-4 py-3 flex items-center gap-2 border-l border-[#232326]">
+              <div className="relative px-4 flex items-center gap-2">
                 <button onClick={() => handleSort("price")} className="hover:text-white transition-colors flex items-center gap-1.5">
                   PRICE <SortIcon col="price" />
                 </button>
@@ -522,14 +569,14 @@ export function DevicesClient() {
               </div>
 
               {/* RELEASE DATE */}
-              <div className="px-4 py-3 border-l border-[#232326]">
+              <div className="px-4 flex items-center">
                 <button onClick={() => handleSort("release")} className="text-[#6E56CF] hover:text-white transition-colors flex items-center gap-1.5">
                   RELEASE DATE <SortIcon col="release" />
                 </button>
               </div>
 
               {/* MAIN TASK */}
-              <div className="px-4 py-3 border-l border-[#232326]">MAIN TASK</div>
+              <div className="px-4 flex items-center">MAIN TASK</div>
             </div>
 
             {/* Rows */}
@@ -547,31 +594,26 @@ export function DevicesClient() {
                   <Link
                     key={device.id}
                     href={`/devices/${device.slug || device.id}`}
-                    className="grid grid-cols-[64px_1.8fr_1.2fr_1.2fr_1fr_0.8fr_1fr_1fr] border-b border-[#232326]/40 items-center group relative transition-all"
+                    className="grid grid-cols-[72px_2.2fr_1.2fr_1.3fr_1.1fr_0.9fr_1.1fr_1.5fr] border-b border-[#232326] items-center group relative transition-colors"
                     onMouseEnter={(e) => {
                       (e.currentTarget as HTMLElement).style.backgroundColor = `${device.mainTaskColor || '#6E56CF'}0f`;
-                      (e.currentTarget as HTMLElement).style.borderLeft = `3px solid ${device.mainTaskColor || '#6E56CF'}`;
+                      (e.currentTarget as HTMLElement).style.boxShadow = `inset 3px 0 0 ${device.mainTaskColor || '#6E56CF'}`;
                     }}
                     onMouseLeave={(e) => {
                       (e.currentTarget as HTMLElement).style.backgroundColor = '';
-                      (e.currentTarget as HTMLElement).style.borderLeft = '';
+                      (e.currentTarget as HTMLElement).style.boxShadow = '';
                     }}
                   >
                     {/* Logo */}
-                    <div className="px-5 py-3 flex items-center justify-center">
-                      <div className="h-12 w-12 rounded-lg bg-[#18181C] border border-[#232326] flex items-center justify-center overflow-hidden shrink-0">
-                        {device.manufacturerLogoUrl ? (
-                          <img src={device.manufacturerLogoUrl} alt={device.manufacturer} className="h-10 w-10 object-contain"
-                            onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(device.name)}&background=232326&color=fff&size=48&bold=true&length=1`; }} />
-                        ) : (
-                          <span className="text-base font-bold text-white uppercase">{device.name.charAt(0)}</span>
-                        )}
+                    <div className="py-2.5 flex items-center justify-center">
+                      <div className="h-12 w-12 rounded-xl bg-[#18181C] border border-[#2a2a2e] flex items-center justify-center overflow-hidden shadow-sm">
+                        <LogoCell name={device.name} logoUrl={device.manufacturerLogoUrl} color={device.mainTaskColor} />
                       </div>
                     </div>
 
                     {/* Name */}
-                    <div className="px-4 py-3 min-w-0 border-l border-[#232326]/40">
-                      <span className="font-semibold text-white text-sm truncate block transition-colors"
+                    <div className="px-4 py-3 min-w-0">
+                      <span className="font-semibold text-white text-[15px] truncate block transition-colors"
                         style={{ color: undefined }}
                         ref={(el) => {
                           if (el) {
@@ -587,7 +629,7 @@ export function DevicesClient() {
                     </div>
 
                     {/* Company */}
-                    <div className="px-4 py-3 flex items-center gap-2 min-w-0 border-l border-[#232326]/40">
+                    <div className="px-4 py-3 flex items-center gap-2 min-w-0">
                       <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2" className="shrink-0">
                         <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
                       </svg>
@@ -595,12 +637,12 @@ export function DevicesClient() {
                     </div>
 
                     {/* Category */}
-                    <div className="px-4 py-3 text-sm text-[#A1A1AA] truncate border-l border-[#232326]/40">
+                    <div className="px-4 py-3 text-sm text-[#A1A1AA] truncate">
                       {device.category || "—"}
                     </div>
 
                     {/* Availability */}
-                    <div className="px-4 py-3 border-l border-[#232326]/40">
+                    <div className="px-4 py-3">
                       {device.availability ? (
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${AVAILABILITY_STYLES[device.availability] || "bg-[#232326] text-[#A1A1AA]"}`}>
                           {device.availability}
@@ -609,19 +651,19 @@ export function DevicesClient() {
                     </div>
 
                     {/* Price */}
-                    <div className="px-4 py-3 text-sm border-l border-[#232326]/40">
+                    <div className="px-4 py-3 text-sm">
                       {device.price
                         ? <span className="text-white font-medium">{device.price}</span>
                         : <span className="text-[#52525B]">N/A</span>}
                     </div>
 
                     {/* Release Date */}
-                    <div className="px-4 py-3 text-sm text-[#A1A1AA] border-l border-[#232326]/40">
+                    <div className="px-4 py-3 text-sm text-[#A1A1AA]">
                       {device.month || device.year || "—"}
                     </div>
 
                     {/* Main Task */}
-                    <div className="px-4 py-3 border-l border-[#232326]/40">
+                    <div className="px-4 py-3">
                       {device.mainTask ? (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded whitespace-nowrap"
                           style={{ backgroundColor: `${device.mainTaskColor}33`, color: device.mainTaskColor, border: `1px solid ${device.mainTaskColor}55` }}>
