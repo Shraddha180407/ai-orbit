@@ -2,7 +2,17 @@ import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import { ToolCard } from "@/components/ToolCard";
 import type { ToolCardData } from "@/lib/types";
 
-export function ToolGrid({ tools }: { tools: ToolCardData[] }) {
+export function ToolGrid({ 
+  tools,
+  isAdmin,
+  onEdit,
+  onDelete
+}: { 
+  tools: ToolCardData[];
+  isAdmin?: boolean;
+  onEdit?: (c: ToolCardData) => void;
+  onDelete?: (id: string) => void;
+}) {
   if (tools.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border py-20 text-center">
@@ -24,7 +34,12 @@ export function ToolGrid({ tools }: { tools: ToolCardData[] }) {
     >
       {tools.map((tool) => (
         <div key={tool.id} role="listitem">
-          <ToolCard tool={tool} />
+          <ToolCard 
+            tool={tool} 
+            isAdmin={isAdmin} 
+            onEdit={onEdit} 
+            onDelete={onDelete} 
+          />
         </div>
       ))}
     </div>

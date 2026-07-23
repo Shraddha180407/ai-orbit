@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { Device } from "@/lib/types";
 import { fetchAllDevices } from "@/lib/api";
-import { DEVICES_DATA, DeviceData } from "@/data/devices";
+import { DEVICES_DATA, DeviceData, getMainTaskColor } from "@/data/devices";
 
 const ALL_CATEGORIES = "All Categories";
 
@@ -15,15 +15,28 @@ const AVAILABILITY_STYLES: Record<string, string> = {
   Discontinued: "bg-[#3a1a1a] text-[#f87171] border border-[#5a2a2a]",
 };
 
+function getFaviconUrl(manufacturer: string, slug: string): string {
+  const domain = slug
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "")
+    .split("-")[0];
+  const mfr = (manufacturer || "").toLowerCase().replace(/\s+/g, "");
+  const guess = mfr || domain;
+  return `https://www.google.com/s2/favicons?sz=64&domain=${guess}.com`;
+}
+
 function mergeWithDummy(apiDevices: Device[]): DeviceData[] {
   if (!apiDevices || apiDevices.length === 0) return DEVICES_DATA;
   const merged = apiDevices.map((api) => {
     const dummy = DEVICES_DATA.find((d) => d.id === api.id || d.slug === api.slug);
+    const mainTask = api.mainTask || dummy?.mainTask || "Device";
+    const slug = dummy?.slug || api.slug || api.id;
+    const manufacturer = api.manufacturer || dummy?.manufacturer || "—";
     return {
       id: api.id,
-      slug: dummy?.slug || api.slug || api.id,
+      slug,
       name: api.name,
-      manufacturer: api.manufacturer || dummy?.manufacturer || "—",
+      manufacturer,
       manufacturerSlug: dummy?.manufacturerSlug || "",
       category: api.category || dummy?.category || "Other",
       availability: api.availability || dummy?.availability || "Announced",
@@ -32,9 +45,9 @@ function mergeWithDummy(apiDevices: Device[]): DeviceData[] {
       month: dummy?.month || api.month || api.year || "—",
       description: api.description || dummy?.description || "",
       imageUrl: api.imageUrl || dummy?.imageUrl || "",
-      manufacturerLogoUrl: dummy?.manufacturerLogoUrl || "",
-      mainTask: api.mainTask || dummy?.mainTask || "Device",
-      mainTaskColor: dummy?.mainTaskColor || "#6E56CF",
+      manufacturerLogoUrl: dummy?.manufacturerLogoUrl || getFaviconUrl(manufacturer, slug),
+      mainTask,
+      mainTaskColor: getMainTaskColor(mainTask),
       formFactor: api.formFactor || dummy?.formFactor || null,
       country: api.country || dummy?.country || null,
       ram: api.ram || dummy?.ram || null,
@@ -44,12 +57,51 @@ function mergeWithDummy(apiDevices: Device[]): DeviceData[] {
       buyUrl: api.buyUrl || dummy?.buyUrl || null,
     } as DeviceData;
   });
-  const apiNames = apiDevices.map((d) => d.name.toLowerCase());
-  const extraDummy = DEVICES_DATA.filter((d) => !apiNames.includes(d.name.toLowerCase()));
-  return [...merged, ...extraDummy];
+  return merged;
 }
 
 type SortKey = "release" | "name" | "availability" | "price";
+
+function GridImageCell({ name, imageUrl, color }: { name: string; imageUrl: string; color: string }) {
+  const [failed, setFailed] = React.useState(false);
+  if (!imageUrl || failed) {
+    return (
+      <div className="w-full h-full flex items-center justify-center"
+        style={{ background: `${color}22` }}>
+        <span className="text-5xl font-black uppercase" style={{ color }}>
+          {name.charAt(0)}
+        </span>
+      </div>
+    );
+  }
+  return (
+    <img
+      src={imageUrl}
+      alt={name}
+      className="w-full h-full object-cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function LogoCell({ name, logoUrl, color }: { name: string; logoUrl: string; color: string }) {
+  const [failed, setFailed] = React.useState(false);
+  if (!logoUrl || failed) {
+    return (
+      <span className="text-xl font-black uppercase" style={{ color }}>
+        {name.charAt(0)}
+      </span>
+    );
+  }
+  return (
+    <img
+      src={logoUrl}
+      alt={name}
+      className="h-13 w-13 object-contain"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 const PAGE_SIZE = 20;
 
 export function DevicesClient() {
@@ -184,14 +236,30 @@ export function DevicesClient() {
   return (
     <main className="w-full px-6 md:px-10 py-8 flex-1">
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Devices</h1>
-          <p className="text-sm text-[#71717A] mt-1">
-            Total devices <span className="text-white font-semibold">{isLoading ? "…" : devices.length}</span>
-            {"  ·  "}Categories <span className="text-white font-semibold">{isLoading ? "…" : categories.length}</span>
-          </p>
+<div className="relative flex flex-col items-center text-center mb-6 py-10 overflow-hidden">
+  {/* Glow blobs */}
+  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[250px] rounded-full blur-[120px] opacity-25 pointer-events-none"
+    style={{ background: "radial-gradient(ellipse, #E91E8C 0%, transparent 70%)" }} />
+  <div className="absolute top-4 left-1/3 w-[350px] h-[180px] rounded-full blur-[100px] opacity-15 pointer-events-none"
+    style={{ background: "radial-gradient(ellipse, #FF1F8C 0%, transparent 70%)" }} />
+  <div className="absolute top-4 right-1/3 w-[350px] h-[180px] rounded-full blur-[100px] opacity-15 pointer-events-none"
+    style={{ background: "radial-gradient(ellipse, #C2185B 0%, transparent 70%)" }} />
+        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-2">
+          AI Devices & Wearables
+        </h1>
+        <div className="flex items-center gap-6 mt-3">
+          <div className="flex flex-col items-center">
+            <span className="text-2xl font-black text-white">{isLoading ? "…" : devices.length}</span>
+            <span className="text-xs text-[#52525B] uppercase tracking-widest mt-0.5">Devices</span>
+          </div>
+          <div className="w-px h-8 bg-[#232326]" />
+          <div className="flex flex-col items-center">
+            <span className="text-2xl font-black text-white">{isLoading ? "…" : categories.length}</span>
+            <span className="text-xs text-[#52525B] uppercase tracking-widest mt-0.5">Categories</span>
+          </div>
         </div>
+      </div>
+      <div className="flex justify-end mb-4 mt-4">
         <div className="flex items-center gap-2">
           {hasActiveFilters && (
             <button onClick={clearAllFilters}
@@ -212,6 +280,107 @@ export function DevicesClient() {
 
       {/* Grid View */}
       {viewMode === "grid" && (
+        <div>
+          {/* Grid Filters */}
+          <div className="flex flex-wrap gap-3 mb-5 items-center">
+            {/* Name search */}
+            <div className="flex gap-2 flex-1 min-w-[180px]">
+              <input
+                type="text"
+                placeholder="Search devices..."
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { setNameSearch(nameInput); setCurrentPage(1); } }}
+                className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 w-full placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF]"
+              />
+              <button
+                onClick={() => { setNameSearch(nameInput); setCurrentPage(1); }}
+                className="text-xs bg-[#6E56CF] hover:bg-[#7C66DF] text-white px-3 py-2 rounded-lg transition-colors font-semibold shrink-0">
+                Apply
+              </button>
+            </div>
+
+            {/* Category */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
+              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] flex-1 min-w-[140px]"
+            >
+              <option value={ALL_CATEGORIES}>All Categories</option>
+              {categories.map((c) => <option key={c}>{c}</option>)}
+            </select>
+
+            {/* Availability */}
+            <select
+              value={selectedAvailability}
+              onChange={(e) => { setSelectedAvailability(e.target.value); setCurrentPage(1); }}
+              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] flex-1 min-w-[140px]"
+            >
+              <option value="All">All Availability</option>
+              <option value="Available">Available</option>
+              <option value="Pre-order">Pre-order</option>
+              <option value="Announced">Announced</option>
+              <option value="Discontinued">Discontinued</option>
+            </select>
+
+            {/* Sort */}
+            <select
+              value={`${sortKey}-${sortDir}`}
+              onChange={(e) => {
+                const [key, dir] = e.target.value.split("-");
+                setSortKey(key as SortKey);
+                setSortDir(dir as "asc" | "desc");
+                setCurrentPage(1);
+              }}
+              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] flex-1 min-w-[160px]"
+            >
+              <option value="release-desc">Sort: Newest First</option>
+              <option value="release-asc">Sort: Oldest First</option>
+              <option value="name-asc">Sort: Name A→Z</option>
+              <option value="name-desc">Sort: Name Z→A</option>
+              <option value="price-asc">Sort: Price Low→High</option>
+              <option value="price-desc">Sort: Price High→Low</option>
+            </select>
+
+            {/* Price Range */}
+            <div className="relative shrink-0">
+              <button
+                onClick={() => setOpenDropdown(openDropdown === "grid-price" ? null : "grid-price")}
+                className={`flex items-center gap-1.5 bg-[#131316] border text-sm rounded-lg px-3 py-2 transition-colors whitespace-nowrap ${activePriceFilter ? "border-[#6E56CF] text-[#6E56CF]" : "border-[#232326] text-[#A1A1AA] hover:text-white"}`}
+              >
+                {activePriceFilter ? `$${priceMin}–$${priceMax}` : "Price Range"}
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              {openDropdown === "grid-price" && (
+                <div className="absolute top-10 right-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-4 min-w-[220px]">
+                  <div className="flex justify-between text-[10px] text-[#A1A1AA] mb-3">
+                    <span>Min: <span className="text-white font-bold">${priceMin.toLocaleString()}</span></span>
+                    <span>Max: <span className="text-white font-bold">${priceMax.toLocaleString()}</span></span>
+                  </div>
+                  <div className="relative h-5 mb-4">
+                    <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-[#232326] rounded-full" />
+                    <div className="absolute top-1/2 -translate-y-1/2 h-1 bg-[#6E56CF] rounded-full"
+                      style={{ left: `${(priceMin / 10000) * 100}%`, right: `${100 - (priceMax / 10000) * 100}%` }} />
+                    <input type="range" min={0} max={10000} step={10} value={priceMin}
+                      onChange={(e) => { const val = Math.min(Number(e.target.value), priceMax - 10); setPriceMin(val); setActivePriceFilter(true); setCurrentPage(1); }}
+                      className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: priceMin > 9000 ? 5 : 3 }} />
+                    <input type="range" min={0} max={10000} step={10} value={priceMax}
+                      onChange={(e) => { const val = Math.max(Number(e.target.value), priceMin + 10); setPriceMax(val); setActivePriceFilter(true); setCurrentPage(1); }}
+                      className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: 4 }} />
+                    <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
+                      style={{ left: `calc(${(priceMin / 10000) * 100}% - 7px)` }} />
+                    <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
+                      style={{ left: `calc(${(priceMax / 10000) * 100}% - 7px)` }} />
+                  </div>
+                  <button onClick={() => { setPriceMin(0); setPriceMax(10000); setActivePriceFilter(false); setCurrentPage(1); setOpenDropdown(null); }}
+                    className="w-full text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors">
+                    Reset
+                  </button>
+                </div>
+              )}
+            </div>
+
+          </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
           {isLoading ? (
             [...Array(8)].map((_, i) => (
@@ -220,15 +389,14 @@ export function DevicesClient() {
           ) : visible.map((device) => (
             <Link key={device.id} href={`/devices/${device.slug || device.id}`}
               className="rounded-xl border border-[#232326] bg-[#0D0D0F] hover:border-[#6E56CF]/40 transition-all group overflow-hidden">
-              <div className="relative h-44 bg-[#18181C] flex items-center justify-center overflow-hidden">
-                {device.imageUrl ? (
-                  <img src={device.imageUrl} alt={device.name} className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                ) : (
-                  <span className="text-4xl font-black text-white uppercase">{device.name.charAt(0)}</span>
-                )}
+              <div className="relative h-56 bg-[#18181C] flex items-center justify-center overflow-hidden">
+                <GridImageCell name={device.name} imageUrl={device.imageUrl} color={device.mainTaskColor} />
                 <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                  <p className="text-sm font-bold text-white truncate">{device.name}</p>
+                  <p className="text-sm font-bold text-white truncate transition-colors"
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = device.mainTaskColor || '#6E56CF'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'white'; }}>
+                    {device.name}
+                  </p>
                   <p className="text-[11px] text-[#A1A1AA]">{device.category} · {device.manufacturer}</p>
                 </div>
                 {device.month && (
@@ -251,21 +419,23 @@ export function DevicesClient() {
             </Link>
           ))}
         </div>
+        </div>
       )}
 
-      {/* List View */}
+        {/* List View */}
       {viewMode === "list" && (
-        <div className="rounded-xl border border-[#232326] overflow-x-auto">
-          <div className="min-w-[900px] relative min-h-[400px]" ref={dropdownRef}>
+        <div>
+        <div className="rounded-xl border border-[#232326] overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar]:block">
+          <div className="min-w-[980px] relative min-h-[400px]" ref={dropdownRef}>
 
             {/* Table Header */}
-            <div className="grid grid-cols-[64px_1.8fr_1.2fr_1.2fr_1fr_0.8fr_1fr_1fr] bg-[#0D0D0F] border-b border-[#232326] text-[11px] font-semibold text-[#52525B] uppercase tracking-wider">
+            <div className="grid grid-cols-[72px_2.2fr_1.2fr_1.3fr_1.1fr_0.9fr_1.1fr_1.5fr] bg-[#0D0D0F] border-b border-[#232326] text-[12px] font-semibold text-[#52525B] uppercase tracking-wider divide-x divide-[#232326] h-[48px]">
 
               {/* Logo */}
-              <div className="px-5 py-3" />
+              <div className="py-2.5" />
 
               {/* NAME */}
-              <div className="relative px-4 py-3 flex items-center gap-2 border-l border-[#232326]">
+              <div className="relative px-4 flex items-center gap-2">
                 <button onClick={() => handleSort("name")} className="hover:text-white transition-colors flex items-center gap-1.5">
                   NAME <SortIcon col="name" />
                 </button>
@@ -303,10 +473,10 @@ export function DevicesClient() {
               </div>
 
               {/* COMPANY */}
-              <div className="px-4 py-3 border-l border-[#232326]">COMPANY</div>
+              <div className="px-4 flex items-center">COMPANY</div>
 
               {/* CATEGORY */}
-              <div className="relative px-4 py-3 flex items-center gap-2 border-l border-[#232326]">
+              <div className="relative px-4 flex items-center gap-2">
                 <span className={selectedCategory !== ALL_CATEGORIES ? "text-[#6E56CF]" : ""}>CATEGORY</span>
                 <button onClick={() => setOpenDropdown(openDropdown === "category" ? null : "category")}
                   className="hover:text-white transition-colors">
@@ -331,7 +501,7 @@ export function DevicesClient() {
               </div>
 
               {/* AVAILABILITY */}
-              <div className="relative px-4 py-3 flex items-center gap-2 border-l border-[#232326]">
+              <div className="relative px-4 flex items-center gap-2">
                 <button onClick={() => handleSort("availability")} className="hover:text-white transition-colors flex items-center gap-1.5">
                   AVAIL. <SortIcon col="availability" />
                 </button>
@@ -358,7 +528,7 @@ export function DevicesClient() {
               </div>
 
               {/* PRICE */}
-              <div className="relative px-4 py-3 flex items-center gap-2 border-l border-[#232326]">
+              <div className="relative px-4 flex items-center gap-2">
                 <button onClick={() => handleSort("price")} className="hover:text-white transition-colors flex items-center gap-1.5">
                   PRICE <SortIcon col="price" />
                 </button>
@@ -406,14 +576,14 @@ export function DevicesClient() {
               </div>
 
               {/* RELEASE DATE */}
-              <div className="px-4 py-3 border-l border-[#232326]">
+              <div className="px-4 flex items-center">
                 <button onClick={() => handleSort("release")} className="text-[#6E56CF] hover:text-white transition-colors flex items-center gap-1.5">
                   RELEASE DATE <SortIcon col="release" />
                 </button>
               </div>
 
               {/* MAIN TASK */}
-              <div className="px-4 py-3 border-l border-[#232326]">MAIN TASK</div>
+              <div className="px-4 flex items-center">MAIN TASK</div>
             </div>
 
             {/* Rows */}
@@ -431,40 +601,42 @@ export function DevicesClient() {
                   <Link
                     key={device.id}
                     href={`/devices/${device.slug || device.id}`}
-                    className="grid grid-cols-[64px_1.8fr_1.2fr_1.2fr_1fr_0.8fr_1fr_1fr] border-b border-[#232326]/40 items-center group relative transition-all"
+                    className="grid grid-cols-[72px_2.2fr_1.2fr_1.3fr_1.1fr_0.9fr_1.1fr_1.5fr] border-b border-[#232326] items-center group relative transition-colors"
                     onMouseEnter={(e) => {
                       (e.currentTarget as HTMLElement).style.backgroundColor = `${device.mainTaskColor || '#6E56CF'}0f`;
-                      (e.currentTarget as HTMLElement).style.borderLeft = `3px solid ${device.mainTaskColor || '#6E56CF'}`;
+                      (e.currentTarget as HTMLElement).style.boxShadow = `inset 3px 0 0 ${device.mainTaskColor || '#6E56CF'}`;
                     }}
                     onMouseLeave={(e) => {
                       (e.currentTarget as HTMLElement).style.backgroundColor = '';
-                      (e.currentTarget as HTMLElement).style.borderLeft = '';
+                      (e.currentTarget as HTMLElement).style.boxShadow = '';
                     }}
                   >
                     {/* Logo */}
-                    <div className="px-5 py-3 flex items-center justify-center">
-                      <div className="h-12 w-12 rounded-lg bg-[#18181C] border border-[#232326] flex items-center justify-center overflow-hidden shrink-0">
-                        {device.manufacturerLogoUrl ? (
-                          <img src={device.manufacturerLogoUrl} alt={device.manufacturer} className="h-10 w-10 object-contain"
-                            onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(device.name)}&background=232326&color=fff&size=48&bold=true&length=1`; }} />
-                        ) : (
-                          <span className="text-base font-bold text-white uppercase">{device.name.charAt(0)}</span>
-                        )}
+                    <div className="py-2.5 flex items-center justify-center">
+                      <div className="h-12 w-12 rounded-xl bg-[#18181C] border border-[#2a2a2e] flex items-center justify-center overflow-hidden shadow-sm">
+                        <LogoCell name={device.name} logoUrl={device.manufacturerLogoUrl} color={device.mainTaskColor} />
                       </div>
                     </div>
 
                     {/* Name */}
-                    <div className="px-4 py-3 min-w-0 border-l border-[#232326]/40">
-                      <span className="font-semibold text-white text-sm truncate block transition-colors group-hover:text-white"
-                        style={{}}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = device.mainTaskColor || '#6E56CF'; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = ''; }}>
+                    <div className="px-4 py-3 min-w-0">
+                      <span className="font-semibold text-white text-[15px] truncate block transition-colors"
+                        style={{ color: undefined }}
+                        ref={(el) => {
+                          if (el) {
+                            const row = el.closest('a');
+                            if (row) {
+                              row.addEventListener('mouseenter', () => { el.style.color = device.mainTaskColor || '#6E56CF'; });
+                              row.addEventListener('mouseleave', () => { el.style.color = ''; });
+                            }
+                          }
+                        }}>
                         {device.name}
                       </span>
                     </div>
 
                     {/* Company */}
-                    <div className="px-4 py-3 flex items-center gap-2 min-w-0 border-l border-[#232326]/40">
+                    <div className="px-4 py-3 flex items-center gap-2 min-w-0">
                       <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2" className="shrink-0">
                         <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
                       </svg>
@@ -472,12 +644,12 @@ export function DevicesClient() {
                     </div>
 
                     {/* Category */}
-                    <div className="px-4 py-3 text-sm text-[#A1A1AA] truncate border-l border-[#232326]/40">
+                    <div className="px-4 py-3 text-sm text-[#A1A1AA] truncate">
                       {device.category || "—"}
                     </div>
 
                     {/* Availability */}
-                    <div className="px-4 py-3 border-l border-[#232326]/40">
+                    <div className="px-4 py-3">
                       {device.availability ? (
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${AVAILABILITY_STYLES[device.availability] || "bg-[#232326] text-[#A1A1AA]"}`}>
                           {device.availability}
@@ -486,21 +658,21 @@ export function DevicesClient() {
                     </div>
 
                     {/* Price */}
-                    <div className="px-4 py-3 text-sm border-l border-[#232326]/40">
+                    <div className="px-4 py-3 text-sm">
                       {device.price
                         ? <span className="text-white font-medium">{device.price}</span>
                         : <span className="text-[#52525B]">N/A</span>}
                     </div>
 
                     {/* Release Date */}
-                    <div className="px-4 py-3 text-sm text-[#A1A1AA] border-l border-[#232326]/40">
+                    <div className="px-4 py-3 text-sm text-[#A1A1AA]">
                       {device.month || device.year || "—"}
                     </div>
 
                     {/* Main Task */}
-                    <div className="px-4 py-3 border-l border-[#232326]/40">
+                    <div className="px-4 py-3">
                       {device.mainTask ? (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded"
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded whitespace-nowrap"
                           style={{ backgroundColor: `${device.mainTaskColor}33`, color: device.mainTaskColor, border: `1px solid ${device.mainTaskColor}55` }}>
                           {device.mainTask}
                         </span>
@@ -548,6 +720,7 @@ export function DevicesClient() {
               </div>
             )}
           </div>
+        </div>
         </div>
       )}
     </main>

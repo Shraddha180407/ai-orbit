@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -7,7 +7,7 @@ import { fetchAllDevices, fetchDeviceById } from "@/lib/api";
 import { Device } from "@/lib/types";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { DEVICES_DATA, DeviceData, getDeviceBySlug, getSimilarDevices } from "@/data/devices";
+import { DEVICES_DATA, DeviceData, getDeviceBySlug, getSimilarDevices, getMainTaskColor } from "@/data/devices";
 
 const AVAILABILITY_STYLES: Record<string, string> = {
   Available: "bg-[#1a3a2a] text-[#4ade80] border border-[#2a5a3a]",
@@ -16,15 +16,23 @@ const AVAILABILITY_STYLES: Record<string, string> = {
   Discontinued: "bg-[#3a1a1a] text-[#f87171] border border-[#5a2a2a]",
 };
 
+function getFaviconUrl(manufacturer: string, slug: string): string {
+  const mfr = (manufacturer || "").toLowerCase().replace(/\s+/g, "");
+  const domain = slug.toLowerCase().replace(/[^a-z0-9-]/g, "").split("-")[0];
+  return `https://www.google.com/s2/favicons?sz=64&domain=${mfr || domain}.com`;
+}
+
 function mergeDevice(api: Device | null, slug: string): DeviceData | null {
   const dummy = getDeviceBySlug(slug);
   if (!api && !dummy) return null;
   if (!api) return dummy;
+  const mainTask = api.mainTask || dummy?.mainTask || "Device";
+  const manufacturer = api.manufacturer || dummy?.manufacturer || "—";
   return {
     id: api.id,
     slug: dummy?.slug || api.slug || api.id,
     name: api.name,
-    manufacturer: api.manufacturer || dummy?.manufacturer || "—",
+    manufacturer,
     manufacturerSlug: dummy?.manufacturerSlug || "",
     category: api.category || dummy?.category || "Other",
     availability: api.availability || dummy?.availability || "Announced",
@@ -33,9 +41,9 @@ function mergeDevice(api: Device | null, slug: string): DeviceData | null {
     month: dummy?.month || api.month || api.year || "—",
     description: api.description || dummy?.description || "",
     imageUrl: api.imageUrl || dummy?.imageUrl || "",
-    manufacturerLogoUrl: dummy?.manufacturerLogoUrl || "",
-    mainTask: api.mainTask || dummy?.mainTask || "Device",
-    mainTaskColor: dummy?.mainTaskColor || "#6E56CF",
+    manufacturerLogoUrl: dummy?.manufacturerLogoUrl || getFaviconUrl(manufacturer, slug),
+    mainTask,
+    mainTaskColor: getMainTaskColor(mainTask),
     formFactor: api.formFactor || dummy?.formFactor || null,
     country: api.country || dummy?.country || null,
     ram: api.ram || dummy?.ram || null,
@@ -72,8 +80,84 @@ export function DeviceDetailClient() {
         setDevice(merged);
 
         if (merged) {
-          const sim = getSimilarDevices(merged);
-          setSimilar(sim);
+          // Build similar from API data first, fall back to dummy
+          const allApiDevices = await fetchAllDevices().catch(() => []);
+          if (allApiDevices && allApiDevices.length > 0) {
+            const apiSimilar = allApiDevices
+              .filter((d: Device) => d.id !== merged.id && d.category === merged.category)
+              .slice(0, 4)
+              .map((api: Device) => {
+                const dummy = DEVICES_DATA.find((d) => d.id === api.id || d.slug === api.slug);
+                const mainTask = api.mainTask || dummy?.mainTask || "Device";
+                const slug = dummy?.slug || api.slug || api.id;
+                const manufacturer = api.manufacturer || dummy?.manufacturer || "—";
+                return {
+                  id: api.id,
+                  slug,
+                  name: api.name,
+                  manufacturer,
+                  manufacturerSlug: dummy?.manufacturerSlug || "",
+                  category: api.category || dummy?.category || "Other",
+                  availability: api.availability || dummy?.availability || "Announced",
+                  price: api.price || dummy?.price || null,
+                  year: api.year || dummy?.year || "—",
+                  month: dummy?.month || api.month || api.year || "—",
+                  description: api.description || dummy?.description || "",
+                  imageUrl: api.imageUrl || dummy?.imageUrl || "",
+                  manufacturerLogoUrl: dummy?.manufacturerLogoUrl || `https://www.google.com/s2/favicons?sz=64&domain=${manufacturer.toLowerCase().replace(/\s+/g, "")}.com`,
+                  mainTask,
+                  mainTaskColor: getMainTaskColor(mainTask),
+                  formFactor: api.formFactor || dummy?.formFactor || null,
+                  country: api.country || dummy?.country || null,
+                  ram: api.ram || dummy?.ram || null,
+                  aiFeatures: api.aiFeatures || dummy?.aiFeatures || [],
+                  primaryUseCases: api.primaryUseCases || dummy?.primaryUseCases || [],
+                  additionalInfo: api.additionalInfo || dummy?.additionalInfo || null,
+                  buyUrl: api.buyUrl || dummy?.buyUrl || null,
+                } as DeviceData;
+              });
+            // If not enough same-category devices, fill with other API devices
+            if (apiSimilar.length < 4) {
+              const others = allApiDevices
+                .filter((d: Device) => d.id !== merged.id && d.category !== merged.category)
+                .slice(0, 4 - apiSimilar.length)
+                .map((api: Device) => {
+                  const dummy = DEVICES_DATA.find((d) => d.id === api.id || d.slug === api.slug);
+                  const mainTask = api.mainTask || dummy?.mainTask || "Device";
+                  const slug = dummy?.slug || api.slug || api.id;
+                  const manufacturer = api.manufacturer || dummy?.manufacturer || "—";
+                  return {
+                    id: api.id,
+                    slug,
+                    name: api.name,
+                    manufacturer,
+                    manufacturerSlug: dummy?.manufacturerSlug || "",
+                    category: api.category || dummy?.category || "Other",
+                    availability: api.availability || dummy?.availability || "Announced",
+                    price: api.price || dummy?.price || null,
+                    year: api.year || dummy?.year || "—",
+                    month: dummy?.month || api.month || api.year || "—",
+                    description: api.description || dummy?.description || "",
+                    imageUrl: api.imageUrl || dummy?.imageUrl || "",
+                    manufacturerLogoUrl: dummy?.manufacturerLogoUrl || `https://www.google.com/s2/favicons?sz=64&domain=${manufacturer.toLowerCase().replace(/\s+/g, "")}.com`,
+                    mainTask,
+                    mainTaskColor: getMainTaskColor(mainTask),
+                    formFactor: api.formFactor || dummy?.formFactor || null,
+                    country: api.country || dummy?.country || null,
+                    ram: api.ram || dummy?.ram || null,
+                    aiFeatures: api.aiFeatures || dummy?.aiFeatures || [],
+                    primaryUseCases: api.primaryUseCases || dummy?.primaryUseCases || [],
+                    additionalInfo: api.additionalInfo || dummy?.additionalInfo || null,
+                    buyUrl: api.buyUrl || dummy?.buyUrl || null,
+                  } as DeviceData;
+                });
+              setSimilar([...apiSimilar, ...others]);
+            } else {
+              setSimilar(apiSimilar);
+            }
+          } else {
+            setSimilar(getSimilarDevices(merged));
+          }
         }
       } catch (e) {
         // fallback to dummy only
@@ -137,22 +221,11 @@ export function DeviceDetailClient() {
         {/* Top Section */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-6 mb-8 items-start">
           {/* Left: Image */}
-          <div className="rounded-xl border border-[#232326] bg-white overflow-hidden self-start">
-  {device.imageUrl ? (
-    <img
-      src={device.imageUrl}
-      alt={device.name}
-      className="w-full object-contain p-6 max-h-[380px]"
-      onError={(e) => {
-        (e.target as HTMLImageElement).style.display = "none";
-      }}
-    />
-  ) : (
-    <div className="w-full h-full flex items-center justify-center">
-      <span className="text-5xl font-black text-white uppercase">{device.name.charAt(0)}</span>
-    </div>
-  )}
-</div>
+          <DeviceImage
+  name={device.name}
+  imageUrl={device.imageUrl}
+  color={device.mainTaskColor}
+/>
           {/* Right: Info Card */}
           <div className="rounded-xl border border-[#232326] bg-[#0D0D0F] p-4 md:p-6 flex flex-col gap-3">
 
@@ -231,14 +304,14 @@ export function DeviceDetailClient() {
           <div className="px-6 py-3 bg-[#131316] border-b border-[#232326]">
             <h2 className="text-xs font-bold text-[#A1A1AA] uppercase tracking-widest">Specifications</h2>
           </div>
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-5">
-            {device.formFactor && <SpecRow label="Form factor" value={device.formFactor} />}
-            {device.ram && <SpecRow label="RAM" value={device.ram} />}
-            {device.country && <SpecRow label="Made in" value={device.country} />}
-            <SpecRow label="Release date" value={device.month || device.year || "—"} />
+          <div className="divide-y divide-[#232326]">
+            {device.formFactor && <SpecRowDivider label="Form factor" value={device.formFactor} />}
+            {device.ram && <SpecRowDivider label="RAM" value={device.ram} />}
+            {device.country && <SpecRowDivider label="Made in" value={device.country} />}
+            <SpecRowDivider label="Release date" value={device.month || device.year || "—"} />
             {device.aiFeatures && device.aiFeatures.length > 0 && (
-              <div className="md:col-span-2">
-                <p className="text-sm text-[#52525B] mb-2">AI features</p>
+              <div className="flex items-start gap-4 px-6 py-4">
+                <span className="text-sm text-[#52525B] w-36 shrink-0">AI features</span>
                 <div className="flex flex-wrap gap-2">
                   {device.aiFeatures.map((f) => (
                     <span key={f} className="text-xs bg-[#18181C] border border-[#232326] text-[#A1A1AA] px-3 py-1 rounded-full">
@@ -249,8 +322,8 @@ export function DeviceDetailClient() {
               </div>
             )}
             {device.primaryUseCases && device.primaryUseCases.length > 0 && (
-              <div className="md:col-span-2">
-                <p className="text-sm text-[#52525B] mb-2">Primary use cases</p>
+              <div className="flex items-start gap-4 px-6 py-4">
+                <span className="text-sm text-[#52525B] w-36 shrink-0">Primary use cases</span>
                 <div className="flex flex-wrap gap-2">
                   {device.primaryUseCases.map((u) => (
                     <span key={u} className="text-xs bg-[#18181C] border border-[#232326] text-[#A1A1AA] px-3 py-1 rounded-full">
@@ -277,33 +350,31 @@ export function DeviceDetailClient() {
 
         {/* Similar Devices */}
         {similar.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2 uppercase tracking-widest">
+          <div className="mt-8 rounded-xl border border-[#232326] bg-[#0D0D0F] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#232326] flex items-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-[#6E56CF]"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
-              Similar Devices
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <h2 className="text-xs font-bold text-[#A1A1AA] uppercase tracking-widest">Similar Devices</h2>
+            </div>
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {similar.map((d) => (
                 <Link
                   key={d.id}
                   href={`/devices/${d.slug || d.id}`}
-                  className="rounded-xl border border-[#232326] bg-[#0D0D0F] hover:border-[#6E56CF]/40 transition-all group overflow-hidden"
+                  className="rounded-xl border border-[#232326] bg-[#0D0D0F] transition-all group overflow-hidden"
+                  style={{}}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = `${d.mainTaskColor || '#6E56CF'}60`; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}
                 >
                   {/* Image with overlays */}
-                  <div className="relative h-40 bg-[#18181C] flex items-center justify-center overflow-hidden">
-                    {d.imageUrl ? (
-                      <img
-                        src={d.imageUrl}
-                        alt={d.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                      />
-                    ) : (
-                      <span className="text-3xl font-black text-white uppercase">{d.name.charAt(0)}</span>
-                    )}
+                  <div className="relative h-52 bg-[#18181C] flex items-center justify-center overflow-hidden">
+                    <SimilarDeviceImage name={d.name} imageUrl={d.imageUrl} color={d.mainTaskColor} />
                     {/* Name overlay bottom left */}
                     <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                      <p className="text-xs font-bold text-white truncate">{d.name}</p>
+                      <p className="text-xs font-bold text-white truncate group-hover:text-white transition-colors"
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = d.mainTaskColor || '#6E56CF'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'white'; }}>
+                        {d.name}
+                      </p>
                       <p className="text-[10px] text-[#A1A1AA]">{d.category} · {d.manufacturer}</p>
                     </div>
                     {/* Date badge top right */}
@@ -347,5 +418,65 @@ function SpecRow({ label, value }: { label: string; value: string }) {
       <span className="text-sm text-[#52525B] w-28 shrink-0">{label}</span>
       <span className="text-sm text-white">{value}</span>
     </div>
+  );
+}
+
+function SpecRowDivider({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-4 px-6 py-4">
+      <span className="text-sm text-[#52525B] w-36 shrink-0">{label}</span>
+      <span className="text-sm text-white">{value}</span>
+    </div>
+  );
+}
+
+function DeviceImage({ name, imageUrl, color }: { name: string; imageUrl: string; color: string }) {
+  const [failed, setFailed] = React.useState(false);
+
+  if (!imageUrl || failed) {
+    return (
+      <div
+        className="rounded-xl border border-[#232326] self-start w-full h-[380px] flex items-center justify-center"
+        style={{ background: `${color}18` }}
+      >
+        <span className="text-[120px] font-black uppercase leading-none" style={{ color }}>
+          {name.charAt(0)}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-[#232326] bg-white overflow-hidden self-start">
+      <img
+        src={imageUrl}
+        alt={name}
+        className="w-full object-contain p-6 max-h-[380px]"
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+}
+
+function SimilarDeviceImage({ name, imageUrl, color }: { name: string; imageUrl: string; color: string }) {
+  const [failed, setFailed] = React.useState(false);
+
+  if (!imageUrl || failed) {
+    return (
+      <div className="w-full h-full flex items-center justify-center" style={{ background: `${color}22` }}>
+        <span className="text-5xl font-black uppercase" style={{ color }}>
+          {name.charAt(0)}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={imageUrl}
+      alt={name}
+      className="w-full h-full object-cover"
+      onError={() => setFailed(true)}
+    />
   );
 }

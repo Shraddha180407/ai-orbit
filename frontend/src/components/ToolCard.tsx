@@ -6,14 +6,51 @@ import { CategoryChip } from "@/components/CategoryChip";
 import { RatingStars } from "@/components/RatingStars";
 import type { ToolCardData } from "@/lib/types";
 
-export function ToolCard({ tool }: { tool: ToolCardData }) {
+import { Edit2, Trash2 } from "lucide-react";
+
+export function ToolCard({ 
+  tool,
+  isAdmin,
+  onEdit,
+  onDelete
+}: { 
+  tool: ToolCardData;
+  isAdmin?: boolean;
+  onEdit?: (c: ToolCardData) => void;
+  onDelete?: (id: string) => void;
+}) {
   const primaryCategory = tool.categories[0]?.category;
 
   return (
-    <Link
-      href={`/tools/${tool.slug}`}
-      className="group grid grid-cols-1 sm:grid-cols-[80px_1fr_180px_180px] gap-5 items-start sm:items-center justify-between sm:h-[154px] py-4 px-5 transition-all hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
-    >
+    <div className="relative">
+      {isAdmin && (
+        <div className="absolute right-2 top-2 z-10 flex gap-1">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              onEdit?.(tool);
+            }}
+            className="flex h-7 w-7 items-center justify-center rounded-md bg-surface border border-border text-foreground hover:text-accent transition-colors shadow-sm"
+          >
+            <Edit2 size={13} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              if (confirm('Are you sure you want to delete this tool?')) {
+                onDelete?.(tool.id);
+              }
+            }}
+            className="flex h-7 w-7 items-center justify-center rounded-md bg-surface border border-border text-foreground hover:text-red-500 transition-colors shadow-sm"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      )}
+      <Link
+        href={`/tools/${tool.slug}`}
+        className="group grid grid-cols-1 sm:grid-cols-[80px_1fr_180px_180px] gap-5 items-start sm:items-center justify-between sm:h-[154px] py-4 px-5 transition-all hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
+      >
       {/* Column 1: Logo */}
       <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-white p-2.5">
         {tool.logoUrl ? (
@@ -75,5 +112,6 @@ export function ToolCard({ tool }: { tool: ToolCardData }) {
         </span>
       </div>
     </Link>
+    </div>
   );
 }

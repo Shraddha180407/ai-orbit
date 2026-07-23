@@ -231,7 +231,7 @@ export const DEVICES_DATA: DeviceData[] = [
     manufacturerSlug: "msi",
     category: "Other",
     availability: "Available",
-    price: null,
+    price: "$311.00",
     year: "2026",
     month: "2026",
     description: "A compact AI supercomputer based on the NVIDIA DGX Spark GB10 platform, designed for local AI development, inference, and enterprise AI workloads.",
@@ -277,6 +277,18 @@ export const DEVICES_DATA: DeviceData[] = [
 
 export function getDeviceBySlug(slug: string): DeviceData | null {
   return DEVICES_DATA.find((d) => d.slug === slug || d.id === slug) || null;
+}
+
+const MAIN_TASK_COLORS = [
+  "#6E56CF", "#E85D4A", "#0082FB", "#34A853", "#FF9900",
+  "#E91E8C", "#00BCD4", "#FF6B35", "#8BC34A", "#9C27B0",
+];
+
+export function getMainTaskColor(mainTask: string): string {
+  if (!mainTask) return MAIN_TASK_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < mainTask.length; i++) hash = mainTask.charCodeAt(i) + ((hash << 5) - hash);
+  return MAIN_TASK_COLORS[Math.abs(hash) % MAIN_TASK_COLORS.length];
 }
 
 export function getSimilarDevices(device: DeviceData, count = 4): DeviceData[] {

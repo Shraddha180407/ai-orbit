@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, PricingModel, BillingFrequency } from "@prisma/client";
+import { PrismaClient, PricingModel, BillingFrequency, Availability } from "@prisma/client";
 
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -1703,6 +1703,17 @@ const REVIEWS: { toolSlug: string; rating: number; comment: string }[] = [
   { toolSlug: "perplexity", rating: 4, comment: "Citations make it easy to double check sources compared to other bots." },
 ];
 
+// --- Add this right above async function main() ---
+function getAvailabilityEnum(status: string): Availability {
+  switch (status) {
+    case 'Available': return Availability.Available;
+    case 'Pre-order': return Availability.PreOrder; // Fixes the mismatch!
+    case 'Announced': return Availability.Announced;
+    case 'Discontinued': return Availability.Discontinued;
+    default: return Availability.Announced;
+  }
+}
+
 async function main() {
   const companyBySlug = new Map<string, { id: string }>();
 
@@ -1844,7 +1855,7 @@ async function main() {
   }
   console.log(`Relate completed: bulk created ${categoryLinks.length} categories and ${tagLinks.length} tags.`);
 
-  console.log("Seeding tasks...");
+  console.log("Seeding tasks in batches to prevent connection drops...");
 
   const toolByName = new Map<string, { id: string }>();
   for (const t of allTools) {
@@ -1852,50 +1863,73 @@ async function main() {
     if (tool) toolByName.set(t.name.toLowerCase(), tool);
   }
 
-  for (const t of TASKS) {
-    const categorySlug = t.category.toLowerCase().replace(/ /g, "-");
-    const category = categoryBySlug.get(categorySlug);
+  const taskToolLinks: { taskId: string; toolId: string }[] = [];
+  
+  // 1. Process in batches of 100 to avoid overwhelming the database
+  const BATCH_SIZE = 100; 
 
-    if (!category) {
-      console.warn(`⚠️  Skipping task "${t.title}" — category "${t.category}" not found`);
-      continue;
-    }
+  for (let i = 0; i < TASKS.length; i += BATCH_SIZE) {
+    const batch = TASKS.slice(i, i + BATCH_SIZE);
 
-    const createdTask = await prisma.task.upsert({
-      where: { slug: t.slug },
-      update: {
-        title: t.title,
-        description: t.description,
-        difficulty: t.difficulty,
-        pricingModel: t.pricingModel,
-        isFeatured: t.isFeatured,
-        categoryId: category.id,
-      },
-      create: {
-        slug: t.slug,
-        title: t.title,
-        description: t.description,
-        difficulty: t.difficulty,
-        pricingModel: t.pricingModel,
-        isFeatured: t.isFeatured,
-        categoryId: category.id,
-      },
-    });
+    // Promise.all runs all 100 upserts in this batch simultaneously
+    await Promise.all(
+      batch.map(async (t) => {
+        const categorySlug = t.category.toLowerCase().replace(/ /g, "-");
+        const category = categoryBySlug.get(categorySlug);
 
-    await prisma.taskTool.deleteMany({ where: { taskId: createdTask.id } });
+        if (!category) return;
 
-    for (const toolName of t.recommendedAITools) {
-      const tool = toolByName.get(toolName.toLowerCase());
-      if (!tool) {
-        console.warn(`   ⚠️  Tool "${toolName}" not found for task "${t.title}"`);
-        continue;
-      }
-      await prisma.taskTool.create({ data: { taskId: createdTask.id, toolId: tool.id } });
-    }
+        const createdTask = await prisma.task.upsert({
+          where: { slug: t.slug },
+          update: {
+            title: t.title,
+            description: t.description,
+            difficulty: t.difficulty,
+            pricingModel: t.pricingModel,
+            isFeatured: t.isFeatured,
+            categoryId: category.id,
+          },
+          create: {
+            slug: t.slug,
+            title: t.title,
+            description: t.description,
+            difficulty: t.difficulty,
+            pricingModel: t.pricingModel,
+            isFeatured: t.isFeatured,
+            categoryId: category.id,
+          },
+        });
+
+        // Store relations in memory
+        for (const toolName of t.recommendedAITools) {
+          const tool = toolByName.get(toolName.toLowerCase());
+          if (tool) {
+            taskToolLinks.push({ taskId: createdTask.id, toolId: tool.id });
+          }
+        }
+      })
+    );
+
+    console.log(`... processed ${Math.min(i + BATCH_SIZE, TASKS.length)} / ${TASKS.length} tasks`);
   }
 
-  console.log(`Seeded ${TASKS.length} tasks.`);
+  console.log("Wiping old task-tool relations...");
+  await prisma.taskTool.deleteMany({}); 
+
+  console.log(`Bulk inserting ${taskToolLinks.length} task-tool relations in chunks...`);
   
+  // 2. Chunk the relation inserts too (Neon sometimes drops connections on massive arrays)
+  const RELATION_BATCH_SIZE = 5000;
+  for (let i = 0; i < taskToolLinks.length; i += RELATION_BATCH_SIZE) {
+    const linksBatch = taskToolLinks.slice(i, i + RELATION_BATCH_SIZE);
+    
+    await prisma.taskTool.createMany({ 
+      data: linksBatch,
+      skipDuplicates: true 
+    });
+  }
+
+  console.log(`Seeded ${TASKS.length} tasks successfully!`);
   // Curated similar mappings
   const ALTERNATIVE_PAIRS: [string, string][] = [
     ["chatgpt", "claude"],
@@ -2133,25 +2167,127 @@ async function main() {
   ];
   await prisma.robot.createMany({ data: seedRobots });
 
-  console.log("Seeding Devices...");
-  await prisma.device.deleteMany({});
   const seedDevices = [
-    {
-      name: "Rabbit r1",
-      category: "AI Pocket Assistant",
-      manufacturer: "Rabbit Inc.",
-      year: "2024",
-      description: "A pocket companion device utilizing a Large Action Model (LAM) designed to execute online app actions on your behalf.",
-    },
-    {
-      name: "Humane AI Pin",
-      category: "Wearable Projector Pin",
-      manufacturer: "Humane",
-      year: "2024",
-      description: "A wearable pin that projects digital interface layouts onto the palm of your hand, featuring voice and gesture inputs.",
-    },
-  ];
-  await prisma.device.createMany({ data: seedDevices });
+  {
+    name: "Rabbit r1",
+    slug: "rabbit-r1",
+    category: "AI Pocket Assistant",
+    manufacturer: "Rabbit Inc.",
+    availability: "Available",
+    price: "199.00",
+    year: "2024",
+    month: "Jan, 2024",
+    description: "A pocket companion device utilizing a Large Action Model (LAM) designed to execute online app actions on your behalf.",
+    imageUrl: "https://m.media-amazon.com/images/I/41d-IfutmxL.jpg", 
+    manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqt-drKgbn-v1CvxdzoyKUNNjH6Q_ppxN2qbh6h3meyQ&s=10",
+    mainTask: "AI-powered app automation",
+    formFactor: "Pocket-sized",
+    country: "United States",
+    ram: "4GB",
+    aiFeatures: ["Large Action Model", "Voice Input", "Computer Vision", "Translation"],
+    primaryUseCases: ["App Automation", "Voice Search", "Real-time Translation"],
+    additionalInfo: "No subscription required. Runs on Teenage Engineering hardware.",
+    buyUrl: "https://www.rabbit.tech",
+  },
+  
+  {
+    name: "Ray-Ban Meta Smart Glasses",
+    slug: "ray-ban-meta",
+    category: "Smart Glasses",
+    manufacturer: "Meta",
+    availability: "Available",
+    price: "299.00",
+    year: "2023",
+    month: "Oct, 2023",
+    description: "Stylish smart glasses with integrated Meta AI, allowing you to ask questions about what you are looking at through the built-in camera.",
+    imageUrl: "https://m.media-amazon.com/images/I/51YS2aa2--L._AC_UF1000,1000_QL80_.jpg",
+    manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqfbTP6UVlD7B38a6uRgD7vNt6GYXB780xoQa7veixCw&s=10",
+    mainTask: "Multimodal visual assistance",
+    formFactor: "Eyewear",
+    country: "United States",
+    ram: "2GB",
+    aiFeatures: ["Multimodal AI", "Real-time Translation", "Object Identification", "Audio Streaming"],
+    primaryUseCases: ["Point-of-view Capture", "Audio Listening", "Visual Search"],
+    additionalInfo: "Features a 12MP ultra-wide camera and open-ear audio. Over 8.9M lifetime units shipped.",
+    buyUrl: "https://www.meta.com/smart-glasses/",
+  },
+  {
+    name: "Limitless Pendant",
+    slug: "limitless-pendant",
+    category: "AI Wearable",
+    manufacturer: "Limitless",
+    availability: "Discontinued",
+    price: "99.00",
+    year: "2024",
+    month: "Aug, 2024",
+    description: "A personalized AI wearable that records your meetings and conversations, providing instant summaries and transcriptions.",
+    imageUrl: "https://www.limitless.ai/media/pendant/black/UpdatedPendantAngledOn.webp",
+    manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvBvCARCbE5sLvWhJXmXFwrVzDFu5tATl84jMVESJfLw&s=10",
+    mainTask: "Meeting transcription & memory",
+    formFactor: "Pendant / Clip",
+    country: "United States",
+    ram: null,
+    aiFeatures: ["Consent Mode", "Voice Isolation", "Auto-Summarization", "Action Item Extraction"],
+    primaryUseCases: ["Meeting Notes", "Personal Memory", "Productivity"],
+    additionalInfo: "100-hour battery life. Hardware sales discontinued following Meta acquisition in late 2025.",
+    buyUrl: "https://www.limitless.ai/new",
+  },
+  {
+    name: "Brilliant Labs Frame",
+    slug: "brilliant-labs-frame",
+    category: "Smart Glasses",
+    manufacturer: "Brilliant Labs",
+    availability: "Available",
+    price: "349.00",
+    year: "2024",
+    month: "Apr, 2024",
+    description: "Open-source, lightweight AI glasses that provide a heads-up display (HUD) powered by OpenAI and Perplexity.",
+    imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRndpQutm_8ZHmbv3QFRuEkxMXknoBuc1sPetPK7HUtS5rzrnI4M-L0PvbE&s=10",
+    manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSx4o32nl7E6RbBHMcjv-p_Ja_eHu0M77RiEqIW81USiMzQzkGas7ruYBjk&s=10",
+    mainTask: "Heads-up visual search",
+    formFactor: "Eyewear",
+    country: "Singapore",
+    ram: null,
+    aiFeatures: ["Visual Search", "Real-time Translation", "Web Search", "Open Source Hardware"],
+    primaryUseCases: ["Live Translation", "Fact Checking", "Developer Tinkering"],
+    additionalInfo: "Weighs only 39 grams. Fully open-source and hackable via ZephyrOS and Lua API.",
+    buyUrl: "https://brilliant.xyz",
+  },
+  {
+    name: "Plaud Note",
+    slug: "plaud-note",
+    category: "AI Voice Recorder",
+    manufacturer: "Plaud",
+    availability: "Available",
+    price: "159.00",
+    year: "2023",
+    month: "Nov, 2023",
+    description: "A credit-card sized voice recorder that snaps to the back of your phone, utilizing ChatGPT to transcribe and summarize calls and meetings.",
+    imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUWIuVVBPOiJ-PHCrjIa4WP5fK0zsOVjfurP1MIcm6GA&s",
+    manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkAkzJtf1nr96s5wzF6C5vrxz-VbdDliwbZMtXbg_RyQ&s=10",
+    mainTask: "Call & audio summarization",
+    formFactor: "Magnetic Card",
+    country: "United States",
+    ram: "64GB Storage",
+    aiFeatures: ["ChatGPT Integration", "Call Recording", "Mind Map Generation", "Multi-language Support"],
+    primaryUseCases: ["Phone Call Recording", "Lectures", "Journaling"],
+    additionalInfo: "MagSafe compatible. Includes a physical switch to toggle between ambient and phone call recording.",
+    buyUrl: "https://www.plaud.ai",
+  }
+];
+console.log("Formatting and seeding Devices...");
+  
+  // 1. Map the string array into the strict Prisma Enum shape
+  const formattedDevices = seedDevices.map((device) => ({
+    ...device,
+    availability: getAvailabilityEnum(device.availability),
+  }));
+
+  // 2. Insert the correctly formatted data
+  await prisma.device.createMany({ 
+    data: formattedDevices,
+    skipDuplicates: true // Good practice to prevent crashes on re-seeding
+  });
 
   console.log("Seeding Leaderboard Tools...");
   await prisma.leaderboardTool.deleteMany({});

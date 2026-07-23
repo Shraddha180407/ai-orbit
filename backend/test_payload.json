@@ -1,0 +1,31 @@
+{
+  "tools": [
+    {
+      "slug": "orbit-ai-generator",
+      "name": "Orbit AI Generator",
+      "description": "A powerful AI generator for orbits.",
+      "websiteUrl": "https://orbit-ai.example.com",
+      "logoUrl": "https://orbit-ai.example.com/logo.png",
+      "pricingModel": "FREEMIUM",
+      "pricingAmount": 15.00,
+      "billingFrequency": "MONTHLY",
+      "isOpenSource": false,
+      "isTrending": true,
+      "features": ["Text generation", "Image generation"],
+      "screenshots": [],
+      "company": {
+        "slug": "orbit-inc",
+        "name": "Orbit Inc.",
+        "logoUrl": "https://orbit-inc.example.com/logo.png"
+      },
+      "categories": [
+        { "slug": "ai-generators", "name": "AI Generators" },
+        { "slug": "productivity", "name": "Productivity" }
+      ],
+      "tags": [
+        { "slug": "text-to-image", "name": "Text to Image" },
+        { "slug": "cool", "name": "Cool" }
+      ]
+    }
+  ]
+}

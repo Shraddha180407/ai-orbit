@@ -94,7 +94,7 @@ authRoutes.get('/google/callback', async (c) => {
     }
 
     const jwtSecret = (c.env as any)?.JWT_SECRET || process.env.JWT_SECRET;
-    const jwtToken = sign({ id: user.id, email: user.email, name: user.name }, jwtSecret!, { expiresIn: '7d' });
+    const jwtToken = sign({ id: user.id, email: user.email, name: user.name, role: user.role }, jwtSecret!, { expiresIn: '7d' });
     const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', jwtToken, {
       httpOnly: true,
@@ -104,6 +104,9 @@ authRoutes.get('/google/callback', async (c) => {
       maxAge: 60 * 60 * 24 * 7
     });
 
+    if (user.role === 'ADMIN') {
+      return c.redirect(`${frontendUrl}/admin`);
+    }
     return c.redirect(`${frontendUrl}/dashboard`);
   } catch (err) {
     return c.redirect(`${frontendUrl}/auth/signin?error=OAuthFailed&details=${encodeURIComponent(err instanceof Error ? err.message : String(err))}`);
@@ -201,7 +204,7 @@ authRoutes.get('/github/callback', async (c) => {
     }
 
     const jwtSecret = (c.env as any)?.JWT_SECRET || process.env.JWT_SECRET;
-    const jwtToken = sign({ id: user.id, email: user.email, name: user.name }, jwtSecret!, { expiresIn: '7d' });
+    const jwtToken = sign({ id: user.id, email: user.email, name: user.name, role: user.role }, jwtSecret!, { expiresIn: '7d' });
     const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', jwtToken, {
       httpOnly: true,
@@ -211,6 +214,9 @@ authRoutes.get('/github/callback', async (c) => {
       maxAge: 60 * 60 * 24 * 7
     });
 
+    if (user.role === 'ADMIN') {
+      return c.redirect(`${frontendUrl}/admin`);
+    }
     return c.redirect(`${frontendUrl}/dashboard`);
   } catch (err) {
     return c.redirect(`${frontendUrl}/auth/signin?error=OAuthFailed&details=${encodeURIComponent(err instanceof Error ? err.message : String(err))}`);

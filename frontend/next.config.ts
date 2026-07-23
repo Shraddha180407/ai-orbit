@@ -14,6 +14,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "res.cloudinary.com",
       },
+      {
+        protocol: "https",
+        hostname: "orbit-ai.example.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.gstatic.com",
+      },
     ],
   },
 
@@ -22,18 +30,20 @@ const nextConfig: NextConfig = {
   // included in each edge-function bundle (critical on free plan: 3 MiB cap).
   experimental: {
     optimizePackageImports: [
+
       "lucide-react",          // 1000+ icons — biggest win: ~1 MiB per function
       "@tanstack/react-query",
       "sonner",
       "clsx",
       "tailwind-merge",
+      "recharts",
     ],
   },
   
   async rewrites() {
     return [
       {
-        source: "/:type(collections|countries|devices|fundraises|investors|models|news|repositories|robots|tasks|tools|videos)/:slug",
+        source: "/:type(collections|countries|devices|fundraises|investors|models|news|robots|tasks|tools|videos)/:slug",
         destination: "/p/:type/:slug",
       },
     ];

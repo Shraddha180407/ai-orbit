@@ -6,25 +6,43 @@ import Building from 'lucide-react/dist/esm/icons/building';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin';
 import { Company } from "@/lib/types";
 import { fetchAllCompanies } from "@/lib/api";
+import { useUser } from "@/hooks/use-user";
+import { Modal } from "@/components/ui/modal";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { API_URL } from "@/lib/api";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/shadcn-button";
 
 export function CompaniesClient() {
+  const { user } = useUser();
+  const isAdmin = user?.role === 'ADMIN';
+
   const [companies, setCompanies] = useState<Company[]>([]);
   const [visibleCount, setVisibleCount] = useState(15);
   const [isLoading, setIsLoading] = useState(true);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    async function getCompanies() {
-      try {
-        const data = await fetchAllCompanies();
-        setCompanies(data || []);
-      } catch (e) {
-        console.error("Failed to fetch companies:", e);
-      } finally {
-        setIsLoading(false);
-      }
+  // Admin Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ name: '', slug: '', logoUrl: '' });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const getCompanies = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchAllCompanies();
+      setCompanies(data || []);
+    } catch (e) {
+      console.error("Failed to fetch companies:", e);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
     getCompanies();
   }, []);
 
@@ -52,17 +70,69 @@ export function CompaniesClient() {
 
   const visibleCompanies = companies.slice(0, visibleCount);
 
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const url = editingId ? `${API_URL}/api/admin/companies/${editingId}` : `${API_URL}/api/admin/companies`;
+      const method = editingId ? 'PATCH' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Failed to save company');
+      toast.success(editingId ? 'Company updated successfully' : 'Company added successfully');
+      setIsModalOpen(false);
+      getCompanies();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/companies/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to delete company');
+      toast.success('Company deleted successfully');
+      getCompanies();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const openAdd = () => {
+    setEditingId(null);
+    setFormData({ name: '', slug: '', logoUrl: '' });
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (company: any) => {
+    setEditingId(company.id);
+    setFormData({ name: company.name || '', slug: company.slug || '', logoUrl: company.logoUrl || '' });
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <main className="mx-auto max-w-[1070px] px-8 py-12 flex-1 w-full">
-        <div className="mb-10">
-          <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2">
-            <Building className="text-[#6E56CF]" />
-            AI Companies
-          </h1>
-          <p className="text-sm text-[#A1A1AA] mt-2">
-            Explore leading AI research labs, software vendors, and hardware makers in the global ecosystem.
-          </p>
+        <div className="mb-10 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2">
+              <Building className="text-[#6E56CF]" />
+              AI Companies
+            </h1>
+            <p className="text-sm text-[#A1A1AA] mt-2">
+              Explore leading AI research labs, software vendors, and hardware makers in the global ecosystem.
+            </p>
+          </div>
+          {isAdmin && (
+            <Button className="bg-white text-black hover:bg-neutral-200" onClick={openAdd}>
+              <Plus className="h-4 w-4 mr-2" /> Add Company
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
@@ -87,7 +157,6 @@ export function CompaniesClient() {
                 <div className="h-10 w-10 rounded-lg bg-[#18181C] flex items-center justify-center font-black text-lg text-white border border-[#232326] shrink-0">
                   {company.name.charAt(0)}
                 </div>
-
                 {/* Column 2: Name */}
                 <div className="min-w-0">
                   <h3 className="font-bold text-white text-base truncate group-hover:text-white transition-colors">
@@ -113,6 +182,34 @@ export function CompaniesClient() {
                     View Details &rarr;
                   </span>
                 </div>
+                {isAdmin && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-7 text-xs bg-white/5 border border-white/10 hover:bg-white/10"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        openEdit(company);
+                      }}
+                    >
+                      <Pencil className="w-3 h-3 mr-1" /> Edit
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-7 text-xs bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (window.confirm('Are you sure you want to delete this company?')) {
+                          handleDelete(company.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" /> Delete
+                    </Button>
+                  </div>
+                )}
               </Link>
             ))}
 
@@ -125,6 +222,19 @@ export function CompaniesClient() {
           </div>
         )}
       </main>
+      
+      <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? 'Edit Company' : 'Add Company'} footer={
+        <>
+          <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+          <Button onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save'}</Button>
+        </>
+      }>
+        <div className="space-y-3">
+          <div><label className="text-xs text-[#8A8F98]">Name *</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. OpenAI" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Slug * (unique, lowercase, no spaces)</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. openai" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Logo URL (optional)</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="https://..." value={formData.logoUrl} onChange={e => setFormData({...formData, logoUrl: e.target.value})} /></div>
+        </div>
+      </Modal>
     </div>
   );
 }

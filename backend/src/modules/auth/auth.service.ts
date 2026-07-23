@@ -206,7 +206,7 @@ export class AuthService {
   async getMe(userId: string) {
     const dbUser = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, email: true, image: true, emailVerified: true }
+      select: { id: true, name: true, email: true, image: true, emailVerified: true, role: true }
     });
     if (!dbUser) throw new Error('User not found.');
     return dbUser;

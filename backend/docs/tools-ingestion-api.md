@@ -1,0 +1,101 @@
+# Tools Ingestion API Documentation
+
+This document outlines how the Data Team can programmatically ingest or update AI tools in the `ai-orbit` database.
+
+## Overview
+- **Endpoint**: `POST /api/ingestion/tools`
+- **Content-Type**: `application/json`
+- **Authentication**: Requires a Bearer token in the `Authorization` header.
+
+```http
+Authorization: Bearer <INGESTION_TOKEN>
+```
+
+## Behavior
+This API acts as an **upsert**. 
+- It matches tools based on their `slug`. 
+- Any connected entities (`company`, `categories`, `tags`) provided in the payload will also be automatically upserted based on their respective `slug`s. 
+- If a tool already exists, its primitive fields will be updated, and its associated categories and tags will be fully replaced by the ones in the payload.
+
+## Schema Details
+
+The API expects a top-level JSON object containing a `tools` array.
+
+### Tool Object
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `slug` | `string` | **Yes** | Unique identifier for the tool. Used for upserts. |
+| `name` | `string` | **Yes** | Display name of the tool. |
+| `description` | `string` | **Yes** | Full description of the tool. |
+| `websiteUrl` | `string` (URL) | **Yes** | Primary URL to the tool. |
+| `logoUrl` | `string` (URL) | No | URL to the tool's logo. |
+| `screenshots` | `string[]` | No | Array of screenshot URLs. Default is `[]`. |
+| `features` | `string[]` | No | Array of feature strings. Default is `[]`. |
+| `pricingModel` | `string` | **Yes** | Must be one of: `"FREE"`, `"FREEMIUM"`, `"PAID"`, `"FREE_TRIAL"` |
+| `pricingAmount` | `number` | No | Numerical price. |
+| `billingFrequency`| `string` | No | Must be one of: `"MONTHLY"`, `"YEARLY"`, `"ONE_TIME"`, `"NA"`. Default is `"NA"`. |
+| `isOpenSource` | `boolean` | No | Indicates if the tool is open source. Default is `false`. |
+| `isTrending` | `boolean` | No | Indicates if the tool is currently trending. Default is `false`. |
+| `company` | `object` | No | Details about the parent company. See Company Object. |
+| `categories` | `object[]` | No | Array of categories this tool belongs to. See Entity Object. |
+| `tags` | `object[]` | No | Array of tags describing the tool. See Entity Object. |
+
+### Company Object
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `slug` | `string` | **Yes** | Unique identifier for the company. |
+| `name` | `string` | **Yes** | Display name of the company. |
+| `logoUrl` | `string` (URL) | No | URL to the company's logo. |
+
+### Entity Object (Categories / Tags)
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `slug` | `string` | **Yes** | Unique identifier for the category/tag. |
+| `name` | `string` | **Yes** | Display name of the category/tag. |
+
+---
+
+## Sample Payload
+
+```json
+{
+  "tools": [
+    {
+      "slug": "orbit-ai-generator",
+      "name": "Orbit AI Generator",
+      "description": "A powerful AI generator for orbits.",
+      "websiteUrl": "https://orbit-ai.example.com",
+      "logoUrl": "https://orbit-ai.example.com/logo.png",
+      "pricingModel": "FREEMIUM",
+      "pricingAmount": 15.00,
+      "billingFrequency": "MONTHLY",
+      "isOpenSource": false,
+      "isTrending": true,
+      "features": ["Text generation", "Image generation"],
+      "screenshots": [
+        "https://orbit-ai.example.com/screenshot1.png"
+      ],
+      "company": {
+        "slug": "orbit-inc",
+        "name": "Orbit Inc.",
+        "logoUrl": "https://orbit-inc.example.com/logo.png"
+      },
+      "categories": [
+        { "slug": "ai-generators", "name": "AI Generators" },
+        { "slug": "productivity", "name": "Productivity" }
+      ],
+      "tags": [
+        { "slug": "text-to-image", "name": "Text to Image" },
+        { "slug": "cool", "name": "Cool" }
+      ]
+    }
+  ]
+}
+```
+
+## Responses
+- **200 OK**: Successfully processed the payload. Returns a summary object detailing the number of items created, updated, and any errors encountered during the transaction.
+- **422 Unprocessable Entity**: The provided payload failed Zod schema validation. The response will include an `issues` array detailing the specific validation failures.
+- **401 Unauthorized**: Missing or incorrectly formatted `Authorization` header.
+- **403 Forbidden**: Provided token does not match the server's `INGESTION_TOKEN`.
