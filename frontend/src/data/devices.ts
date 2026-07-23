@@ -231,7 +231,7 @@ export const DEVICES_DATA: DeviceData[] = [
     manufacturerSlug: "msi",
     category: "Other",
     availability: "Available",
-    price: null,
+    price: "$311.00",
     year: "2026",
     month: "2026",
     description: "A compact AI supercomputer based on the NVIDIA DGX Spark GB10 platform, designed for local AI development, inference, and enterprise AI workloads.",

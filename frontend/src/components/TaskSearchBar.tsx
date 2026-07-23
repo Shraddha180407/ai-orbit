@@ -22,14 +22,14 @@ export function TaskSearchBar({ value, onChange }: TaskSearchBarProps) {
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search tasks…"
         aria-label="Search tasks"
-        className="w-full rounded-lg bg-[#131316] border border-[#232326] text-sm text-white placeholder:text-[#71717A] pl-10 pr-10 py-2.5 outline-none focus:ring-2 focus:ring-[#6E56CF]/60 focus:border-[#6E56CF]/60 transition-all"
+        className="w-full rounded-xl bg-[#0A0A0C]/60 ring-1 ring-[#232326]/60 text-sm text-white placeholder:text-[#71717A] pl-10 pr-10 py-2.5 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#6E56CF]/60"
       />
       {value.length > 0 && (
         <button
           type="button"
           onClick={() => onChange("")}
           aria-label="Clear search"
-          className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 rounded-md flex items-center justify-center text-[#71717A] hover:text-white hover:bg-[#232326] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF]/60"
+          className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 rounded-md flex items-center justify-center text-[#71717A] hover:text-white hover:bg-[#232326] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF]/60"
         >
           <X className="h-3.5 w-3.5" />
         </button>

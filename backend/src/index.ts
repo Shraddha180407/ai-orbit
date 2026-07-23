@@ -28,6 +28,7 @@ type Bindings = {
   CLOUDINARY_CLOUD_NAME: string
   CLOUDINARY_API_KEY: string
   CLOUDINARY_API_SECRET: string
+  INGESTION_TOKEN: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -54,6 +55,8 @@ app.route('/api/videos', videosRouter)
 app.route('/api/news', newsRouter)
 app.route('/api/ingestion', ingestionRouter)
 app.route('/logos/publishers', logosRouter)
+import { adminRouter } from './modules/admin/admin.routes.js'
+
 app.route('/api/auth', authRoutes)
 app.route('/api/v1/leaderboard', leaderboardRouter)
 app.route('/api/v1/companies', companiesRouter)
@@ -62,6 +65,7 @@ app.route('/api/v1/devices', devicesRouter)
 app.route('/api/v1/models', modelsRouter)
 app.route('/api/v1/repositories', repositoriesRouter)
 app.route('/api/v1/robots', robotsRouter)
+app.route('/api/admin', adminRouter)
 app.route('/api/v1/tasks', tasksRouter)
 app.route('/api/v1/homepage', homepageRouter)
 app.route('/api/v1/tools', toolsRouter)

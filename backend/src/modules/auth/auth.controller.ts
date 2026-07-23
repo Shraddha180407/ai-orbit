@@ -62,7 +62,7 @@ export class AuthController {
       const jwtSecret = c.env?.JWT_SECRET || process.env.JWT_SECRET;
 
       const token = sign(
-        { id: user.id, email: user.email, name: user.name }, 
+        { id: user.id, email: user.email, name: user.name, role: user.role }, 
         jwtSecret!, 
         { expiresIn: '7d' }
       );
@@ -76,7 +76,7 @@ export class AuthController {
         maxAge: 60 * 60 * 24 * 7
       });
 
-      return c.json({ success: true, user: { id: user.id, name: user.name, email: user.email } });
+      return c.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
     } catch (error: any) {
       if (error.message === 'Invalid email or password.') {
         return c.json({ error: error.message }, 401);
@@ -84,6 +84,7 @@ export class AuthController {
       if (error.message === 'Please verify your email before logging in.') {
         return c.json({ error: error.message }, 403);
       }
+      console.error("LOGIN ERROR:", error);
       return c.json({ error: 'Failed to login.' }, 500);
     }
   }
@@ -120,7 +121,7 @@ export class AuthController {
       const jwtSecret = c.env?.JWT_SECRET || process.env.JWT_SECRET;
 
       const token = sign(
-        { id: user.id, email: user.email, name: user.name }, 
+        { id: user.id, email: user.email, name: user.name, role: user.role }, 
         jwtSecret!, 
         { expiresIn: '7d' }
       );
