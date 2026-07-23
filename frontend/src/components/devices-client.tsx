@@ -188,13 +188,19 @@ export function DevicesClient() {
         <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-2">
           AI Devices & Wearables
         </h1>
-        <div className="flex items-center gap-4 text-sm text-[#52525B] mt-2">
-          <span><span className="text-white font-semibold">{isLoading ? "…" : devices.length}</span> Devices</span>
-          <span>·</span>
-          <span><span className="text-white font-semibold">{isLoading ? "…" : categories.length}</span> Categories</span>
+        <div className="flex items-center gap-6 mt-3">
+          <div className="flex flex-col items-center">
+            <span className="text-2xl font-black text-white">{isLoading ? "…" : devices.length}</span>
+            <span className="text-xs text-[#52525B] uppercase tracking-widest mt-0.5">Devices</span>
+          </div>
+          <div className="w-px h-8 bg-[#232326]" />
+          <div className="flex flex-col items-center">
+            <span className="text-2xl font-black text-white">{isLoading ? "…" : categories.length}</span>
+            <span className="text-xs text-[#52525B] uppercase tracking-widest mt-0.5">Categories</span>
+          </div>
         </div>
       </div>
-      <div className="flex justify-end mb-1">
+      <div className="flex justify-end mb-4 mt-4">
         <div className="flex items-center gap-2">
           {hasActiveFilters && (
             <button onClick={clearAllFilters}
@@ -219,34 +225,27 @@ export function DevicesClient() {
           {/* Grid Filters */}
           <div className="flex flex-wrap gap-3 mb-5 items-center">
             {/* Name search */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-1 min-w-[180px]">
               <input
                 type="text"
-                placeholder="Search by name..."
+                placeholder="Search devices..."
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { setNameSearch(nameInput); setCurrentPage(1); } }}
-                className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 w-48 placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF]"
+                className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 w-full placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF]"
               />
               <button
                 onClick={() => { setNameSearch(nameInput); setCurrentPage(1); }}
-                className="text-xs bg-[#6E56CF] hover:bg-[#7C66DF] text-white px-3 py-2 rounded-lg transition-colors font-semibold">
+                className="text-xs bg-[#6E56CF] hover:bg-[#7C66DF] text-white px-3 py-2 rounded-lg transition-colors font-semibold shrink-0">
                 Apply
               </button>
-              {nameSearch && (
-                <button
-                  onClick={() => { setNameSearch(""); setNameInput(""); setCurrentPage(1); }}
-                  className="text-xs border border-[#232326] text-[#52525B] hover:text-white px-3 py-2 rounded-lg transition-colors">
-                  Clear
-                </button>
-              )}
             </div>
 
             {/* Category */}
             <select
               value={selectedCategory}
               onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
-              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF]"
+              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] flex-1 min-w-[140px]"
             >
               <option value={ALL_CATEGORIES}>All Categories</option>
               {categories.map((c) => <option key={c}>{c}</option>)}
@@ -256,11 +255,13 @@ export function DevicesClient() {
             <select
               value={selectedAvailability}
               onChange={(e) => { setSelectedAvailability(e.target.value); setCurrentPage(1); }}
-              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF]"
+              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] flex-1 min-w-[140px]"
             >
-              {["All", "Available", "Pre-order", "Announced", "Discontinued"].map((a) => (
-                <option key={a}>{a}</option>
-              ))}
+              <option value="All">All Availability</option>
+              <option value="Available">Available</option>
+              <option value="Pre-order">Pre-order</option>
+              <option value="Announced">Announced</option>
+              <option value="Discontinued">Discontinued</option>
             </select>
 
             {/* Sort */}
@@ -272,27 +273,27 @@ export function DevicesClient() {
                 setSortDir(dir as "asc" | "desc");
                 setCurrentPage(1);
               }}
-              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF]"
+              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] flex-1 min-w-[160px]"
             >
-              <option value="release-desc">Release Date ↓</option>
-              <option value="release-asc">Release Date ↑</option>
-              <option value="name-asc">Name A→Z</option>
-              <option value="name-desc">Name Z→A</option>
-              <option value="price-asc">Price Low→High</option>
-              <option value="price-desc">Price High→Low</option>
+              <option value="release-desc">Sort: Newest First</option>
+              <option value="release-asc">Sort: Oldest First</option>
+              <option value="name-asc">Sort: Name A→Z</option>
+              <option value="name-desc">Sort: Name Z→A</option>
+              <option value="price-asc">Sort: Price Low→High</option>
+              <option value="price-desc">Sort: Price High→Low</option>
             </select>
 
             {/* Price Range */}
-            <div className="relative">
+            <div className="relative shrink-0">
               <button
                 onClick={() => setOpenDropdown(openDropdown === "grid-price" ? null : "grid-price")}
-                className={`flex items-center gap-1.5 bg-[#131316] border text-sm rounded-lg px-3 py-2 transition-colors ${activePriceFilter ? "border-[#6E56CF] text-[#6E56CF]" : "border-[#232326] text-[#A1A1AA] hover:text-white"}`}
+                className={`flex items-center gap-1.5 bg-[#131316] border text-sm rounded-lg px-3 py-2 transition-colors whitespace-nowrap ${activePriceFilter ? "border-[#6E56CF] text-[#6E56CF]" : "border-[#232326] text-[#A1A1AA] hover:text-white"}`}
               >
-                Price {activePriceFilter ? `$${priceMin}–$${priceMax}` : "Range"}
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M6 9l6 6 6-6"/></svg>
+                {activePriceFilter ? `$${priceMin}–$${priceMax}` : "Price Range"}
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
               </button>
               {openDropdown === "grid-price" && (
-                <div className="absolute top-10 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-4 min-w-[220px]">
+                <div className="absolute top-10 right-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-4 min-w-[220px]">
                   <div className="flex justify-between text-[10px] text-[#A1A1AA] mb-3">
                     <span>Min: <span className="text-white font-bold">${priceMin.toLocaleString()}</span></span>
                     <span>Max: <span className="text-white font-bold">${priceMax.toLocaleString()}</span></span>
@@ -320,12 +321,6 @@ export function DevicesClient() {
               )}
             </div>
 
-            {hasActiveFilters && (
-              <button onClick={clearAllFilters}
-                className="text-xs text-[#A1A1AA] hover:text-white border border-[#232326] hover:border-[#6E56CF] px-3 py-2 rounded-lg transition-colors">
-                Clear all
-              </button>
-            )}
           </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
           {isLoading ? (
@@ -335,7 +330,7 @@ export function DevicesClient() {
           ) : visible.map((device) => (
             <Link key={device.id} href={`/devices/${device.slug || device.id}`}
               className="rounded-xl border border-[#232326] bg-[#0D0D0F] hover:border-[#6E56CF]/40 transition-all group overflow-hidden">
-              <div className="relative h-44 bg-[#18181C] flex items-center justify-center overflow-hidden">
+              <div className="relative h-56 bg-[#18181C] flex items-center justify-center overflow-hidden">
                 {device.imageUrl ? (
                   <img src={device.imageUrl} alt={device.name} className="w-full h-full object-cover"
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
@@ -343,7 +338,11 @@ export function DevicesClient() {
                   <span className="text-4xl font-black text-white uppercase">{device.name.charAt(0)}</span>
                 )}
                 <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                  <p className="text-sm font-bold text-white truncate">{device.name}</p>
+                  <p className="text-sm font-bold text-white truncate transition-colors"
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = device.mainTaskColor || '#6E56CF'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'white'; }}>
+                    {device.name}
+                  </p>
                   <p className="text-[11px] text-[#A1A1AA]">{device.category} · {device.manufacturer}</p>
                 </div>
                 {device.month && (
@@ -572,10 +571,17 @@ export function DevicesClient() {
 
                     {/* Name */}
                     <div className="px-4 py-3 min-w-0 border-l border-[#232326]/40">
-                      <span className="font-semibold text-white text-sm truncate block transition-colors group-hover:text-white"
-                        style={{}}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = device.mainTaskColor || '#6E56CF'; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = ''; }}>
+                      <span className="font-semibold text-white text-sm truncate block transition-colors"
+                        style={{ color: undefined }}
+                        ref={(el) => {
+                          if (el) {
+                            const row = el.closest('a');
+                            if (row) {
+                              row.addEventListener('mouseenter', () => { el.style.color = device.mainTaskColor || '#6E56CF'; });
+                              row.addEventListener('mouseleave', () => { el.style.color = ''; });
+                            }
+                          }
+                        }}>
                         {device.name}
                       </span>
                     </div>
