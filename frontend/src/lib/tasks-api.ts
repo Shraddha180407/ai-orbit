@@ -1,4 +1,11 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+function resolveApiUrl(): string {
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  if (url && url.startsWith("http") && url !== "undefined") {
+    return url.replace(/\/$/, "");
+  }
+  return "https://api.aiorbit.club";
+}
+const BASE_URL = resolveApiUrl();
 
 export type Difficulty = "EASY" | "MEDIUM" | "ADVANCED";
 export type PricingModel = "FREE" | "FREEMIUM" | "PAID" | "FREE_TRIAL";

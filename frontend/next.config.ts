@@ -14,6 +14,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "res.cloudinary.com",
       },
+      {
+        protocol: "https",
+        hostname: "orbit-ai.example.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.gstatic.com",
+      },
     ],
   },
 
