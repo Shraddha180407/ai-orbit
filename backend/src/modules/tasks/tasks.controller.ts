@@ -21,7 +21,7 @@ export class TasksController {
         return c.json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }, 401);
       }
       try {
-        const jwtSecret = (c.env as any)?.JWT_SECRET || process.env.JWT_SECRET;
+        const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
         const decoded = verify(token, jwtSecret!) as { id: string };
         userId = decoded.id;
       } catch {
@@ -46,9 +46,9 @@ export class TasksController {
         userId,
       });
       return c.json(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('listTasks error:', error);
-      return c.json({ error: error.message ?? String(error) }, 500);
+      return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
     } finally {
       if (prisma) await prisma.$disconnect();
     }
@@ -62,7 +62,7 @@ export class TasksController {
       const token = getCookie(c, 'auth_token');
       if (token) {
         try {
-          const jwtSecret = (c.env as any)?.JWT_SECRET || process.env.JWT_SECRET;
+          const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
           const decoded = verify(token, jwtSecret!) as { id: string };
           userId = decoded.id;
         } catch {
@@ -77,9 +77,9 @@ export class TasksController {
         return c.json({ error: 'Task not found' }, 404);
       }
       return c.json(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('getTaskDetails error:', error);
-      return c.json({ error: error.message ?? String(error) }, 500);
+      return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
     } finally {
       if (prisma) await prisma.$disconnect();
     }
@@ -97,9 +97,9 @@ export class TasksController {
     const bookmarked = await service.toggleBookmarkBySlug(slug, user.id);
     if (bookmarked === null) return c.json({ error: 'Task not found' }, 404);
     return c.json({ bookmarked });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('toggleBookmark error:', error);
-    return c.json({ error: error.message ?? String(error) }, 500);
+    return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
   } finally {
     if (prisma) await prisma.$disconnect();
   }
@@ -117,9 +117,9 @@ async toggleLike(c: Context) {
     const liked = await service.toggleLikeBySlug(slug, user.id);
     if (liked === null) return c.json({ error: 'Task not found' }, 404);
     return c.json({ liked });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('toggleLike error:', error);
-    return c.json({ error: error.message ?? String(error) }, 500);
+    return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
   } finally {
     if (prisma) await prisma.$disconnect();
   }
@@ -137,9 +137,9 @@ async toggleSubscribe(c: Context) {
     const subscribed = await service.toggleSubscribeBySlug(slug, user.id);
     if (subscribed === null) return c.json({ error: 'Task not found' }, 404);
     return c.json({ subscribed });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('toggleSubscribe error:', error);
-    return c.json({ error: error.message ?? String(error) }, 500);
+    return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
   } finally {
     if (prisma) await prisma.$disconnect();
   }

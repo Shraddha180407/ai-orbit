@@ -287,8 +287,8 @@ export class NewsService {
     } else {
       try {
         await this.prisma.newsVote.create({ data: { articleId, clientId, value } });
-      } catch (err: any) {
-        if (err?.code !== "P2002") throw err;
+      } catch (err: unknown) {
+        if (!(err instanceof Error) || (err as { code?: string }).code !== "P2002") throw err;
         await this.prisma.newsVote.update({ where: { articleId_clientId: { articleId, clientId } }, data: { value } });
       }
       myVote = value;
@@ -326,8 +326,8 @@ export class NewsService {
     if (!existing) {
       try {
         await this.prisma.newsBookmark.create({ data: { articleId, clientId } });
-      } catch (err: any) {
-        if (err?.code !== "P2002") throw err;
+      } catch (err: unknown) {
+        if (!(err instanceof Error) || (err as { code?: string }).code !== "P2002") throw err;
       }
     }
     return { bookmarked: true };

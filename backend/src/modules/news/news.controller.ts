@@ -62,7 +62,7 @@ export class NewsController {
         : undefined;
 
       return c.json({ articles, sources, categories, filterChips, pagination });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("News listing error:", error);
       return c.json({ error: "Internal server error." }, 500);
     }
@@ -89,7 +89,7 @@ export class NewsController {
       ]);
 
       return c.json({ article, related, sources, popularSources, comments });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("News detail error:", error);
       return c.json({ error: "Internal server error." }, 500);
     }
@@ -109,7 +109,7 @@ export class NewsController {
 
       const result = await service.setVote(articleId, clientId, value);
       return c.json(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("News vote error:", error);
       return c.json({ error: "Internal server error." }, 500);
     }
@@ -129,7 +129,7 @@ export class NewsController {
 
       const result = await service.addBookmark(articleId, clientId);
       return c.json(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("News bookmark create error:", error);
       return c.json({ error: "Internal server error." }, 500);
     }
@@ -149,7 +149,7 @@ export class NewsController {
 
       const result = await service.removeBookmark(articleId, clientId);
       return c.json(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("News bookmark delete error:", error);
       return c.json({ error: "Internal server error." }, 500);
     }
@@ -169,7 +169,7 @@ export class NewsController {
 
       const comment = await service.addComment(articleId, clientId, authorName, body);
       return c.json({ comment }, 201);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("News comment create error:", error);
       return c.json({ error: "Internal server error." }, 500);
     }
