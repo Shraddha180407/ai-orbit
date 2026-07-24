@@ -96,10 +96,24 @@ export interface CollectionListItem {
   creator: CreatorProfile;
   categories: CollectionCategory[];
   isBookmarked?: boolean;   // ← add this
+  previewTools?: { logoUrl: string | null; name: string }[];
   _count: {
     relatedModels: number;
     relatedCompanies: number;
   };
+}
+
+export interface CollectionDetailData {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  curatedBy: string;
+  category: string;
+  featured: boolean;
+  updatedAt: string;
+  toolCount: number;
+  tools: ToolCardData[];
 }
 
 export interface CollectionsApiResponse {

@@ -47,8 +47,8 @@ export function CollectionCard({
       )}
       <div>
         <div className="mb-4 flex items-start justify-between">
-          <StackedLogos tools={collection.previewTools} />
-          {collection.featured && (
+          <StackedLogos tools={collection.previewTools ?? []} />
+          {collection.isFeatured && (
             <span
               className="rounded-full px-2.5 py-1 text-xs font-medium"
               style={{ color: "var(--collections-gold)", backgroundColor: "var(--collections-gold-muted)" }}
@@ -59,7 +59,7 @@ export function CollectionCard({
         </div>
 
         <h3 className="font-semibold text-foreground transition-colors group-hover:text-accent">
-          {collection.title}
+          {collection.name}
         </h3>
         <p className="mt-1.5 line-clamp-2 text-sm text-foreground-muted">{collection.description}</p>
       </div>

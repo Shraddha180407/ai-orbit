@@ -14,7 +14,12 @@ import type { CollectionListItem, CreatorType } from "@/lib/types";
 // Delay before firing a search request, so we don't hit the API on every keystroke
 const SEARCH_DEBOUNCE_MS = 350;
 
-export default function CollectionsPageClient() {
+interface Props {
+  initialItems?: CollectionListItem[];
+  initialNextCursor?: string | null;
+}
+
+export default function CollectionsPageClient({ initialItems, initialNextCursor }: Props = {}) {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sort, setSort] = useState("recently_updated");
@@ -27,13 +32,14 @@ export default function CollectionsPageClient() {
   const [hasRelatedCompanies, setHasRelatedCompanies] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  const [items, setItems] = useState<CollectionListItem[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
+  const [items, setItems] = useState<CollectionListItem[]>(initialItems ?? []);
+  const [cursor, setCursor] = useState<string | null>(initialNextCursor ?? null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
+  const hasInitialData = useRef(initialItems != null);
 
   // Debounce search input
   useEffect(() => {
@@ -66,6 +72,12 @@ export default function CollectionsPageClient() {
 
   // Fetch first page whenever filters/search/sort change
   useEffect(() => {
+    // Skip the initial fetch when server-provided data already covers the defaults
+    if (hasInitialData.current) {
+      hasInitialData.current = false;
+      return;
+    }
+
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;

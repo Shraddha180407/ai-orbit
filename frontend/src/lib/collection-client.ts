@@ -6,8 +6,8 @@ import {
 } from "@tanstack/react-query";
 
 import type {
-    CollectionsListResponse,
-    CollectionsQueryParams,
+    CollectionsApiResponse,
+    CollectionFilterParams,
 } from "@/lib/types";
 
 
@@ -16,8 +16,8 @@ import type {
 // ----------------------------------------
 
 async function fetchCollections(
-    params: CollectionsQueryParams
-): Promise<CollectionsListResponse> {
+    params: CollectionFilterParams
+): Promise<CollectionsApiResponse> {
     const search = new URLSearchParams();
 
     if (params.search)
@@ -116,7 +116,7 @@ export function useDebouncedValue<T>(
 // ----------------------------------------
 
 export function useCollectionsInfinite(
-    params: Omit<CollectionsQueryParams, "cursor">
+    params: Omit<CollectionFilterParams, "cursor">
 ) {
     return useInfiniteQuery({
         queryKey: ["collections", params],
