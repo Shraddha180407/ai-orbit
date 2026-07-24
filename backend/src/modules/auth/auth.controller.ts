@@ -103,7 +103,7 @@ export class AuthController {
       const user = c.get('user');
       const dbUser = await this.getService(c).getMe(user.id);
       return c.json({ success: true, user: dbUser });
-    } catch (error) {
+    } catch (_error) {
       return c.json({ error: 'User not found' }, 404);
     }
   }
@@ -186,7 +186,7 @@ export class AuthController {
 
       const response = await this.getService(c).forgotPassword(result.data);
       return c.json({ success: true, message: response.message });
-    } catch (error) {
+    } catch (_error) {
       return c.json({ error: 'Failed to send password reset email.' }, 500);
     }
   }
@@ -240,7 +240,7 @@ export class AuthController {
       const user = c.get('user');
       const settings = await this.getService(c).getSettings(user.id);
       return c.json(settings);
-    } catch (error) {
+    } catch (_error) {
       return c.json({ error: 'Failed to fetch settings' }, 500);
     }
   }

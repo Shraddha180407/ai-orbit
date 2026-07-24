@@ -88,13 +88,12 @@ export class AdminService {
     });
   }
 
-  async getReports(page: number, status: string) {
-    const pageSize = 20;
+  async getReports(page: number, _status: string) {
     const reports: any[] = []; const total = 0;
     return { reports, total, page, totalPages: 1 };
   }
 
-  async updateReport(id: string, status: string) {
+  async updateReport(_id: string, _status: string) {
     throw new Error('Report model removed');
   }
 

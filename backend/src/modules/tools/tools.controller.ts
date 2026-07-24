@@ -54,7 +54,6 @@ export class ToolsController {
   async submitReview(c: Context) {
     const prisma = getPrisma(c.env);
     const service = new ToolsService(prisma);
-    const slug = c.req.param('slug');
 
     try {
       const body = await c.req.json();

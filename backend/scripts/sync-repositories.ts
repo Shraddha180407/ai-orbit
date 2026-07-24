@@ -197,15 +197,6 @@ async function fetchReadme(owner: string, name: string): Promise<string | null> 
   }
 }
 
-function rewriteRelativeImages(html: string, owner: string, name: string, branch: string): string {
-  const prefix = `https://raw.githubusercontent.com/${owner}/${name}/${branch}/`;
-  // Rewrite src="...", src='./...', src="./..." to absolute URLs
-  return html.replace(
-    /src="(?!\w+:\/?\/)([^"]+)"/g,
-    (_match, path) => `src="${prefix}${path}"`
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Field mapping
 // ---------------------------------------------------------------------------
