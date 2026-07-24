@@ -47,7 +47,7 @@ export function RepositoryDetailPage({ slug }: RepositoryDetailPageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <RepositoryBreadcrumb owner={repo.owner} name={repo.name} />
+      <RepositoryBreadcrumb owner={repo.owner} name={repo.name} companySlug={repo.companySlug} />
       <RepositoryHeroCard repo={repo} />
       <RepositoryReadme 
         readmeHtml={repo.readmeHtml} 
