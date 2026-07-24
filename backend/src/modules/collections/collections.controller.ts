@@ -14,8 +14,8 @@ export class CollectionsController {
     try {
       const result = await service.listCollections({ category, page });
       return c.json(result);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
       await prisma.$disconnect();
     }
@@ -32,8 +32,8 @@ export class CollectionsController {
         return c.json({ error: 'Collection not found' }, 404);
       }
       return c.json(collection);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
       await prisma.$disconnect();
     }
