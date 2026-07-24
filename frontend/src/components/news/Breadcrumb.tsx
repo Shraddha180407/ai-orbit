@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Icon } from "@/components/ui/Icon";
-import { ICONS } from "@/lib/icons";
+import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 
 export interface BreadcrumbItem {
   label: string;
@@ -9,34 +8,19 @@ export interface BreadcrumbItem {
 
 export function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
   return (
-    <nav aria-label="Breadcrumb" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+    <nav aria-label="Breadcrumb" className="flex items-center gap-2 flex-wrap">
       {items.map((it, i) => {
         const last = i === items.length - 1;
         return (
-          <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <span key={i} className="inline-flex items-center gap-2">
             {it.href && !last ? (
-              <Link
-                href={it.href}
-                className="tas-crumb"
-                style={{
-                  font: "var(--fw-medium) var(--fs-xs)/1 var(--font-sans)",
-                  color: "var(--text-tertiary)",
-                  transition: "var(--transition-colors)",
-                }}
-              >
+              <Link href={it.href} className="text-xs font-medium text-foreground-faint hover:text-foreground-muted transition-colors">
                 {it.label}
               </Link>
             ) : (
-              <span
-                style={{
-                  font: "var(--fw-medium) var(--fs-xs)/1 var(--font-sans)",
-                  color: last ? "var(--text-secondary)" : "var(--text-tertiary)",
-                }}
-              >
-                {it.label}
-              </span>
+              <span className={`text-xs font-medium ${last ? "text-foreground-muted" : "text-foreground-faint"}`}>{it.label}</span>
             )}
-            {!last && <Icon path={ICONS.chevronR} size={13} style={{ color: "var(--text-quaternary)" }} />}
+            {!last && <ChevronRight size={13} className="text-foreground-faint" />}
           </span>
         );
       })}

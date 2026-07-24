@@ -8,7 +8,8 @@
     "postinstall": "prisma generate",
     "ingest": "tsx scripts/ingest.ts",
     "sync-repos": "tsx scripts/sync-repositories.ts",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@hono/zod-validator": "^0.8.0",
@@ -30,14 +31,18 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260710.1",
+    "@eslint/js": "^9.39.5",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/marked": "^5.0.2",
     "@types/node": "^20.11.17",
     "@types/nodemailer": "^8.0.1",
     "@types/ws": "^8.18.1",
     "dotenv": "^17.4.2",
+    "eslint": "^9.39.5",
+    "globals": "^17.7.0",
     "tsx": "^4.23.0",
     "typescript": "^5.8.3",
+    "typescript-eslint": "^8.65.0",
     "wrangler": "^4.110.0"
   }
 }

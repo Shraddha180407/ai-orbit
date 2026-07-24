@@ -2,6 +2,7 @@ import { Context } from 'hono';
 import { setCookie, deleteCookie } from 'hono/cookie';
 import { sign } from 'jsonwebtoken';
 import { AuthService } from './auth.service.js';
+import { logger } from '../../lib/logger.js';
 import { 
   signupSchema, 
   loginSchema, 
@@ -19,7 +20,7 @@ export class AuthController {
   }
 
   async signup(c: Context) {
-    const ip = getIp(c.req.raw as any) || 'unknown';
+    const ip = getIp(c.req.raw) || 'unknown';
     const { success, retryAfter } = rateLimit(`signup:${ip}`, 5, 60000);
     if (!success) {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
@@ -35,8 +36,8 @@ export class AuthController {
 
       await this.getService(c).signup(result.data);
       return c.json({ success: true, message: 'Verification email sent.' }, 201);
-    } catch (error: any) {
-      if (error.message === 'Email is already in use.') {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === 'Email is already in use.') {
         return c.json({ error: error.message }, 409);
       }
       return c.json({ error: 'Failed to create account.' }, 500);
@@ -44,7 +45,7 @@ export class AuthController {
   }
 
   async login(c: Context) {
-    const ip = getIp(c.req.raw as any) || 'unknown';
+    const ip = getIp(c.req.raw) || 'unknown';
     const { success, retryAfter } = rateLimit(`login:${ip}`, 10, 60000);
     if (!success) {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
@@ -77,14 +78,16 @@ export class AuthController {
       });
 
       return c.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
-    } catch (error: any) {
-      if (error.message === 'Invalid email or password.') {
-        return c.json({ error: error.message }, 401);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if (error.message === 'Invalid email or password.') {
+          return c.json({ error: error.message }, 401);
+        }
+        if (error.message === 'Please verify your email before logging in.') {
+          return c.json({ error: error.message }, 403);
+        }
       }
-      if (error.message === 'Please verify your email before logging in.') {
-        return c.json({ error: error.message }, 403);
-      }
-      console.error("LOGIN ERROR:", error);
+      logger.error("LOGIN ERROR:", error);
       return c.json({ error: 'Failed to login.' }, 500);
     }
   }
@@ -103,7 +106,7 @@ export class AuthController {
       const user = c.get('user');
       const dbUser = await this.getService(c).getMe(user.id);
       return c.json({ success: true, user: dbUser });
-    } catch (error) {
+    } catch (_error) {
       return c.json({ error: 'User not found' }, 404);
     }
   }
@@ -136,16 +139,17 @@ export class AuthController {
       });
 
       return c.json({ success: true, message: 'Email verified successfully.' });
-    } catch (error: any) {
-      if (error.message?.includes('expired') || error.message?.includes('Invalid') || error.message?.includes('not found')) {
-         return c.json({ error: error.message }, 400);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : undefined;
+      if (message?.includes('expired') || message?.includes('Invalid') || message?.includes('not found')) {
+         return c.json({ error: message }, 400);
       }
       return c.json({ error: 'An unexpected error occurred during verification.' }, 500);
     }
   }
 
   async resendVerification(c: Context) {
-    const ip = getIp(c.req.raw as any) || 'unknown';
+    const ip = getIp(c.req.raw) || 'unknown';
     const { success, retryAfter } = rateLimit(`resend-verification:${ip}`, 3, 60000);
     if (!success) {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
@@ -161,8 +165,8 @@ export class AuthController {
 
       const response = await this.getService(c).resendVerification(result.data);
       return c.json({ success: true, message: response.message });
-    } catch (error: any) {
-      if (error.message === 'Email is already verified.') {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === 'Email is already verified.') {
         return c.json({ error: error.message }, 400);
       }
       return c.json({ error: 'Failed to resend verification email.' }, 500);
@@ -170,7 +174,7 @@ export class AuthController {
   }
 
   async forgotPassword(c: Context) {
-    const ip = getIp(c.req.raw as any) || 'unknown';
+    const ip = getIp(c.req.raw) || 'unknown';
     const { success, retryAfter } = rateLimit(`forgot-password:${ip}`, 3, 60000);
     if (!success) {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
@@ -186,13 +190,13 @@ export class AuthController {
 
       const response = await this.getService(c).forgotPassword(result.data);
       return c.json({ success: true, message: response.message });
-    } catch (error) {
+    } catch (_error) {
       return c.json({ error: 'Failed to send password reset email.' }, 500);
     }
   }
 
   async resetPassword(c: Context) {
-    const ip = getIp(c.req.raw as any) || 'unknown';
+    const ip = getIp(c.req.raw) || 'unknown';
     const { success, retryAfter } = rateLimit(`reset-password:${ip}`, 3, 60000);
     if (!success) {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
@@ -208,9 +212,10 @@ export class AuthController {
 
       await this.getService(c).resetPassword(result.data);
       return c.json({ success: true, message: 'Password has been reset successfully.' });
-    } catch (error: any) {
-      if (error.message?.includes('Invalid') || error.message?.includes('expired')) {
-        return c.json({ error: error.message }, 400);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : undefined;
+      if (message?.includes('Invalid') || message?.includes('expired')) {
+        return c.json({ error: message }, 400);
       }
       return c.json({ error: 'Failed to reset password.' }, 500);
     }
@@ -229,9 +234,9 @@ export class AuthController {
       });
 
       return c.json({ success: true, message: 'Account deleted successfully' });
-    } catch (error: any) {
-      console.error('Delete account error:', error);
-      return c.json({ error: error.message || 'Failed to delete account' }, 500);
+    } catch (error: unknown) {
+      logger.error('Delete account error:', error);
+      return c.json({ error: error instanceof Error ? error.message : 'Failed to delete account' }, 500);
     }
   }
 
@@ -240,7 +245,7 @@ export class AuthController {
       const user = c.get('user');
       const settings = await this.getService(c).getSettings(user.id);
       return c.json(settings);
-    } catch (error) {
+    } catch (_error) {
       return c.json({ error: 'Failed to fetch settings' }, 500);
     }
   }
@@ -256,8 +261,8 @@ export class AuthController {
       
       await this.getService(c).updatePassword(user.id, body);
       return c.json({ success: true, message: 'Password updated successfully' });
-    } catch (error: any) {
-      return c.json({ error: error.message || 'Failed to update password' }, 400);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Failed to update password' }, 400);
     }
   }
 }

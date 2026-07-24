@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 const PAGE_SIZE = 12;
 /** Categories with at least this many tools get the "Featured" ribbon. */
@@ -21,7 +21,7 @@ const TOOL_CARD_SELECT = {
   company: { select: { slug: true, name: true } },
 };
 
-function serializeTool(t: any) {
+function serializeTool(t: Prisma.ToolGetPayload<{ select: typeof TOOL_CARD_SELECT }>) {
   return {
     ...t,
     pricingAmount: t.pricingAmount?.toString() ?? null,
@@ -125,7 +125,7 @@ export class CollectionsService {
 
     const tools = category.tools.map((t) => serializeTool(t.tool));
     const latestUpdate = category.tools.reduce<Date | null>((max, t) => {
-      const updated = (t.tool as any).updatedAt as Date | undefined;
+      const updated = t.tool.updatedAt;
       return updated && (!max || updated > max) ? updated : max;
     }, null);
 

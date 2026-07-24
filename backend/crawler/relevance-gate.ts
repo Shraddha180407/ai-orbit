@@ -1,5 +1,6 @@
 import type { ToolCategory } from "./types.js";
 import { TOOL_CATEGORIES } from "./types.js";
+import { logger } from "./logger.js";
 
 export type CandidateVideo = {
   videoId: string;
@@ -74,13 +75,13 @@ async function classifyWithGemini(batch: CandidateVideo[]): Promise<GateLabel[] 
       // Free-tier RPM limit. Back off and retry rather than immediately
       // burning the Groq fallback for what's usually a transient limit.
       const waitMs = attempt * 5000;
-      console.warn(`[relevance-gate] Gemini 429 (attempt ${attempt}/${maxAttempts}) — waiting ${waitMs}ms`);
+      logger.warn(`[relevance-gate] Gemini 429 (attempt ${attempt}/${maxAttempts}) — waiting ${waitMs}ms`);
       await sleep(waitMs);
       continue;
     }
 
     if (!res.ok) {
-      console.error(`[relevance-gate] Gemini failed: ${res.status}`);
+      logger.error(`[relevance-gate] Gemini failed: ${res.status}`);
       return null;
     }
 
@@ -91,7 +92,7 @@ async function classifyWithGemini(batch: CandidateVideo[]): Promise<GateLabel[] 
     return parseLabels(text, batch.length);
   }
 
-  console.error("[relevance-gate] Gemini still rate-limited after retries");
+  logger.error("[relevance-gate] Gemini still rate-limited after retries");
   return null;
 }
 
@@ -129,7 +130,7 @@ async function classifyWithGroq(batch: CandidateVideo[]): Promise<GateLabel[] | 
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.error(`[relevance-gate] Groq failed: ${res.status} ${body.slice(0, 300)}`);
+    logger.error(`[relevance-gate] Groq failed: ${res.status} ${body.slice(0, 300)}`);
     return null;
   }
 
@@ -155,11 +156,11 @@ async function classifyBatch(batch: CandidateVideo[]): Promise<GateLabel[]> {
   const fromGemini = await classifyWithGemini(batch);
   if (fromGemini) return fromGemini;
 
-  console.warn("[relevance-gate] Gemini unavailable, falling back to Groq");
+  logger.warn("[relevance-gate] Gemini unavailable, falling back to Groq");
   const fromGroq = await classifyWithGroq(batch);
   if (fromGroq) return fromGroq;
 
-  console.warn("[relevance-gate] Gemini + Groq both unavailable — failing open as 'general-ai'");
+  logger.warn("[relevance-gate] Gemini + Groq both unavailable — failing open as 'general-ai'");
   return batch.map(() => "general-ai" as GateLabel);
 }
 

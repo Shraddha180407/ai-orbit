@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Icon } from "./Icon";
-import { ICONS } from "@/lib/icons";
+import Search from "lucide-react/dist/esm/icons/search";
 
 interface NewsSearchBarProps {
   value: string;
@@ -10,81 +8,29 @@ interface NewsSearchBarProps {
   placeholder?: string;
 }
 
-export function NewsSearchBar({ value, onChange, placeholder = "Search AI news…" }: NewsSearchBarProps) {
-  const ref = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        ref.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
+/**
+ * Same markup/classes as SearchBar.tsx (the homepage/tools search input) —
+ * `rounded-md border border-border bg-surface py-2.5 pl-10 pr-4 text-sm`,
+ * same icon, same placeholder color. The only difference is functional:
+ * SearchBar.tsx submits a GET form to /tools, while news filtering is all
+ * client-side in NewsListingClient, so this is a controlled input instead
+ * of an uncontrolled `defaultValue` + form submit.
+ */
+export function NewsSearchBar({ value, onChange, placeholder = "Search AI news..." }: NewsSearchBarProps) {
   return (
-    <div
-      className="tas-search h-12 sm:h-[50px] md:h-[52px]"
-      style={{
-        position: "relative",
-        display: "flex",
-        alignItems: "center",
-        width: "100%",
-        borderRadius: "var(--news-radius-lg)",
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border-strong)",
-        boxShadow: "var(--highlight-top)",
-        transition: "var(--transition-colors)",
-      }}
-    >
-      <span style={{ display: "inline-flex", paddingLeft: 18, paddingRight: 12, color: "var(--text-secondary)", flex: "none" }}>
-        <Icon path={ICONS.search} size={18} />
-      </span>
+    <div className="relative w-full">
+      <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-faint" aria-hidden="true" />
+      <label htmlFor="news-search" className="sr-only">
+        Search AI news
+      </label>
       <input
-        ref={ref}
+        id="news-search"
+        type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        aria-label="Search AI news"
-        style={{
-          flex: 1,
-          minWidth: 0,
-          height: "100%",
-          border: "none",
-          outline: "none",
-          boxShadow: "none",
-          background: "transparent",
-          font: "var(--fw-regular) var(--fs-lg)/1 var(--font-sans)",
-          color: "var(--text-primary)",
-          padding: 0,
-          paddingRight: 14,
-          letterSpacing: "-0.006em",
-        }}
+        className="w-full rounded-md border border-border bg-surface py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-foreground-faint focus:border-accent focus:outline-none"
       />
-      <kbd
-        className="hidden lg:inline-flex"
-        style={{
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 2,
-          marginRight: 10,
-          flex: "none",
-          minWidth: 34,
-          height: 24,
-          padding: "0 7px",
-          borderRadius: "var(--news-radius-sm)",
-          background: "var(--bg-surface-2)",
-          border: "1px solid var(--border-default)",
-          boxShadow: "var(--highlight-top)",
-          font: "var(--fw-medium) var(--fs-xs)/1 var(--font-sans)",
-          color: "var(--text-tertiary)",
-          letterSpacing: "0.02em",
-        }}
-      >
-        ⌘K
-      </kbd>
     </div>
   );
 }

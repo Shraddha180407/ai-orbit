@@ -1,4 +1,5 @@
 import { createMiddleware } from 'hono/factory';
+import { logger } from '../lib/logger.js';
 
 type Bindings = {
   INGESTION_TOKEN: string;
@@ -15,7 +16,7 @@ export const requireIngestionToken = createMiddleware<{
   const ingestionToken = c.env.INGESTION_TOKEN;
 
   if (!ingestionToken) {
-    console.error('INGESTION_TOKEN is not configured in the environment variables');
+    logger.error('INGESTION_TOKEN is not configured in the environment variables');
     return c.json({
       error: 'INTERNAL_SERVER_ERROR',
       message: 'Authorization is misconfigured on the server',

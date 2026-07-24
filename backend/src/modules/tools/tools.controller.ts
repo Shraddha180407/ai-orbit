@@ -25,8 +25,8 @@ export class ToolsController {
         page: pageNum,
       });
       return c.json(result);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
       await prisma.$disconnect();
     }
@@ -44,8 +44,8 @@ export class ToolsController {
         return c.json({ error: 'Tool not found' }, 404);
       }
       return c.json(result);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
       await prisma.$disconnect();
     }
@@ -54,7 +54,6 @@ export class ToolsController {
   async submitReview(c: Context) {
     const prisma = getPrisma(c.env);
     const service = new ToolsService(prisma);
-    const slug = c.req.param('slug');
 
     try {
       const body = await c.req.json();
@@ -67,8 +66,8 @@ export class ToolsController {
       const user = c.get('user');
       await service.createOrUpdateReview(parsed.data.toolId, user.id, parsed.data.rating, parsed.data.comment);
       return c.json({ status: 'success', message: 'Thanks — your review is live.' });
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
       await prisma.$disconnect();
     }
@@ -89,8 +88,8 @@ export class ToolsController {
       const user = c.get('user');
       const bookmarked = await service.toggleBookmark(parsed.data.toolId, user.id);
       return c.json({ bookmarked });
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
       await prisma.$disconnect();
     }

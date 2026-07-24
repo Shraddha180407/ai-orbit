@@ -5,7 +5,7 @@ import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getCollectionDetail } from "@/lib/collections";
-import { CollectionGrid } from "@/components/CollectionGrid";
+import { CollectionGrid } from "@/components/collections/CollectionGrid";
 import { StackedLogos } from "@/components/StackedLogos";
 import { DetailToolCard } from "@/components/DetailToolCard";
 

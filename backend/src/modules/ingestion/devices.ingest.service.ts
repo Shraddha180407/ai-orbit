@@ -1,5 +1,6 @@
-import type { PrismaClient, Prisma } from "@prisma/client";
+import type { PrismaClient, Availability } from "@prisma/client";
 import type { DevicesIngestPayload } from "./devices.ingest.schema.js";
+import { logger } from "../../lib/logger.js";
 
 export class DevicesIngestService {
   static async ingestDevices(prisma: PrismaClient, payload: DevicesIngestPayload) {
@@ -7,7 +8,7 @@ export class DevicesIngestService {
       processed: 0,
       created: 0,
       updated: 0,
-      errors: [] as any[]
+      errors: [] as { slug: string; message: string }[]
     };
 
     for (const deviceData of payload.devices) {
@@ -74,7 +75,7 @@ export class DevicesIngestService {
               name: deviceData.name,
               manufacturer: deviceData.manufacturer,
               category: deviceData.category,
-              availability: mappedAvailability as any,
+              availability: mappedAvailability as Availability,
               price: deviceData.price || null,
               year: deviceData.year,
               month: deviceData.month || null,
@@ -97,7 +98,7 @@ export class DevicesIngestService {
               name: deviceData.name,
               manufacturer: deviceData.manufacturer,
               category: deviceData.category,
-              availability: mappedAvailability as any,
+              availability: mappedAvailability as Availability,
               price: deviceData.price || null,
               year: deviceData.year,
               month: deviceData.month || null,
@@ -120,16 +121,17 @@ export class DevicesIngestService {
         }, {
           timeout: 10000 
         });
-      } catch (err: any) {
-        console.error(`Error ingesting device ${deviceData.slug}:`, err);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.error(`Error ingesting device ${deviceData.slug}:`, err);
         summary.errors.push({
           slug: deviceData.slug,
-          message: err.message
+          message
         });
         
         // Adjust counts since it failed
-        if (summary.created > 0 && err.message.includes('create')) summary.created--;
-        if (summary.updated > 0 && !err.message.includes('create')) summary.updated--;
+        if (summary.created > 0 && message.includes('create')) summary.created--;
+        if (summary.updated > 0 && !message.includes('create')) summary.updated--;
       }
     }
 

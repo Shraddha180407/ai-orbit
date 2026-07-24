@@ -1,12 +1,13 @@
 import nodemailer from 'nodemailer';
+import { logger } from './logger.js';
 
-const getBaseUrl = (env: any) => {
+const getBaseUrl = (env: Record<string, string | undefined>) => {
   if (env?.FRONTEND_URL) return env.FRONTEND_URL;
   if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
   return 'https://aiorbit.club';
 };
 
-const getTransporter = (env: any) => {
+const getTransporter = (env: Record<string, string | undefined>) => {
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -16,7 +17,7 @@ const getTransporter = (env: any) => {
   });
 };
 
-export async function sendVerificationLinkEmail(email: string, token: string, env: any) {
+export async function sendVerificationLinkEmail(email: string, token: string, env: Record<string, string | undefined>) {
   const confirmLink = `${getBaseUrl(env)}/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
   const emailUser = env?.EMAIL_USER || process.env.EMAIL_USER;
 
@@ -48,12 +49,12 @@ export async function sendVerificationLinkEmail(email: string, token: string, en
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error) {
-    console.error('Error sending verification email:', error);
+    logger.error('Error sending verification email:', error);
     return { success: false, error };
   }
 }
 
-export async function sendPasswordResetEmail(email: string, token: string, env: any) {
+export async function sendPasswordResetEmail(email: string, token: string, env: Record<string, string | undefined>) {
   const resetLink = `${getBaseUrl(env)}/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
   const emailUser = env?.EMAIL_USER || process.env.EMAIL_USER;
 
@@ -85,7 +86,7 @@ export async function sendPasswordResetEmail(email: string, token: string, env: 
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error) {
-    console.error('Error sending password reset email:', error);
+    logger.error('Error sending password reset email:', error);
     return { success: false, error };
   }
 }

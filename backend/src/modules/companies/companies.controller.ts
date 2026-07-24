@@ -10,8 +10,8 @@ export class CompaniesController {
     try {
       const companies = await service.listCompanies();
       return c.json(companies);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
       await prisma.$disconnect();
     }
@@ -28,8 +28,8 @@ export class CompaniesController {
         return c.json({ error: 'Company not found' }, 404);
       }
       return c.json(company);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
       await prisma.$disconnect();
     }

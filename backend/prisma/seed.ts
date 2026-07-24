@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { PrismaClient, PricingModel, BillingFrequency, Availability } from "@prisma/client";
+import { logger } from "../src/lib/logger.js";
 
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -1715,11 +1716,11 @@ async function main() {
 
   const allTools = TOOLS;
 
-  console.log("Cleaning up old companies...");
+  logger.info("Cleaning up old companies...");
   const activeCompanySlugs = COMPANIES.map((c) => c.slug);
   await prisma.company.deleteMany({ where: { slug: { notIn: activeCompanySlugs } } });
 
-  console.log("Upserting companies...");
+  logger.info("Upserting companies...");
   for (const c of COMPANIES) {
     const company = await prisma.company.upsert({
       where: { slug: c.slug },
@@ -1728,9 +1729,9 @@ async function main() {
     });
     companyBySlug.set(c.slug, company);
   }
-  console.log(`Upserted ${companyBySlug.size} companies.`);
+  logger.info(`Upserted ${companyBySlug.size} companies.`);
 
-  console.log("Upserting categories...");
+  logger.info("Upserting categories...");
   const categoryBySlug = new Map<string, { id: string }>();
   for (const name of CATEGORY_NAMES) {
     const slug = name.toLowerCase().replace(/ & /g, "-").replace(/ /g, "-");
@@ -1741,9 +1742,9 @@ async function main() {
     });
     categoryBySlug.set(slug, category);
   }
-  console.log(`Upserted ${categoryBySlug.size} categories.`);
+  logger.info(`Upserted ${categoryBySlug.size} categories.`);
 
-  console.log("Upserting tags...");
+  logger.info("Upserting tags...");
   const tagBySlug = new Map<string, { id: string }>();
   for (const name of TAG_NAMES) {
     const slug = name.toLowerCase().replace(/ /g, "-");
@@ -1754,9 +1755,9 @@ async function main() {
     });
     tagBySlug.set(slug, tag);
   }
-  console.log(`Upserted ${tagBySlug.size} tags.`);
+  logger.info(`Upserted ${tagBySlug.size} tags.`);
 
-  console.log("Upserting demo users...");
+  logger.info("Upserting demo users...");
   const demoUsers = [
     { email: "reviewer.one@example.com", name: "Aditi Rao" },
     { email: "reviewer.two@example.com", name: "Marcus Webb" },
@@ -1770,13 +1771,13 @@ async function main() {
       })
     )
   );
-  console.log(`Upserted ${users.length} demo users.`);
+  logger.info(`Upserted ${users.length} demo users.`);
 
-  console.log("Cleaning up old tools...");
+  logger.info("Cleaning up old tools...");
   const activeToolSlugs = allTools.map((t) => t.slug);
   await prisma.tool.deleteMany({ where: { slug: { notIn: activeToolSlugs } } });
 
-  console.log("Upserting tools...");
+  logger.info("Upserting tools...");
   const toolBySlug = new Map<string, { id: string }>();
   for (const t of allTools) {
     const companyId = t.companySlug ? companyBySlug.get(t.companySlug)?.id ?? null : null;
@@ -1810,7 +1811,7 @@ async function main() {
     });
 
     toolBySlug.set(t.slug, tool);
-    console.log(`Upserted tool: ${t.slug}`);
+    logger.info(`Upserted tool: ${t.slug}`);
   }
 
   // Bulk relate categories and tags to tools to optimize connection roundtrips
@@ -1845,9 +1846,9 @@ async function main() {
   if (tagLinks.length > 0) {
     await prisma.toolTag.createMany({ data: tagLinks });
   }
-  console.log(`Relate completed: bulk created ${categoryLinks.length} categories and ${tagLinks.length} tags.`);
+  logger.info(`Relate completed: bulk created ${categoryLinks.length} categories and ${tagLinks.length} tags.`);
 
-  console.log("Seeding tasks in batches to prevent connection drops...");
+  logger.info("Seeding tasks in batches to prevent connection drops...");
 
   const toolByName = new Map<string, { id: string }>();
   for (const t of allTools) {
@@ -1902,13 +1903,13 @@ async function main() {
       })
     );
 
-    console.log(`... processed ${Math.min(i + BATCH_SIZE, TASKS.length)} / ${TASKS.length} tasks`);
+    logger.info(`... processed ${Math.min(i + BATCH_SIZE, TASKS.length)} / ${TASKS.length} tasks`);
   }
 
-  console.log("Wiping old task-tool relations...");
+  logger.info("Wiping old task-tool relations...");
   await prisma.taskTool.deleteMany({}); 
 
-  console.log(`Bulk inserting ${taskToolLinks.length} task-tool relations in chunks...`);
+  logger.info(`Bulk inserting ${taskToolLinks.length} task-tool relations in chunks...`);
   
   // 2. Chunk the relation inserts too (Neon sometimes drops connections on massive arrays)
   const RELATION_BATCH_SIZE = 5000;
@@ -1921,7 +1922,7 @@ async function main() {
     });
   }
 
-  console.log(`Seeded ${TASKS.length} tasks successfully!`);
+  logger.info(`Seeded ${TASKS.length} tasks successfully!`);
   // Curated similar mappings
   const ALTERNATIVE_PAIRS: [string, string][] = [
     ["chatgpt", "claude"],
@@ -1937,7 +1938,7 @@ async function main() {
     ["elevenlabs", "murf-ai"],
   ];
 
-  console.log("Linking similar tools...");
+  logger.info("Linking similar tools...");
   for (const [aSlug, bSlug] of ALTERNATIVE_PAIRS) {
     const a = toolBySlug.get(aSlug);
     const b = toolBySlug.get(bSlug);
@@ -1954,7 +1955,7 @@ async function main() {
     }
   }
 
-  console.log("Upserting reviews...");
+  logger.info("Upserting reviews...");
   await prisma.review.deleteMany({}); // reset reviews for clean aggregation
   const reviewDataList: { rating: number; comment: string; toolId: string; userId: string }[] = [];
   let userIndex = 0;
@@ -1978,7 +1979,7 @@ async function main() {
   }
 
   // Aggregate ratings & review count
-  console.log("Updating tool averages...");
+  logger.info("Updating tool averages...");
   const toolsDb = await prisma.tool.findMany({ select: { id: true } });
   for (const tool of toolsDb) {
     const aggregates = await prisma.review.aggregate({
@@ -1997,7 +1998,7 @@ async function main() {
   }
 
   // ---- New Discovery Sections Seeding ----
-  console.log("Seeding AI models...");
+  logger.info("Seeding AI models...");
   await prisma.aIModel.deleteMany({});
   const seedModels = [
     // OpenAI Models
@@ -2062,7 +2063,7 @@ async function main() {
   // real RSS ingestion (`npm run ingest`), not mock rows. See
   // src/modules/ingestion/.
 
-  console.log("Seeding Repositories...");
+  logger.info("Seeding Repositories...");
   await prisma.repository.deleteMany({});
   const seedRepos = [
     {
@@ -2139,7 +2140,7 @@ async function main() {
   // schema). Removed rather than fixed with fabricated data — not this
   // module's data to seed.
 
-  console.log("Seeding Robots...");
+  logger.info("Seeding Robots...");
   await prisma.robot.deleteMany({});
   const seedRobots = [
     {
@@ -2267,7 +2268,7 @@ async function main() {
     buyUrl: "https://www.plaud.ai",
   }
 ];
-console.log("Formatting and seeding Devices...");
+logger.info("Formatting and seeding Devices...");
   
   // 1. Map the string array into the strict Prisma Enum shape
   const formattedDevices = seedDevices.map((device) => ({
@@ -2281,7 +2282,7 @@ console.log("Formatting and seeding Devices...");
     skipDuplicates: true // Good practice to prevent crashes on re-seeding
   });
 
-  console.log("Seeding Leaderboard Tools...");
+  logger.info("Seeding Leaderboard Tools...");
   await prisma.leaderboardTool.deleteMany({});
   const leaderboardTools = [
     ...TOOLS.map((t, index) => ({
@@ -2303,7 +2304,7 @@ console.log("Formatting and seeding Devices...");
   ];
   await prisma.leaderboardTool.createMany({ data: leaderboardTools });
 
-  console.log("Seeding Leaderboard Models...");
+  logger.info("Seeding Leaderboard Models...");
   await prisma.leaderboardModel.deleteMany({});
   const leaderboardModels = [
     ...seedModels.map((m, index) => ({
@@ -2327,7 +2328,7 @@ console.log("Formatting and seeding Devices...");
   ];
   await prisma.leaderboardModel.createMany({ data: leaderboardModels });
 
-  console.log("Seeding Leaderboard Companies...");
+  logger.info("Seeding Leaderboard Companies...");
   await prisma.leaderboardCompany.deleteMany({});
   const leaderboardCompanies = COMPANIES.map((c, index) => ({
     id: c.slug,
@@ -2346,12 +2347,12 @@ console.log("Formatting and seeding Devices...");
   }));
   await prisma.leaderboardCompany.createMany({ data: leaderboardCompanies });
 
-  console.log(`Seed complete: ${COMPANIES.length} companies, ${allTools.length} tools, ${REVIEWS.length} reviews.`);
+  logger.info(`Seed complete: ${COMPANIES.length} companies, ${allTools.length} tools, ${REVIEWS.length} reviews.`);
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    logger.error(e);
     process.exit(1);
   })
   .finally(async () => {

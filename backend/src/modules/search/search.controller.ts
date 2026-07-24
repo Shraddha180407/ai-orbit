@@ -18,8 +18,8 @@ export class SearchController {
       const limit = Number.parseInt(parsed.data.limit, 10) || 8;
       const suggestions = await service.autocomplete(parsed.data.q, limit);
       return c.json({ suggestions });
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
       await prisma.$disconnect();
     }
@@ -32,8 +32,8 @@ export class SearchController {
     try {
       const popular = await service.popular();
       return c.json({ popular });
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
       await prisma.$disconnect();
     }
@@ -46,8 +46,8 @@ export class SearchController {
     try {
       const featured = await service.featured();
       return c.json({ featured });
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
       await prisma.$disconnect();
     }

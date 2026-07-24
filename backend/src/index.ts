@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { logger } from './lib/logger.js'
 import { cors } from 'hono/cors'
 import { videosRouter } from './modules/videos/videos.routes.js'
 import type { ScheduledController, ExecutionContext } from '@cloudflare/workers-types'
@@ -14,7 +15,7 @@ import { tasksRouter } from './modules/tasks/tasks.routes.js'
 import { modelsRouter } from './modules/models/models.routes.js'
 import { repositoriesRouter } from './modules/repositories/repositories.routes.js'
 import { robotsRouter } from './modules/robots/robots.routes.js'
-import { searchRouter } from './modules/search/search.routes.js'
+
 import { homepageRouter } from './modules/homepage/homepage.routes.js'
 import { toolsRouter } from './modules/tools/tools.routes.js'
 import { userRouter } from './modules/user/user.routes.js'
@@ -33,6 +34,7 @@ type Bindings = {
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
+
 
 // Enable CORS middleware so the frontend Next.js can make HTTP calls
 app.use('*', cors({
@@ -93,7 +95,7 @@ app.get('/health', async (c) => {
     await prisma.$queryRaw`SELECT 1`
     return c.json({ status: 'ok', db: 'connected', timestamp: new Date().toISOString() })
   } catch (error) {
-    console.error('Database connection failed:', error)
+    logger.error('Database connection failed:', error)
     return c.json({ status: 'error', db: 'disconnected', timestamp: new Date().toISOString() }, 500)
   }
 })
@@ -119,10 +121,10 @@ export default {
     ctx.waitUntil(
       runIngestion(ingestionCtx)
         .then((summary) => {
-          console.log(`[cron] ingestion complete: created=${summary.totalCreated} pruned=${summary.pruned}`)
+          logger.info(`[cron] ingestion complete: created=${summary.totalCreated} pruned=${summary.pruned}`)
         })
         .catch((err) => {
-          console.error('[cron] ingestion failed:', err)
+          logger.error('[cron] ingestion failed:', err)
         })
     )
   },

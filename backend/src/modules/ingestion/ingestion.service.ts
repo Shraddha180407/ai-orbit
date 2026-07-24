@@ -7,6 +7,7 @@
  */
 import { FEED_SOURCES, type FeedSource } from "./sources.js";
 import { ingestAll, ingestHackerNewsDiscovery, loadRecentTitleIndex, type IngestionContext, type PipelineResult, type RunCap } from "./pipeline.js";
+import { logger } from "../../lib/logger.js";
 
 /**
  * Caps how many NEW articles a single runIngestion() call may create,
@@ -65,7 +66,7 @@ export async function runIngestion(ctx: IngestionContext, options: IngestionRunO
   // table's actual size and duplicate-skip rate without a dashboard.
   const totalArticles = await ctx.prisma.news.count();
   const duplicatesSkipped = allResults.reduce((sum, r) => sum + r.skippedDuplicate + r.skippedNearDuplicate, 0);
-  console.log(`[ingestion] run summary: totalArticles=${totalArticles} newlyInserted=${totalCreated} duplicatesSkipped=${duplicatesSkipped}`);
+  logger.info(`[ingestion] run summary: totalArticles=${totalArticles} newlyInserted=${totalCreated} duplicatesSkipped=${duplicatesSkipped}`);
 
   return {
     totalCreated,

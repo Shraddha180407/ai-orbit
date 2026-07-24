@@ -1,3 +1,5 @@
+import { logger } from "./logger.js";
+
 /**
  * Posts a message to a Slack incoming webhook, if SLACK_WEBHOOK_URL is set.
  * No-ops silently if it's not configured — this is optional operational
@@ -15,7 +17,7 @@ async function postToSlack(text: string) {
     });
   } catch (err) {
     // Don't let a Slack failure fail the ingest run itself.
-    console.error("[alerts] failed to post to Slack:", err);
+    logger.error("[alerts] failed to post to Slack:", err);
   }
 }
 

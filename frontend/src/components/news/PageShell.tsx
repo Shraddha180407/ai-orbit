@@ -1,14 +1,29 @@
 import type { ReactNode } from "react";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
+/**
+ * Wraps every /news page in the site's actual shared shell — same
+ * <Header/>/<Footer/> and the same `bg-[#000000] text-white` base as the
+ * homepage (home-client.tsx) and /tools (tools-client.tsx) — instead of the
+ * old `.news-scope` wrapper, which pulled in a completely separate
+ * self-hosted-Geist/purple-accent theme (see globals.css's `.news-scope`
+ * block) that never matched the rest of the site. News now renders with
+ * the exact same font (site default `font-sans` -> system-ui, since no
+ * next/font Geist is actually wired up anywhere in this app despite the
+ * `--font-geist-sans` token name) and the exact same color tokens
+ * (`text-foreground`, `text-foreground-muted`, `border-border`, etc. from
+ * the top-level `@theme` block) as every other listing page.
+ */
 export function PageShell({ children }: { children: ReactNode }) {
   return (
-    <div className="news-scope" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-base)" }}>
-      <main
-        className="px-4 pt-6 pb-16 md:px-6 md:pt-8 md:pb-20 lg:px-8 lg:pt-11 lg:pb-24"
-        style={{ flex: 1, width: "100%", maxWidth: 1280, margin: "0 auto" }}
-      >
-        {children}
-      </main>
+    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+      <Header />
+      {/* flex-1 wrapper, not <main> — the actual <main> element is rendered by
+          the page content itself (see NewsListingClient.tsx, ArticleDetail's
+          page wrapper), matching ToolsClient.tsx's own single <main>. */}
+      <div className="flex-1 w-full">{children}</div>
+      <Footer />
     </div>
   );
 }

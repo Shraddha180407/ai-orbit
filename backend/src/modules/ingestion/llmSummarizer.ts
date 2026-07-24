@@ -27,6 +27,8 @@
  *   use — paced with a 500ms margin for clock/network jitter.
  */
 
+import { logger } from "../../lib/logger.js";
+
 const GEMINI_MODEL = "gemini-flash-lite-latest";
 const GROQ_MODEL = "llama-3.1-8b-instant";
 const REQUEST_TIMEOUT_MS = 20_000;
@@ -78,7 +80,7 @@ const groqGate = new IntervalGate(GROQ_MIN_INTERVAL_MS);
 const pollinationsGate = new IntervalGate(POLLINATIONS_MIN_INTERVAL_MS);
 
 function debugLog(enabled: boolean, msg: string): void {
-  if (enabled) console.log(`  [llm-debug] ${msg}`);
+  if (enabled) logger.debug(`  [llm-debug] ${msg}`);
 }
 
 /**
