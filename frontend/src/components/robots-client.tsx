@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import Cpu from 'lucide-react/dist/esm/icons/cpu';
 import { Robot } from "@/lib/types";
 import { fetchAllRobots } from "@/lib/api";
@@ -9,6 +10,8 @@ export function RobotsClient() {
   const [robots, setRobots] = useState<Robot[]>([]);
   const [visibleCount, setVisibleCount] = useState(15);
   const [isLoading, setIsLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const q = (searchParams.get("q") || "").trim();
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -26,9 +29,19 @@ export function RobotsClient() {
     getRobots();
   }, []);
 
+  const filteredRobots = useMemo(() => {
+    if (!q) return robots;
+    const needle = q.toLowerCase();
+    return robots.filter((r) => r.name.toLowerCase().includes(needle));
+  }, [robots, q]);
+
+  useEffect(() => {
+    setVisibleCount(15);
+  }, [q]);
+
   // IntersectionObserver for client-side endless scroll
   useEffect(() => {
-    if (isLoading || visibleCount >= robots.length) return;
+    if (isLoading || visibleCount >= filteredRobots.length) return;
 
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
@@ -46,9 +59,9 @@ export function RobotsClient() {
         observer.unobserve(currentSentinel);
       }
     };
-  }, [isLoading, visibleCount, robots.length]);
+  }, [isLoading, visibleCount, filteredRobots.length]);
 
-  const visibleRobots = robots.slice(0, visibleCount);
+  const visibleRobots = filteredRobots.slice(0, visibleCount);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
@@ -59,7 +72,11 @@ export function RobotsClient() {
             Humanoid & Autonomous Robotics
           </h1>
           <p className="text-sm text-[#A1A1AA] mt-2">
-            Explore advanced bipedal, wheeled, and multi-joint humanoid agents deploying AI control loop systems.
+            {q ? (
+              <>Showing results for <span className="text-white font-medium">&ldquo;{q}&rdquo;</span></>
+            ) : (
+              "Explore advanced bipedal, wheeled, and multi-joint humanoid agents deploying AI control loop systems."
+            )}
           </p>
         </div>
 
@@ -69,9 +86,9 @@ export function RobotsClient() {
               <div key={i} className="h-20 animate-pulse bg-[#131316]/50" />
             ))}
           </div>
-        ) : robots.length === 0 ? (
+        ) : filteredRobots.length === 0 ? (
           <div className="text-center py-20 border border-[#232326] bg-[#131316] rounded-xl">
-            <p className="text-[#A1A1AA] text-sm">No robots found.</p>
+            <p className="text-[#A1A1AA] text-sm">{q ? `No robots match "${q}".` : "No robots found."}</p>
           </div>
         ) : (
           <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
@@ -114,7 +131,7 @@ export function RobotsClient() {
             ))}
 
             {/* Sentinel for infinite scroll */}
-            {robots.length > 0 && visibleCount < robots.length && (
+            {filteredRobots.length > 0 && visibleCount < filteredRobots.length && (
               <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
               </div>
