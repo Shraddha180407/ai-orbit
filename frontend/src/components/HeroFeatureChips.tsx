@@ -17,15 +17,20 @@ const FILTERS = [
 
 export function HeroFeatureChips() {
   const [activeFilter, setActiveFilter] = useState<string>("");
+  const [hovered, setHovered] = useState<string>("");
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 max-w-4xl relative z-10 select-none">
+    <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-4xl relative z-10 select-none">
       {FILTERS.map((f) => {
         const isActive = activeFilter === f.name;
+        const isHovered = hovered === f.name;
+        const filled = isActive || isHovered;
         const Icon = f.icon;
         return (
           <button
             key={f.name}
+            onMouseEnter={() => setHovered(f.name)}
+            onMouseLeave={() => setHovered("")}
             onClick={() => {
               setActiveFilter(isActive ? "" : f.name);
               const url = new URL(window.location.href);
@@ -37,39 +42,26 @@ export function HeroFeatureChips() {
               url.hash = "tools";
               window.location.href = url.toString();
             }}
-            className={`group inline-flex items-center gap-1 rounded-full px-2 h-[22px] text-[9.5px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.03] active:scale-[0.98] ${
-              isActive ? "text-black shadow-md" : "bg-[#131316]/70"
-            }`}
-            style={
-              isActive
-                ? { backgroundColor: f.color, borderColor: f.color, boxShadow: `0 4px 12px -6px ${f.color}88` }
-                : { borderColor: `${f.color}55` }
-            }
-            onMouseEnter={(e) => {
-              if (!isActive) {
-                e.currentTarget.style.boxShadow = `0 4px 10px -8px ${f.color}77`;
-                e.currentTarget.style.borderColor = f.color;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isActive) {
-                e.currentTarget.style.boxShadow = "";
-                e.currentTarget.style.borderColor = `${f.color}55`;
-              }
+            className="group inline-flex items-center gap-2 rounded-full pl-2.5 pr-4 h-9 text-[13px] font-medium border bg-[#0d0d10] transition-colors duration-150"
+            style={{
+              borderColor: filled ? f.color : `${f.color}40`,
+              color: filled ? "#ffffff" : "#a1a1aa",
             }}
           >
             <span
-              className="flex h-3 w-3 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:rotate-[8deg]"
-              style={{ backgroundColor: isActive ? "rgba(0,0,0,0.15)" : `${f.color}22` }}
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-150"
+              style={{
+                backgroundColor: filled ? f.color : "transparent",
+                borderColor: f.color,
+              }}
             >
               <Icon
-                size={8}
+                size={11}
                 strokeWidth={2.25}
-                className={isActive ? "text-black" : ""}
-                style={isActive ? undefined : { color: f.color, filter: `drop-shadow(0 0 3px ${f.color}99)` }}
+                style={{ color: filled ? "#000000" : f.color }}
               />
             </span>
-            <span style={isActive ? undefined : { color: f.color }}>{f.name}</span>
+            <span>{f.name}</span>
           </button>
         );
       })}

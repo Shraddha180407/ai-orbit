@@ -152,7 +152,7 @@ export function HomeClient() {
 
         <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
           <h1 className="max-w-[820px] text-2xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.1] mb-4 sm:mb-6 select-none text-white text-balance">
-            The Home of AI
+            The Home of Everything AI
           </h1>
 
           <form action="/tools" method="GET" className="relative w-full max-w-[520px] mx-auto mb-4 sm:mb-5 group">
