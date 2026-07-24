@@ -1,26 +1,21 @@
 "use client";
 
-import { NewsTable, type NewsTableFilters } from "./NewsTable";
-import { EmptyState } from "./EmptyState";
-import { NoResultsState } from "./NoResultsState";
-import type { NewsArticle, NewsSource, SortKey, SortState } from "@/types/news";
+import { NewsTable, NewsTableEmpty } from "./NewsTable";
+import type { NewsArticle, NewsSource } from "@/types/news";
 
 interface NewsListProps {
   articles: NewsArticle[];
   sources: Record<string, NewsSource>;
   emptyKind: "search" | "empty";
-  sort: SortState;
-  onSort: (key: SortKey) => void;
-  filters: NewsTableFilters;
   isAdmin?: boolean;
-  onEdit?: (news: any) => void;
+  onEdit?: (news: NewsArticle) => void;
   onDelete?: (id: string) => void;
 }
 
-/** Renders the discovery table, or the empty/no-results state when the feed has nothing to show. */
-export function NewsList({ articles, sources, emptyKind, sort, onSort, filters, isAdmin, onEdit, onDelete }: NewsListProps) {
+/** Renders the listing table, or the same empty state ToolListView uses when the feed has nothing to show. */
+export function NewsList({ articles, sources, emptyKind, isAdmin, onEdit, onDelete }: NewsListProps) {
   if (!articles.length) {
-    return emptyKind === "search" ? <NoResultsState /> : <EmptyState />;
+    return <NewsTableEmpty searchActive={emptyKind === "search"} />;
   }
-  return <NewsTable articles={articles} sources={sources} sort={sort} onSort={onSort} filters={filters} isAdmin={isAdmin} onEdit={onEdit} onDelete={onDelete} />;
+  return <NewsTable articles={articles} sources={sources} isAdmin={isAdmin} onEdit={onEdit} onDelete={onDelete} />;
 }

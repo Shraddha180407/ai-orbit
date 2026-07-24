@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import { SidebarCard } from "./SidebarCard";
 import { PublisherIcon } from "./PublisherIcon";
-import { Icon } from "@/components/ui/Icon";
-import { ICONS } from "@/lib/icons";
 import { publishedLabel } from "@/lib/news/format";
 import { articleSourceUrl } from "@/lib/news/news";
 import type { NewsArticle, NewsSource } from "@/types/news";
@@ -23,13 +22,13 @@ export function RelatedNews({ articles, sources, title = "Related news" }: Relat
     <SidebarCard
       title={title}
       action={
-        <Link href="/news" className="tas-link" style={{ font: "var(--fw-medium) 15px/1 var(--font-sans)", color: "var(--purple-text)" }}>
+        <Link href="/news" className="text-sm font-medium text-foreground-muted hover:text-white transition-colors">
           View all
         </Link>
       }
     >
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        {articles.map((a, i) => (
+      <div className="flex flex-col divide-y divide-border">
+        {articles.map((a) => (
           <div
             key={a.id}
             role="link"
@@ -38,50 +37,27 @@ export function RelatedNews({ articles, sources, title = "Related news" }: Relat
             onKeyDown={(e) => {
               if (e.key === "Enter") router.push(`/news/${a.id}`);
             }}
-            className="tas-relrow py-4 lg:py-[15px]"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-              paddingLeft: 8,
-              paddingRight: 8,
-              margin: "0 -8px",
-              borderRadius: "var(--news-radius-md)",
-              transition: "var(--transition-colors)",
-              borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
-              cursor: "pointer",
-            }}
+            className="flex items-center gap-3 py-3 -mx-2 px-2 rounded-md transition-colors hover:bg-surface-raised cursor-pointer"
           >
-            <PublisherIcon source={sources[a.source]} box={44} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  font: "var(--fw-medium) 17px/1.4 var(--font-sans)",
-                  letterSpacing: "-0.006em",
-                  color: "var(--text-primary)",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }}
-              >
-                {a.headline}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 7, font: "var(--fw-regular) 15px/1 var(--font-sans)", color: "var(--text-quaternary)" }}>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white">
+              <PublisherIcon source={sources[a.source]} box={36} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-foreground line-clamp-2 leading-snug">{a.headline}</div>
+              <div className="flex items-center gap-1.5 mt-1.5 text-xs text-foreground-faint">
                 <a
-                  className="tas-link"
                   href={articleSourceUrl(a)}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  style={{ color: "var(--purple-text)", font: "var(--fw-medium) 15px/1 var(--font-sans)" }}
+                  className="font-medium text-foreground-muted hover:text-white transition-colors"
                 >
                   {sources[a.source].domain}
                 </a>
                 <span>· {publishedLabel(a.hours)}</span>
               </div>
             </div>
-            <Icon path={ICONS.chevronR} size={16} style={{ color: "var(--text-quaternary)", flex: "none" }} />
+            <ChevronRight size={16} className="text-foreground-faint shrink-0" />
           </div>
         ))}
       </div>

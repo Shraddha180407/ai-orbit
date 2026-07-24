@@ -468,7 +468,7 @@ export class LeaderboardService {
       let domain = "";
       try {
         domain = new URL(t.websiteUrl).hostname.replace(/^www\./, "");
-      } catch (e) {
+      } catch (_e) {
         domain = `${t.slug}.com`;
       }
 
@@ -640,7 +640,7 @@ export class LeaderboardService {
       if (c.tools && c.tools.length > 0) {
         try {
           domain = new URL(c.tools[0].websiteUrl).hostname.replace(/^www\./, "");
-        } catch (e) {}
+        } catch (_e) { /* ignore invalid URL */ }
       }
       if (!domain) {
         domain = `${c.slug}.com`;

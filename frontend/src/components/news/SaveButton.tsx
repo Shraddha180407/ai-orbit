@@ -1,37 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Icon } from "@/components/ui/Icon";
-import { ICONS } from "@/lib/icons";
+import Bookmark from "lucide-react/dist/esm/icons/bookmark";
 import { API_URL } from "@/lib/api";
 import { getClientId } from "@/lib/clientId";
+import { cn } from "@/lib/utils";
 
 interface SaveButtonProps {
   id: string;
-  /** Fixed width filling its container (no content-driven growth) — used in the mobile equal-width grid. */
   fluid?: boolean;
-  /**
-   * Authoritative initial state from the backend (article.bookmarked, from
-   * GET /api/news[/:slug]?clientId=... — see news.services.ts's
-   * loadBookmarkedIds). When provided, this — not localStorage — determines
-   * whether the button opens as "Saved", closing the gap where a
-   * cleared-localStorage/different-browser session showed "Save" despite a
-   * real NewsBookmark row existing. Falls back to the old localStorage-only
-   * read when omitted (e.g. a caller that hasn't been updated to pass it).
-   */
   initialBookmarked?: boolean;
 }
 
 /**
- * Real, persisted bookmarking via POST/DELETE /api/news/:slug/bookmark —
- * replaces the old app's localStorage-only toggle. `id` is the article's
- * slug (see VoteButtons.tsx's comment on why NewsArticleDTO.id is a slug).
- *
- * Initial "is this saved" state comes from `initialBookmarked` (the
- * backend's real answer) when the caller provides it; localStorage is kept
- * in sync alongside it purely so toggle()'s optimistic click-update (below)
- * still has something to read/write locally between backend round-trips —
- * it is no longer the source of truth for what renders on mount.
+ * Real, persisted bookmarking via POST/DELETE /api/news/:slug/bookmark.
+ * Same button treatment as VoteButtons.tsx now — bg-[#18181C]/border-
+ * [#232326] resting, var(--color-signal) active — matching the homepage's
+ * accent color instead of the old purple theme.
  */
 export function SaveButton({ id, fluid, initialBookmarked }: SaveButtonProps) {
   const key = "tas_bm_" + id;
@@ -88,31 +73,19 @@ export function SaveButton({ id, fluid, initialBookmarked }: SaveButtonProps) {
 
   return (
     <button
+      type="button"
       onClick={toggle}
       disabled={pending}
       aria-pressed={saved}
-      className="tas-savebtn"
-      data-on={saved ? "" : undefined}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: fluid ? "center" : "flex-start",
-        width: fluid ? "100%" : "auto",
-        gap: 8,
-        height: 40,
-        padding: "0 16px",
-        borderRadius: "var(--news-radius-md)",
-        cursor: pending ? "default" : "pointer",
-        opacity: pending ? 0.7 : 1,
-        transition: "var(--transition-colors)",
-        font: "var(--fw-medium) var(--fs-body)/1 var(--font-sans)",
-        color: saved ? "var(--purple-text)" : "var(--text-secondary)",
-        background: saved ? "var(--purple-soft)" : "var(--bg-elevated)",
-        border: `1px solid ${saved ? "var(--purple-border)" : "var(--border-default)"}`,
-        boxShadow: "var(--highlight-top)",
-      }}
+      className={cn(
+        "inline-flex items-center gap-2 rounded-md border h-10 px-4 text-sm font-medium transition-colors",
+        fluid ? "w-full justify-center" : "justify-start",
+        saved ? "border-transparent text-black" : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white",
+        pending && "opacity-70 cursor-default"
+      )}
+      style={saved ? { backgroundColor: "var(--color-signal)" } : undefined}
     >
-      <Icon path={ICONS.bookmark} size={17} fill={saved} />
+      <Bookmark size={16} fill={saved ? "currentColor" : "none"} />
       {saved ? "Saved" : "Save"}
     </button>
   );

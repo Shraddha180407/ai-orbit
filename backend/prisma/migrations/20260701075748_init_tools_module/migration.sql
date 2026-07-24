@@ -11,7 +11,7 @@ CREATE TABLE "Company" (
     "name" TEXT NOT NULL,
     "logoUrl" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Company_pkey" PRIMARY KEY ("id")
 );
@@ -21,13 +21,7 @@ CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "name" TEXT,
-    "password" TEXT,
-    "image" TEXT,
-    "role" TEXT NOT NULL DEFAULT 'USER',
-    "status" TEXT NOT NULL DEFAULT 'ACTIVE',
-    "emailVerified" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -47,7 +41,7 @@ CREATE TABLE "Tool" (
     "billingFrequency" "BillingFrequency" NOT NULL DEFAULT 'NA',
     "companyId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Tool_pkey" PRIMARY KEY ("id")
 );
@@ -92,7 +86,7 @@ CREATE TABLE "Review" (
     "rating" INTEGER NOT NULL,
     "comment" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     "toolId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
 
@@ -121,13 +115,16 @@ CREATE TABLE "_ToolAlternatives" (
 CREATE UNIQUE INDEX "Company_slug_key" ON "Company"("slug");
 
 -- CreateIndex
+CREATE INDEX "Company_slug_idx" ON "Company"("slug");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Tool_slug_key" ON "Tool"("slug");
 
 -- CreateIndex
-CREATE INDEX "Tool_companyId_idx" ON "Tool"("companyId");
+CREATE INDEX "Tool_slug_idx" ON "Tool"("slug");
 
 -- CreateIndex
 CREATE INDEX "Tool_pricingModel_idx" ON "Tool"("pricingModel");
@@ -139,7 +136,13 @@ CREATE INDEX "Tool_createdAt_idx" ON "Tool"("createdAt");
 CREATE UNIQUE INDEX "Category_slug_key" ON "Category"("slug");
 
 -- CreateIndex
+CREATE INDEX "Category_slug_idx" ON "Category"("slug");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Tag_slug_key" ON "Tag"("slug");
+
+-- CreateIndex
+CREATE INDEX "Tag_slug_idx" ON "Tag"("slug");
 
 -- CreateIndex
 CREATE INDEX "ToolCategory_categoryId_idx" ON "ToolCategory"("categoryId");
@@ -148,25 +151,16 @@ CREATE INDEX "ToolCategory_categoryId_idx" ON "ToolCategory"("categoryId");
 CREATE INDEX "ToolTag_tagId_idx" ON "ToolTag"("tagId");
 
 -- CreateIndex
+CREATE INDEX "Review_toolId_rating_idx" ON "Review"("toolId", "rating");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Review_toolId_userId_key" ON "Review"("toolId", "userId");
 
 -- CreateIndex
-CREATE INDEX "Review_toolId_idx" ON "Review"("toolId");
-
--- CreateIndex
-CREATE INDEX "Review_userId_idx" ON "Review"("userId");
-
--- CreateIndex
-CREATE INDEX "Review_rating_idx" ON "Review"("rating");
+CREATE INDEX "Bookmark_userId_idx" ON "Bookmark"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Bookmark_toolId_userId_key" ON "Bookmark"("toolId", "userId");
-
--- CreateIndex
-CREATE INDEX "Bookmark_toolId_idx" ON "Bookmark"("toolId");
-
--- CreateIndex
-CREATE INDEX "Bookmark_userId_idx" ON "Bookmark"("userId");
 
 -- CreateIndex
 CREATE INDEX "_ToolAlternatives_B_index" ON "_ToolAlternatives"("B");

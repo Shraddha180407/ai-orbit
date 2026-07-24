@@ -1,360 +1,236 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { SortHeader } from "./SortHeader";
-import { FilterDropdown } from "./FilterDropdown";
+import Link from "next/link";
+import SearchX from "lucide-react/dist/esm/icons/search-x";
+import Bookmark from "lucide-react/dist/esm/icons/bookmark";
+import Share2 from "lucide-react/dist/esm/icons/share-2";
+import Check from "lucide-react/dist/esm/icons/check";
+import { useEffect, useState, type MouseEvent } from "react";
+import { CategoryChip } from "@/components/CategoryChip";
 import { PublisherIcon } from "./PublisherIcon";
-import { TopicChip } from "./TopicChip";
-import { NewsRowActions } from "./NewsRowActions";
-import { NewsCard } from "./NewsCard";
-import { MobileFilterSheet } from "./MobileFilterSheet";
-import { MobileSortMenu } from "./MobileSortMenu";
-import { Icon } from "@/components/ui/Icon";
-import { ICONS } from "@/lib/icons";
 import { publishedLabel } from "@/lib/news/format";
-import { articleSourceUrl } from "@/lib/news/news";
-import type { FilterOption, NewsArticle, NewsSource, SortKey, SortState } from "@/types/news";
-
-export interface NewsTableFilters {
-  topicOptions: FilterOption[];
-  selectedTopics: string[];
-  onToggleTopic: (value: string) => void;
-  onClearTopics: () => void;
-  sourceOptions: FilterOption[];
-  selectedSources: string[];
-  onToggleSource: (value: string) => void;
-  onClearSources: () => void;
-}
-
-// Desktop-only (lg: and up) table grid: Title | Source | Topics | Published | Actions. Below
-// that breakpoint the table is replaced entirely by a card feed (see NewsCard.tsx) — no
-// horizontal scrolling of a squeezed table on phones/tablets anymore.
-const GRID = "minmax(320px,2.2fr) minmax(120px,0.7fr) minmax(120px,0.6fr) 90px 84px";
-
-const eyebrowStyle = {
-  font: "var(--fw-semibold) var(--fs-2xs)/1 var(--font-sans)",
-  letterSpacing: "0.12em",
-  textTransform: "uppercase" as const,
-  color: "var(--text-secondary)",
-};
-
-interface NewsTableHeadProps {
-  sort: SortState;
-  onSort: (key: SortKey) => void;
-  filters: NewsTableFilters;
-  openFilter: "topics" | "source" | null;
-  setOpenFilter: (v: "topics" | "source" | null) => void;
-}
-
-function NewsTableHead({ sort, onSort, filters, openFilter, setOpenFilter }: NewsTableHeadProps) {
-  const cellBase = { display: "flex" as const, alignItems: "center" as const, height: "100%" };
-  const sourceCellRef = useRef<HTMLDivElement>(null);
-  const topicsCellRef = useRef<HTMLDivElement>(null);
-
-  return (
-    <div
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 30,
-        background: "var(--bg-base)",
-        display: "grid",
-        gridTemplateColumns: GRID,
-        gap: 12,
-        alignItems: "center",
-        height: 40,
-        padding: "0 14px",
-        borderBottom: "1px solid var(--border-default)",
-      }}
-    >
-      <div style={cellBase}>
-        <SortHeader label="Title" sortKey="title" sort={sort} onSort={onSort} />
-      </div>
-      <div ref={sourceCellRef} style={{ ...cellBase, position: "relative" }}>
-        <SortHeader
-          label="Source"
-          sortKey="source"
-          sort={sort}
-          onSort={onSort}
-          onFilter={() => setOpenFilter(openFilter === "source" ? null : "source")}
-          filterActive={filters.selectedSources.length > 0}
-        />
-        {openFilter === "source" && (
-          <FilterDropdown
-            title="Sources"
-            options={filters.sourceOptions}
-            selected={filters.selectedSources}
-            onToggle={filters.onToggleSource}
-            onClear={filters.onClearSources}
-            onClose={() => setOpenFilter(null)}
-            anchorRef={sourceCellRef}
-          />
-        )}
-      </div>
-      <div ref={topicsCellRef} style={{ ...cellBase, position: "relative" }}>
-        <SortHeader
-          label="Topics"
-          sortKey="topics"
-          sort={sort}
-          onSort={onSort}
-          onFilter={() => setOpenFilter(openFilter === "topics" ? null : "topics")}
-          filterActive={filters.selectedTopics.length > 0}
-        />
-        {openFilter === "topics" && (
-          <FilterDropdown
-            title="Topics"
-            options={filters.topicOptions}
-            selected={filters.selectedTopics}
-            onToggle={filters.onToggleTopic}
-            onClear={filters.onClearTopics}
-            onClose={() => setOpenFilter(null)}
-            anchorRef={topicsCellRef}
-          />
-        )}
-      </div>
-      <div style={cellBase}>
-        <SortHeader label="Published" sortKey="date" sort={sort} onSort={onSort} />
-      </div>
-      <div style={{ ...cellBase, justifyContent: "flex-end", ...eyebrowStyle }}>Actions</div>
-    </div>
-  );
-}
-
-interface NewsRowProps {
-  article: NewsArticle;
-  index: number;
-  sources: Record<string, NewsSource>;
-  onTopic?: (topic: string) => void;
-  isAdmin?: boolean;
-  onEdit?: (news: any) => void;
-  onDelete?: (id: string) => void;
-}
-
+import type { NewsArticle, NewsSource } from "@/types/news";
 import { Pencil, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/shadcn-button";
-
-function NewsRow({ article, index, sources, onTopic, isAdmin, onEdit, onDelete }: NewsRowProps) {
-  const router = useRouter();
-  const source = sources[article.source];
-  const go = () => router.push(`/news/${article.id}`);
-  const [primaryTopic] = article.topics;
-  const accent = source.color || "#5E5CE6";
-
-  return (
-    <div
-      role="link"
-      tabIndex={0}
-      onClick={go}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") go();
-      }}
-      className="tas-row tas-enter"
-      style={{
-        display: "grid",
-        gridTemplateColumns: GRID,
-        gap: 12,
-        alignItems: "center",
-        padding: "18px 14px",
-        borderBottom: "1px solid var(--border-subtle)",
-        borderLeft: `2px solid ${accent}`,
-        cursor: "pointer",
-        animationDelay: Math.min(index, 12) * 24 + "ms",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flex: "none",
-            width: 36,
-            height: 36,
-            borderRadius: "var(--news-radius-sm)",
-            background: `color-mix(in srgb, ${accent} 14%, transparent)`,
-          }}
-        >
-          <PublisherIcon source={source} box={32} />
-        </span>
-        <h3
-          className="tas-row-title"
-          style={{
-            font: "var(--fw-semibold) 15px/1.45 var(--font-sans)",
-            letterSpacing: "-0.012em",
-            color: "var(--text-primary)",
-            margin: 0,
-            minWidth: 0,
-          }}
-        >
-          {article.headline}
-        </h3>
-      </div>
-      <div style={{ minWidth: 0 }}>
-        <a
-          className="tas-link"
-          href={articleSourceUrl(article)}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            display: "block",
-            font: "var(--fw-semibold) var(--fs-sm)/1.3 var(--font-sans)",
-            letterSpacing: "-0.01em",
-            color: "var(--purple-text)",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-          }}
-        >
-          {source.name}
-        </a>
-      </div>
-      <div style={{ minWidth: 0 }}>
-        <TopicChip maxWidth={130} accent={accent} onClick={onTopic ? () => onTopic(primaryTopic) : undefined}>
-          {primaryTopic}
-        </TopicChip>
-      </div>
-      <div
-        style={{
-          minWidth: 0,
-          font: "var(--fw-medium) var(--fs-sm)/1 var(--font-sans)",
-          letterSpacing: "-0.01em",
-          color: "var(--text-primary)",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {publishedLabel(article.hours)}
-      </div>
-      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "8px" }}>
-        <NewsRowActions article={article} />
-        {isAdmin && (
-          <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-8 px-2 bg-white/5 border border-white/10 hover:bg-white/10"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit?.(article);
-              }}
-            >
-              <Pencil className="w-3 h-3" />
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-8 px-2 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (window.confirm("Delete this news?")) {
-                  onDelete?.(article.id);
-                }
-              }}
-            >
-              <Trash2 className="w-3 h-3" />
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 interface NewsTableProps {
   articles: NewsArticle[];
   sources: Record<string, NewsSource>;
-  sort: SortState;
-  onSort: (key: SortKey) => void;
-  filters: NewsTableFilters;
   isAdmin?: boolean;
-  onEdit?: (news: any) => void;
+  onEdit?: (news: NewsArticle) => void;
   onDelete?: (id: string) => void;
 }
 
 /**
- * Renders two entirely different layouts for the same data, swapped by CSS
- * breakpoint (no JS media-query, so there's no layout flash/mismatch risk):
- *  - below `lg:`: a card feed (1 column on phones, 2 columns from `md:` up
- *    — see NewsCard.tsx) with its own compact sort/filter toolbar, since the
- *    per-column SortHeader/FilterDropdown UI has nothing to anchor to
- *    without table header cells.
- *  - `lg:` and up: the original sortable/filterable table, unchanged.
- * Both consume the exact same `filters`/`sort`/`onSort` props from
- * NewsListingClient, so switching viewport width never desyncs state.
+ * Mirrors ToolListView.tsx (the homepage's own listing table) exactly — same
+ * grid-template-columns shape, same literal hex colors, same font sizes/
+ * weights, same border-radius/padding/gap values, same divide-y row
+ * separators, same loading-skeleton and empty-state markup. Per the
+ * instructor's brief: the news list should look and feel identical to the
+ * homepage's tool listing, not like a separate visual system.
+ *
+ * Columns: Publisher (logo) | Headline+source | Topic | Published | Actions.
+ * No per-column sort/filter popovers and no separate mobile card layout —
+ * ToolListView itself doesn't have either; it's one table that scrolls
+ * horizontally below ~1024px via COL_MIN_WIDTH, same pattern reused here.
  */
-export function NewsTable({ articles, sources, sort, onSort, filters, isAdmin, onEdit, onDelete }: NewsTableProps) {
-  const [openFilter, setOpenFilter] = useState<"topics" | "source" | null>(null);
-  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
-  const activeMobileFilters = filters.selectedSources.length + filters.selectedTopics.length;
+const COL_TEMPLATE = "grid-cols-[44px_minmax(220px,2.4fr)_minmax(110px,1fr)_minmax(90px,0.8fr)_minmax(90px,0.8fr)]";
+const COL_MIN_WIDTH = "min-w-[720px]";
+
+const COLUMN_HEADERS = ["SOURCE", "HEADLINE", "TOPIC", "PUBLISHED", "ACTIONS"];
+
+/** Bookmark + share row actions — same icon-button treatment as ToolListView's Compare button (rounded-md border, hover states), just two icon-only buttons instead of one labeled one. */
+function NewsRowActions({ article }: { article: NewsArticle }) {
+  const key = "tas_bm_" + article.id;
+  const [saved, setSaved] = useState(false);
+  const [shared, setShared] = useState(false);
+
+  useEffect(() => {
+    try {
+      setSaved(window.localStorage.getItem(key) === "1");
+    } catch {
+      // localStorage unavailable — ignore
+    }
+  }, [key]);
+
+  const toggle = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const next = !saved;
+    setSaved(next);
+    try {
+      if (next) window.localStorage.setItem(key, "1");
+      else window.localStorage.removeItem(key);
+    } catch {
+      // localStorage unavailable — ignore
+    }
+  };
+
+  const share = async (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `${window.location.origin}/news/${article.id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: article.headline, text: article.headline, url });
+        return;
+      }
+    } catch {
+      // user cancelled or Web Share unsupported — fall through to clipboard
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // clipboard unavailable — ignore
+    }
+    setShared(true);
+    setTimeout(() => setShared(false), 1400);
+  };
 
   return (
-    <div>
-      {/* Mobile/tablet toolbar — stands in for the desktop header's sort/filter controls */}
-      <div className="flex lg:hidden gap-2 sm:gap-2.5" style={{ alignItems: "center", padding: "4px 2px 12px" }}>
-        <MobileSortMenu sort={sort} onSort={onSort} />
-        <button
-          onClick={() => setMobileFilterOpen(true)}
-          className="tas-hbtn"
-          data-active={activeMobileFilters > 0 ? "" : undefined}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            height: 36,
-            padding: "0 12px",
-            borderRadius: "var(--news-radius-sm)",
-            font: "var(--fw-medium) var(--fs-sm)/1 var(--font-sans)",
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-default)",
-            color: "var(--text-secondary)",
-            cursor: "pointer",
-            transition: "all 0.2s",
-          }}
-        >
-          <Icon path={ICONS.filter} size={14} className="opacity-70" />
-          <span>Filters</span>
-          {activeMobileFilters > 0 && (
-            <span style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 18,
-              height: 18,
-              borderRadius: 9,
-              background: "var(--text-primary)",
-              color: "var(--bg-base)",
-              fontSize: 10,
-              fontWeight: 700,
-              marginLeft: 2
-            }}>
-              {activeMobileFilters}
-            </span>
-          )}
-        </button>
+    <div className="flex items-center justify-end gap-1.5">
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label={saved ? "Saved" : "Save"}
+        title={saved ? "Saved" : "Save"}
+        className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors ${
+          saved
+            ? "border-transparent text-black"
+            : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
+        }`}
+        style={saved ? { backgroundColor: "var(--color-signal)" } : undefined}
+      >
+        <Bookmark size={12} fill={saved ? "currentColor" : "none"} />
+      </button>
+      <button
+        type="button"
+        onClick={share}
+        aria-label={shared ? "Link copied" : "Share"}
+        title={shared ? "Link copied" : "Share"}
+        className="inline-flex items-center justify-center rounded-md border border-[#232326]/60 bg-[#18181C] p-1.5 text-[#A1A1AA] transition-colors hover:border-[#3a3a3d] hover:text-white"
+      >
+        {shared ? <Check size={12} /> : <Share2 size={12} />}
+      </button>
+    </div>
+  );
+}
+
+function NewsRow({ article, sources, isAdmin, onEdit, onDelete }: { article: NewsArticle; sources: Record<string, NewsSource>; isAdmin?: boolean; onEdit?: (news: NewsArticle) => void; onDelete?: (id: string) => void }) {
+  const source = sources[article.source];
+  const [primaryTopic] = article.topics;
+
+  return (
+    <Link
+      href={`/news/${article.id}`}
+      className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none`}
+    >
+      {/* Column 1: Publisher logo — same 44px white-backed box as ToolListView's tool logo */}
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
+        <PublisherIcon source={source} box={40} />
       </div>
 
-      <MobileFilterSheet
-        filters={filters}
-        onClose={() => setMobileFilterOpen(false)}
-      />
-
-      {/* Card feed — phones (1 col), large phones/small tablets (2 cols from sm:), roomier gap from md: */}
-      <div className="grid lg:hidden gap-2.5 sm:grid-cols-2 sm:gap-3 md:gap-4" style={{ gridTemplateColumns: "1fr" }}>
-        {articles.map((a, i) => (
-          <NewsCard key={a.id} article={a} index={i} sources={sources} onTopic={filters.onToggleTopic} />
-        ))}
+      {/* Column 2: Headline + source name — plain text, same as ToolListView's
+          description cell (no nested <a>: the whole row is already a <Link>,
+          and an <a> inside another <a> is invalid HTML / a hydration error). */}
+      <div className="min-w-0">
+        <h3 className="truncate text-[13px] font-semibold text-white group-hover:text-white">{article.headline}</h3>
+        <p className="mt-0.5 line-clamp-1 text-[11px] text-[#A1A1AA] leading-snug">{source.name}</p>
       </div>
 
-      {/* Desktop table */}
-      <div className="hidden lg:block tas-scroll-x" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-        <div style={{ minWidth: 820 }}>
-          <NewsTableHead sort={sort} onSort={onSort} filters={filters} openFilter={openFilter} setOpenFilter={setOpenFilter} />
-          <div>
-            {articles.map((a, i) => (
-              <NewsRow key={a.id} article={a} index={i} sources={sources} onTopic={filters.onToggleTopic} isAdmin={isAdmin} onEdit={onEdit} onDelete={onDelete} />
+      {/* Column 3: Topic */}
+      <div className="min-w-0 truncate">
+        {primaryTopic ? <CategoryChip label={primaryTopic} /> : <span className="text-[11px] text-[#71717A]">—</span>}
+      </div>
+
+      {/* Column 4: Published */}
+      <div className="hidden text-[11px] font-mono text-[#A1A1AA] sm:block">{publishedLabel(article.hours)}</div>
+
+      {/* Column 5: Actions */}
+      <div className="hidden sm:flex items-center justify-end gap-1.5">
+        <NewsRowActions article={article} />
+        {isAdmin && (
+          <div className="flex items-center gap-1 ml-1">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-md border border-[#232326]/60 bg-[#18181C] p-1.5 text-[#A1A1AA] transition-colors hover:border-[#3a3a3d] hover:text-white"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit?.(article); }}
+            >
+              <Pencil size={12} />
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-md border border-red-500/20 bg-red-500/10 p-1.5 text-red-400 transition-colors hover:bg-red-500/20"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (window.confirm("Delete this news?")) onDelete?.(article.id); }}
+            >
+              <Trash2 size={12} />
+            </button>
+          </div>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+export function NewsTable({ articles, sources, isAdmin, onEdit, onDelete }: NewsTableProps) {
+  return (
+    <div className="flex flex-col rounded-lg border border-[#232326]/60 bg-[#131316]/10 overflow-hidden">
+      <div className="overflow-x-auto">
+        <div className="border-b border-[#232326]/60 bg-[#131316]/40">
+          <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2`}>
+            {COLUMN_HEADERS.map((h) => (
+              <span key={h} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">
+                {h}
+              </span>
             ))}
           </div>
         </div>
+
+        <div role="list" className="flex flex-col divide-y divide-[#232326]/60">
+          {articles.map((a) => (
+            <div key={a.id} role="listitem">
+              <NewsRow article={a} sources={sources} isAdmin={isAdmin} onEdit={onEdit} onDelete={onDelete} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Loading skeleton — exact same shape/animation as ToolListView's own skeleton rows. */
+export function NewsTableSkeleton({ rows = 8 }: { rows?: number }) {
+  return (
+    <div className="overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10">
+      <div className="flex flex-col divide-y divide-[#232326]/60">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2.5`}>
+            <div className="h-11 w-11 animate-pulse rounded-lg bg-[#18181C]" />
+            <div className="space-y-1.5">
+              <div className="h-3 w-40 animate-pulse rounded bg-[#18181C]" />
+              <div className="h-2 w-24 animate-pulse rounded bg-[#18181C]" />
+            </div>
+            <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
+            <div className="h-3 w-14 animate-pulse rounded bg-[#18181C]" />
+            <div className="ml-auto h-5 w-16 animate-pulse rounded-md bg-[#18181C]" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Empty/no-results state — exact same markup as ToolListView's own empty state. */
+export function NewsTableEmpty({ searchActive = false }: { searchActive?: boolean }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-[#232326] bg-[#131316]/40 py-16 text-center">
+      <SearchX size={28} className="text-[#71717A]" aria-hidden="true" />
+      <div>
+        <p className="text-sm font-medium text-white">{searchActive ? "No stories match your filters" : "No stories yet"}</p>
+        <p className="mt-1 text-xs text-[#A1A1AA]">
+          {searchActive
+            ? "Try a different search term or clear a filter to see more results."
+            : "Nothing to show in this feed right now."}
+        </p>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import type { PrismaClient, Prisma } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 import type { DevicesIngestPayload } from "./devices.ingest.schema.js";
 
 export class DevicesIngestService {

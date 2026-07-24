@@ -19,7 +19,7 @@ export function HeroFeatureChips() {
   const [activeFilter, setActiveFilter] = useState<string>("");
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 max-w-4xl relative z-10 select-none">
+    <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 max-w-4xl relative z-10 select-none">
       {FILTERS.map((f) => {
         const isActive = activeFilter === f.name;
         const Icon = f.icon;
@@ -37,17 +37,17 @@ export function HeroFeatureChips() {
               url.hash = "tools";
               window.location.href = url.toString();
             }}
-            className={`group inline-flex items-center gap-1.5 rounded-full px-3 h-[28px] text-[11px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.03] active:scale-[0.98] ${
+            className={`group inline-flex items-center gap-1 rounded-full px-2 h-[22px] text-[9.5px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.03] active:scale-[0.98] ${
               isActive ? "text-black shadow-md" : "bg-[#131316]/70"
             }`}
             style={
               isActive
-                ? { backgroundColor: f.color, borderColor: f.color, boxShadow: `0 6px 16px -6px ${f.color}88` }
+                ? { backgroundColor: f.color, borderColor: f.color, boxShadow: `0 4px 12px -6px ${f.color}88` }
                 : { borderColor: `${f.color}55` }
             }
             onMouseEnter={(e) => {
               if (!isActive) {
-                e.currentTarget.style.boxShadow = `0 6px 14px -8px ${f.color}77`;
+                e.currentTarget.style.boxShadow = `0 4px 10px -8px ${f.color}77`;
                 e.currentTarget.style.borderColor = f.color;
               }
             }}
@@ -59,14 +59,14 @@ export function HeroFeatureChips() {
             }}
           >
             <span
-              className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:rotate-[8deg]"
+              className="flex h-3 w-3 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:rotate-[8deg]"
               style={{ backgroundColor: isActive ? "rgba(0,0,0,0.15)" : `${f.color}22` }}
             >
               <Icon
-                size={10}
+                size={8}
                 strokeWidth={2.25}
                 className={isActive ? "text-black" : ""}
-                style={isActive ? undefined : { color: f.color, filter: `drop-shadow(0 0 4px ${f.color}99)` }}
+                style={isActive ? undefined : { color: f.color, filter: `drop-shadow(0 0 3px ${f.color}99)` }}
               />
             </span>
             <span style={isActive ? undefined : { color: f.color }}>{f.name}</span>

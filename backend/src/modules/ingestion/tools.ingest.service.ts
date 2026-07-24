@@ -1,4 +1,4 @@
-import type { PrismaClient, Prisma } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 import type { ToolsIngestPayload } from "./tools.ingest.schema.js";
 
 export class ToolsIngestService {
