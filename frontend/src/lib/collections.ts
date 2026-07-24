@@ -38,6 +38,19 @@ export async function fetchCollections(
   return data;
 }
 
+export async function getCollectionDetail(slug: string) {
+  const res = await fetch(`${API_BASE}/collections/${slug}`, {
+    headers: { Accept: "application/json" },
+  });
+
+  if (!res.ok) {
+    return null;
+  }
+
+  const data = await res.json();
+  return { collection: data.collection, related: data.related ?? [] };
+}
+
 export async function toggleBookmark(
   collectionId: string,
   bookmarked: boolean
