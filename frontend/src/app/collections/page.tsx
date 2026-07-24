@@ -1,6 +1,9 @@
 import CollectionsPageClient from "./CollectionsPageClient";
 import type { CollectionsApiResponse } from "@/lib/types";
 import { Header } from "@/components/Header";
+
+export const runtime = "edge";
+
 export const metadata = {
   title: "Curated Collections | Tool Directory",
   description: "Explore curated lists and stack configurations by domain experts.",
