@@ -26,6 +26,7 @@ export const MIN_DURATION_SECONDS = 120; // drop Shorts / sub-2-minute clips
  * language-detection API per video without adding real cost and latency.
  */
 const NON_LATIN_SCRIPT_RE =
+  // eslint-disable-next-line no-misleading-character-class
   /[\u0400-\u04FF\u0600-\u06FF\u0900-\u097F\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\u0E00-\u0E7F\u0590-\u05FF\u0530-\u058F\u10A0-\u10FF]/g;
 
 /**
