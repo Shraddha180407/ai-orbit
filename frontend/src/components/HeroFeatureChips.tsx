@@ -42,21 +42,21 @@ export function HeroFeatureChips() {
               url.hash = "tools";
               window.location.href = url.toString();
             }}
-            className="group inline-flex items-center gap-2 rounded-full pl-2.5 pr-4 h-9 text-[13px] font-medium border bg-[#0d0d10] transition-colors duration-150"
+      className="group inline-flex items-center gap-1.5 rounded-full pl-2 pr-3 h-7 text-[12px] font-medium border bg-[#0d0d10] transition-colors duration-150"
             style={{
               borderColor: filled ? f.color : `${f.color}40`,
               color: filled ? "#ffffff" : "#a1a1aa",
             }}
           >
             <span
-              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-150"
+              className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors duration-150"
               style={{
                 backgroundColor: filled ? f.color : "transparent",
                 borderColor: f.color,
               }}
             >
               <Icon
-                size={11}
+                size={9}
                 strokeWidth={2.25}
                 style={{ color: filled ? "#000000" : f.color }}
               />
