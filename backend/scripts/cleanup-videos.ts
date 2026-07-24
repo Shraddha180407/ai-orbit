@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { MIN_DURATION_SECONDS, isLikelyEnglish } from "../crawler/youtube-enrich.js";
+import { logger } from "../src/lib/logger.js";
 
 /**
  * One-off cleanup: youtube-enrich.ts's duration/language filters only apply
@@ -39,27 +40,27 @@ async function main() {
     return tooShort || notEnglish;
   });
 
-  console.log(`[cleanup] ${rows.length} total video(s). ${toDelete.length} violate the rules:`);
+  logger.info(`[cleanup] ${rows.length} total video(s). ${toDelete.length} violate the rules:`);
   for (const v of toDelete) {
     const tooShort = v.durationSeconds > 0 && v.durationSeconds < MIN_DURATION_SECONDS;
     const notEnglish = !isLikelyEnglish(v.title, v.description ?? "");
     const reasons = [tooShort && "short", notEnglish && "non-english"].filter(Boolean).join(", ");
-    console.log(`  - [${reasons}] ${v.title} (${v.durationSeconds}s)`);
+    logger.info(`  - [${reasons}] ${v.title} (${v.durationSeconds}s)`);
   }
 
   if (!shouldDelete) {
-    console.log(`\n[cleanup] Dry run only — nothing deleted. Re-run with --delete to actually remove these.`);
+    logger.info(`\n[cleanup] Dry run only — nothing deleted. Re-run with --delete to actually remove these.`);
     await prisma.$disconnect();
     return;
   }
 
   const ids = toDelete.map((v) => v.id);
   const result = await prisma.video.deleteMany({ where: { id: { in: ids } } });
-  console.log(`[cleanup] Deleted ${result.count} row(s).`);
+  logger.info(`[cleanup] Deleted ${result.count} row(s).`);
   await prisma.$disconnect();
 }
 
 main().catch((err) => {
-  console.error("[cleanup] failed:", err);
+  logger.error("[cleanup] failed:", err);
   process.exit(1);
 });

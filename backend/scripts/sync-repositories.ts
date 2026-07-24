@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { marked } from "marked";
+import { logger } from "../src/lib/logger.js";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -79,7 +80,7 @@ function checkEnv(): void {
   if (!process.env.DATABASE_URL) missing.push("DATABASE_URL");
   if (!process.env.GITHUB_TOKEN) missing.push("GITHUB_TOKEN");
   if (missing.length > 0) {
-    console.error(`Missing required env vars: ${missing.join(", ")}`);
+    logger.error(`Missing required env vars: ${missing.join(", ")}`);
     process.exit(1);
   }
 }
@@ -132,12 +133,12 @@ async function searchReposByTopic(topic: string): Promise<GitHubRepo[]> {
       const res = await fetch(url, { headers: githubHeaders() });
 
       if (res.status === 403) {
-        console.warn(`  ⚠ Rate limited on topic "${topic}" page ${page}, waiting 60s...`);
+        logger.warn(`  ⚠ Rate limited on topic "${topic}" page ${page}, waiting 60s...`);
         await sleep(60_000);
         // Retry once
         const retry = await fetch(url, { headers: githubHeaders() });
         if (!retry.ok) {
-          console.error(`  ✗ Retry failed for "${topic}" page ${page}: ${retry.status}`);
+          logger.error(`  ✗ Retry failed for "${topic}" page ${page}: ${retry.status}`);
           break;
         }
         const data: GitHubSearchResponse = await retry.json();
@@ -148,21 +149,21 @@ async function searchReposByTopic(topic: string): Promise<GitHubRepo[]> {
       }
 
       if (!res.ok) {
-        console.error(`  ✗ Search failed for "${topic}" page ${page}: ${res.status}`);
+        logger.error(`  ✗ Search failed for "${topic}" page ${page}: ${res.status}`);
         break;
       }
 
       const data: GitHubSearchResponse = await res.json();
       allRepos.push(...data.items);
 
-      console.log(
+      logger.info(
         `  Page ${page}: ${data.items.length} repos (total so far: ${allRepos.length})`
       );
 
       if (data.items.length < SEARCH_PER_PAGE) break;
       await sleep(SEARCH_API_DELAY_MS);
     } catch (err) {
-      console.error(`  ✗ Network error on "${topic}" page ${page}:`, err);
+      logger.error(`  ✗ Network error on "${topic}" page ${page}:`, err);
       break;
     }
   }
@@ -184,7 +185,7 @@ async function fetchReadme(owner: string, name: string): Promise<string | null> 
     const data: GitHubReadmeResponse = await res.json();
 
     if (data.encoding !== "base64") {
-      console.warn(`  ⚠ Unexpected encoding "${data.encoding}" for ${owner}/${name}`);
+      logger.warn(`  ⚠ Unexpected encoding "${data.encoding}" for ${owner}/${name}`);
       return null;
     }
 
@@ -192,7 +193,7 @@ async function fetchReadme(owner: string, name: string): Promise<string | null> 
     const html = await marked.parse(markdown) as string;
     return html;
   } catch (err) {
-    console.error(`  ✗ README fetch error for ${owner}/${name}:`, err);
+    logger.error(`  ✗ README fetch error for ${owner}/${name}:`, err);
     return null;
   }
 }
@@ -316,10 +317,10 @@ async function main(): Promise<void> {
   const startTime = Date.now();
   checkEnv();
 
-  console.log("=== GitHub Repository Discovery & Sync ===\n");
-  console.log(`Topics to scan: ${GITHUB_TOPICS.length}`);
-  console.log(`GitHub token: ${process.env.GITHUB_TOKEN!.slice(0, 4)}...`);
-  console.log();
+  logger.info("=== GitHub Repository Discovery & Sync ===\n");
+  logger.info(`Topics to scan: ${GITHUB_TOPICS.length}`);
+  logger.info(`GitHub token: ${process.env.GITHUB_TOKEN!.slice(0, 4)}...`);
+  logger.info();
 
   const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
   const prisma = new PrismaClient({ adapter });
@@ -330,7 +331,7 @@ async function main(): Promise<void> {
 
   for (let i = 0; i < GITHUB_TOPICS.length; i++) {
     const topic = GITHUB_TOPICS[i];
-    console.log(`[${i + 1}/${GITHUB_TOPICS.length}] Searching topic: "${topic}"`);
+    logger.info(`[${i + 1}/${GITHUB_TOPICS.length}] Searching topic: "${topic}"`);
 
     const repos = await searchReposByTopic(topic);
 
@@ -343,7 +344,7 @@ async function main(): Promise<void> {
       }
     }
 
-    console.log(
+    logger.info(
       `  → Found ${repos.length} repos, ${newCount} new (running unique total: ${uniqueRepos.length})`
     );
 
@@ -352,10 +353,10 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log(`\n--- Discovery complete: ${uniqueRepos.length} unique repos ---\n`);
+  logger.info(`\n--- Discovery complete: ${uniqueRepos.length} unique repos ---\n`);
 
   // Phase 2: Fetch READMEs in batches
-  console.log("Fetching READMEs...");
+  logger.info("Fetching READMEs...");
   const readmeMap = new Map<number, string | null>();
   let readmeFailures = 0;
 
@@ -367,7 +368,7 @@ async function main(): Promise<void> {
     if (readme === null) readmeFailures++;
 
     if ((i + 1) % 25 === 0 || i === uniqueRepos.length - 1) {
-      console.log(
+      logger.info(
         `  README progress: ${i + 1}/${uniqueRepos.length} (${readmeFailures} failures)`
       );
     }
@@ -377,10 +378,10 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log(`\nREADME fetch complete: ${uniqueRepos.length - readmeFailures} success, ${readmeFailures} failures\n`);
+  logger.info(`\nREADME fetch complete: ${uniqueRepos.length - readmeFailures} success, ${readmeFailures} failures\n`);
 
   // Phase 3: Upsert to database in batches
-  console.log("Writing to database...");
+  logger.info("Writing to database...");
   let upserted = 0;
   let dbErrors = 0;
 
@@ -393,12 +394,12 @@ async function main(): Promise<void> {
       await upsertRepo(prisma, mapped);
       upserted++;
     } catch (err) {
-      console.error(`  ✗ DB upsert failed for ${repo.full_name}:`, err);
+      logger.error(`  ✗ DB upsert failed for ${repo.full_name}:`, err);
       dbErrors++;
     }
 
     if ((i + 1) % DB_BATCH_SIZE === 0 && i < uniqueRepos.length - 1) {
-      console.log(`  DB progress: ${i + 1}/${uniqueRepos.length} (${upserted} upserted, ${dbErrors} errors)`);
+      logger.info(`  DB progress: ${i + 1}/${uniqueRepos.length} (${upserted} upserted, ${dbErrors} errors)`);
     }
   }
 
@@ -406,15 +407,15 @@ async function main(): Promise<void> {
 
   // Summary
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log("\n=== Sync Complete ===");
-  console.log(`Total repos discovered: ${uniqueRepos.length}`);
-  console.log(`Total upserted:         ${upserted}`);
-  console.log(`DB errors:              ${dbErrors}`);
-  console.log(`README fetch failures:  ${readmeFailures}`);
-  console.log(`Time taken:             ${elapsed}s`);
+  logger.info("\n=== Sync Complete ===");
+  logger.info(`Total repos discovered: ${uniqueRepos.length}`);
+  logger.info(`Total upserted:         ${upserted}`);
+  logger.info(`DB errors:              ${dbErrors}`);
+  logger.info(`README fetch failures:  ${readmeFailures}`);
+  logger.info(`Time taken:             ${elapsed}s`);
 }
 
 main().catch((err) => {
-  console.error("Fatal error:", err);
+  logger.error("Fatal error:", err);
   process.exitCode = 1;
 });
