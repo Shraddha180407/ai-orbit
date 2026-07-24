@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { CollectionDetailClient } from "./CollectionDetailClient";
 import { API_URL } from "@/lib/api";
 
+export const runtime = "edge";
+
 async function fetchCollection(slug: string) {
   try {
     const res = await fetch(`${API_URL}/api/v1/collections/${slug}`, { next: { revalidate: 60 } });
