@@ -138,7 +138,7 @@ export function HomeClient() {
 
       {/* 2. Hero Section */}
       <section
-        className="relative w-full flex flex-col items-center pt-4 pb-6 px-6 overflow-hidden"
+        className="relative w-full flex flex-col items-center pt-9 pb-6 px-6 overflow-hidden"
         style={{
           backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
@@ -151,7 +151,7 @@ export function HomeClient() {
         />
 
         <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
-          <h1 className="max-w-[820px] text-2xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.1] mb-4 sm:mb-6 select-none text-white text-balance">
+          <h1 className="max-w-[820px] text-2xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.1] mb-3 sm:mb-4 select-none text-white text-balance">
             The Home of Everything AI
           </h1>
 
@@ -191,14 +191,14 @@ export function HomeClient() {
       <div className="border-b border-[#232326]/40 w-full z-10 relative" />
 
       {/* Sort control — now sits above the directory nav strip */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 pt-4">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-2">
         <div className="mx-auto w-full max-w-[1600px] flex justify-end">
           <SortDropdown />
         </div>
       </div>
 
       {/* Directory nav strip — single row, evenly spread, sits just above the tools list */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-1 pb-1">
         <div className="mx-auto w-full max-w-[1600px]">
           <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto">
             {DIRECTORY_CARDS.map((card) => {
