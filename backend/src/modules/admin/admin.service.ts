@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, PricingModel } from '@prisma/client';
 
 export class AdminService {
   private prisma: PrismaClient;
@@ -89,7 +89,7 @@ export class AdminService {
   }
 
   async getReports(page: number, _status: string) {
-    const reports: any[] = []; const total = 0;
+    const reports: unknown[] = []; const total = 0;
     return { reports, total, page, totalPages: 1 };
   }
 
@@ -109,12 +109,12 @@ export class AdminService {
     return { collections };
   }
 
-  async createCollection(data: any, creatorId: string) {
+  async createCollection(data: Record<string, unknown>, creatorId: string) {
     const collection = await this.prisma.collection.create({
       data: {
-        name: data.name,
-        slug: data.slug,
-        description: data.description,
+        name: data.name as string,
+        slug: data.slug as string,
+        description: data.description as string,
         creatorType: 'EDITORIAL',
         creatorId,
       }
@@ -122,8 +122,8 @@ export class AdminService {
     return collection;
   }
 
-  async updateCollection(id: string, data: any) {
-    const update: any = {};
+  async updateCollection(id: string, data: Record<string, unknown>) {
+    const update: Record<string, unknown> = {};
     if (data.name !== undefined) update.name = data.name;
     if (data.slug !== undefined) update.slug = data.slug;
     if (data.description !== undefined) update.description = data.description;
@@ -137,8 +137,8 @@ export class AdminService {
   async deleteCollection(id: string) {
     try {
       await this.prisma.collection.delete({ where: { id } });
-    } catch (e: any) {
-      if (e.code === 'P2003') throw new Error('Cannot delete this collection because it is referenced by other items.');
+    } catch (e: unknown) {
+      if (e instanceof Error && 'code' in e && (e as { code?: string }).code === 'P2003') throw new Error('Cannot delete this collection because it is referenced by other items.');
       throw e;
     }
   }
@@ -171,8 +171,8 @@ export class AdminService {
   async deleteTool(id: string) {
     try {
       await this.prisma.tool.delete({ where: { id } });
-    } catch (e: any) {
-      if (e.code === 'P2003') throw new Error('Cannot delete this tool because it is referenced by other items.');
+    } catch (e: unknown) {
+      if (e instanceof Error && 'code' in e && (e as { code?: string }).code === 'P2003') throw new Error('Cannot delete this tool because it is referenced by other items.');
       throw e;
     }
   }
@@ -223,21 +223,21 @@ export class AdminService {
     ]);
   }
 
-  async createTool(data: any) {
-    const slug = data.slug || data.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `tool-${Date.now()}`;
+  async createTool(data: Record<string, unknown>) {
+    const slug = (data.slug as string) || (data.name as string)?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `tool-${Date.now()}`;
     return this.prisma.tool.create({
       data: {
         slug,
-        name: data.name || 'Untitled Tool',
-        description: data.description || '',
-        websiteUrl: data.websiteUrl || '',
-        pricingModel: data.pricingModel || 'FREE',
-        logoUrl: data.logoUrl || null,
+        name: (data.name as string) || 'Untitled Tool',
+        description: (data.description as string) || '',
+        websiteUrl: (data.websiteUrl as string) || '',
+        pricingModel: (data.pricingModel as PricingModel) || 'FREE',
+        logoUrl: (data.logoUrl as string) || null,
       }
     });
   }
-  async updateTool(id: string, data: any) {
-    const update: any = {};
+  async updateTool(id: string, data: Record<string, unknown>) {
+    const update: Record<string, unknown> = {};
     const fields = ['name', 'slug', 'description', 'websiteUrl', 'pricingModel', 'logoUrl'];
     for (const f of fields) {
       if (data[f] !== undefined) update[f] = data[f];
@@ -247,19 +247,19 @@ export class AdminService {
 
   async getCompanies(page: number, search: string) {
     const pageSize = 20;
-    const where: any = search ? { name: { contains: search, mode: 'insensitive' } } : {};
+    const where: Prisma.CompanyWhereInput = search ? { name: { contains: search, mode: 'insensitive' } } : {};
     const [companies, total] = await Promise.all([
       this.prisma.company.findMany({ where, skip: (page - 1) * pageSize, take: pageSize, orderBy: { createdAt: 'desc' } }),
       this.prisma.company.count({ where })
     ]);
     return { companies, total, page, totalPages: Math.ceil(total / pageSize) };
   }
-  async createCompany(data: any) {
-    const { name, slug, logoUrl } = data;
+  async createCompany(data: Record<string, unknown>) {
+    const { name, slug, logoUrl } = data as { name: string; slug: string; logoUrl?: string };
     return this.prisma.company.create({ data: { name, slug, logoUrl: logoUrl || null } });
   }
-  async updateCompany(id: string, data: any) {
-    const update: any = {};
+  async updateCompany(id: string, data: Record<string, unknown>) {
+    const update: Record<string, unknown> = {};
     if (data.name !== undefined) update.name = data.name;
     if (data.slug !== undefined) update.slug = data.slug;
     if (data.logoUrl !== undefined) update.logoUrl = data.logoUrl || null;
@@ -268,28 +268,28 @@ export class AdminService {
   async deleteCompany(id: string) {
     try {
       await this.prisma.company.delete({ where: { id } });
-    } catch (e: any) {
-      if (e.code === 'P2003') throw new Error('Cannot delete this company because it is referenced by other items.');
+    } catch (e: unknown) {
+      if (e instanceof Error && 'code' in e && (e as { code?: string }).code === 'P2003') throw new Error('Cannot delete this company because it is referenced by other items.');
       throw e;
     }
   }
 
   async getModels(page: number, search: string) {
     const pageSize = 20;
-    const where: any = search ? { name: { contains: search, mode: 'insensitive' } } : {};
+    const where: Prisma.AIModelWhereInput = search ? { name: { contains: search, mode: 'insensitive' } } : {};
     const [models, total] = await Promise.all([
       this.prisma.aIModel.findMany({ where, skip: (page - 1) * pageSize, take: pageSize, orderBy: { createdAt: 'desc' } }),
       this.prisma.aIModel.count({ where })
     ]);
     return { models, total, page, totalPages: Math.ceil(total / pageSize) };
   }
-  async createModel(data: any) {
-    const { name, creator, contextWindow, parameterSize, modality, releaseDate, description } = data;
+  async createModel(data: Record<string, unknown>) {
+    const { name, creator, contextWindow, parameterSize, modality, releaseDate, description } = data as { name: string; creator: string; contextWindow: string; parameterSize: string; modality: string; releaseDate: string; description: string };
     return this.prisma.aIModel.create({ data: { name, creator, contextWindow, parameterSize, modality, releaseDate, description } });
   }
-  async updateModel(id: string, data: any) {
-    const { name, creator, contextWindow, parameterSize, modality, releaseDate, description } = data;
-    const update: any = {};
+  async updateModel(id: string, data: Record<string, unknown>) {
+    const { name, creator, contextWindow, parameterSize, modality, releaseDate, description } = data as { name?: string; creator?: string; contextWindow?: string; parameterSize?: string; modality?: string; releaseDate?: string; description?: string };
+    const update: Record<string, unknown> = {};
     if (name !== undefined) update.name = name;
     if (creator !== undefined) update.creator = creator;
     if (contextWindow !== undefined) update.contextWindow = contextWindow;
@@ -302,46 +302,46 @@ export class AdminService {
   async deleteModel(id: string) {
     try {
       await this.prisma.aIModel.delete({ where: { id } });
-    } catch (e: any) {
-      if (e.code === 'P2003') throw new Error('Cannot delete this AI model because it is referenced by other items.');
+    } catch (e: unknown) {
+      if (e instanceof Error && 'code' in e && (e as { code?: string }).code === 'P2003') throw new Error('Cannot delete this AI model because it is referenced by other items.');
       throw e;
     }
   }
 
   async getVideos(page: number, search: string) {
     const pageSize = 20;
-    const where: any = search ? { title: { contains: search, mode: 'insensitive' } } : {};
+    const where: Prisma.VideoWhereInput = search ? { title: { contains: search, mode: 'insensitive' } } : {};
     const [videos, total] = await Promise.all([
       this.prisma.video.findMany({ where, skip: (page - 1) * pageSize, take: pageSize, orderBy: { createdAt: 'desc' } }),
       this.prisma.video.count({ where })
     ]);
     return { videos, total, page, totalPages: Math.ceil(total / pageSize) };
   }
-  async createVideo(data: any) {
-    const slug = data.slug || data.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `video-${Date.now()}`;
+  async createVideo(data: Record<string, unknown>) {
+    const slug = (data.slug as string) || (data.title as string)?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `video-${Date.now()}`;
     return this.prisma.video.create({
       data: {
         slug,
-        title: data.title || 'Untitled Video',
-        description: data.description || '',
-        toolName: data.toolName || '',
-        toolCategory: data.toolCategory || 'general-ai',
-        youtubeId: data.youtubeId || `manual-${Date.now()}`,
-        thumbnail: data.thumbnail || '',
+        title: (data.title as string) || 'Untitled Video',
+        description: (data.description as string) || '',
+        toolName: (data.toolName as string) || '',
+        toolCategory: (data.toolCategory as string) || 'general-ai',
+        youtubeId: (data.youtubeId as string) || `manual-${Date.now()}`,
+        thumbnail: (data.thumbnail as string) || '',
         durationSeconds: Number(data.durationSeconds) || 0,
         views: Number(data.views) || 0,
         likes: Number(data.likes) || 0,
-        publishedAt: data.publishedAt || new Date().toISOString().slice(0, 10),
-        authorName: data.authorName || 'Unknown',
-        authorAvatar: data.authorAvatar || '',
-        channelId: data.channelId || null,
+        publishedAt: (data.publishedAt as string) || new Date().toISOString().slice(0, 10),
+        authorName: (data.authorName as string) || 'Unknown',
+        authorAvatar: (data.authorAvatar as string) || '',
+        channelId: (data.channelId as string) || null,
         tags: Array.isArray(data.tags) ? data.tags : [],
-        accent: data.accent || '#6E56CF',
+        accent: (data.accent as string) || '#6E56CF',
       }
     });
   }
-  async updateVideo(id: string, data: any) {
-    const update: any = {};
+  async updateVideo(id: string, data: Record<string, unknown>) {
+    const update: Record<string, unknown> = {};
     const fields = ['title', 'description', 'toolName', 'toolCategory', 'thumbnail', 'durationSeconds', 'views', 'likes', 'publishedAt', 'authorName', 'authorAvatar', 'channelId', 'tags', 'accent', 'slug'];
     for (const f of fields) {
       if (data[f] !== undefined) update[f] = data[f];
@@ -351,33 +351,33 @@ export class AdminService {
   async deleteVideo(id: string) {
     try {
       await this.prisma.video.delete({ where: { id } });
-    } catch (e: any) {
-      if (e.code === 'P2003') throw new Error('Cannot delete this video because it is referenced by other items.');
+    } catch (e: unknown) {
+      if (e instanceof Error && 'code' in e && (e as { code?: string }).code === 'P2003') throw new Error('Cannot delete this video because it is referenced by other items.');
       throw e;
     }
   }
 
-  async createNews(data: any) {
+  async createNews(data: Record<string, unknown>) {
     // Find or use first publisher as fallback
     const publisher = await this.prisma.publisher.findFirst({ orderBy: { createdAt: 'asc' } });
     if (!publisher) throw new Error('No publisher found. Please create a publisher first.');
-    const slug = data.slug || data.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `news-${Date.now()}`;
+    const slug = (data.slug as string) || (data.title as string)?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `news-${Date.now()}`;
     return this.prisma.news.create({
       data: {
         slug,
-        title: data.title || 'Untitled',
-        dek: data.dek || data.summary || '',
-        aiSummary: data.aiSummary || data.summary || '',
-        articleUrl: data.articleUrl || `https://placeholder.com/${slug}-${Date.now()}`,
-        publisherId: data.publisherId || publisher.id,
-        category: data.category || 'general',
-        filterTags: Array.isArray(data.filterTags) ? data.filterTags : [],
-        publishedAt: data.publishedAt ? new Date(data.publishedAt) : new Date(),
+        title: (data.title as string) || 'Untitled',
+        dek: (data.dek as string) || (data.summary as string) || '',
+        aiSummary: (data.aiSummary as string) || (data.summary as string) || '',
+        articleUrl: (data.articleUrl as string) || `https://placeholder.com/${slug}-${Date.now()}`,
+        publisherId: (data.publisherId as string) || publisher.id,
+        category: (data.category as string) || 'general',
+        filterTags: Array.isArray(data.filterTags) ? (data.filterTags as string[]) : [],
+        publishedAt: data.publishedAt ? new Date(data.publishedAt as string) : new Date(),
       }
     });
   }
-  async updateNews(id: string, data: any) {
-    const update: any = {};
+  async updateNews(id: string, data: Record<string, unknown>) {
+    const update: Record<string, unknown> = {};
     const fields = ['title', 'dek', 'aiSummary', 'articleUrl', 'category', 'filterTags', 'publishedAt', 'slug'];
     for (const f of fields) {
       if (data[f] !== undefined) update[f] = data[f];

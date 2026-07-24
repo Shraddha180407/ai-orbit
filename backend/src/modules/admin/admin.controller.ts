@@ -11,8 +11,8 @@ export class AdminController {
     try {
       const data = await this.getService(c).getAnalytics();
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -22,8 +22,8 @@ export class AdminController {
       const search = c.req.query('q') || '';
       const data = await this.getService(c).getUsers(page, search);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -52,8 +52,8 @@ export class AdminController {
         });
       }
       return c.json({ success: true });
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -72,8 +72,8 @@ export class AdminController {
 
       await this.getService(c).updateUserRole(id, role);
       return c.json({ success: true });
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -92,8 +92,8 @@ export class AdminController {
 
       await this.getService(c).updateUserStatus(id, status);
       return c.json({ success: true });
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -103,8 +103,8 @@ export class AdminController {
       const status = c.req.query('status') || 'ALL';
       const data = await this.getService(c).getReports(page, status);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -114,8 +114,8 @@ export class AdminController {
       const { status } = await c.req.json();
       await this.getService(c).updateReport(id, status);
       return c.json({ success: true });
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -123,8 +123,8 @@ export class AdminController {
     try {
       const data = await this.getService(c).getCollections();
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -134,8 +134,8 @@ export class AdminController {
       const user = c.get('user');
       const data = await this.getService(c).createCollection(body, user.id);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -145,8 +145,8 @@ export class AdminController {
       const body = await c.req.json();
       const data = await this.getService(c).updateCollection(id, body);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -155,11 +155,11 @@ export class AdminController {
       const id = c.req.param('id')!;
       await this.getService(c).deleteCollection(id);
       return c.json({ success: true });
-    } catch (error: any) {
-      if (error.code === 'P2003') {
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && (error as { code?: string }).code === 'P2003') {
         return c.json({ error: 'Cannot delete this record because it is currently in use or referenced by other items.' }, 409);
       }
-      return c.json({ error: error.message }, 500);
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -169,8 +169,8 @@ export class AdminController {
       const search = c.req.query('q') || '';
       const data = await this.getService(c).getTools(page, search);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -179,8 +179,8 @@ export class AdminController {
       const body = await c.req.json();
       const data = await this.getService(c).createTool(body);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -190,8 +190,8 @@ export class AdminController {
       const body = await c.req.json();
       const data = await this.getService(c).updateTool(id, body);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -200,11 +200,11 @@ export class AdminController {
       const id = c.req.param('id')!;
       await this.getService(c).deleteTool(id);
       return c.json({ success: true });
-    } catch (error: any) {
-      if (error.code === 'P2003') {
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && (error as { code?: string }).code === 'P2003') {
         return c.json({ error: 'Cannot delete this record because it is currently in use or referenced by other items.' }, 409);
       }
-      return c.json({ error: error.message }, 500);
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -214,8 +214,8 @@ export class AdminController {
       const search = c.req.query('q') || '';
       const data = await this.getService(c).getNews(page, search);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -224,12 +224,12 @@ export class AdminController {
       const id = c.req.param('id')!;
       await this.getService(c).deleteNews(id);
       return c.json({ success: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('DELETE NEWS ERROR:', error);
-      if (error.code === 'P2003') {
+      if (error instanceof Error && 'code' in error && (error as { code?: string }).code === 'P2003') {
         return c.json({ error: 'Cannot delete this record because it is currently in use or referenced by other items.' }, 409);
       }
-      return c.json({ error: error.message }, 500);
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -239,8 +239,8 @@ export class AdminController {
       const search = c.req.query('q') || '';
       const data = await this.getService(c).getCompanies(page, search);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
   async createCompany(c: Context) {
@@ -248,8 +248,8 @@ export class AdminController {
       const body = await c.req.json();
       const data = await this.getService(c).createCompany(body);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
   async updateCompany(c: Context) {
@@ -258,8 +258,8 @@ export class AdminController {
       const body = await c.req.json();
       const data = await this.getService(c).updateCompany(id, body);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
   async deleteCompany(c: Context) {
@@ -267,11 +267,11 @@ export class AdminController {
       const id = c.req.param('id')!;
       await this.getService(c).deleteCompany(id);
       return c.json({ success: true });
-    } catch (error: any) {
-      if (error.code === 'P2003') {
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && (error as { code?: string }).code === 'P2003') {
         return c.json({ error: 'Cannot delete this record because it is currently in use or referenced by other items.' }, 409);
       }
-      return c.json({ error: error.message }, 500);
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -281,8 +281,8 @@ export class AdminController {
       const search = c.req.query('q') || '';
       const data = await this.getService(c).getModels(page, search);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
   async createModel(c: Context) {
@@ -290,8 +290,8 @@ export class AdminController {
       const body = await c.req.json();
       const data = await this.getService(c).createModel(body);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
   async updateModel(c: Context) {
@@ -300,8 +300,8 @@ export class AdminController {
       const body = await c.req.json();
       const data = await this.getService(c).updateModel(id, body);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
   async deleteModel(c: Context) {
@@ -309,11 +309,11 @@ export class AdminController {
       const id = c.req.param('id')!;
       await this.getService(c).deleteModel(id);
       return c.json({ success: true });
-    } catch (error: any) {
-      if (error.code === 'P2003') {
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && (error as { code?: string }).code === 'P2003') {
         return c.json({ error: 'Cannot delete this record because it is currently in use or referenced by other items.' }, 409);
       }
-      return c.json({ error: error.message }, 500);
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -323,8 +323,8 @@ export class AdminController {
       const search = c.req.query('q') || '';
       const data = await this.getService(c).getVideos(page, search);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
   async createVideo(c: Context) {
@@ -332,8 +332,8 @@ export class AdminController {
       const body = await c.req.json();
       const data = await this.getService(c).createVideo(body);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
   async updateVideo(c: Context) {
@@ -342,8 +342,8 @@ export class AdminController {
       const body = await c.req.json();
       const data = await this.getService(c).updateVideo(id, body);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
   async deleteVideo(c: Context) {
@@ -351,11 +351,11 @@ export class AdminController {
       const id = c.req.param('id')!;
       await this.getService(c).deleteVideo(id);
       return c.json({ success: true });
-    } catch (error: any) {
-      if (error.code === 'P2003') {
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && (error as { code?: string }).code === 'P2003') {
         return c.json({ error: 'Cannot delete this record because it is currently in use or referenced by other items.' }, 409);
       }
-      return c.json({ error: error.message }, 500);
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 
@@ -364,8 +364,8 @@ export class AdminController {
       const body = await c.req.json();
       const data = await this.getService(c).createNews(body);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
   async updateNews(c: Context) {
@@ -374,8 +374,8 @@ export class AdminController {
       const body = await c.req.json();
       const data = await this.getService(c).updateNews(id, body);
       return c.json(data);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   }
 }
