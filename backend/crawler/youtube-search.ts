@@ -1,3 +1,5 @@
+import { logger } from "./logger.js";
+
 const API_BASE = "https://www.googleapis.com/youtube/v3";
 
 /**
@@ -108,13 +110,13 @@ export async function discoverVideos(): Promise<DiscoveredVideo[]> {
       const res = await fetch(url);
       if (!res.ok) {
         const body = await res.text().catch(() => "");
-        console.error(`[youtube-search] search.list failed for "${q}": ${res.status} ${body.slice(0, 400)}`);
+        logger.error(`[youtube-search] search.list failed for "${q}": ${res.status} ${body.slice(0, 400)}`);
         // Quota exhausted (daily 10k units, or per-100s burst) — every
         // remaining query will fail identically, so stop burning API calls
         // and log the useful part just once.
         if (res.status === 403 || res.status === 429) {
           if (/quotaExceeded|rateLimitExceeded|userRateLimitExceeded/i.test(body)) {
-            console.error("[youtube-search] YouTube API quota exhausted — stopping discovery for this run");
+            logger.error("[youtube-search] YouTube API quota exhausted — stopping discovery for this run");
             return [...seen.values()];
           }
         }

@@ -6,6 +6,7 @@ import { discoverVideos } from "./youtube-search.js";
 import { enrichVideos } from "./youtube-enrich.js";
 import { getKnownYoutubeIds, upsertVideos } from "../src/modules/videos/videos.services.js";
 import { notifyIngestFailure, notifyIngestSuspicious } from "./alerts.js";
+import { logger } from "./logger.js";
 
 /**
  * Runs as a standalone Node script OUTSIDE the Cloudflare Worker — the
@@ -67,11 +68,11 @@ export async function runIngest() {
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   runIngest()
     .then((result) => {
-      console.log("[ingest] done:", result);
+      logger.info("[ingest] done:", result);
       process.exit(0);
     })
     .catch((err) => {
-      console.error("[ingest] failed:", err);
+      logger.error("[ingest] failed:", err);
       process.exit(1);
     });
 }

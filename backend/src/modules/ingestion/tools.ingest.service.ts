@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import type { ToolsIngestPayload } from "./tools.ingest.schema.js";
+import { logger } from "../../lib/logger.js";
 
 export class ToolsIngestService {
   static async ingestTools(prisma: PrismaClient, payload: ToolsIngestPayload) {
@@ -130,7 +131,7 @@ export class ToolsIngestService {
         });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(`Error ingesting tool ${toolData.slug}:`, err);
+        logger.error(`Error ingesting tool ${toolData.slug}:`, err);
         summary.errors.push({
           slug: toolData.slug,
           message

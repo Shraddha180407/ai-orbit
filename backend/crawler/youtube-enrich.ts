@@ -1,5 +1,6 @@
 import type { Video } from "./types.js";
 import { categorize, isLikelyAiRelated } from "./categorize.js";
+import { logger } from "./logger.js";
 
 const API_BASE = "https://www.googleapis.com/youtube/v3";
 
@@ -89,7 +90,7 @@ export async function enrichVideos(videoIds: string[]): Promise<Video[]> {
     )}&key=${apiKey()}`;
     const res = await fetch(url);
     if (!res.ok) {
-      console.error(`[youtube-enrich] videos.list failed: ${res.status}`);
+      logger.error(`[youtube-enrich] videos.list failed: ${res.status}`);
       continue;
     }
     const json = await res.json();

@@ -1,8 +1,10 @@
 import { Context } from 'hono';
 import { getPrisma } from '../../lib/prisma.js';
 import { RepositoriesService } from './repositories.service.js';
+import { logger } from '../../lib/logger.js';
 
 const VALID_SORTS = ['stars_desc', 'newest', 'name_asc'] as const;
+type SortOption = (typeof VALID_SORTS)[number];
 
 export class RepositoriesController {
   async listRepositories(c: Context) {
@@ -11,7 +13,7 @@ export class RepositoriesController {
 
     try {
       const sort = c.req.query('sort');
-      if (sort && !VALID_SORTS.includes(sort as any)) {
+      if (sort && !VALID_SORTS.includes(sort as SortOption)) {
         return c.json(
           { error: `Invalid sort value "${sort}". Valid options: ${VALID_SORTS.join(', ')}` },
           400,
@@ -31,8 +33,8 @@ export class RepositoriesController {
       });
 
       return c.json(result);
-    } catch (error: any) {
-      console.error('Error listing repositories:', error);
+    } catch (error: unknown) {
+      logger.error('Error listing repositories:', error);
       return c.json({ error: 'Failed to fetch repositories' }, 500);
     } finally {
       await prisma.$disconnect();
@@ -50,8 +52,8 @@ export class RepositoriesController {
         return c.json({ error: 'Repository not found' }, 404);
       }
       return c.json(repo);
-    } catch (error: any) {
-      console.error('Error fetching repository:', error);
+    } catch (error: unknown) {
+      logger.error('Error fetching repository:', error);
       return c.json({ error: 'Failed to fetch repository' }, 500);
     } finally {
       await prisma.$disconnect();

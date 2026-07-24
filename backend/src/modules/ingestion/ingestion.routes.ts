@@ -3,6 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { ingestionRunQuerySchema } from "./ingestion.schemas.js";
 import { IngestionController } from "./ingestion.controller.js";
 import { requireIngestionToken } from "../../middleware/auth.js";
+import { logger } from "../../lib/logger.js";
 import { toolsIngestPayloadSchema } from "./tools.ingest.schema.js";
 import { ToolsIngestService } from "./tools.ingest.service.js";
 import { devicesIngestPayloadSchema } from "./devices.ingest.schema.js";
@@ -41,7 +42,7 @@ router.post("/tools", requireIngestionToken, async (c) => {
     return c.json(summary, 200);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "An unexpected error occurred during tools ingestion";
-    console.error("Tools ingestion error:", err);
+    logger.error("Tools ingestion error:", err);
     return c.json({
       error: "INTERNAL_SERVER_ERROR",
       message
@@ -67,7 +68,7 @@ router.post("/devices", requireIngestionToken, async (c) => {
     return c.json(summary, 200);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "An unexpected error occurred during devices ingestion";
-    console.error("Devices ingestion error:", err);
+    logger.error("Devices ingestion error:", err);
     return c.json({
       error: "INTERNAL_SERVER_ERROR",
       message

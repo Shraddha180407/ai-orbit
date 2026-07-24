@@ -1,5 +1,28 @@
 import { PrismaClient, Prisma, PricingModel, TaskDifficulty } from '@prisma/client';
 
+type SerializedTask = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  difficulty: TaskDifficulty;
+  pricingModel: PricingModel;
+  isFeatured: boolean;
+  category: { slug: string; name: string };
+  creator: { id: string; name: string | null; image: string | null } | null;
+  createdAt: Date;
+  _count: {
+    likes: number;
+    subscribers: number;
+    bookmarks: number;
+    resources: number;
+    tools: number;
+    models: number;
+    robots: number;
+    devices: number;
+  };
+};
+
 export class TasksService {
   private prisma: PrismaClient;
 
@@ -194,34 +217,39 @@ export class TasksService {
   // Shared helper — TaskBookmark uses its own `id` primary key,
   // while TaskLike/TaskSubscriber use a composite (taskId, userId) key.
   // The `compositeKey` flag switches between the two lookup styles.
-  private async toggleJoinRow(model: any, taskId: string, userId: string, compositeKey = false) {
+  private async toggleJoinRow(model: unknown, taskId: string, userId: string, compositeKey = false) {
+    const m = model as {
+      findUnique: (args: { where: { taskId_userId: { taskId: string; userId: string } }; select?: { id: true } }) => Promise<{ id: string } | null>;
+      delete: (args: { where: { taskId_userId: { taskId: string; userId: string } } | { id: string } }) => Promise<unknown>;
+      create: (args: { data: { taskId: string; userId: string } }) => Promise<unknown>;
+    };
     if (compositeKey) {
-      const existing = await model.findUnique({
+      const existing = await m.findUnique({
         where: { taskId_userId: { taskId, userId } },
       });
       if (existing) {
-        await model.delete({ where: { taskId_userId: { taskId, userId } } });
+        await m.delete({ where: { taskId_userId: { taskId, userId } } });
         return false;
       } else {
-        await model.create({ data: { taskId, userId } });
+        await m.create({ data: { taskId, userId } });
         return true;
       }
     } else {
-      const existing = await model.findUnique({
+      const existing = await m.findUnique({
         where: { taskId_userId: { taskId, userId } },
         select: { id: true },
       });
       if (existing) {
-        await model.delete({ where: { id: existing.id } });
+        await m.delete({ where: { id: existing.id } });
         return false;
       } else {
-        await model.create({ data: { taskId, userId } });
+        await m.create({ data: { taskId, userId } });
         return true;
       }
     }
   }
 
-  private serializeTask(t: any) {
+  private serializeTask(t: SerializedTask) {
     return {
       id: t.id,
       slug: t.slug,

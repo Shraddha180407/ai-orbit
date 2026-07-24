@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { logger } from "../src/lib/logger.js";
 
 /**
  * One-off backfill: the normal ingest pipeline (crawler/ingest.ts) only
@@ -38,7 +39,7 @@ async function fetchChannelIds(youtubeIds: string[]): Promise<Map<string, string
     const url = `${API_BASE}/videos?part=snippet&id=${batch.join(",")}&key=${apiKey()}`;
     const res = await fetch(url);
     if (!res.ok) {
-      console.error(`[backfill] videos.list failed: ${res.status}`);
+      logger.error(`[backfill] videos.list failed: ${res.status}`);
       continue;
     }
     const json = await res.json();
@@ -60,14 +61,14 @@ async function main() {
     select: { id: true, youtubeId: true },
   });
 
-  console.log(`[backfill] ${rows.length} video(s) missing channelId.`);
+  logger.info(`[backfill] ${rows.length} video(s) missing channelId.`);
   if (rows.length === 0) {
     await prisma.$disconnect();
     return;
   }
 
   const channelIds = await fetchChannelIds(rows.map((r) => r.youtubeId));
-  console.log(`[backfill] resolved channelId for ${channelIds.size}/${rows.length} video(s).`);
+  logger.info(`[backfill] resolved channelId for ${channelIds.size}/${rows.length} video(s).`);
 
   let updated = 0;
   for (const row of rows) {
@@ -80,11 +81,11 @@ async function main() {
     updated++;
   }
 
-  console.log(`[backfill] done. Updated ${updated} row(s).`);
+  logger.info(`[backfill] done. Updated ${updated} row(s).`);
   await prisma.$disconnect();
 }
 
 main().catch((err) => {
-  console.error("[backfill] failed:", err);
+  logger.error("[backfill] failed:", err);
   process.exit(1);
 });

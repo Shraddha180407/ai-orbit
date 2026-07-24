@@ -24,20 +24,21 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { runIngestion } from "../src/modules/ingestion/ingestion.service.js";
 import type { IngestionContext } from "../src/modules/ingestion/pipeline.js";
+import { logger } from "../src/lib/logger.js";
 
 function checkRequiredEnv(): void {
   if (!process.env.DATABASE_URL) {
-    console.error("FATAL: DATABASE_URL is not set. Add it to backend/.env.");
+    logger.error("FATAL: DATABASE_URL is not set. Add it to backend/.env.");
     process.exit(1);
   }
   for (const key of ["GEMINI_API_KEY", "GROQ_API_KEY"]) {
     if (!process.env[key]) {
-      console.warn(`  note: ${key} is not set in backend/.env — LLM summaries will fall through to Pollinations.ai or the raw RSS description.`);
+      logger.warn(`  note: ${key} is not set in backend/.env — LLM summaries will fall through to Pollinations.ai or the raw RSS description.`);
     }
   }
   for (const key of ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"]) {
     if (!process.env[key]) {
-      console.warn(`  note: ${key} is not set in backend/.env — publisher logos will fall through to the Google favicon aggregator.`);
+      logger.warn(`  note: ${key} is not set in backend/.env — publisher logos will fall through to the Google favicon aggregator.`);
     }
   }
 }
@@ -50,7 +51,7 @@ function cloudinaryConfigFromEnv() {
 
 async function main() {
   checkRequiredEnv();
-  console.log("Starting manual ingestion run...\n");
+  logger.info("Starting manual ingestion run...\n");
 
   const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
   const prisma = new PrismaClient({ adapter });
@@ -63,21 +64,21 @@ async function main() {
   const summary = await runIngestion(ctx);
 
   for (const r of summary.results) {
-    console.log(
+    logger.info(
       `${r.source.padEnd(28)} fetched=${r.fetched} created=${r.created} duplicate=${r.skippedDuplicate} ` +
         `near-dup=${r.skippedNearDuplicate} not-ai=${r.skippedNotAiRelevant} invalid=${r.skippedInvalid} ` +
         `no-content=${r.skippedNoContent} cap-reached=${r.skippedCapReached}` +
         `${r.errors.length ? ` errors=${r.errors.length}` : ""}`
     );
-    for (const err of r.errors.slice(0, 3)) console.log(`   ! ${err}`);
+    for (const err of r.errors.slice(0, 3)) logger.info(`   ! ${err}`);
   }
 
-  console.log(`\nDone. ${summary.totalCreated} new article(s) ingested.`);
+  logger.info(`\nDone. ${summary.totalCreated} new article(s) ingested.`);
 
   await prisma.$disconnect();
 }
 
 main().catch((err) => {
-  console.error(err);
+  logger.error(err);
   process.exitCode = 1;
 });

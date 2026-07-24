@@ -1,4 +1,4 @@
-import { Hono } from 'hono'
+import { Context, Hono } from 'hono'
 import { Prisma, PrismaClient } from '@prisma/client'
 import { getPrisma } from '../../lib/prisma.js'
 import { jwtMiddleware, optionalJwtMiddleware } from '../../middleware/jwt.js'
@@ -102,8 +102,8 @@ app.get('/', async (c) => {
     }
 
     return c.json({ items, nextCursor })
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500)
+  } catch (error: unknown) {
+    return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500)
   }
 })
 
@@ -144,7 +144,7 @@ app.get('/:slug', optionalJwtMiddleware, async (c) => {
     // Process BigInt/Decimal mapping for embedded Tools
     const processedCollection = {
       ...collection,
-      tools: collection.tools.map((t: any) => ({
+      tools: collection.tools.map((t) => ({
         ...t,
         tool: {
           ...t.tool,
@@ -155,8 +155,8 @@ app.get('/:slug', optionalJwtMiddleware, async (c) => {
     }
 
     return c.json({ collection: processedCollection, nextToolCursor })
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500)
+  } catch (error: unknown) {
+    return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500)
   }
 })
 
@@ -166,7 +166,7 @@ app.post('/:id/bookmark', jwtMiddleware, async (c) => {
   const collectionId = c.req.param('id')
 
   try {
-    const user = (c as any).get('user') as { id: string };
+    const user = (c as Context).get('user') as { id: string };
     const userId = user.id;
     if (!collectionId) return c.json({ error: 'Missing collection id' }, 400);
 
@@ -188,8 +188,8 @@ app.post('/:id/bookmark', jwtMiddleware, async (c) => {
     })
 
     return c.json({ bookmarked: true })
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500)
+  } catch (error: unknown) {
+    return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500)
   }
 })
 
@@ -199,7 +199,7 @@ app.delete('/:id/bookmark', jwtMiddleware, async (c) => {
   const collectionId = c.req.param('id')
 
   try {
-    const user = (c as any).get('user') as { id: string };
+    const user = (c as Context).get('user') as { id: string };
     const userId = user.id;
     if (!collectionId) return c.json({ error: 'Missing collection id' }, 400);
 
@@ -219,8 +219,8 @@ app.delete('/:id/bookmark', jwtMiddleware, async (c) => {
     }
 
     return c.json({ bookmarked: false })
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500)
+  } catch (error: unknown) {
+    return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500)
   }
 })
 

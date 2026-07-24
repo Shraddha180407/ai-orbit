@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import type { News, Publisher, Topic } from "@prisma/client";
 import { GENERIC_TOPIC_FALLBACK, COMPANY_TOPIC_LABELS } from "../ingestion/topicTagging.js";
+import { logger } from "../../lib/logger.js";
 import type { NewsArticleDTO, NewsCategory, NewsFilterChip, NewsSource } from "./news.types.js";
 
 type ArticleRow = News & { publisher: Publisher; topics: Topic[] };
@@ -19,7 +20,7 @@ async function withTiming<T>(label: string, fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   } finally {
-    console.log(`[timing] ${label}: ${Date.now() - start}ms`);
+    logger.info(`[timing] ${label}: ${Date.now() - start}ms`);
   }
 }
 
@@ -287,8 +288,8 @@ export class NewsService {
     } else {
       try {
         await this.prisma.newsVote.create({ data: { articleId, clientId, value } });
-      } catch (err: any) {
-        if (err?.code !== "P2002") throw err;
+      } catch (err: unknown) {
+        if (!(err instanceof Error) || (err as { code?: string }).code !== "P2002") throw err;
         await this.prisma.newsVote.update({ where: { articleId_clientId: { articleId, clientId } }, data: { value } });
       }
       myVote = value;
@@ -326,8 +327,8 @@ export class NewsService {
     if (!existing) {
       try {
         await this.prisma.newsBookmark.create({ data: { articleId, clientId } });
-      } catch (err: any) {
-        if (err?.code !== "P2002") throw err;
+      } catch (err: unknown) {
+        if (!(err instanceof Error) || (err as { code?: string }).code !== "P2002") throw err;
       }
     }
     return { bookmarked: true };

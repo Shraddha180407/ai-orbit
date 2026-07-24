@@ -11,6 +11,7 @@ export class BookmarksController {
       const user = c.get('user');
       const bookmarks = await service.listBookmarks(user.id);
       return c.json(bookmarks);
+
     } finally {
       await prisma.$disconnect();
     }
@@ -27,6 +28,7 @@ export class BookmarksController {
       }
       const bookmark = await service.createBookmark(user.id, body.title, body.url);
       return c.json(bookmark);
+
     } finally {
       await prisma.$disconnect();
     }
@@ -43,6 +45,7 @@ export class BookmarksController {
       }
       await service.deleteBookmark(user.id, id);
       return c.json({ success: true });
+
     } finally {
       await prisma.$disconnect();
     }

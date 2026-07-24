@@ -10,8 +10,8 @@ export class RobotsController {
     try {
       const robots = await service.listRobots();
       return c.json(robots);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
       await prisma.$disconnect();
     }

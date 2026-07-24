@@ -20,7 +20,7 @@ export class AuthController {
   }
 
   async signup(c: Context) {
-    const ip = getIp(c.req.raw as any) || 'unknown';
+    const ip = getIp(c.req.raw as unknown as Request) || 'unknown';
     const { success, retryAfter } = rateLimit(`signup:${ip}`, 5, 60000);
     if (!success) {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
@@ -38,7 +38,7 @@ export class AuthController {
   }
 
   async login(c: Context) {
-    const ip = getIp(c.req.raw as any) || 'unknown';
+    const ip = getIp(c.req.raw as unknown as Request) || 'unknown';
     const { success, retryAfter } = rateLimit(`login:${ip}`, 10, 60000);
     if (!success) {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
@@ -117,7 +117,7 @@ export class AuthController {
   }
 
   async resendVerification(c: Context) {
-    const ip = getIp(c.req.raw as any) || 'unknown';
+    const ip = getIp(c.req.raw as unknown as Request) || 'unknown';
     const { success, retryAfter } = rateLimit(`resend-verification:${ip}`, 3, 60000);
     if (!success) {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
@@ -135,7 +135,7 @@ export class AuthController {
   }
 
   async forgotPassword(c: Context) {
-    const ip = getIp(c.req.raw as any) || 'unknown';
+    const ip = getIp(c.req.raw as unknown as Request) || 'unknown';
     const { success, retryAfter } = rateLimit(`forgot-password:${ip}`, 3, 60000);
     if (!success) {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
@@ -153,7 +153,7 @@ export class AuthController {
   }
 
   async resetPassword(c: Context) {
-    const ip = getIp(c.req.raw as any) || 'unknown';
+    const ip = getIp(c.req.raw as unknown as Request) || 'unknown';
     const { success, retryAfter } = rateLimit(`reset-password:${ip}`, 3, 60000);
     if (!success) {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
