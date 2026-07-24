@@ -6,19 +6,12 @@ interface SidebarCardProps {
   children: ReactNode;
 }
 
+/** Same card shell as the rest of the site's bordered surfaces: bg-surface, border-border, rounded-lg. */
 export function SidebarCard({ title, action, children }: SidebarCardProps) {
   return (
-    <section
-      style={{
-        borderRadius: "var(--news-radius-lg)",
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border-default)",
-        boxShadow: "var(--highlight-top)",
-        padding: 24,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 18 }}>
-        <h3 style={{ font: "var(--fw-bold) 22px/1.1 var(--font-sans)", letterSpacing: "-0.02em", color: "var(--text-primary)", margin: 0 }}>{title}</h3>
+    <section className="rounded-lg border border-border bg-surface p-5">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <h3 className="text-base font-semibold text-foreground">{title}</h3>
         {action}
       </div>
       {children}
