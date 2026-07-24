@@ -1,8 +1,7 @@
 import Link from "next/link";
+import ExternalLink from "lucide-react/dist/esm/icons/external-link";
 import { SidebarCard } from "./SidebarCard";
 import { PublisherIcon } from "./PublisherIcon";
-import { Icon } from "@/components/ui/Icon";
-import { ICONS } from "@/lib/icons";
 import type { NewsSource } from "@/types/news";
 
 interface PopularSourcesProps {
@@ -15,13 +14,13 @@ export function PopularSources({ popular, sources }: PopularSourcesProps) {
     <SidebarCard
       title="Popular sources"
       action={
-        <Link href="/news" className="tas-link" style={{ font: "var(--fw-medium) 15px/1 var(--font-sans)", color: "var(--purple-text)" }}>
+        <Link href="/news" className="text-sm font-medium text-foreground-muted hover:text-white transition-colors">
           View all
         </Link>
       }
     >
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        {popular.map((key, i) => {
+      <div className="flex flex-col divide-y divide-border">
+        {popular.map((key) => {
           const s = sources[key];
           return (
             <a
@@ -29,34 +28,16 @@ export function PopularSources({ popular, sources }: PopularSourcesProps) {
               href={`https://${s.domain}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="tas-srcrow py-4 lg:py-[13px]"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                paddingLeft: 8,
-                paddingRight: 8,
-                margin: "0 -8px",
-                minHeight: 68,
-                borderRadius: "var(--news-radius-md)",
-                transition: "var(--transition-colors)",
-                borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
-              }}
+              className="flex items-center gap-3 py-3 -mx-2 px-2 rounded-md transition-colors hover:bg-surface-raised"
             >
-              <PublisherIcon source={s} box={44} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    font: "var(--fw-semibold) 18px/1.25 var(--font-sans)",
-                    letterSpacing: "-0.01em",
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  {s.name}
-                </div>
-                <div style={{ font: "var(--fw-regular) 15px/1 var(--font-sans)", color: "var(--text-quaternary)", marginTop: 6 }}>{s.followers} followers</div>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white">
+                <PublisherIcon source={s} box={36} />
               </div>
-              <Icon path={ICONS.external} size={16} style={{ color: "var(--text-quaternary)", flex: "none" }} />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-foreground truncate">{s.name}</div>
+                <div className="text-xs text-foreground-faint mt-0.5">{s.followers} followers</div>
+              </div>
+              <ExternalLink size={14} className="text-foreground-faint shrink-0" />
             </a>
           );
         })}

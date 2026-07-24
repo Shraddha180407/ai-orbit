@@ -1,23 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Breadcrumb } from "./Breadcrumb";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
+import X from "lucide-react/dist/esm/icons/x";
+import { Plus } from "lucide-react";
 import { NewsSearchBar } from "@/components/ui/NewsSearchBar";
 import { FilterChips } from "./FilterChips";
 import { TopicChip } from "./TopicChip";
 import { NewsList } from "./NewsList";
-import { FeaturedStory } from "./FeaturedStory";
 import { LoadingSkeleton } from "./LoadingSkeleton";
 import { ErrorState } from "./ErrorState";
 import { API_URL } from "@/lib/api";
 import { getClientId } from "@/lib/clientId";
-import { applySearch, buildSourceOptions, buildTopicOptions, nextSortState, sortArticles } from "@/lib/news/news";
+import { applySearch, sortArticles } from "@/lib/news/news";
 import type { NewsArticle, NewsCategory, NewsFilterChip, NewsSource, SortState } from "@/types/news";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/shadcn-button";
 
 const PAGE_SIZE = 25;
@@ -36,17 +37,14 @@ interface NewsListingClientProps {
 }
 
 /**
- * Owns its own data fetching (moved here from NewsPageClient) because the
- * fetch strategy now depends on filter state, which lives here: the default
- * feed (no category, no search/topic/source filter, default date sort) is
- * fetched page-by-page as the user scrolls (GET /api/news?page=&perPage=).
- * The moment any filter/search/non-default sort is touched, or the page was
- * reached already scoped to a category/topic, the FULL article list is
- * fetched once (GET /api/news, unchanged from the old app) and every filter
- * below runs entirely client-side over that complete set, same as before.
- * Once upgraded to the full set, it stays that way for the rest of the
- * session — clearing filters again just re-reveals more of what's already
- * loaded, it doesn't drop back to paginated fetching.
+ * Same page shape as ToolsClient.tsx: a "Back to Home" link, an
+ * `<h1>`+count header, a search bar, a filter-chip row, then the listing
+ * table — same classes/spacing throughout (`mx-auto max-w-[1070px] px-6
+ * py-10`, `text-2xl font-semibold text-foreground` h1, etc.) so /news reads
+ * as the same product as /tools, not a separate visual system.
+ *
+ * Data fetching itself (pagination/full-list upgrade, filter/sort state) is
+ * unchanged from before — only the presentation was rewritten.
  */
 export function NewsListingClient({ category, initialTopic }: NewsListingClientProps) {
   const { user } = useUser();
@@ -56,7 +54,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   const [query, setQuery] = useState("");
   const [selectedTopics, setSelectedTopics] = useState<string[]>(initialTopic ? [initialTopic] : []);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [sort, setSort] = useState<SortState>({ key: "date", dir: "desc" });
+  const [sort] = useState<SortState>({ key: "date", dir: "desc" });
 
   // Admin Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,8 +76,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   const [initialError, setInitialError] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState(false);
 
-  const isDefaultView =
-    !category && filter === "all" && !query.trim() && selectedTopics.length === 0 && selectedSources.length === 0 && sort.key === "date" && sort.dir === "desc";
+  const isDefaultView = !category && filter === "all" && !query.trim() && selectedTopics.length === 0 && selectedSources.length === 0;
 
   const loadFull = useCallback(async () => {
     setInitialError(false);
@@ -130,25 +127,17 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     }
   }, []);
 
-  // Initial load, once.
-
   useEffect(() => {
     if (category || initialTopic) loadFull();
     else loadPage(1, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once on mount; category/initialTopic only ever come from the URL at first render
   }, []);
 
-  // Upgrade from paginated to the full dataset the moment a filter, search,
-  // or non-default sort is touched — see the doc comment above.
   useEffect(() => {
     if (!isDefaultView && mode === "paginated" && !isLoadingInitial) loadFull();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDefaultView, mode, isLoadingInitial]);
 
-  // Scroll-triggered fetch of the next page — only active in paginated mode.
-  // Appending to the end of `articles` (never replacing/reordering earlier
-  // rows) is what keeps scroll position stable; nothing above the sentinel
-  // ever re-renders differently.
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (mode !== "paginated" || !hasMore) return;
@@ -164,27 +153,16 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     return () => observer.disconnect();
   }, [mode, hasMore, isLoadingMore, nextPage, loadPage]);
 
-  const onSort = (key: SortState["key"]) => setSort((s) => nextSortState(s, key));
+  const toggleTopic = (v: string) => setSelectedTopics((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
+  const toggleSource = (v: string) => setSelectedSources((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
 
-  const topicOptions = useMemo(() => buildTopicOptions(articles), [articles]);
-  const sourceOptions = useMemo(() => buildSourceOptions(articles, sources), [articles, sources]);
-
-  const toggleTopic = (v: string) =>
-    setSelectedTopics((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
-  const toggleSource = (v: string) =>
-    setSelectedSources((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
-
+  // Admin handlers
   const handleSave = async () => {
     setIsSaving(true);
     try {
       const url = editingId ? `${API_URL}/api/admin/news/${editingId}` : `${API_URL}/api/admin/news`;
       const method = editingId ? 'PATCH' : 'POST';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-        credentials: 'include'
-      });
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData), credentials: 'include' });
       if (!res.ok) throw new Error('Failed to save news');
       toast.success(editingId ? 'News updated successfully' : 'News added successfully');
       setIsModalOpen(false);
@@ -217,42 +195,18 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
   const openEdit = (news: any) => {
     setEditingId(news.id);
-    setFormData({ title: news.title || '', slug: news.slug || '', articleUrl: news.articleUrl || '', category: news.category || 'general', summary: news.dek || news.aiSummary || '' });
+    setFormData({ title: news.headline || '', slug: news.id || '', articleUrl: news.articleUrl || '', category: news.category || 'general', summary: news.dek || news.aiSummary || '' });
     setIsModalOpen(true);
-  };
-
-  const tableFilters = {
-    topicOptions,
-    selectedTopics,
-    onToggleTopic: toggleTopic,
-    onClearTopics: () => setSelectedTopics([]),
-    sourceOptions,
-    selectedSources,
-    onToggleSource: toggleSource,
-    onClearSources: () => setSelectedSources([]),
   };
 
   let list = articles.slice();
   if (category) list = list.filter((a) => a.category === category || a.filters.includes(category));
-  // "Trending" = real articles from the last 48h — not the old fixed 80-percentile
-  // rank-score cut, which was an artifact of array order and meaningless once
-  // every real article starts at 0 votes. Other chips are dynamic topic names
-  // (see getFilterChips()), so they filter on the real `topics` field.
   if (filter === "trending") list = list.filter((a) => a.hours <= 48);
   else if (filter !== "all") list = list.filter((a) => a.topics.includes(filter));
   list = applySearch(list, query, sources);
   if (selectedTopics.length) list = list.filter((a) => selectedTopics.some((t) => a.topics.includes(t)));
   if (selectedSources.length) list = list.filter((a) => selectedSources.includes(a.source));
   list = sortArticles(list, sort, sources);
-
-  // Hero/featured story: only the top-ranked article of the default,
-  // unfiltered feed's first page — never while a category/search/filter/
-  // non-default sort is active (isDefaultView already guarantees list[0]
-  // is the newest article, date-desc). Sliced out of `list` below it so it
-  // isn't shown twice.
-  const showFeatured = isDefaultView && list.length > 0;
-  const featured = showFeatured ? list[0] : null;
-  const restList = showFeatured ? list.slice(1) : list;
 
   const emptyKind: "search" | "empty" = query || selectedTopics.length || selectedSources.length ? "search" : "empty";
   const total = mode === "paginated" ? serverTotal : list.length;
@@ -262,191 +216,96 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
   if (isLoadingInitial) {
     return (
-      <div>
-        <div style={{ height: 24 }} />
+      <main className="mx-auto max-w-[1070px] px-6 py-10">
+        <div className="h-24 animate-pulse rounded-lg bg-[#18181C] mb-8" />
         <LoadingSkeleton />
-      </div>
+      </main>
     );
   }
 
   if (initialError) {
-    return <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />;
+    return (
+      <main className="mx-auto max-w-[1070px] px-6 py-10">
+        <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
+      </main>
+    );
   }
 
   return (
-    <div>
-      {category && (
-        <div style={{ marginBottom: 18 }}>
-          <Breadcrumb
-            items={[
-              { label: "AI News", href: "/news" },
-              { label: catLabel ?? category },
-            ]}
-          />
-        </div>
-      )}
+    <main className="mx-auto max-w-[1070px] px-6 py-10">
+      <Link href="/" className="mb-6 inline-flex items-center gap-1.5 text-sm text-foreground-muted hover:text-white transition-colors">
+        <ArrowLeft size={16} />
+        Back to Home
+      </Link>
 
-      <header>
-        <div style={{ minWidth: 0 }}>
-          {!category && (
-            <div
-              className="gap-1.5 px-2.5 h-[22px] mb-2.5 sm:gap-2 sm:h-6 sm:mb-3 md:mb-4"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                borderRadius: "var(--radius-pill)",
-                background: "var(--purple-soft)",
-                border: "1px solid var(--purple-border)",
-              }}
-            >
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--purple-text)", flex: "none" }} />
-              <span
-                className="text-[10px] sm:text-[11px]"
-                style={{ font: "var(--fw-semibold) inherit/1 var(--font-sans)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--purple-text)" }}
-              >
-                Live feed
-              </span>
-            </div>
-          )}
-          <h1
-            className="text-[30px] leading-[1.15] sm:text-[36px] sm:leading-[1.1] md:text-[46px] md:leading-[1.08] lg:text-[54px] lg:leading-[1.05]"
-            style={{ fontFamily: "var(--font-display)", fontWeight: "var(--fw-bold)", letterSpacing: "-0.03em", color: "var(--text-primary)", margin: 0 }}
-          >
-            {category ? catLabel ?? category : "AI News"}
-          </h1>
-          {category ? (
-            <p
-              className="text-base leading-[1.35] mt-2 sm:text-lg sm:mt-2.5 md:text-xl md:leading-[1.25] md:mt-3 lg:text-2xl lg:leading-[1.2] lg:mt-[14px]"
-              style={{ fontFamily: "var(--font-sans)", fontWeight: "var(--fw-medium)", letterSpacing: "-0.02em", color: "var(--text-secondary)" }}
-            >
-              {total} {catLabel ?? category} stories across the AI ecosystem
-            </p>
-          ) : (
-            <p
-              className="text-sm leading-[1.5] mt-2 sm:text-[15px] sm:mt-2.5 md:text-base md:leading-[1.6] md:mt-3.5 lg:text-lg lg:leading-[1.65] lg:mt-4"
-              style={{
-                fontFamily: "var(--font-sans)",
-                fontWeight: "var(--fw-regular)",
-                letterSpacing: "-0.01em",
-                color: "var(--text-secondary)",
-                maxWidth: 780,
-              }}
-            >
-              Curated news covering the most critical breakthroughs, investments, research, and models across the artificial intelligence landscape.
-            </p>
-          )}
+      <header className="mb-8 flex flex-col gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">{category ? catLabel ?? category : "AI News"}</h1>
+          <p className="mt-1 text-sm text-foreground-muted">
+            {total} {category ? `${catLabel ?? category} ` : ""}stor{total === 1 ? "y" : "ies"} across the AI ecosystem
+          </p>
         </div>
         {isAdmin && (
-          <Button className="mt-4 bg-white text-black hover:bg-neutral-200" onClick={openAdd}>
+          <Button className="self-start bg-white text-black hover:bg-neutral-200" onClick={openAdd}>
             <Plus className="h-4 w-4 mr-2" /> Add News
           </Button>
         )}
+        <NewsSearchBar value={query} onChange={setQuery} />
       </header>
 
-      <div className="mt-4 sm:mt-5 md:mt-6 lg:mt-8">
-        <NewsSearchBar value={query} onChange={setQuery} />
+      <div className="space-y-5 mb-8">
+        <div className="space-y-2">
+          <span className="block text-[10px] font-mono tracking-widest text-foreground-faint uppercase">Filters</span>
+          <FilterChips items={filterChips} value={filter} onChange={setFilter} />
+        </div>
+
+        {(selectedTopics.length > 0 || selectedSources.length > 0) && (
+          <div className="flex items-center gap-2 flex-wrap pt-2">
+            {selectedTopics.map((t) => (
+              <TopicChip key={"t" + t} active onClick={() => toggleTopic(t)}>
+                {t}
+                <X size={12} className="ml-1.5" />
+              </TopicChip>
+            ))}
+            {selectedSources.map((s) => (
+              <TopicChip key={"s" + s} active onClick={() => toggleSource(s)}>
+                {sources[s]?.name}
+                <X size={12} className="ml-1.5" />
+              </TopicChip>
+            ))}
+            <button
+              onClick={() => {
+                setSelectedTopics([]);
+                setSelectedSources([]);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground-muted hover:bg-surface-raised hover:text-foreground transition-all active:scale-95"
+            >
+              <X size={12} aria-hidden="true" />
+              Clear all filters
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="mt-3 sm:mt-4 md:mt-5 lg:mt-7">
-        <FilterChips items={filterChips} value={filter} onChange={setFilter} />
-      </div>
+      <div className="space-y-6">
+        <NewsList articles={list} sources={sources} emptyKind={emptyKind} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
 
-      {(selectedTopics.length > 0 || selectedSources.length > 0) && (
-        <div className="mt-2.5 sm:mt-3 md:mt-3.5 lg:mt-4" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          {selectedTopics.map((t) => (
-            <TopicChip key={"t" + t} active onClick={() => toggleTopic(t)}>
-              {t} ✕
-            </TopicChip>
-          ))}
-          {selectedSources.map((s) => (
-            <TopicChip key={"s" + s} active onClick={() => toggleSource(s)}>
-              {sources[s].name} ✕
-            </TopicChip>
-          ))}
-          <button
-            onClick={() => {
-              setSelectedTopics([]);
-              setSelectedSources([]);
-            }}
-            style={{ font: "var(--fw-medium) var(--fs-xs)/1 var(--font-sans)", color: "var(--text-secondary)", padding: "2px 4px" }}
-          >
-            Clear all
-          </button>
-        </div>
-      )}
-
-      {list.length > 0 && (
-        <div
-          className="mt-4 mb-2 sm:mt-5 sm:mb-2.5 md:mt-6 lg:mt-7 lg:mb-5"
-          style={{
-            font: "var(--fw-semibold) var(--fs-xs)/1 var(--font-sans)",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "var(--text-primary)",
-          }}
-        >
-          {/* Always the real DB total, not how many are loaded/rendered so far — same phrasing in both modes. Infinite-scroll fetching itself (25 at a time) is unaffected; this is display-only. */}
-          Showing {total} {total === 1 ? "story" : "stories"}
-        </div>
-      )}
-
-      <div style={{ height: list.length ? 8 : 20 }} />
-
-      {featured && sources[featured.source] && (
-        <div className="mb-3 sm:mb-4 lg:mb-6">
-          <FeaturedStory article={featured} source={sources[featured.source]} onTopic={toggleTopic} />
-        </div>
-      )}
-
-      <div
-        className="px-3 lg:px-5"
-        style={{
-          borderRadius: "var(--radius-xl)",
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border-default)",
-          boxShadow: "var(--highlight-top)",
-          paddingTop: 8,
-          paddingBottom: 12,
-        }}
-      >
-        <NewsList articles={restList} sources={sources} emptyKind={emptyKind} sort={sort} onSort={onSort} filters={tableFilters} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
-
-        {mode === "paginated" && restList.length > 0 && (
-          <div ref={sentinelRef} style={{ padding: "18px 0 8px" }}>
-            {isLoadingMore && (
-              <div style={{ display: "flex", justifyContent: "center", padding: "12px 0" }}>
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-              </div>
-            )}
+        {mode === "paginated" && list.length > 0 && (
+          <div ref={sentinelRef} className="flex items-center justify-center py-8">
+            {isLoadingMore && <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />}
             {!isLoadingMore && loadMoreError && (
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, padding: "12px 0" }}>
-                <span style={{ font: "var(--fw-regular) var(--fs-sm)/1 var(--font-sans)", color: "var(--text-quaternary)" }}>
-                  Couldn't load more stories.
-                </span>
-                <button
-                  onClick={() => loadPage(nextPage, true)}
-                  style={{ font: "var(--fw-semibold) var(--fs-sm)/1 var(--font-sans)", color: "var(--purple-text)" }}
-                >
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-foreground-faint">Couldn&apos;t load more stories.</span>
+                <button onClick={() => loadPage(nextPage, true)} className="text-sm font-semibold text-white hover:underline">
                   Retry
                 </button>
               </div>
             )}
-            {!isLoadingMore && !loadMoreError && !hasMore && (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "12px 0",
-                  font: "var(--fw-medium) var(--fs-sm)/1 var(--font-sans)",
-                  color: "var(--text-quaternary)",
-                }}
-              >
-                You're all caught up
-              </div>
-            )}
+            {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-foreground-faint">You&apos;re all caught up</span>}
           </div>
         )}
       </div>
-      
+
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? 'Edit News' : 'Add News'} footer={
         <>
           <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
@@ -455,12 +314,12 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       }>
         <div className="space-y-3">
           <div><label className="text-xs text-[#8A8F98]">Title *</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="Article headline" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} /></div>
-          <div><label className="text-xs text-[#8A8F98]">Slug (auto-generated from title if blank)</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="article-url-slug" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Slug</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="article-url-slug" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} /></div>
           <div><label className="text-xs text-[#8A8F98]">Article URL</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="https://..." value={formData.articleUrl} onChange={e => setFormData({...formData, articleUrl: e.target.value})} /></div>
           <div><label className="text-xs text-[#8A8F98]">Category</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. general, llm, robotics" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} /></div>
-          <div><label className="text-xs text-[#8A8F98]">Summary / Dek</label><textarea className="w-full p-2 text-sm bg-[#111113] border border-[#1C1C1F] text-white rounded-md h-20" placeholder="Brief description of the article..." value={formData.summary} onChange={e => setFormData({...formData, summary: e.target.value})} /></div>
+          <div><label className="text-xs text-[#8A8F98]">Summary / Dek</label><textarea className="w-full p-2 text-sm bg-[#111113] border border-[#1C1C1F] text-white rounded-md h-20" placeholder="Brief description..." value={formData.summary} onChange={e => setFormData({...formData, summary: e.target.value})} /></div>
         </div>
       </Modal>
-    </div>
+    </main>
   );
 }

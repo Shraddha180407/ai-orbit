@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Icon } from "@/components/ui/Icon";
-import { ICONS } from "@/lib/icons";
+import Share2 from "lucide-react/dist/esm/icons/share-2";
+import Check from "lucide-react/dist/esm/icons/check";
+import { cn } from "@/lib/utils";
 
 interface ShareButtonProps {
-  /** Fixed width filling its container (no content-driven growth) — used in the mobile equal-width grid. */
   fluid?: boolean;
-  /** Article headline, passed to the native share sheet (title/text) when available — see NewsTable.tsx's NewsRowActions.share, same pattern. */
   title?: string;
 }
 
@@ -35,29 +34,17 @@ export function ShareButton({ fluid, title }: ShareButtonProps) {
 
   return (
     <button
+      type="button"
       onClick={share}
       aria-label="Share"
-      className="tas-savebtn"
-      data-on={copied ? "" : undefined}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: fluid ? "center" : "flex-start",
-        width: fluid ? "100%" : "auto",
-        gap: 8,
-        height: 40,
-        padding: "0 16px",
-        borderRadius: "var(--news-radius-md)",
-        cursor: "pointer",
-        transition: "var(--transition-colors)",
-        font: "var(--fw-medium) var(--fs-body)/1 var(--font-sans)",
-        color: copied ? "var(--purple-text)" : "var(--text-secondary)",
-        background: copied ? "var(--purple-soft)" : "var(--bg-elevated)",
-        border: `1px solid ${copied ? "var(--purple-border)" : "var(--border-default)"}`,
-        boxShadow: "var(--highlight-top)",
-      }}
+      className={cn(
+        "inline-flex items-center gap-2 rounded-md border h-10 px-4 text-sm font-medium transition-colors",
+        fluid ? "w-full justify-center" : "justify-start",
+        copied ? "border-transparent text-black" : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
+      )}
+      style={copied ? { backgroundColor: "var(--color-signal)" } : undefined}
     >
-      <Icon path={copied ? ICONS.check : ICONS.share} size={17} />
+      {copied ? <Check size={16} /> : <Share2 size={16} />}
       {copied ? "Link copied" : "Share"}
     </button>
   );

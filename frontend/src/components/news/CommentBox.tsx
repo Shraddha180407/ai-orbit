@@ -6,13 +6,16 @@ import { getClientId } from "@/lib/clientId";
 import type { NewsComment } from "@/types/news";
 
 interface CommentBoxProps {
-  /** Article slug — see VoteButtons.tsx's comment on why NewsArticleDTO.id is a slug. */
   id: string;
-  /** Real, already-persisted comments from the article detail fetch (GET /api/news/:slug's `comments` field) — not local-only state. */
   initialComments: NewsComment[];
 }
 
-/** Real, persisted comments via POST /api/news/:slug/comments — replaces the old app's in-memory-only composer, which reset on every refresh (see the component's own former header comment: "no backend/persisted thread; posts are local to the session"). */
+/**
+ * Real, persisted comments via POST /api/news/:slug/comments. Restyled to
+ * the homepage's plain-Tailwind system: bg-surface/border-border card,
+ * var(--color-signal) as the post-button accent instead of the old purple
+ * theme.
+ */
 export function CommentBox({ id, initialComments }: CommentBoxProps) {
   const [value, setValue] = useState("");
   const [comments, setComments] = useState<NewsComment[]>(initialComments);
@@ -41,19 +44,8 @@ export function CommentBox({ id, initialComments }: CommentBoxProps) {
   };
 
   return (
-    <section
-      style={{
-        marginTop: 44,
-        padding: "20px 20px",
-        borderRadius: "var(--radius-xl)",
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border-default)",
-        boxShadow: "var(--highlight-top)",
-      }}
-    >
-      <h3 style={{ font: "var(--fw-bold) 22px/1.1 var(--font-sans)", letterSpacing: "-0.02em", color: "var(--text-primary)", margin: "0 0 12px" }}>
-        {comments.length ? `Comments (${comments.length})` : "Add a comment"}
-      </h3>
+    <section className="mt-11 rounded-lg border border-border bg-surface p-5">
+      <h3 className="text-lg font-semibold text-foreground mb-3">{comments.length ? `Comments (${comments.length})` : "Add a comment"}</h3>
       <textarea
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -62,74 +54,36 @@ export function CommentBox({ id, initialComments }: CommentBoxProps) {
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") post();
         }}
         placeholder="Share your thoughts about this story…"
-        className="tas-cinput"
-        style={{
-          width: "100%",
-          resize: "vertical",
-          minHeight: 120,
-          padding: "14px 16px",
-          background: "var(--bg-inset)",
-          border: "1px solid var(--border-default)",
-          borderRadius: "var(--news-radius-lg)",
-          font: "var(--fw-regular) 17px/1.55 var(--font-sans)",
-          color: "var(--text-primary)",
-          outline: "none",
-        }}
+        className="w-full resize-y min-h-[120px] rounded-md border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-foreground-faint focus:border-accent focus:outline-none"
       />
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 12 }}>
+      <div className="flex items-center gap-3.5 mt-3">
         <button
+          type="button"
           onClick={post}
           disabled={!canPost}
-          className="tas-cpost"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            height: 38,
-            padding: "0 18px",
-            borderRadius: "var(--news-radius-md)",
-            font: "var(--fw-semibold) 15px/1 var(--font-sans)",
-            border: "none",
-            cursor: canPost ? "pointer" : "not-allowed",
-            background: canPost ? "var(--purple)" : "var(--bg-elevated)",
-            color: canPost ? "#fff" : "var(--text-quaternary)",
-            boxShadow: canPost ? "none" : "var(--highlight-top)",
-            transition: "var(--transition-colors)",
-          }}
+          className={`inline-flex h-9 items-center rounded-md px-4 text-sm font-semibold transition-colors ${
+            canPost ? "text-black" : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
+          }`}
+          style={canPost ? { backgroundColor: "var(--color-signal)" } : undefined}
         >
           {posting ? "Posting…" : "Post Comment"}
         </button>
-        <span style={{ font: "var(--fw-regular) var(--fs-xs)/1 var(--font-sans)", color: "var(--text-quaternary)" }}>⌘↵ to post</span>
+        <span className="text-xs text-foreground-faint">⌘↵ to post</span>
       </div>
 
       {comments.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 24, paddingTop: 24, borderTop: "1px solid var(--border-subtle)" }}>
+        <div className="flex flex-col gap-4 mt-6 pt-6 border-t border-border">
           {comments.map((c) => (
-            <div key={c.id} style={{ display: "flex", gap: 12 }}>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 34,
-                  height: 34,
-                  flex: "none",
-                  borderRadius: "50%",
-                  background: "var(--bg-surface-2)",
-                  border: "1px solid var(--border-default)",
-                  font: "var(--fw-semibold) var(--fs-xs)/1 var(--font-sans)",
-                  color: "var(--text-secondary)",
-                }}
-              >
+            <div key={c.id} className="flex gap-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-surface-raised text-xs font-semibold text-foreground-muted">
                 {c.authorName.slice(0, 1).toUpperCase()}
               </span>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ font: "var(--fw-semibold) var(--fs-sm)/1 var(--font-sans)", color: "var(--text-primary)" }}>{c.authorName}</span>
-                  <span style={{ font: "var(--fw-regular) var(--fs-2xs)/1 var(--font-mono)", color: "var(--text-quaternary)" }}>
-                    {new Date(c.createdAt).toLocaleString()}
-                  </span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-foreground">{c.authorName}</span>
+                  <span className="text-[11px] font-mono text-foreground-faint">{new Date(c.createdAt).toLocaleString()}</span>
                 </div>
-                <p style={{ font: "var(--fw-regular) var(--fs-body)/1.55 var(--font-sans)", color: "var(--text-secondary)", margin: "7px 0 0" }}>{c.body}</p>
+                <p className="text-sm leading-relaxed text-foreground-muted mt-1.5">{c.body}</p>
               </div>
             </div>
           ))}
