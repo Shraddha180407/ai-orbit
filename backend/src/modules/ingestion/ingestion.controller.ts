@@ -36,9 +36,10 @@ export class IngestionController {
       });
 
       return c.json(summary);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
       console.error("Ingestion run error:", error);
-      return c.json({ error: error.message }, 500);
+      return c.json({ error: message }, 500);
     }
   }
 }

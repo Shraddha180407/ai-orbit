@@ -19,7 +19,7 @@ router.get("/:filename", async (c) => {
   const object = await c.env.LOGO_BUCKET.get(`publishers/${filename}`);
   if (!object) return c.notFound();
 
-  return new Response(object.body as any, {
+  return new Response(object.body as unknown as ReadableStream<Uint8Array>, {
     headers: {
       "Content-Type": object.httpMetadata?.contentType ?? "application/octet-stream",
       // Logos are resolved once and never change for a given filename (the

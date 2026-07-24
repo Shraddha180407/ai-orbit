@@ -35,15 +35,16 @@ router.post("/tools", requireIngestionToken, async (c) => {
       }, 422);
     }
 
-    const prisma = getPrisma(c.env as any);
+    const prisma = getPrisma(c.env);
     const summary = await ToolsIngestService.ingestTools(prisma, parsed.data);
     
     return c.json(summary, 200);
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "An unexpected error occurred during tools ingestion";
     console.error("Tools ingestion error:", err);
     return c.json({
       error: "INTERNAL_SERVER_ERROR",
-      message: err.message || "An unexpected error occurred during tools ingestion"
+      message
     }, 500);
   }
 });
@@ -60,15 +61,16 @@ router.post("/devices", requireIngestionToken, async (c) => {
       }, 422);
     }
 
-    const prisma = getPrisma(c.env as any);
+    const prisma = getPrisma(c.env);
     const summary = await DevicesIngestService.ingestDevices(prisma, parsed.data);
     
     return c.json(summary, 200);
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "An unexpected error occurred during devices ingestion";
     console.error("Devices ingestion error:", err);
     return c.json({
       error: "INTERNAL_SERVER_ERROR",
-      message: err.message || "An unexpected error occurred during devices ingestion"
+      message
     }, 500);
   }
 });

@@ -7,7 +7,7 @@ export class ToolsIngestService {
       processed: 0,
       created: 0,
       updated: 0,
-      errors: [] as any[]
+      errors: [] as { slug: string; message: string }[]
     };
 
     for (const toolData of payload.tools) {
@@ -128,16 +128,17 @@ export class ToolsIngestService {
           // Increase timeout for large payloads
           timeout: 10000 
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
         console.error(`Error ingesting tool ${toolData.slug}:`, err);
         summary.errors.push({
           slug: toolData.slug,
-          message: err.message
+          message
         });
         
         // Adjust counts since it failed
-        if (summary.created > 0 && err.message.includes('create')) summary.created--;
-        if (summary.updated > 0 && !err.message.includes('create')) summary.updated--;
+        if (summary.created > 0 && message.includes('create')) summary.created--;
+        if (summary.updated > 0 && !message.includes('create')) summary.updated--;
       }
     }
 
