@@ -17,9 +17,10 @@ const getBackendSortValue = (field: string | null, order: "asc" | "desc"): strin
 };
 
 export function RepositoriesClient() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-
+  const initialQuery = searchParams.get("q") || "";
+  const router = useRouter();
+  
   const [repos, setRepos] = useState<Repository[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -32,8 +33,8 @@ export function RepositoriesClient() {
   const [isLicenseDropdownOpen, setIsLicenseDropdownOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
-  const [repoSearchQuery, setRepoSearchQuery] = useState("");
-  const [activeRepoSearch, setActiveRepoSearch] = useState("");
+  const [repoSearchQuery, setRepoSearchQuery] = useState(initialQuery);
+  const [activeRepoSearch, setActiveRepoSearch] = useState(initialQuery);
   const [isRepoFilterOpen, setIsRepoFilterOpen] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
 

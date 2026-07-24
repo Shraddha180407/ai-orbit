@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { Prisma, PrismaClient } from '@prisma/client'
-import { getPrisma, getOrCreateDemoUser } from '../../lib/prisma.js'
+import { getPrisma } from '../../lib/prisma.js'
+import { jwtMiddleware, optionalJwtMiddleware } from '../../middleware/jwt.js'
 
 const app = new Hono()
 
@@ -107,7 +108,7 @@ app.get('/', async (c) => {
 })
 
 // b) GET /collections/:slug
-app.get('/:slug', async (c) => {
+app.get('/:slug', optionalJwtMiddleware, async (c) => {
   const prisma = getPrisma(c.env)
   const slug = c.req.param('slug')
   const toolCursor = c.req.query('toolCursor')
@@ -160,15 +161,19 @@ app.get('/:slug', async (c) => {
 })
 
 // c) POST /collections/:id/bookmark
-app.post('/:id/bookmark', async (c) => {
+app.post('/:id/bookmark', jwtMiddleware, async (c) => {
   const prisma = getPrisma(c.env)
   const collectionId = c.req.param('id')
 
   try {
-    // TODO: auth middleware should set c.var.userId. For now, we fallback to the demo user.
-    // const userId = c.get('userId');
-    const demoUser = await getOrCreateDemoUser(prisma)
-    const userId = demoUser.id
+    const user = (c as any).get('user') as { id: string };
+    const userId = user.id;
+    if (!collectionId) return c.json({ error: 'Missing collection id' }, 400);
+
+    const collection = await prisma.collection.findUnique({ where: { id: collectionId }, select: { id: true } })
+    if (!collection) {
+      return c.json({ error: 'Collection not found' }, 404)
+    }
 
     const existing = await prisma.collectionBookmark.findUnique({
       where: { userId_collectionId: { userId, collectionId } }
@@ -189,15 +194,19 @@ app.post('/:id/bookmark', async (c) => {
 })
 
 // d) DELETE /collections/:id/bookmark
-app.delete('/:id/bookmark', async (c) => {
+app.delete('/:id/bookmark', jwtMiddleware, async (c) => {
   const prisma = getPrisma(c.env)
   const collectionId = c.req.param('id')
 
   try {
-    // TODO: auth middleware should set c.var.userId. For now, we fallback to the demo user.
-    // const userId = c.get('userId');
-    const demoUser = await getOrCreateDemoUser(prisma)
-    const userId = demoUser.id
+    const user = (c as any).get('user') as { id: string };
+    const userId = user.id;
+    if (!collectionId) return c.json({ error: 'Missing collection id' }, 400);
+
+    const collection = await prisma.collection.findUnique({ where: { id: collectionId }, select: { id: true } })
+    if (!collection) {
+      return c.json({ error: 'Collection not found' }, 404)
+    }
 
     const existing = await prisma.collectionBookmark.findUnique({
       where: { userId_collectionId: { userId, collectionId } }

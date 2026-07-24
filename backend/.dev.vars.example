@@ -1,5 +1,4 @@
-DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
-GITHUB_TOKEN=""
+DATABASE_URL=""
 GEMINI_API_KEY=""
 GROQ_API_KEY=""
 CLOUDINARY_CLOUD_NAME=""

@@ -30,7 +30,7 @@ export function ToolDetailClient() {
     async function fetchTool() {
       setIsLoading(true);
       try {
-        const res = await fetch(`${API_URL}/api/v1/tools/${slug}`);
+        const res = await fetch(`${API_URL}/api/v1/tools/${slug}`, { credentials: 'include' });
         if (!res.ok) {
           setNotFoundState(true);
           return;
@@ -40,6 +40,15 @@ export function ToolDetailClient() {
         setSimilarTools(data.similarTools || []);
         setReviews(data.reviews || []);
         setBookmarked(data.bookmarked || false);
+
+        if (data.tool?.id) {
+          fetch(`${API_URL}/api/user/history`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ toolId: data.tool.id })
+          }).catch(e => console.error('Failed to record history', e));
+        }
       } catch (error) {
         console.error("Failed to fetch tool:", error);
         setNotFoundState(true);

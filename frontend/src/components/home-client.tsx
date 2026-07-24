@@ -22,6 +22,7 @@ import { API_URL } from "@/lib/api";
 
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { HeroSearchBar } from "@/components/HeroSearchBar";
 import { HeroFeatureChips } from "@/components/HeroFeatureChips";
 import { SortDropdown } from "@/components/SortDropdown";
 import { ToolListView } from "@/components/ToolListView";
@@ -209,49 +210,32 @@ export function HomeClient() {
 
       {/* 2. Hero Section */}
       <section
-        className="relative w-full flex flex-col items-center pt-6 pb-10 px-6 overflow-hidden"
+        className="relative w-full flex flex-col items-center pt-16 pb-10 px-6"
         style={{
           backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
         }}
       >
-        {/* ambient signal glow behind headline */}
-        <div
-          className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-[0.12] blur-[100px]"
-          style={{ backgroundColor: 'var(--color-signal)' }}
-        />
+        {/* ambient signal glow behind headline — clipped to this layer only,
+            so it doesn't constrain the search dropdown's overlay below */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-[0.12] blur-[100px]"
+            style={{ backgroundColor: 'var(--color-signal)' }}
+          />
+        </div>
 
         <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
           <h1 className="max-w-[820px] text-2xl sm:text-4xl lg:text-[48px] font-black tracking-tight leading-[1.1] mb-6 sm:mb-8 select-none text-white text-balance">
             The best AI, in one signal.
           </h1>
 
-          <form action="/tools" method="GET" className="relative w-full max-w-[640px] mx-auto mb-4 sm:mb-5 group">
-            <div
-              className="relative w-full rounded-xl border border-[#232326]/70 bg-[#111113] h-[44px] sm:h-[52px] flex items-center px-4 sm:px-5 pr-[4.5rem] transition-colors duration-150"
-              style={{ borderColor: undefined }}
-            >
-              <Search size={15} className="mr-2.5 sm:mr-3 text-[#71717A] shrink-0" />
-              <input
-                type="text"
-                name="q"
-                defaultValue={params.q}
-                placeholder="Search AI tools, models, companies…"
-                className="w-full bg-transparent text-[13px] sm:text-[14px] text-white placeholder:text-[#71717A] focus:outline-none"
-              />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <kbd className="hidden sm:inline-flex h-6 select-none items-center gap-0.5 rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 font-mono text-[10px] text-[#71717A] pointer-events-none">
-                  <span>⌘</span>K
-                </kbd>
-              </div>
-            </div>
-            <style jsx>{`
-              form:focus-within > div {
-                border-color: var(--color-signal) !important;
-                box-shadow: 0 0 0 3px var(--color-signal-dim);
-              }
-            `}</style>
-          </form>
+          <p className="max-w-xl text-[15px] sm:text-base text-[#A1A1AA] leading-relaxed mb-8 select-none">
+            Cut through the noise. Discover, compare, and track the AI tools,
+            models, and companies that actually matter.
+          </p>
+
+          <HeroSearchBar defaultValue={params.q} />
 
           <div className="mb-3">
             <HeroFeatureChips />
