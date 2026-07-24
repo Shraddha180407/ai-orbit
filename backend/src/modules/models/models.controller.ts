@@ -20,8 +20,8 @@ export class ModelsController {
     try {
       const result = await service.listModels(parsed.data);
       return c.json(result);
-    } catch (error: unknown) {
-      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
+    } catch (error: any) {
+      return c.json({ error: error.message }, 500);
     } finally {
       await prisma.$disconnect();
     }
@@ -45,8 +45,8 @@ export class ModelsController {
       }
 
       return c.json(model);
-    } catch (error: unknown) {
-      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
+    } catch (error: any) {
+      return c.json({ error: error.message }, 500);
     } finally {
       await prisma.$disconnect();
     }
