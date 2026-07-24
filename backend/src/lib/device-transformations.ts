@@ -1,3 +1,5 @@
+import type { Device } from '@prisma/client';
+
 const MONTH_NAMES = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
@@ -96,7 +98,7 @@ export function validateImageUrl(url: string | null): string | null {
   return url.trim();
 }
 
-export function transformDeviceForListing(device: any): any {
+export function transformDeviceForListing(device: Device) {
   return {
     id: device.id,
     slug: device.slug,
@@ -122,7 +124,7 @@ export function transformDeviceForListing(device: any): any {
   };
 }
 
-export function transformDeviceForDetail(device: any): any {
+export function transformDeviceForDetail(device: Device & { tasks?: unknown[] }) {
   const listingData = transformDeviceForListing(device);
 
   return {

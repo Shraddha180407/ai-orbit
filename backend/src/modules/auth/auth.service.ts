@@ -1,18 +1,20 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import type { z } from 'zod';
 import { generateVerificationToken, hashToken } from '../../lib/tokens.js';
 import { sendVerificationLinkEmail, sendPasswordResetEmail } from '../../lib/mailer.js';
+import { signupSchema, loginSchema, verifyEmailSchema, emailOnlySchema, resetPasswordSchema } from './auth.schema.js';
 
 export class AuthService {
   private prisma: PrismaClient;
-  private env: any;
+  private env: Record<string, string | undefined>;
 
-  constructor(prisma: PrismaClient, env: any) {
+  constructor(prisma: PrismaClient, env: Record<string, string | undefined>) {
     this.prisma = prisma;
     this.env = env;
   }
 
-  async signup(data: any) {
+  async signup(data: z.infer<typeof signupSchema>) {
     const email = data.email.trim().toLowerCase();
     const existingUser = await this.prisma.user.findFirst({
       where: { email: { equals: email, mode: 'insensitive' } }
@@ -48,7 +50,7 @@ export class AuthService {
     return user;
   }
 
-  async login(data: any) {
+  async login(data: z.infer<typeof loginSchema>) {
     const email = data.email.trim().toLowerCase();
     const user = await this.prisma.user.findFirst({
       where: { email: { equals: email, mode: 'insensitive' } }
@@ -70,7 +72,7 @@ export class AuthService {
     return user;
   }
 
-  async verifyEmail(data: any) {
+  async verifyEmail(data: z.infer<typeof verifyEmailSchema>) {
     const email = data.email.trim().toLowerCase();
     const identifier = `verify:${email}`;
     const hashedToken = hashToken(data.token);
@@ -108,7 +110,7 @@ export class AuthService {
     return user;
   }
 
-  async resendVerification(data: any) {
+  async resendVerification(data: z.infer<typeof emailOnlySchema>) {
     const email = data.email.trim().toLowerCase();
     const user = await this.prisma.user.findFirst({
       where: { email: { equals: email, mode: 'insensitive' } }
@@ -138,7 +140,7 @@ export class AuthService {
     return { message: 'Verification email resent.' };
   }
 
-  async forgotPassword(data: any) {
+  async forgotPassword(data: z.infer<typeof emailOnlySchema>) {
     const email = data.email.trim().toLowerCase();
     const user = await this.prisma.user.findFirst({
       where: { email: { equals: email, mode: 'insensitive' } }
@@ -164,7 +166,7 @@ export class AuthService {
     return { message: 'Password reset email sent.' };
   }
 
-  async resetPassword(data: any) {
+  async resetPassword(data: z.infer<typeof resetPasswordSchema>) {
     const email = data.email.trim().toLowerCase();
     const identifier = `reset:${email}`;
     const hashedToken = hashToken(data.token);
@@ -225,7 +227,7 @@ export class AuthService {
     };
   }
 
-  async updatePassword(userId: string, data: any) {
+  async updatePassword(userId: string, data: { currentPassword: string; newPassword: string }) {
     const dbUser = await this.prisma.user.findUnique({
       where: { id: userId }
     });

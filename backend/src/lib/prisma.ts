@@ -4,8 +4,9 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaNeon } from '@prisma/adapter-neon';
 
 
-export function getPrisma(env: { DATABASE_URL: string } | any) {
-  const dbUrl = env?.DATABASE_URL || process.env.DATABASE_URL;
+export function getPrisma(env: unknown) {
+  const envObj = (typeof env === 'object' && env !== null) ? env as Record<string, unknown> : {};
+  const dbUrl = (typeof envObj.DATABASE_URL === 'string' ? envObj.DATABASE_URL : undefined) || process.env.DATABASE_URL;
   if (!dbUrl) {
     throw new Error('DATABASE_URL is not configured');
   }

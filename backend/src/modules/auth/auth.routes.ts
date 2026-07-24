@@ -23,7 +23,7 @@ authRoutes.patch('/password', jwtMiddleware, (c) => authController.updatePasswor
 
 // --- GOOGLE OAUTH ---
 authRoutes.get('/google', (c) => {
-  const clientId = (c.env as any)?.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+  const clientId = (c.env as Record<string, string | undefined>)?.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
   if (!clientId) return c.json({ error: 'Google OAuth not configured' }, 500);
   
   const requestUrl = new URL(c.req.url);
@@ -38,14 +38,14 @@ authRoutes.get('/google', (c) => {
 authRoutes.get('/google/callback', async (c) => {
   const code = c.req.query('code');
   const error = c.req.query('error');
-  const frontendUrl = (c.env as any)?.FRONTEND_URL || process.env.FRONTEND_URL || 'https://aiorbit.club';
+  const frontendUrl = (c.env as Record<string, string | undefined>)?.FRONTEND_URL || process.env.FRONTEND_URL || 'https://aiorbit.club';
 
   if (error || !code) {
     return c.redirect(`${frontendUrl}/auth/signin?error=OAuthFailed`);
   }
 
-  const clientId = (c.env as any)?.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = (c.env as any)?.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+  const clientId = (c.env as Record<string, string | undefined>)?.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = (c.env as Record<string, string | undefined>)?.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
   
   const requestUrl = new URL(c.req.url);
   const backendUrl = requestUrl.origin;
@@ -93,7 +93,7 @@ authRoutes.get('/google/callback', async (c) => {
       });
     }
 
-    const jwtSecret = (c.env as any)?.JWT_SECRET || process.env.JWT_SECRET;
+    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
     const jwtToken = sign({ id: user.id, email: user.email, name: user.name, role: user.role }, jwtSecret!, { expiresIn: '7d' });
     const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', jwtToken, {
@@ -115,7 +115,7 @@ authRoutes.get('/google/callback', async (c) => {
 
 // --- GITHUB OAUTH ---
 authRoutes.get('/github', (c) => {
-  const clientId = (c.env as any)?.GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID;
+  const clientId = (c.env as Record<string, string | undefined>)?.GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID;
   if (!clientId) return c.json({ error: 'Github OAuth not configured' }, 500);
   
   const requestUrl = new URL(c.req.url);
@@ -128,14 +128,14 @@ authRoutes.get('/github', (c) => {
 
 authRoutes.get('/github/callback', async (c) => {
   const code = c.req.query('code');
-  const frontendUrl = (c.env as any)?.FRONTEND_URL || process.env.FRONTEND_URL || 'https://aiorbit.club';
+  const frontendUrl = (c.env as Record<string, string | undefined>)?.FRONTEND_URL || process.env.FRONTEND_URL || 'https://aiorbit.club';
 
   if (!code) {
     return c.redirect(`${frontendUrl}/auth/signin?error=OAuthFailed`);
   }
 
-  const clientId = (c.env as any)?.GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID;
-  const clientSecret = (c.env as any)?.GITHUB_CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET;
+  const clientId = (c.env as Record<string, string | undefined>)?.GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID;
+  const clientSecret = (c.env as Record<string, string | undefined>)?.GITHUB_CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET;
   
   const requestUrl = new URL(c.req.url);
   const backendUrl = requestUrl.origin;
@@ -182,7 +182,7 @@ authRoutes.get('/github/callback', async (c) => {
         }
       });
       const emailsData = await emailRes.json();
-      const primaryEmail = emailsData.find((e: any) => e.primary);
+      const primaryEmail = emailsData.find((e: { primary: boolean; email: string }) => e.primary);
       if (primaryEmail) email = primaryEmail.email;
     }
 
@@ -203,7 +203,7 @@ authRoutes.get('/github/callback', async (c) => {
       });
     }
 
-    const jwtSecret = (c.env as any)?.JWT_SECRET || process.env.JWT_SECRET;
+    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
     const jwtToken = sign({ id: user.id, email: user.email, name: user.name, role: user.role }, jwtSecret!, { expiresIn: '7d' });
     const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', jwtToken, {

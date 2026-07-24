@@ -1,4 +1,9 @@
 import type { Context, Next } from 'hono'
+
+interface JwtUserPayload {
+  id: string;
+  [key: string]: unknown;
+}
 import { getCookie } from 'hono/cookie'
 import { verify } from 'jsonwebtoken'
 import { getPrisma } from '../lib/prisma.js'
@@ -11,7 +16,7 @@ export const jwtMiddleware = async (c: Context, next: Next) => {
   }
 
   try {
-    const jwtSecret = (c.env as any)?.JWT_SECRET || process.env.JWT_SECRET;
+    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
     const decoded = verify(token, jwtSecret!);
     c.set('user', decoded);
     await next()
@@ -28,8 +33,8 @@ export const adminMiddleware = async (c: Context, next: Next) => {
   }
 
   try {
-    const jwtSecret = (c.env as any)?.JWT_SECRET || process.env.JWT_SECRET;
-    const decodedUser = verify(token, jwtSecret!) as any;
+    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
+    const decodedUser = verify(token, jwtSecret!) as JwtUserPayload;
     c.set('user', decodedUser);
 
     if (!decodedUser || !decodedUser.id) {
@@ -66,7 +71,7 @@ export const optionalJwtMiddleware = async (c: Context, next: Next) => {
   
   if (token) {
     try {
-      const jwtSecret = (c.env as any)?.JWT_SECRET || process.env.JWT_SECRET;
+      const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
       const decoded = verify(token, jwtSecret!);
       c.set('user', decoded);
     } catch (_error) {
