@@ -21,8 +21,8 @@ export class DevicesService {
     return devices.flatMap(device => {
       try {
         return [transformDeviceForListing(device)];
-      } catch (error: any) {
-        console.error(`Error transforming device ${device.id}:`, error.message);
+      } catch (error: unknown) {
+        console.error(`Error transforming device ${device.id}:`, error instanceof Error ? error.message : 'Unknown error');
         return []; 
       }
     });
