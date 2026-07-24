@@ -3,7 +3,7 @@ import { getPrisma } from '../../lib/prisma.js';
 import { TasksService } from './tasks.service.js';
 import { getCookie } from 'hono/cookie';
 import { verify } from 'jsonwebtoken';
-import { GetTasksQuerySchema, ToggleTaskBookmarkSchema } from './tasks.schema.js';
+import { GetTasksQuerySchema } from './tasks.schema.js';
 
 export class TasksController {
   async listTasks(c: Context) {
@@ -14,7 +14,6 @@ export class TasksController {
       return c.json({ error: 'Invalid parameters', details: parsed.error.issues }, 400);
     }
 
-    // "for-you" and "following" require a logged-in user
     let userId: string | undefined;
     if (parsed.data.filter === 'for-you' || parsed.data.filter === 'following') {
       const token = getCookie(c, 'auth_token');
@@ -59,8 +58,6 @@ export class TasksController {
     const slug = c.req.param('slug') || '';
     let prisma;
     try {
-      // Optionally authenticated — anonymous visitors still see the task,
-      // just without bookmarked/liked/subscribed state.
       let userId: string | undefined;
       const token = getCookie(c, 'auth_token');
       if (token) {
@@ -89,71 +86,62 @@ export class TasksController {
   }
 
   async toggleBookmark(c: Context) {
-    let prisma;
-    try {
-      const user = c.get('user') as { id: string } | undefined;
-      if (!user?.id) return c.json({ error: 'Unauthorized' }, 401);
+  let prisma;
+  try {
+    const user = c.get('user') as { id: string } | undefined;
+    if (!user?.id) return c.json({ error: 'Unauthorized' }, 401);
 
-      prisma = getPrisma(c.env);
-      const service = new TasksService(prisma);
-      const body = await c.req.json();
-      const parsed = ToggleTaskBookmarkSchema.safeParse(body);
-      if (!parsed.success) {
-        return c.json({ error: 'Invalid input data', details: parsed.error.issues }, 400);
-      }
-      const bookmarked = await service.toggleBookmark(parsed.data.taskId, user.id);
-      return c.json({ bookmarked });
-    } catch (error: any) {
-      console.error('toggleBookmark error:', error);
-      return c.json({ error: error.message ?? String(error) }, 500);
-    } finally {
-      if (prisma) await prisma.$disconnect();
-    }
+    const slug = c.req.param('slug') || '';   // ← fixed
+    prisma = getPrisma(c.env);
+    const service = new TasksService(prisma);
+    const bookmarked = await service.toggleBookmarkBySlug(slug, user.id);
+    if (bookmarked === null) return c.json({ error: 'Task not found' }, 404);
+    return c.json({ bookmarked });
+  } catch (error: any) {
+    console.error('toggleBookmark error:', error);
+    return c.json({ error: error.message ?? String(error) }, 500);
+  } finally {
+    if (prisma) await prisma.$disconnect();
   }
+}
 
-  async toggleLike(c: Context) {
-    let prisma;
-    try {
-      const user = c.get('user') as { id: string } | undefined;
-      if (!user?.id) return c.json({ error: 'Unauthorized' }, 401);
+async toggleLike(c: Context) {
+  let prisma;
+  try {
+    const user = c.get('user') as { id: string } | undefined;
+    if (!user?.id) return c.json({ error: 'Unauthorized' }, 401);
 
-      prisma = getPrisma(c.env);
-      const service = new TasksService(prisma);
-      const body = await c.req.json();
-      const parsed = ToggleTaskBookmarkSchema.safeParse(body);
-      if (!parsed.success) {
-        return c.json({ error: 'Invalid input data', details: parsed.error.issues }, 400);
-      }
-      const liked = await service.toggleLike(parsed.data.taskId, user.id);
-      return c.json({ liked });
-    } catch (error: any) {
-      console.error('toggleLike error:', error);
-      return c.json({ error: error.message ?? String(error) }, 500);
-    } finally {
-      if (prisma) await prisma.$disconnect();
-    }
+    const slug = c.req.param('slug') || '';   // ← fixed
+    prisma = getPrisma(c.env);
+    const service = new TasksService(prisma);
+    const liked = await service.toggleLikeBySlug(slug, user.id);
+    if (liked === null) return c.json({ error: 'Task not found' }, 404);
+    return c.json({ liked });
+  } catch (error: any) {
+    console.error('toggleLike error:', error);
+    return c.json({ error: error.message ?? String(error) }, 500);
+  } finally {
+    if (prisma) await prisma.$disconnect();
   }
+}
 
-  async toggleSubscribe(c: Context) {
-    let prisma;
-    try {
-      const user = c.get('user') as { id: string } | undefined;
-      if (!user?.id) return c.json({ error: 'Unauthorized' }, 401);
+async toggleSubscribe(c: Context) {
+  let prisma;
+  try {
+    const user = c.get('user') as { id: string } | undefined;
+    if (!user?.id) return c.json({ error: 'Unauthorized' }, 401);
 
-      prisma = getPrisma(c.env);
-      const service = new TasksService(prisma);
-      const body = await c.req.json();
-      const parsed = ToggleTaskBookmarkSchema.safeParse(body);
-      if (!parsed.success) {
-        return c.json({ error: 'Invalid input data', details: parsed.error.issues }, 400);
-      }
-      const subscribed = await service.toggleSubscribe(parsed.data.taskId, user.id);
-      return c.json({ subscribed });
-    } catch (error: any) {
-      console.error('toggleSubscribe error:', error);
-      return c.json({ error: error.message ?? String(error) }, 500);
-    } finally {
-      if (prisma) await prisma.$disconnect();
-    }
+    const slug = c.req.param('slug') || '';   // ← fixed
+    prisma = getPrisma(c.env);
+    const service = new TasksService(prisma);
+    const subscribed = await service.toggleSubscribeBySlug(slug, user.id);
+    if (subscribed === null) return c.json({ error: 'Task not found' }, 404);
+    return c.json({ subscribed });
+  } catch (error: any) {
+    console.error('toggleSubscribe error:', error);
+    return c.json({ error: error.message ?? String(error) }, 500);
+  } finally {
+    if (prisma) await prisma.$disconnect();
   }
+}
 }

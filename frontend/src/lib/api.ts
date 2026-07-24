@@ -119,8 +119,12 @@ export async function fetchRepositoryBySlug(slug: string): Promise<RepositoryDet
 export async function fetchAllRepos(): Promise<Repository[]> {
   try {
     const data = await fetchRepositories();
-    return data.items;
-  } catch {
+    // Defensive: fetchRepositories() should always resolve to
+    // { items: [...] }, but guard against a malformed/unexpected response
+    // shape so this can never crash repos.forEach() downstream again.
+    return Array.isArray(data.items) ? data.items : [];
+  } catch (e) {
+    console.error("Failed to fetch repositories:", e);
     return [];
   }
 }
@@ -152,6 +156,46 @@ export async function fetchDeviceById(id: string): Promise<any | null> {
   const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) return null;
   return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Global search API helpers (cross-entity autocomplete + popular terms)
+// ---------------------------------------------------------------------------
+
+export interface RealSearchSuggestion {
+  id: string;
+  type: "tool" | "company" | "model" | "repository" | "robot" | "device";
+  title: string;
+  category: string;
+  slug: string | null;
+  logoUrl?: string | null;
+}
+
+export async function fetchSearchAutocomplete(q: string): Promise<RealSearchSuggestion[]> {
+  const trimmed = q.trim();
+  if (!trimmed) return [];
+  const url = `${API_URL}/api/v1/search/autocomplete?q=${encodeURIComponent(trimmed)}`;
+  const res = await fetch(url);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.suggestions ?? [];
+}
+
+export async function fetchPopularSearches(): Promise<string[]> {
+  const url = `${API_URL}/api/v1/search/popular`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.popular ?? [];
+}
+
+/** Featured tools for the search dropdown's empty-query "Featured" section. */
+export async function fetchFeaturedTools(): Promise<RealSearchSuggestion[]> {
+  const url = `${API_URL}/api/v1/search/featured`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.featured ?? [];
 }
 
 /**
