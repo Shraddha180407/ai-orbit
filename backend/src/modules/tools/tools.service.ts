@@ -1,5 +1,24 @@
 import { PrismaClient, Prisma, PricingModel } from '@prisma/client';
 
+type ToolCard = {
+  id: string;
+  slug: string;
+  name: string;
+  logoUrl: string | null;
+  description: string;
+  pricingModel: PricingModel;
+  pricingAmount: Prisma.Decimal | null;
+  billingFrequency: string | null;
+  avgRating: number;
+  createdAt: Date;
+  isOpenSource: boolean;
+  isTrending: boolean;
+  categories: { category: { slug: string; name: string } }[];
+  tags: { tag: { slug: string; name: string } }[];
+  _count: { reviews: number; bookmarks: number };
+  company: { slug: string; name: string } | null;
+};
+
 export class ToolsService {
   private prisma: PrismaClient;
 
@@ -91,7 +110,7 @@ export class ToolsService {
     ]);
 
     return {
-      tools: tools.map((t: any) => ({
+      tools: tools.map((t) => ({
         ...t,
         pricingAmount: t.pricingAmount?.toString() ?? null,
         avgRating: t.avgRating > 0 ? t.avgRating : null,
@@ -140,10 +159,10 @@ export class ToolsService {
       },
     });
 
-    let similarTools: any[] = [];
+    let similarTools: ToolCard[] = [];
     if (withRelations) {
-      const alternativeIds = withRelations.alternatives.map((a: any) => a.id);
-      const categoryIds = withRelations.categories.map((cat: any) => cat.categoryId);
+      const alternativeIds = withRelations.alternatives.map((a) => a.id);
+      const categoryIds = withRelations.categories.map((cat) => cat.categoryId);
 
       const cardSelect = {
         id: true,
@@ -171,7 +190,7 @@ export class ToolsService {
       similarTools = curated;
 
       if (similarTools.length < 4 && categoryIds.length > 0) {
-        const excludeIds = [tool.id, ...similarTools.map((t: any) => t.id)];
+        const excludeIds = [tool.id, ...similarTools.map((t) => t.id)];
         const fillers = await this.prisma.tool.findMany({
           where: {
             id: { notIn: excludeIds },
@@ -213,12 +232,12 @@ export class ToolsService {
         pricingAmount: tool.pricingAmount?.toString() ?? null,
         avgRating: tool.avgRating > 0 ? tool.avgRating : null,
       },
-      similarTools: similarTools.map((t: any) => ({
+      similarTools: similarTools.map((t) => ({
         ...t,
         pricingAmount: t.pricingAmount?.toString() ?? null,
         avgRating: t.avgRating > 0 ? t.avgRating : null,
       })),
-      reviews: reviews.map((r: any) => ({
+      reviews: reviews.map((r) => ({
         ...r,
         createdAt: r.createdAt.toISOString(),
       })),

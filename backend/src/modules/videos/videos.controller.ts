@@ -1,5 +1,6 @@
 import type { Context } from "hono";
 import { PrismaClient } from "@prisma/client";
+import type { Video } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import {
   fetchVideos,
@@ -21,7 +22,7 @@ function getPrisma(c: Context) {
 // Prisma stores authorName/authorAvatar as flat columns, but the frontend
 // (ported as-is from Video_section) expects a nested `author: {name, avatar}`
 // object. Reshape at the API boundary so frontend components stay untouched.
-function toApiShape(video: any) {
+function toApiShape(video: Video | null) {
   if (!video) return video;
   const { authorName, authorAvatar, ...rest } = video;
   return { ...rest, author: { name: authorName, avatar: authorAvatar } };
@@ -39,9 +40,9 @@ export async function listVideos(c: Context) {
     const { sort, limit, offset } = result.data;
     const videos = await fetchVideos(prisma, sort, limit, offset);
     return c.json(videos.map(toApiShape));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Videos API Controller Error:", error);
-    return c.json({ error: "Internal server error.", message: error.message }, 500);
+    return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
   } finally {
     await prisma.$disconnect();
   }
@@ -53,9 +54,9 @@ export async function getVideosCount(c: Context) {
   try {
     const total = await countVideos(prisma);
     return c.json({ total });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Videos API Controller Error:", error);
-    return c.json({ error: "Internal server error.", message: error.message }, 500);
+    return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
   } finally {
     await prisma.$disconnect();
   }
@@ -74,9 +75,9 @@ export async function getVideoBySlug(c: Context) {
     if (!video) return c.json({ error: "Not found" }, 404);
 
     return c.json(toApiShape(video));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Videos API Controller Error:", error);
-    return c.json({ error: "Internal server error.", message: error.message }, 500);
+    return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
   } finally {
     await prisma.$disconnect();
   }
@@ -101,9 +102,9 @@ export async function getRelatedVideos(c: Context) {
 
     const related = await fetchRelatedVideos(prisma, video, queryParsed.data.limit);
     return c.json(related.map(toApiShape));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Videos API Controller Error:", error);
-    return c.json({ error: "Internal server error.", message: error.message }, 500);
+    return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
   } finally {
     await prisma.$disconnect();
   }
