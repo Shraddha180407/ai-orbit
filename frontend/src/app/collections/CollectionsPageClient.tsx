@@ -1,85 +1,189 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { CategoryMenu } from "@/components/CategoryMenu";
-import { CollectionGrid } from "@/components/CollectionGrid";
-import { CollectionsClosingCTA } from "@/components/CollectionsClosingCTA";
-import { API_URL } from "@/lib/api";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-export function CollectionsPageClient() {
-  const searchParams = useSearchParams();
-  const [items, setItems] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
-  const [isLoading, setIsLoading] = useState(true);
+import { CollectionGrid } from "@/components/collections/CollectionGrid";
+import { CollectionSearch } from "@/components/collections/CollectionSearch";
+import CollectionFilters from "@/components/collections/CollectionFilters";
+import { CollectionsHeader } from "@/components/collections/CollectionHeader";
+import { CollectionsClosingCTA } from "@/components/collections/CollectionsClosingCTA";
+import { LoadMoreButton } from "@/components/collections/LoadMoreButton";
+import { fetchCollections } from "@/lib/collections";
+import type { CollectionListItem, CreatorType } from "@/lib/types";
 
+// Delay before firing a search request, so we don't hit the API on every keystroke
+const SEARCH_DEBOUNCE_MS = 350;
+
+export default function CollectionsPageClient() {
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sort, setSort] = useState("recently_updated");
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [creatorType, setCreatorType] = useState<CreatorType | undefined>(undefined);
+  const [updatedWithin, setUpdatedWithin] = useState("");
+  const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [hasRelatedModels, setHasRelatedModels] = useState(false);
+  const [hasRelatedCompanies, setHasRelatedCompanies] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+  const [items, setItems] = useState<CollectionListItem[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Debounce search input
   useEffect(() => {
-    async function fetchCollections() {
-      setIsLoading(true);
-      try {
-        const query = new URLSearchParams(searchParams.toString());
-        const res = await fetch(`${API_URL}/api/v1/collections?${query.toString()}`);
-        if (res.ok) {
-          const data = await res.json();
-          setItems(data.items || []);
-          setTotal(data.pagination?.total || 0);
-          setCategoryCounts(data.categoryCounts || {});
-        }
-      } catch (error) {
-        console.error("Failed to fetch collections:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+    const timeout = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+  }, [search]);
 
-    fetchCollections();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams.toString()]);
+  const filterParams = useMemo(
+    () => ({
+      search: debouncedSearch || undefined,
+      creatorType,
+      hasRelatedModels: hasRelatedModels || undefined,
+      hasRelatedCompanies: hasRelatedCompanies || undefined,
+      featured: featuredOnly || undefined,
+      updatedWithin: updatedWithin || undefined,
+      category: selectedCategories.length ? selectedCategories : undefined,
+      sort,
+    }),
+    [
+      debouncedSearch,
+      creatorType,
+      hasRelatedModels,
+      hasRelatedCompanies,
+      featuredOnly,
+      updatedWithin,
+      selectedCategories,
+      sort,
+    ]
+  );
+
+  // Fetch first page whenever filters/search/sort change
+  useEffect(() => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setLoading(true);
+    setError(null);
+
+    fetchCollections(filterParams, controller.signal)
+      .then((data) => {
+        setItems(data.items);
+        setCursor(data.nextCursor);
+      })
+      .catch((err) => {
+        if (err.name !== "AbortError") setError(err.message);
+      })
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, [filterParams]);
+
+  const handleLoadMore = async () => {
+    if (!cursor) return;
+    setLoadingMore(true);
+    setError(null);
+
+    try {
+      const data = await fetchCollections({ ...filterParams, cursor });
+      setItems((prev) => [...prev, ...data.items]);
+      setCursor(data.nextCursor);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const resetFilters = () => {
+    setCreatorType(undefined);
+    setUpdatedWithin("");
+    setFeaturedOnly(false);
+    setHasRelatedModels(false);
+    setHasRelatedCompanies(false);
+    setSelectedCategories([]);
+  };
 
   return (
-    <main className="collections-scope min-h-screen pb-20">
-      <div className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-container items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-bold text-background">
-              S
-            </span>
-            <span className="text-base font-bold text-foreground">The AI Signal</span>
+    <>
+      <CollectionsHeader />
+
+      <main className="mx-auto max-w-7xl px-6 pb-16">
+        <div className="mb-6 flex items-center gap-3">
+          <CollectionSearch value={search} onChange={setSearch} />
+
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="h-10 rounded-lg border border-[#232326] bg-[#18181B] px-3 text-xs text-white"
+          >
+            <option value="recently_updated">Recently Updated</option>
+            <option value="oldest_updated">Oldest Updated</option>
+            <option value="name_asc">Name A–Z</option>
+            <option value="name_desc">Name Z–A</option>
+            <option value="most_tools">Most Tools</option>
+            <option value="fewest_tools">Fewest Tools</option>
+            <option value="most_bookmarked">Most Bookmarked</option>
+            <option value="featured_first">Featured First</option>
+          </select>
+
+          <button
+            onClick={() => setIsFilterOpen(true)}
+            className="h-10 rounded-lg border border-[#232326] bg-[#18181B] px-4 text-xs font-semibold text-white"
+          >
+            Filters
+          </button>
+        </div>
+
+        <CollectionFilters
+          isOpen={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          creatorType={creatorType}
+          onCreatorTypeChange={setCreatorType}
+          updatedWithin={updatedWithin}
+          onUpdatedWithinChange={setUpdatedWithin}
+          featuredOnly={featuredOnly}
+          onFeaturedOnlyChange={setFeaturedOnly}
+          hasRelatedModels={hasRelatedModels}
+          onHasRelatedModelsChange={setHasRelatedModels}
+          hasRelatedCompanies={hasRelatedCompanies}
+          onHasRelatedCompaniesChange={setHasRelatedCompanies}
+          selectedCategories={selectedCategories}
+          onCategoriesChange={setSelectedCategories}
+          onReset={resetFilters}
+        />
+
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            {error}
           </div>
-          <CategoryMenu categoryCounts={categoryCounts} />
-        </div>
-      </div>
+        )}
 
-      <div className="mx-auto max-w-container px-6 pt-6">
-        <div className="max-w-2xl">
-          <span className="font-mono text-xs uppercase tracking-widest text-accent">
-            Collections
-          </span>
-          <h1 className="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
-            Curated bundles of the best AI tools
-          </h1>
-          <p className="mt-3 text-foreground-muted">
-            Hand-picked sets of tools for a specific job — from shipping code faster to
-            scaling a marketing team. {total} collections and counting. Browse
-            by category using the menu above.
-          </p>
-        </div>
+        {loading ? (
+          <div className="py-16 text-center text-sm text-[#A1A1AA]">
+            Loading collections…
+          </div>
+        ) : (
+          <CollectionGrid collections={items} />
+        )}
 
-        <div className="mt-8">
-          {isLoading ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-40 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
-              ))}
-            </div>
-          ) : (
-            <CollectionGrid collections={items} />
-          )}
-        </div>
+        {cursor && !loading && (
+          <LoadMoreButton
+            loading={loadingMore}
+            disabled={loadingMore}
+            onClick={handleLoadMore}
+          />
+        )}
 
         <CollectionsClosingCTA />
-      </div>
-    </main>
+      </main>
+    </>
   );
 }

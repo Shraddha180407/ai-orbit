@@ -1,35 +1,57 @@
-import type { CollectionsSearchParams } from "@/lib/types";
+import type { CollectionsApiResponse, CollectionFilterParams } from "@/lib/types";
 
-import { API_URL } from "@/lib/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
-export async function getCollections(rawParams: CollectionsSearchParams) {
+export async function fetchCollections(
+  params: CollectionFilterParams,
+  signal?: AbortSignal
+): Promise<CollectionsApiResponse> {
   const query = new URLSearchParams();
-  if (rawParams.category) query.set('category', rawParams.category);
-  if (rawParams.page) query.set('page', rawParams.page);
 
-  try {
-    const res = await fetch(`${API_URL}/api/v1/collections?${query.toString()}`, {
-      cache: 'no-store'
-    });
-    if (!res.ok) throw new Error(`API returned status ${res.status}`);
-    return await res.json();
-  } catch (error) {
-    console.error('getCollections fetch error:', error);
-    return {
-      items: [],
-      pagination: { total: 0, page: 1, limit: 50, totalPages: 1 },
-      categories: []
-    };
+  if (params.search) query.set("search", params.search);
+  if (params.creatorType) query.set("creatorType", params.creatorType);
+  if (params.hasRelatedModels) query.set("hasRelatedModels", "true");
+  if (params.hasRelatedCompanies) query.set("hasRelatedCompanies", "true");
+  if (params.featured) query.set("featured", "true");
+  if (params.updatedWithin) query.set("updatedWithin", params.updatedWithin);
+  if (params.sort) query.set("sort", params.sort);
+  if (params.cursor) query.set("cursor", params.cursor);
+
+  // Backend reads categories via c.req.queries('category'), so append each separately
+  if (params.category?.length) {
+    for (const cat of params.category) {
+      query.append("category", cat);
+    }
   }
+
+  const res = await fetch(`${API_BASE}/collections?${query.toString()}`, {
+    signal,
+    headers: { Accept: "application/json" },
+  });
+
+  const data: CollectionsApiResponse = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || `Request failed with status ${res.status}`);
+  }
+
+  return data;
 }
 
-export async function getCollectionDetail(slug: string) {
-  try {
-    const res = await fetch(`${API_URL}/api/v1/collections/${slug}`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (error) {
-    console.error('getCollectionDetail fetch error:', error);
-    return null;
+export async function toggleBookmark(
+  collectionId: string,
+  bookmarked: boolean
+): Promise<boolean> {
+  const res = await fetch(`${API_BASE}/collections/${collectionId}/bookmark`, {
+    method: bookmarked ? "DELETE" : "POST",
+    headers: { Accept: "application/json" },
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || `Request failed with status ${res.status}`);
   }
+
+  return data.bookmarked as boolean;
 }

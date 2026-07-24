@@ -74,42 +74,51 @@ export type SimilarToolData = {
   avgRating: number | null;
 };
 
-// ============================================================
-// APPEND THIS to the END of frontend/src/lib/types.ts
-// Do not remove or modify any existing type above it (ToolCardData,
-// ToolDetailData, etc. belong to Module 3).
-// ============================================================
-
-export type CollectionsSearchParams = {
-  category?: string;
-  page?: string;
-};
-
-export type CollectionListItem = {
+export interface CreatorProfile {
   id: string;
-  slug: string;
-  title: string;
-  description: string;
-  curatedBy: string;
-  category: string;
-  featured: boolean;
-  updatedAt: string;
-  toolCount: number;
-  previewTools: { logoUrl: string | null; name: string }[];
-};
+  name: string;
+  image: string | null;
+}
 
-export type CollectionDetailData = {
+export interface CollectionCategory {
+  categoryName: string;
+}
+
+export interface CollectionListItem {
   id: string;
+  name: string;
   slug: string;
-  title: string;
-  description: string;
-  curatedBy: string;
-  category: string;
-  featured: boolean;
-  updatedAt: string;
+  description: string | null;
+  isFeatured: boolean;
+  creatorType: "EDITORIAL" | "COMMUNITY";
   toolCount: number;
-  tools: ToolCardData[]; // reuses Module 3's existing ToolCardData shape
-};
+  updatedAt: string;
+  creator: CreatorProfile;
+  categories: CollectionCategory[];
+  isBookmarked?: boolean;   // ← add this
+  _count: {
+    relatedModels: number;
+    relatedCompanies: number;
+  };
+}
+
+export interface CollectionsApiResponse {
+  items: CollectionListItem[];
+  nextCursor: string | null;
+  error?: string;
+}
+
+export interface CollectionFilterParams {
+  search?: string;
+  category?: string[];
+  creatorType?: "EDITORIAL" | "COMMUNITY";
+  hasRelatedModels?: boolean;
+  hasRelatedCompanies?: boolean;
+  featured?: boolean;
+  updatedWithin?: string;
+  sort?: string;
+  cursor?: string;
+}
 
 export type Company = {
   id: string;
@@ -240,3 +249,18 @@ export type Device = {
   additionalInfo?: string | null;
   buyUrl?: string | null;
 };
+
+
+export type CreatorType = "EDITORIAL" | "COMMUNITY";
+
+export type CollectionSort =
+  | "recently_updated"
+  | "oldest_updated"
+  | "name_asc"
+  | "name_desc"
+  | "most_tools"
+  | "fewest_tools"
+  | "most_bookmarked"
+  | "most_related_models"
+  | "most_related_companies"
+  | "featured_first";
