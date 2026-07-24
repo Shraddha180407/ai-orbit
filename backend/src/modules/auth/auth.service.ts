@@ -1,27 +1,26 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import type { z } from 'zod';
 import { generateVerificationToken, hashToken } from '../../lib/tokens.js';
 import { sendVerificationLinkEmail, sendPasswordResetEmail } from '../../lib/mailer.js';
-import { signupSchema, loginSchema, verifyEmailSchema, emailOnlySchema, resetPasswordSchema } from './auth.schema.js';
+import { AppError } from '../../lib/error.js';
 
 export class AuthService {
   private prisma: PrismaClient;
-  private env: Record<string, string | undefined>;
+  private env: any;
 
-  constructor(prisma: PrismaClient, env: Record<string, string | undefined>) {
+  constructor(prisma: PrismaClient, env: any) {
     this.prisma = prisma;
     this.env = env;
   }
 
-  async signup(data: z.infer<typeof signupSchema>) {
+  async signup(data: any) {
     const email = data.email.trim().toLowerCase();
     const existingUser = await this.prisma.user.findFirst({
       where: { email: { equals: email, mode: 'insensitive' } }
     });
     
     if (existingUser) {
-      throw new Error('Email is already in use.');
+      throw AppError.Conflict('Email is already in use.');
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
@@ -50,29 +49,29 @@ export class AuthService {
     return user;
   }
 
-  async login(data: z.infer<typeof loginSchema>) {
+  async login(data: any) {
     const email = data.email.trim().toLowerCase();
     const user = await this.prisma.user.findFirst({
       where: { email: { equals: email, mode: 'insensitive' } }
     });
 
     if (!user || !user.password) {
-      throw new Error('Invalid email or password.');
+      throw AppError.Unauthorized('Invalid email or password.');
     }
 
     const isValid = await bcrypt.compare(data.password, user.password);
     if (!isValid) {
-      throw new Error('Invalid email or password.');
+      throw AppError.Unauthorized('Invalid email or password.');
     }
 
     if (!user.emailVerified) {
-      throw new Error('Please verify your email before logging in.');
+      throw AppError.Forbidden('Please verify your email before logging in.');
     }
 
     return user;
   }
 
-  async verifyEmail(data: z.infer<typeof verifyEmailSchema>) {
+  async verifyEmail(data: any) {
     const email = data.email.trim().toLowerCase();
     const identifier = `verify:${email}`;
     const hashedToken = hashToken(data.token);
@@ -82,19 +81,19 @@ export class AuthService {
     });
 
     if (!verificationToken) {
-      throw new Error('Invalid verification link. It may have already been used.');
+      throw AppError.BadRequest('Invalid verification link. It may have already been used.');
     }
 
     if (new Date() > verificationToken.expires) {
       await this.prisma.verificationToken.delete({
         where: { identifier_token: { identifier, token: hashedToken } },
       });
-      throw new Error('This verification link has expired. Please request a new one.');
+      throw AppError.BadRequest('This verification link has expired. Please request a new one.');
     }
 
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new Error('User not found.');
+      throw AppError.NotFound('User not found.');
     }
 
     await this.prisma.$transaction([
@@ -110,7 +109,7 @@ export class AuthService {
     return user;
   }
 
-  async resendVerification(data: z.infer<typeof emailOnlySchema>) {
+  async resendVerification(data: any) {
     const email = data.email.trim().toLowerCase();
     const user = await this.prisma.user.findFirst({
       where: { email: { equals: email, mode: 'insensitive' } }
@@ -121,7 +120,7 @@ export class AuthService {
     }
 
     if (user.emailVerified) {
-      throw new Error('Email is already verified.');
+      throw AppError.BadRequest('Email is already verified.');
     }
 
     const rawToken = generateVerificationToken();
@@ -140,7 +139,7 @@ export class AuthService {
     return { message: 'Verification email resent.' };
   }
 
-  async forgotPassword(data: z.infer<typeof emailOnlySchema>) {
+  async forgotPassword(data: any) {
     const email = data.email.trim().toLowerCase();
     const user = await this.prisma.user.findFirst({
       where: { email: { equals: email, mode: 'insensitive' } }
@@ -166,7 +165,7 @@ export class AuthService {
     return { message: 'Password reset email sent.' };
   }
 
-  async resetPassword(data: z.infer<typeof resetPasswordSchema>) {
+  async resetPassword(data: any) {
     const email = data.email.trim().toLowerCase();
     const identifier = `reset:${email}`;
     const hashedToken = hashToken(data.token);
@@ -176,14 +175,14 @@ export class AuthService {
     });
 
     if (!verificationToken) {
-      throw new Error('Invalid or expired reset link.');
+      throw AppError.BadRequest('Invalid or expired reset link.');
     }
 
     if (new Date() > verificationToken.expires) {
       await this.prisma.verificationToken.delete({
         where: { identifier_token: { identifier, token: hashedToken } },
       });
-      throw new Error('This reset link has expired. Please request a new one.');
+      throw AppError.BadRequest('This reset link has expired. Please request a new one.');
     }
 
     const hashedPassword = await bcrypt.hash(data.newPassword, 12);
@@ -210,7 +209,7 @@ export class AuthService {
       where: { id: userId },
       select: { id: true, name: true, email: true, image: true, emailVerified: true, role: true }
     });
-    if (!dbUser) throw new Error('User not found.');
+    if (!dbUser) throw AppError.NotFound('User not found.');
     return dbUser;
   }
 
@@ -219,7 +218,7 @@ export class AuthService {
       where: { id: userId },
       select: { password: true }
     });
-    if (!dbUser) throw new Error('User not found.');
+    if (!dbUser) throw AppError.NotFound('User not found.');
     
     return {
       connectedProviders: [], // We are not tracking oauth providers in Account table right now
@@ -227,15 +226,15 @@ export class AuthService {
     };
   }
 
-  async updatePassword(userId: string, data: { currentPassword: string; newPassword: string }) {
+  async updatePassword(userId: string, data: any) {
     const dbUser = await this.prisma.user.findUnique({
       where: { id: userId }
     });
-    if (!dbUser) throw new Error('User not found.');
+    if (!dbUser) throw AppError.NotFound('User not found.');
     
     if (dbUser.password) {
       const isValid = await bcrypt.compare(data.currentPassword, dbUser.password);
-      if (!isValid) throw new Error('Incorrect current password.');
+      if (!isValid) throw AppError.Unauthorized('Incorrect current password.');
     }
     
     const hashedNewPassword = await bcrypt.hash(data.newPassword, 12);
