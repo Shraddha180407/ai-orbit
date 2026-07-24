@@ -1,33 +1,43 @@
-import type { Metadata } from "next";
-import { Suspense } from "react";
-import { CollectionsPageClient } from "./CollectionsPageClient";
-
-export const metadata: Metadata = {
-  title: "Collections — The AI Signal",
-  description:
-    "Curated bundles of the best AI tools, agents and models, hand-picked by category.",
+import CollectionsPageClient from "./CollectionsPageClient";
+import type { CollectionsApiResponse } from "@/lib/types";
+import { Header } from "@/components/Header";
+export const metadata = {
+  title: "Curated Collections | Tool Directory",
+  description: "Explore curated lists and stack configurations by domain experts.",
 };
 
-export default function CollectionsPage() {
+const API_BASE_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
+
+async function getInitialCollections(): Promise<CollectionsApiResponse> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/collections?sort=recently_updated`, {
+      cache: "no-store", 
+    });
+
+    if (!res.ok) {
+      console.error(`Failed to fetch collections: ${res.status} ${res.statusText}`);
+      return { items: [], nextCursor: null };
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error("Error fetching initial collections:", err);
+    return { items: [], nextCursor: null };
+  }
+}
+
+export default async function CollectionsPage() {
+  const initialData = await getInitialCollections();
+
   return (
-    <Suspense fallback={
-      <main className="collections-scope min-h-screen pb-20">
-        <div className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
-          <div className="mx-auto flex max-w-container items-center justify-between px-6 py-3">
-             <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-bold text-background">
-                  S
-                </span>
-                <span className="text-base font-bold text-foreground">The AI Signal</span>
-             </div>
-          </div>
-        </div>
-        <div className="mx-auto max-w-container px-6 pt-6">
-          <div className="h-60 animate-pulse rounded-xl border border-[#232326] bg-[#131316]/50" />
-        </div>
+    <div className="relative min-h-screen bg-[#000000] text-[#E4E4E7] antialiased">
+      <Header/>
+      <main className="relative z-10">
+        <CollectionsPageClient 
+          initialItems={initialData.items} 
+          initialNextCursor={initialData.nextCursor} 
+        />
       </main>
-    }>
-      <CollectionsPageClient />
-    </Suspense>
+    </div>
   );
 }

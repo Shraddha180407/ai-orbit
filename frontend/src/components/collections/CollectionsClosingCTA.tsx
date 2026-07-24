@@ -28,7 +28,7 @@ export function CollectionsClosingCTA() {
         </p>
         <Link
           href="mailto:hello@aiorbit.club?subject=Collection%20suggestion"
-          className="mt-1 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+          className="mt-1 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-black transition-colors hover:bg-accent-hover"
         >
           Suggest a collection
         </Link>
