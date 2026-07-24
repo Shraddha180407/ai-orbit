@@ -14,6 +14,7 @@ import Smartphone from 'lucide-react/dist/esm/icons/smartphone';
 import Bot from 'lucide-react/dist/esm/icons/bot';
 import Plug from 'lucide-react/dist/esm/icons/plug';
 import PlayCircle from 'lucide-react/dist/esm/icons/play-circle';
+import UserCircle from 'lucide-react/dist/esm/icons/user-circle';
 import User from 'lucide-react/dist/esm/icons/user';
 import Palette from 'lucide-react/dist/esm/icons/palette';
 
@@ -42,6 +43,8 @@ const DIRECTORY_CARDS = [
   { name: "Repositories", href: "/repositories", description: "Trending open-source AI repositories on GitHub.", icon: GitBranch, color: "#22D3EE" },
   { name: "MCP", href: "/tools", description: "Model Context Protocol servers and integrations.", icon: Plug, color: "#818CF8" },
   { name: "Collections", href: "/collections", description: "Curated bundles of tools grouped by use case.", icon: FolderHeart, color: "#34D399" },
+  // { name: "Personal", href: "/tools?category=personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
+  // { name: "Creativity", href: "/tools?category=creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
 
 const PERSONAL_CATEGORIES = [
@@ -223,7 +226,7 @@ export function HomeClient() {
         </div>
 
         <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
-          <h1 className="max-w-[820px] text-3xl sm:text-5xl lg:text-[64px] font-black tracking-tight leading-[1.05] mb-6 sm:mb-8 select-none text-white text-balance">
+          <h1 className="max-w-[820px] text-2xl sm:text-4xl lg:text-[48px] font-black tracking-tight leading-[1.1] mb-6 sm:mb-8 select-none text-white text-balance">
             The best AI, in one signal.
           </h1>
 
@@ -315,7 +318,7 @@ export function HomeClient() {
                   >
                     <Icon size={10} strokeWidth={1.75} style={{ color: card.color }} />
                   </div>
-                  <span className="text-[10px] sm:text-[11.5px] font-bold tracking-tight text-white whitespace-nowrap">
+                  <span className="text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
                     {card.name}
                   </span>
                 </a>

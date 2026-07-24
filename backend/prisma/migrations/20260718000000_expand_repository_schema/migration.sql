@@ -1,20 +1,5 @@
 BEGIN;
 
--- CreateTable: Repository (original shape before expansion)
-CREATE TABLE "Repository" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "owner" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
-    "url" TEXT NOT NULL,
-    "language" TEXT NOT NULL,
-    "stars" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Repository_pkey" PRIMARY KEY ("id")
-);
-
 -- Clear existing test data (4 placeholder repos) so new required columns
 -- can be added without default-value conflicts. These will be re-populated
 -- by the Phase 2 sync script.
