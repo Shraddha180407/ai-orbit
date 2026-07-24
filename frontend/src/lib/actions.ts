@@ -1,15 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { API_URL } from "@/lib/api";
 
 export async function toggleBookmark(toolId: string, toolSlug: string) {
   try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth_token')?.value || '';
     const res = await fetch(`${API_URL}/api/v1/tools/${toolSlug}/bookmark`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Cookie": `auth_token=${token}`
+      },
       body: JSON.stringify({ toolId }),
       cache: "no-store",
     });
@@ -61,9 +67,14 @@ export async function submitReview(
   const { toolId, toolSlug, rating, comment } = parsed.data;
 
   try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth_token')?.value || '';
     const res = await fetch(`${API_URL}/api/v1/tools/${toolSlug}/reviews`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Cookie": `auth_token=${token}`
+      },
       body: JSON.stringify({ toolId, rating, comment }),
       cache: "no-store",
     });

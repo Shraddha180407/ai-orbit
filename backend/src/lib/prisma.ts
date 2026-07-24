@@ -28,11 +28,3 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
 
-// Helper to get or create demo user
-export async function getOrCreateDemoUser(prismaClient: PrismaClient) {
-  return prismaClient.user.upsert({
-    where: { email: "demo@example.com" },
-    update: {},
-    create: { email: "demo@example.com", name: "Demo User" },
-  });
-}

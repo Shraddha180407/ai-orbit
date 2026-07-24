@@ -1,5 +1,4 @@
 import { PrismaClient, Prisma, PricingModel } from '@prisma/client';
-import { getOrCreateDemoUser } from '../../lib/prisma.js';
 
 export class ToolsService {
   private prisma: PrismaClient;
@@ -106,7 +105,7 @@ export class ToolsService {
     };
   }
 
-  async getToolDetails(slug: string) {
+  async getToolDetails(slug: string, userId?: string) {
     const tool = await this.prisma.tool.findUnique({
       where: { slug },
       select: {
@@ -202,11 +201,14 @@ export class ToolsService {
       },
     });
 
-    const demoUser = await getOrCreateDemoUser(this.prisma);
-    const bookmark = await this.prisma.bookmark.findUnique({
-      where: { toolId_userId: { toolId: tool.id, userId: demoUser.id } },
-      select: { id: true },
-    });
+    let bookmarked = false;
+    if (userId) {
+      const bookmark = await this.prisma.bookmark.findUnique({
+        where: { toolId_userId: { toolId: tool.id, userId } },
+        select: { id: true },
+      });
+      bookmarked = Boolean(bookmark);
+    }
 
     return {
       tool: {
@@ -225,27 +227,23 @@ export class ToolsService {
         ...r,
         createdAt: r.createdAt.toISOString(),
       })),
-      bookmarked: Boolean(bookmark),
+      bookmarked,
     };
   }
 
-  async createOrUpdateReview(toolId: string, rating: number, comment: string) {
-    const demoUser = await getOrCreateDemoUser(this.prisma);
-
+  async createOrUpdateReview(toolId: string, userId: string, rating: number, comment: string) {
     await this.prisma.review.upsert({
-      where: { toolId_userId: { toolId, userId: demoUser.id } },
+      where: { toolId_userId: { toolId, userId } },
       update: { rating, comment },
-      create: { toolId, userId: demoUser.id, rating, comment },
+      create: { toolId, userId, rating, comment },
     });
 
     await this.recomputeToolRating(toolId);
   }
 
-  async toggleBookmark(toolId: string) {
-    const demoUser = await getOrCreateDemoUser(this.prisma);
-
+  async toggleBookmark(toolId: string, userId: string) {
     const existing = await this.prisma.bookmark.findUnique({
-      where: { toolId_userId: { toolId, userId: demoUser.id } },
+      where: { toolId_userId: { toolId, userId } },
       select: { id: true },
     });
 
@@ -253,7 +251,7 @@ export class ToolsService {
       await this.prisma.bookmark.delete({ where: { id: existing.id } });
       return false;
     } else {
-      await this.prisma.bookmark.create({ data: { toolId, userId: demoUser.id } });
+      await this.prisma.bookmark.create({ data: { toolId, userId } });
       return true;
     }
   }
