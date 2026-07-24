@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
 
 function formatDistanceToNow(date: Date) {
   const diff = Date.now() - date.getTime();
@@ -28,6 +29,9 @@ export function HistoryClient() {
       if (!res.ok) return [];
       return res.json();
     },
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    staleTime: 0,
   });
 
   if (isLoading) {
@@ -55,15 +59,15 @@ export function HistoryClient() {
   return (
     <div className="space-y-3">
       {history.map((item) => (
-        <Card key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-4 border border-border bg-background">
+        <Card key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-4 border border-border bg-background hover:bg-[#18181C]/40 transition-colors">
           <div>
-            <p className="font-medium text-white text-[14px]">
-              {item.action === 'CLICK_TOOL' ? 'Visited tool' : item.action}
-            </p>
-            <p className="text-[13px] text-[#8A8F98]">{item.entity}</p>
+            <Link href={`/tools/${item.tool?.slug}`} className="font-medium text-white text-[14px] hover:underline">
+              Visited {item.tool?.name || 'Unknown Tool'}
+            </Link>
+            <p className="text-[13px] text-[#8A8F98] truncate max-w-sm">{item.tool?.description}</p>
           </div>
           <p className="text-[12px] text-[#636871] whitespace-nowrap">
-            {formatDistanceToNow(new Date(item.createdAt))}
+            {formatDistanceToNow(new Date(item.viewedAt))}
           </p>
         </Card>
       ))}

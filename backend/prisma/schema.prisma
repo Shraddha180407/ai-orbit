@@ -46,7 +46,7 @@ model User {
   password      String?
   image         String?
   role          String    @default("USER")
-  status        String    @default("ACTIVE")
+  status        String    @default("ACTIVE") // ACTIVE, BLOCKED
   emailVerified DateTime?
 
   createdAt DateTime @default(now())
@@ -56,9 +56,11 @@ model User {
   bookmarks           Bookmark[]
   accounts            Account[]
   sessions            Session[]
+  toolHistory         ToolHistory[]
   collections         Collection[]
   collectionBookmarks CollectionBookmark[]
   taskBookmarks       TaskBookmark[]
+    linkBookmarks       LinkBookmark[]
 
   reportsMade         Report[] @relation("Reporter")
   reportsAgainst      Report[] @relation("ReportedUser")
@@ -66,6 +68,8 @@ model User {
   taskLikes           TaskLike[]           @relation("TaskLikeUser")
   taskSubscriptions   TaskSubscriber[]     @relation("TaskSubscriberUser")
 }
+
+
 
 // ---- Module 3: AI Tools ----
 
@@ -91,10 +95,11 @@ model Tool {
 
   categories ToolCategory[]
   tags       ToolTag[]
-  reports    Report[]
 
-  reviews   Review[]
-  bookmarks Bookmark[]
+  reviews     Review[]
+  bookmarks   Bookmark[]
+  reports     Report[]
+  history     ToolHistory[]
 
   alternatives  Tool[]     @relation("ToolAlternatives")
   alternativeOf Tool[]     @relation("ToolAlternatives")
@@ -499,6 +504,19 @@ model LeaderboardTool {
   addedDate   String
 }
 
+model ToolHistory {
+  id       String   @id @default(cuid())
+  userId   String
+  toolId   String
+  viewedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tool     Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, toolId])
+  @@index([userId])
+  @@index([toolId])
+}
+
 // ---- Module: Collections ----
 
 enum CreatorType {
@@ -592,7 +610,6 @@ model CollectionBookmark {
 
   @@unique([userId, collectionId])
 }
-
 // ---- Module: Tasks ----
 
 enum TaskDifficulty {
@@ -749,3 +766,15 @@ model Report {
   reportedNews   News?    @relation(fields: [reportedNewsId], references: [id], onDelete: Cascade)
 }
 
+model LinkBookmark {
+  id        String   @id @default(cuid())
+  title     String?
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

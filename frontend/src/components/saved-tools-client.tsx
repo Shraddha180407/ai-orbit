@@ -30,6 +30,9 @@ export function SavedToolsClient() {
       const data = await res.json();
       return data.savedTools || [];
     },
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    staleTime: 0,
   });
 
   // Delete Saved Tool
