@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import type { News, Publisher, Topic } from "@prisma/client";
 import { GENERIC_TOPIC_FALLBACK, COMPANY_TOPIC_LABELS } from "../ingestion/topicTagging.js";
+import { logger } from "../../lib/logger.js";
 import type { NewsArticleDTO, NewsCategory, NewsFilterChip, NewsSource } from "./news.types.js";
 
 type ArticleRow = News & { publisher: Publisher; topics: Topic[] };
@@ -19,7 +20,7 @@ async function withTiming<T>(label: string, fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   } finally {
-    console.log(`[timing] ${label}: ${Date.now() - start}ms`);
+    logger.info(`[timing] ${label}: ${Date.now() - start}ms`);
   }
 }
 

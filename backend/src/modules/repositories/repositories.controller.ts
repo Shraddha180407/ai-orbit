@@ -1,6 +1,7 @@
 import { Context } from 'hono';
 import { getPrisma } from '../../lib/prisma.js';
 import { RepositoriesService } from './repositories.service.js';
+import { logger } from '../../lib/logger.js';
 
 const VALID_SORTS = ['stars_desc', 'newest', 'name_asc'] as const;
 type SortOption = (typeof VALID_SORTS)[number];
@@ -33,7 +34,7 @@ export class RepositoriesController {
 
       return c.json(result);
     } catch (error: unknown) {
-      console.error('Error listing repositories:', error);
+      logger.error('Error listing repositories:', error);
       return c.json({ error: 'Failed to fetch repositories' }, 500);
     } finally {
       await prisma.$disconnect();
@@ -52,7 +53,7 @@ export class RepositoriesController {
       }
       return c.json(repo);
     } catch (error: unknown) {
-      console.error('Error fetching repository:', error);
+      logger.error('Error fetching repository:', error);
       return c.json({ error: 'Failed to fetch repository' }, 500);
     } finally {
       await prisma.$disconnect();

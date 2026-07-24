@@ -3,6 +3,7 @@ import {
   transformDeviceForListing,
   transformDeviceForDetail,
 } from '../../lib/device-transformations.js';
+import { logger } from '../../lib/logger.js';
 
 export class DevicesService {
   private prisma: PrismaClient;
@@ -22,7 +23,7 @@ export class DevicesService {
       try {
         return [transformDeviceForListing(device)];
       } catch (error: unknown) {
-        console.error(`Error transforming device ${device.id}:`, error instanceof Error ? error.message : 'Unknown error');
+        logger.error(`Error transforming device ${device.id}:`, error instanceof Error ? error.message : 'Unknown error');
         return []; 
       }
     });

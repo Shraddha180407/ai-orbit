@@ -8,6 +8,7 @@ import {
   fetchRelatedVideos,
   countVideos,
 } from "./videos.services.js";
+import { logger } from "../../lib/logger.js";
 import {
   ListQuerySchema,
   SlugParamSchema,
@@ -41,7 +42,7 @@ export async function listVideos(c: Context) {
     const videos = await fetchVideos(prisma, sort, limit, offset);
     return c.json(videos.map(toApiShape));
   } catch (error: unknown) {
-    console.error("Videos API Controller Error:", error);
+    logger.error("Videos API Controller Error:", error);
     return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
   } finally {
     await prisma.$disconnect();
@@ -55,7 +56,7 @@ export async function getVideosCount(c: Context) {
     const total = await countVideos(prisma);
     return c.json({ total });
   } catch (error: unknown) {
-    console.error("Videos API Controller Error:", error);
+    logger.error("Videos API Controller Error:", error);
     return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
   } finally {
     await prisma.$disconnect();
@@ -76,7 +77,7 @@ export async function getVideoBySlug(c: Context) {
 
     return c.json(toApiShape(video));
   } catch (error: unknown) {
-    console.error("Videos API Controller Error:", error);
+    logger.error("Videos API Controller Error:", error);
     return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
   } finally {
     await prisma.$disconnect();
@@ -103,7 +104,7 @@ export async function getRelatedVideos(c: Context) {
     const related = await fetchRelatedVideos(prisma, video, queryParsed.data.limit);
     return c.json(related.map(toApiShape));
   } catch (error: unknown) {
-    console.error("Videos API Controller Error:", error);
+    logger.error("Videos API Controller Error:", error);
     return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
   } finally {
     await prisma.$disconnect();

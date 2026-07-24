@@ -1,5 +1,6 @@
 import type { PrismaClient, Availability } from "@prisma/client";
 import type { DevicesIngestPayload } from "./devices.ingest.schema.js";
+import { logger } from "../../lib/logger.js";
 
 export class DevicesIngestService {
   static async ingestDevices(prisma: PrismaClient, payload: DevicesIngestPayload) {
@@ -122,7 +123,7 @@ export class DevicesIngestService {
         });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(`Error ingesting device ${deviceData.slug}:`, err);
+        logger.error(`Error ingesting device ${deviceData.slug}:`, err);
         summary.errors.push({
           slug: deviceData.slug,
           message

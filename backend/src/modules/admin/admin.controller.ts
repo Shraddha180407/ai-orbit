@@ -1,6 +1,7 @@
 import { Context } from 'hono';
 import { AdminService } from './admin.service.js';
 import { getPrisma } from '../../lib/prisma.js';
+import { logger } from '../../lib/logger.js';
 
 export class AdminController {
   private getService(c: Context) {
@@ -225,7 +226,7 @@ export class AdminController {
       await this.getService(c).deleteNews(id);
       return c.json({ success: true });
     } catch (error: unknown) {
-      console.error('DELETE NEWS ERROR:', error);
+      logger.error('DELETE NEWS ERROR:', error);
       if (error instanceof Error && 'code' in error && (error as { code?: string }).code === 'P2003') {
         return c.json({ error: 'Cannot delete this record because it is currently in use or referenced by other items.' }, 409);
       }

@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { logger } from './logger.js';
 
 const getBaseUrl = (env: Record<string, string | undefined>) => {
   if (env?.FRONTEND_URL) return env.FRONTEND_URL;
@@ -48,7 +49,7 @@ export async function sendVerificationLinkEmail(email: string, token: string, en
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error) {
-    console.error('Error sending verification email:', error);
+    logger.error('Error sending verification email:', error);
     return { success: false, error };
   }
 }
@@ -85,7 +86,7 @@ export async function sendPasswordResetEmail(email: string, token: string, env: 
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error) {
-    console.error('Error sending password reset email:', error);
+    logger.error('Error sending password reset email:', error);
     return { success: false, error };
   }
 }

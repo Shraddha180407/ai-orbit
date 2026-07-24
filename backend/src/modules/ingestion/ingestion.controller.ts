@@ -2,6 +2,7 @@ import { Context } from "hono";
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { FEED_SOURCES } from "./sources.js";
+import { logger } from "../../lib/logger.js";
 import type { IngestionContext } from "./pipeline.js";
 import { runIngestion } from "./ingestion.service.js";
 import type { IngestionRunQueryInput } from "./ingestion.schemas.js";
@@ -38,7 +39,7 @@ export class IngestionController {
       return c.json(summary);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      console.error("Ingestion run error:", error);
+      logger.error("Ingestion run error:", error);
       return c.json({ error: message }, 500);
     }
   }

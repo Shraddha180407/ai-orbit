@@ -3,6 +3,7 @@ import { getPrisma } from '../../lib/prisma.js';
 import { TasksService } from './tasks.service.js';
 import { getCookie } from 'hono/cookie';
 import { verify } from 'jsonwebtoken';
+import { logger } from '../../lib/logger.js';
 import { GetTasksQuerySchema } from './tasks.schema.js';
 
 export class TasksController {
@@ -47,7 +48,7 @@ export class TasksController {
       });
       return c.json(result);
     } catch (error: unknown) {
-      console.error('listTasks error:', error);
+      logger.error('listTasks error:', error);
       return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
     } finally {
       if (prisma) await prisma.$disconnect();
@@ -78,7 +79,7 @@ export class TasksController {
       }
       return c.json(result);
     } catch (error: unknown) {
-      console.error('getTaskDetails error:', error);
+      logger.error('getTaskDetails error:', error);
       return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
     } finally {
       if (prisma) await prisma.$disconnect();
@@ -98,7 +99,7 @@ export class TasksController {
     if (bookmarked === null) return c.json({ error: 'Task not found' }, 404);
     return c.json({ bookmarked });
   } catch (error: unknown) {
-    console.error('toggleBookmark error:', error);
+    logger.error('toggleBookmark error:', error);
     return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
   } finally {
     if (prisma) await prisma.$disconnect();
@@ -118,7 +119,7 @@ async toggleLike(c: Context) {
     if (liked === null) return c.json({ error: 'Task not found' }, 404);
     return c.json({ liked });
   } catch (error: unknown) {
-    console.error('toggleLike error:', error);
+    logger.error('toggleLike error:', error);
     return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
   } finally {
     if (prisma) await prisma.$disconnect();
@@ -138,7 +139,7 @@ async toggleSubscribe(c: Context) {
     if (subscribed === null) return c.json({ error: 'Task not found' }, 404);
     return c.json({ subscribed });
   } catch (error: unknown) {
-    console.error('toggleSubscribe error:', error);
+    logger.error('toggleSubscribe error:', error);
     return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
   } finally {
     if (prisma) await prisma.$disconnect();

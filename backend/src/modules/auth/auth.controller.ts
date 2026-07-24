@@ -2,6 +2,7 @@ import { Context } from 'hono';
 import { setCookie, deleteCookie } from 'hono/cookie';
 import { sign } from 'jsonwebtoken';
 import { AuthService } from './auth.service.js';
+import { logger } from '../../lib/logger.js';
 import { 
   signupSchema, 
   loginSchema, 
@@ -86,7 +87,7 @@ export class AuthController {
           return c.json({ error: error.message }, 403);
         }
       }
-      console.error("LOGIN ERROR:", error);
+      logger.error("LOGIN ERROR:", error);
       return c.json({ error: 'Failed to login.' }, 500);
     }
   }
@@ -234,7 +235,7 @@ export class AuthController {
 
       return c.json({ success: true, message: 'Account deleted successfully' });
     } catch (error: unknown) {
-      console.error('Delete account error:', error);
+      logger.error('Delete account error:', error);
       return c.json({ error: error instanceof Error ? error.message : 'Failed to delete account' }, 500);
     }
   }

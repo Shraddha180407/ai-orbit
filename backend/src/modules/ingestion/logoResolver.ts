@@ -23,6 +23,7 @@
  */
 import * as cheerio from "cheerio";
 import { slugify } from "./normalize.js";
+import { logger } from "../../lib/logger.js";
 
 export interface CloudinaryConfig {
   cloudName: string;
@@ -32,7 +33,7 @@ export interface CloudinaryConfig {
 
 const DEBUG = false;
 function debug(msg: string): void {
-  if (DEBUG) console.log(`  [logo-debug] ${msg}`);
+  if (DEBUG) logger.debug(`  [logo-debug] ${msg}`);
 }
 
 interface IconCandidate {
