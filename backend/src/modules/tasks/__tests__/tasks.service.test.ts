@@ -10,18 +10,24 @@ const mockPrisma = {
   taskLike: {
     findUnique: vi.fn(),
     findMany: vi.fn(),
+    create: vi.fn(),
+    delete: vi.fn(),
   },
   taskBookmark: {
     findUnique: vi.fn(),
     findMany: vi.fn(),
+    create: vi.fn(),
+    delete: vi.fn(),
   },
   taskSubscriber: {
     findUnique: vi.fn(),
+    create: vi.fn(),
+    delete: vi.fn(),
   },
   category: {
     findMany: vi.fn(),
   },
-} as never;
+};
 
 let service: TasksService;
 

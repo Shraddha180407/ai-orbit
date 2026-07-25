@@ -11,7 +11,7 @@ const mockPrisma = {
     findMany: vi.fn(),
     upsert: vi.fn(),
   },
-} as never;
+};
 
 let service: UserService;
 

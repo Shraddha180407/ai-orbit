@@ -24,7 +24,7 @@ describe('errorHandler', () => {
   it('returns AppError status code and message', () => {
     const c = mockContext();
     const err = new AppError(404, 'Not Found');
-    errorHandler(err, c as never, vi.fn());
+    errorHandler(err, c as never);
     expect(c.status).toBe(404);
     expect(c.body).toEqual({ error: 'Not Found' });
   });
@@ -32,7 +32,7 @@ describe('errorHandler', () => {
   it('returns 400 for BadRequest', () => {
     const c = mockContext();
     const err = AppError.BadRequest('Invalid input');
-    errorHandler(err, c as never, vi.fn());
+    errorHandler(err, c as never);
     expect(c.status).toBe(400);
     expect(c.body).toEqual({ error: 'Invalid input' });
   });
@@ -40,7 +40,7 @@ describe('errorHandler', () => {
   it('returns 500 for unknown errors', () => {
     const c = mockContext();
     const err = new Error('something broke');
-    errorHandler(err, c as never, vi.fn());
+    errorHandler(err, c as never);
     expect(c.status).toBe(500);
     expect(c.body).toEqual({ error: 'An unexpected internal server error occurred.' });
   });

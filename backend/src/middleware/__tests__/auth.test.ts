@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { requireIngestionToken } from '../auth.js';
 
 vi.mock('../../lib/logger.js', () => ({

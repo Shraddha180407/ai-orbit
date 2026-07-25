@@ -24,7 +24,7 @@ vi.mock('../../../lib/logger.js', () => ({
 
 import { RepositoriesController } from '../repositories.controller.js';
 import { getPrisma } from '../../../lib/prisma.js';
-import { RepositoriesService } from '../repositories.service.js';
+
 import { logger } from '../../../lib/logger.js';
 
 function mockContext(queryParams: Record<string, string> = {}, params: Record<string, string> = {}) {

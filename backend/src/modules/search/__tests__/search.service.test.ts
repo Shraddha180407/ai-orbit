@@ -8,7 +8,7 @@ const mockPrisma = {
   repository: { findMany: vi.fn() },
   robot: { findMany: vi.fn() },
   device: { findMany: vi.fn() },
-} as never;
+};
 
 let service: SearchService;
 
@@ -19,8 +19,6 @@ beforeEach(() => {
 
 describe('SearchService', () => {
   describe('autocomplete', () => {
-    const emptyResult = { tool: [], company: [], model: [], repository: [], robot: [], device: [] };
-
     beforeEach(() => {
       mockPrisma.tool.findMany.mockResolvedValue([]);
       mockPrisma.company.findMany.mockResolvedValue([]);

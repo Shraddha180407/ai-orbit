@@ -176,7 +176,8 @@ describe('deviceSchema', () => {
   });
 
   it('availability defaults to Announced when omitted', () => {
-    const { availability: _, ...rest } = validDevice;
+    const rest = { ...validDevice } as Record<string, unknown>;
+    delete rest.availability;
     const result = deviceSchema.safeParse(rest);
     expect(result.success).toBe(true);
     if (result.success) {

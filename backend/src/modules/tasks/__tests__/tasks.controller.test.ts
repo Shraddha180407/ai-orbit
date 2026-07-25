@@ -61,7 +61,7 @@ function createListContext(query: Record<string, string> = {}, cookieToken?: str
     _json: json,
     get: vi.fn(),
     _cookieToken: cookieToken,
-  } as never;
+  };
 }
 
 function createDetailContext(slug: string, cookieToken?: string) {
@@ -76,7 +76,7 @@ function createDetailContext(slug: string, cookieToken?: string) {
     _json: json,
     get: vi.fn(),
     _cookieToken: cookieToken,
-  } as never;
+  };
 }
 
 function createToggleContext(slug: string, user?: { id: string }) {
@@ -90,7 +90,7 @@ function createToggleContext(slug: string, user?: { id: string }) {
     json,
     _json: json,
     get: vi.fn().mockReturnValue(user),
-  } as never;
+  };
 }
 
 describe('TasksController', () => {

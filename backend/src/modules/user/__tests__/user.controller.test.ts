@@ -25,7 +25,7 @@ function createContext(user?: { id: string }, params: Record<string, string> = {
     json,
     _json: json,
     get: vi.fn().mockReturnValue(user),
-  } as never;
+  };
 }
 
 describe('UserController', () => {

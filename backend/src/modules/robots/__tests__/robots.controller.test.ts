@@ -23,7 +23,7 @@ function createContext() {
     req: { query: () => ({}) },
     json,
     _json: json,
-  } as never;
+  };
 }
 
 describe('RobotsController', () => {

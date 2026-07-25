@@ -3,7 +3,7 @@ import { RobotsService } from '../robots.service.js';
 
 const mockPrisma = {
   robot: { findMany: vi.fn() },
-} as never;
+};
 
 let service: RobotsService;
 

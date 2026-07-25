@@ -17,7 +17,7 @@ import { getCookie } from 'hono/cookie';
 import { verify } from 'jsonwebtoken';
 import { getPrisma } from '../../lib/prisma.js';
 
-function mockContext(cookieValue?: string) {
+function mockContext(_cookieValue?: string) {
   let status: number;
   let body: unknown;
   const userSet = { value: undefined as unknown };

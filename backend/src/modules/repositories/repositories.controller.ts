@@ -68,8 +68,8 @@ export class RepositoriesController {
     try {
       const owners = await service.listRepositoryOwners();
       return c.json(owners);
-    } catch (error: any) {
-      console.error('Error listing repository owners:', error);
+    } catch (error: unknown) {
+      logger.error('Error listing repository owners:', error);
       return c.json({ error: 'Failed to fetch repository owners' }, 500);
     } finally {
       await prisma.$disconnect();

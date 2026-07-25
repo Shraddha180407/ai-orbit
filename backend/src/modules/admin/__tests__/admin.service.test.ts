@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AdminService } from '../admin.service';
+import { AdminService } from '../admin.service.js';
 
 vi.mock('@prisma/client', () => {
   return {
@@ -70,7 +70,7 @@ function createMockPrisma() {
       deleteMany: vi.fn().mockResolvedValue({}),
     },
     $transaction: vi.fn().mockImplementation((ops: unknown[]) => Promise.all(ops)),
-  } as Record<string, unknown>;
+  };
 }
 
 describe('AdminService', () => {
@@ -103,7 +103,6 @@ describe('AdminService', () => {
     });
 
     it('returns empty growthTrend when before June 2026', async () => {
-      const now = new Date();
       const beforeJune2026 = new Date(2025, 0, 1);
       vi.useFakeTimers({ now: beforeJune2026 });
 

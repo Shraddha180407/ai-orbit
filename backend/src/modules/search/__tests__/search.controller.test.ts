@@ -36,7 +36,7 @@ function createContext(query: Record<string, string> = {}) {
     req: { query: () => query },
     json,
     _json: json,
-  } as never;
+  };
 }
 
 describe('SearchController', () => {
