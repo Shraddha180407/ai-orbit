@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { AppError } from '../../lib/error.js';
 
 export class BookmarksService {
   constructor(private prisma: PrismaClient) {}
@@ -29,7 +30,7 @@ export class BookmarksService {
   async deleteBookmark(userId: string, id: string) {
     const bookmark = await this.prisma.linkBookmark.findUnique({ where: { id } });
     if (!bookmark || bookmark.userId !== userId) {
-      throw new Error("Not found or unauthorized");
+      throw AppError.NotFound("Bookmark not found or unauthorized");
     }
     await this.prisma.linkBookmark.delete({ where: { id } });
     return true;

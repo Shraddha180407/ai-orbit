@@ -35,7 +35,7 @@ export function rateLimit(identifier: string, limit: number = 5, windowMs: numbe
 }
 
 // Utility to get the IP address from a request
-export function getIp(req: Request): string {
+export function getIp(req: { headers: { get(name: string): string | null } }): string {
   const xForwardedFor = req.headers.get('x-forwarded-for');
   if (xForwardedFor) {
     return xForwardedFor.split(',')[0].trim();

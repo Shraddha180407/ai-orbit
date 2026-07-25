@@ -1,6 +1,7 @@
 import { Context } from 'hono';
 import { getPrisma } from '../../lib/prisma.js';
 import { BookmarksService } from './bookmarks.service.js';
+import { AppError } from '../../lib/error.js';
 
 export class BookmarksController {
   async listBookmarks(c: Context) {
@@ -10,8 +11,7 @@ export class BookmarksController {
       const user = c.get('user');
       const bookmarks = await service.listBookmarks(user.id);
       return c.json(bookmarks);
-    } catch (error: unknown) {
-      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
+
     } finally {
       await prisma.$disconnect();
     }
@@ -24,12 +24,11 @@ export class BookmarksController {
       const user = c.get('user');
       const body = await c.req.json();
       if (!body.url) {
-        return c.json({ error: 'url is required' }, 400);
+        throw AppError.BadRequest('url is required');
       }
       const bookmark = await service.createBookmark(user.id, body.title, body.url);
       return c.json(bookmark);
-    } catch (error: unknown) {
-      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
+
     } finally {
       await prisma.$disconnect();
     }
@@ -42,12 +41,11 @@ export class BookmarksController {
       const user = c.get('user');
       const id = c.req.param('id');
       if (!id) {
-        return c.json({ error: 'id is required' }, 400);
+        throw AppError.BadRequest('id is required');
       }
       await service.deleteBookmark(user.id, id);
       return c.json({ success: true });
-    } catch (error: unknown) {
-      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
+
     } finally {
       await prisma.$disconnect();
     }

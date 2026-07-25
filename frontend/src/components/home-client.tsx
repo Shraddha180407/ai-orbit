@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import Search from 'lucide-react/dist/esm/icons/search';
 import Wrench from 'lucide-react/dist/esm/icons/wrench';
 import ListChecks from 'lucide-react/dist/esm/icons/list-checks';
@@ -15,25 +16,39 @@ import Bot from 'lucide-react/dist/esm/icons/bot';
 import Plug from 'lucide-react/dist/esm/icons/plug';
 import PlayCircle from 'lucide-react/dist/esm/icons/play-circle';
 import UserCircle from 'lucide-react/dist/esm/icons/user-circle';
-import User from 'lucide-react/dist/esm/icons/user';
 import Palette from 'lucide-react/dist/esm/icons/palette';
+import TrendingUp from 'lucide-react/dist/esm/icons/trending-up';
+import Trophy from 'lucide-react/dist/esm/icons/trophy';
 
 import { API_URL } from "@/lib/api";
 
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { HeroSearchBar } from "@/components/HeroSearchBar";
 import { HeroFeatureChips } from "@/components/HeroFeatureChips";
 import { SortDropdown } from "@/components/SortDropdown";
 import { ToolListView } from "@/components/ToolListView";
+import { ENTITY_META } from "@/lib/entityMeta";
 
 import type { SortOption } from "@/lib/types";
+
+// Top-of-menu quick actions for the homepage hero search dropdown.
+const QUICK_LINKS = [
+  { label: "Trending", href: "/search/trending", icon: TrendingUp },
+  { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
+];
+
+// "Browse by type" — mirrors the entity types the backend indexes.
+const BROWSE_BY_TYPE = [
+  { label: ENTITY_META.company.label, href: ENTITY_META.company.basePath, icon: ENTITY_META.company.icon },
+  { label: ENTITY_META.model.label, href: ENTITY_META.model.basePath, icon: ENTITY_META.model.icon },
+  { label: ENTITY_META.robot.label, href: ENTITY_META.robot.basePath, icon: ENTITY_META.robot.icon },
+  { label: ENTITY_META.repository.label, href: ENTITY_META.repository.basePath, icon: ENTITY_META.repository.icon },
+  { label: ENTITY_META.device.label, href: ENTITY_META.device.basePath, icon: ENTITY_META.device.icon },
+];
 
 const DIRECTORY_CARDS = [
   { name: "Tools", href: "/tools", description: "Browse the full AI tools directory, filter by category and pricing.", icon: Wrench, color: "#FFC53D" },
   { name: "Tasks", href: "/tasks", description: "Find the right AI tool for a specific job to be done.", icon: ListChecks, color: "#FB923C" },
-  { name: "Personal", href: "/tasks/personal", description: "Browse Personal AI Tasks.", icon: User, color: "#A78BFA" },
-  { name: "Creativity", href: "/tasks/creativity", description: "Browse Creative AI Tasks.", icon: Palette, color: "#FFC53D" },
   { name: "Companies", href: "/companies", description: "Explore the labs and startups building the AI ecosystem.", icon: Building2, color: "#38BDF8" },
   { name: "News", href: "/news", description: "The latest announcements and coverage across the AI world.", icon: Newspaper, color: "#FF6B4A" },
   { name: "Videos", href: "/videos", description: "Watch demos, reviews, and deep dives on the latest AI tools.", icon: PlayCircle, color: "#F87171" },
@@ -43,11 +58,154 @@ const DIRECTORY_CARDS = [
   { name: "Repositories", href: "/repositories", description: "Trending open-source AI repositories on GitHub.", icon: GitBranch, color: "#22D3EE" },
   { name: "MCP", href: "/tools", description: "Model Context Protocol servers and integrations.", icon: Plug, color: "#818CF8" },
   { name: "Collections", href: "/collections", description: "Curated bundles of tools grouped by use case.", icon: FolderHeart, color: "#34D399" },
-  // { name: "Personal", href: "/tools?category=personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
-  // { name: "Creativity", href: "/tools?category=creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
+  { name: "Personal", href: "/tools?category=personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
+  { name: "Creativity", href: "/tools?category=creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
 
-const PERSONAL_CATEGORIES = [
+const TOOLS_SUB = [
+  "Writing & Content",
+  "Image Generation",
+  "Video Generation & Editing",
+  "Audio & Voice",
+  "Chatbots & AI Assistants",
+  "Coding & Development",
+  "Marketing & SEO",
+  "Productivity",
+  "Business & Analytics",
+  "Education & Research"
+];
+
+const TASKS_SUB = [
+  "Content Creation",
+  "Image Creation",
+  "Video Creation",
+  "Audio & Music",
+  "Coding & Development",
+  "Data Analysis",
+  "Research & Summarization",
+  "Productivity & Automation",
+  "Marketing & Sales",
+  "Customer Support"
+];
+
+const COMPANIES_SUB = [
+  "AI Model Providers",
+  "AI Startups",
+  "Enterprise AI",
+  "Healthcare AI",
+  "Finance AI",
+  "Marketing AI",
+  "Developer Tools",
+  "Robotics & Automation",
+  "Education AI",
+  "Creative AI"
+];
+
+const NEWS_SUB = [
+  "AI Industry News",
+  "Product Launches",
+  "Research & Innovations",
+  "Company Updates",
+  "Open Source",
+  "Regulations & Policy",
+  "Events & Conferences",
+  "Tutorials & Guides",
+  "Interviews & Opinions",
+  "Market Trends"
+];
+
+const VIDEOS_SUB = [
+  "Product Demos",
+  "Tutorials",
+  "AI News & Updates",
+  "Model Showcases",
+  "Podcasts & Interviews",
+  "Webinars & Workshops",
+  "Conferences & Events",
+  "Case Studies",
+  "Reviews & Comparisons",
+  "Educational Content"
+];
+
+const REPOSITORIES_SUB = [
+  "Large Language Models (LLMs)",
+  "Computer Vision",
+  "Generative AI",
+  "AI Frameworks & Libraries",
+  "NLP (Natural Language Processing)",
+  "Robotics & Automation",
+  "MLOps & Deployment",
+  "Data Science & Analytics",
+  "AI Agents",
+  "Tutorials & Examples"
+];
+
+const ROBOTS_SUB = [
+  "Humanoid Robots",
+  "Industrial Robots",
+  "Service Robots",
+  "Healthcare Robots",
+  "Educational Robots",
+  "Autonomous Mobile Robots (AMRs)",
+  "Drones & Aerial Robots",
+  "Companion Robots",
+  "Agricultural Robots",
+  "Research & Defense Robots"
+];
+
+const MCP_SUB = [
+  "Official MCP Servers",
+  "Developer Tools",
+  "Databases",
+  "File Systems & Storage",
+  "Productivity & Office",
+  "APIs & Web Services",
+  "Cloud & DevOps",
+  "AI & ML Platforms",
+  "Browser & Web Automation",
+  "Community & Open Source"
+];
+
+const DEVICES_SUB = [
+  "AI PCs & Laptops",
+  "Smartphones",
+  "Smart Home Devices",
+  "Wearables",
+  "AI Cameras",
+  "Audio Devices",
+  "AR/VR & Mixed Reality",
+  "Edge AI Devices",
+  "Robotics Hardware",
+  "Development Boards"
+];
+
+const COLLECTIONS_SUB = [
+  "Featured Collections",
+  "Productivity Collections",
+  "Creative Collections",
+  "Developer Collections",
+  "Business Collections",
+  "Education Collections",
+  "Industry Collections",
+  "Open Source Collections",
+  "Trending Collections",
+  "New Collections"
+];
+
+const MODELS_SUB = [
+  "Large Language Models (LLMs)",
+  "Image Generation Models",
+  "Video Generation Models",
+  "Audio & Speech Models",
+  "Multimodal Models",
+  "Code Generation Models",
+  "Embedding Models",
+  "Reasoning Models",
+  "Vision Models",
+  "Open Source Models"
+];
+
+const PERSONAL_SUB = [
   "Productivity",
   "Chatbots",
   "Writing",
@@ -58,7 +216,7 @@ const PERSONAL_CATEGORIES = [
   "Marketing"
 ];
 
-const CREATIVITY_CATEGORIES = [
+const CREATIVITY_SUB = [
   "Image Generation",
   "Video",
   "Audio",
@@ -69,26 +227,182 @@ const CREATIVITY_CATEGORIES = [
   "Customer Support"
 ];
 
+const SUBCATEGORY_SLUG_MAP: Record<string, string> = {
+  "Writing & Content": "productivity",
+  "Coding & Development": "productivity",
+  "Business & Analytics": "productivity",
+  "Education & Research": "chatbots",
+
+  "Content Creation": "productivity",
+  "Image Creation": "image-generation",
+  "Video Creation": "video",
+  "Audio & Music": "audio",
+  "Data Analysis": "productivity",
+  "Research & Summarization": "chatbots",
+  "Productivity & Automation": "productivity",
+  "Marketing & Sales": "marketing",
+  "Customer Support": "customer-support",
+
+  "Large Language Models (LLMs)": "chatbots",
+  "Image Generation Models": "image-generation",
+  "Video Generation Models": "video",
+  "Audio & Speech Models": "audio",
+  "Multimodal Models": "chatbots",
+  "Code Generation Models": "productivity",
+  "Embedding Models": "productivity",
+  "Reasoning Models": "chatbots",
+  "Vision Models": "image-generation",
+  "Open Source Models": "productivity",
+
+  "AI Model Providers": "chatbots",
+  "AI Startups": "productivity",
+  "Enterprise AI": "productivity",
+  "Healthcare AI": "customer-support",
+  "Finance AI": "productivity",
+  "Marketing AI": "marketing",
+  "Developer Tools": "productivity",
+  "Robotics & Automation": "productivity",
+  "Education AI": "productivity",
+  "Creative AI": "image-generation",
+
+  "AI Industry News": "productivity",
+  "Product Launches": "productivity",
+  "Research & Innovations": "chatbots",
+  "Company Updates": "productivity",
+  "Open Source": "productivity",
+  "Regulations & Policy": "productivity",
+  "Events & Conferences": "productivity",
+  "Tutorials & Guides": "productivity",
+  "Interviews & Opinions": "chatbots",
+  "Market Trends": "marketing",
+
+  "Product Demos": "video",
+  "Tutorials": "video",
+  "AI News & Updates": "video",
+  "Model Showcases": "video",
+  "Podcasts & Interviews": "video",
+  "Webinars & Workshops": "video",
+  "Conferences & Events": "video",
+  "Case Studies": "video",
+  "Reviews & Comparisons": "video",
+  "Educational Content": "video",
+
+  "Computer Vision": "image-generation",
+  "Generative AI": "image-generation",
+  "AI Frameworks & Libraries": "productivity",
+  "NLP (Natural Language Processing)": "chatbots",
+  "MLOps & Deployment": "productivity",
+  "Data Science & Analytics": "productivity",
+  "AI Agents": "chatbots",
+  "Tutorials & Examples": "productivity",
+
+  "Humanoid Robots": "chatbots",
+  "Industrial Robots": "productivity",
+  "Service Robots": "customer-support",
+  "Healthcare Robots": "customer-support",
+  "Educational Robots": "productivity",
+  "Autonomous Mobile Robots (AMRs)": "productivity",
+  "Drones & Aerial Robots": "video",
+  "Companion Robots": "chatbots",
+  "Agricultural Robots": "productivity",
+  "Research & Defense Robots": "productivity",
+
+  "Official MCP Servers": "productivity",
+  "Databases": "productivity",
+  "File Systems & Storage": "productivity",
+  "Productivity & Office": "productivity",
+  "APIs & Web Services": "productivity",
+  "Cloud & DevOps": "productivity",
+  "AI & ML Platforms": "productivity",
+  "Browser & Web Automation": "productivity",
+  "Community & Open Source": "productivity",
+
+  "AI PCs & Laptops": "productivity",
+  "Smartphones": "productivity",
+  "Smart Home Devices": "productivity",
+  "Wearables": "audio",
+  "AI Cameras": "video",
+  "Audio Devices": "audio",
+  "AR/VR & Mixed Reality": "video",
+  "Edge AI Devices": "productivity",
+  "Robotics Hardware": "productivity",
+  "Development Boards": "productivity",
+
+  "Featured Collections": "productivity",
+  "Productivity Collections": "productivity",
+  "Creative Collections": "image-generation",
+  "Developer Collections": "productivity",
+  "Business Collections": "productivity",
+  "Education Collections": "productivity",
+  "Industry Collections": "productivity",
+  "Open Source Collections": "productivity",
+  "Trending Collections": "productivity",
+  "New Collections": "productivity",
+
+  "Writing": "productivity",
+  "Design": "image-generation"
+};
+
+function mapSubcategoryToSlug(name: string): string {
+  if (SUBCATEGORY_SLUG_MAP[name]) {
+    return SUBCATEGORY_SLUG_MAP[name];
+  }
+  return name.toLowerCase().replace(/ & /g, "-").replace(/\s+/g, "-");
+}
+
+function getSubcategoriesAndColor(mode: DirectoryMode) {
+  switch (mode) {
+    case 'tools': return { list: TOOLS_SUB, color: "#FFC53D" };
+    case 'tasks': return { list: TASKS_SUB, color: "#FB923C" };
+    case 'companies': return { list: COMPANIES_SUB, color: "#38BDF8" };
+    case 'news': return { list: NEWS_SUB, color: "#FF6B4A" };
+    case 'videos': return { list: VIDEOS_SUB, color: "#F87171" };
+    case 'robots': return { list: ROBOTS_SUB, color: "#2DD4BF" };
+    case 'devices': return { list: DEVICES_SUB, color: "#F472B6" };
+    case 'models': return { list: MODELS_SUB, color: "#A78BFA" };
+    case 'repositories': return { list: REPOSITORIES_SUB, color: "#22D3EE" };
+    case 'mcp': return { list: MCP_SUB, color: "#818CF8" };
+    case 'collections': return { list: COLLECTIONS_SUB, color: "#34D399" };
+    case 'personal': return { list: PERSONAL_SUB, color: "#FBBF24" };
+    case 'creativity': return { list: CREATIVITY_SUB, color: "#E879F9" };
+  }
+}
+
+export type DirectoryMode = 
+  | 'tools' 
+  | 'tasks' 
+  | 'companies' 
+  | 'news' 
+  | 'videos' 
+  | 'robots' 
+  | 'devices' 
+  | 'models' 
+  | 'repositories' 
+  | 'mcp' 
+  | 'collections' 
+  | 'personal' 
+  | 'creativity';
+
 export function HomeClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [expandedMode, setExpandedMode] = useState<'personal' | 'creativity' | null>(null);
+
+  const [expandedMode, setExpandedMode] = useState<DirectoryMode | null>(null);
   const [activeSubcategory, setActiveSubcategory] = useState<string | null>(null);
 
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const [tools, setTools] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLFormElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const toSlug = (name: string): string => {
-    return name.toLowerCase().replace(/ & /g, "-").replace(/\s+/g, "-");
-  };
-
-  const toggleExpanded = (mode: 'personal' | 'creativity', e: React.MouseEvent<HTMLButtonElement>) => {
+  const toggleExpanded = (mode: DirectoryMode, e: React.MouseEvent<HTMLButtonElement>) => {
     const next = expandedMode === mode ? null : mode;
     setExpandedMode(next);
     setActiveSubcategory(null);
@@ -102,19 +416,15 @@ export function HomeClient() {
     });
   };
 
-  const handleInlineCategoryClick = (categoryName: string, e: React.MouseEvent<HTMLButtonElement>) => {
-    let slug = toSlug(categoryName);
-    if (categoryName === "Writing") slug = "productivity";
-    if (categoryName === "Design") slug = "image-generation";
-
-    const nextSub = activeSubcategory === categoryName ? null : categoryName;
+  const handleSubcategoryClick = (subcategoryName: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    const nextSub = activeSubcategory === subcategoryName ? null : subcategoryName;
     setActiveSubcategory(nextSub);
 
     const search = new URLSearchParams(window.location.search);
     if (nextSub === null) {
       search.delete("category");
     } else {
-      search.set("category", slug);
+      search.set("category", mapSubcategoryToSlug(subcategoryName));
     }
     router.push(`/?${search.toString()}`);
     e.currentTarget.scrollIntoView({
@@ -124,6 +434,40 @@ export function HomeClient() {
     });
   };
 
+  // Close the search dropdown on outside click or Escape.
+  useEffect(() => {
+    if (!searchOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setSearchOpen(false);
+        searchInputRef.current?.blur();
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [searchOpen]);
+
+  // ⌘K / Ctrl+K opens the homepage search dropdown.
+  useEffect(() => {
+    function handleShortcut(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+        searchInputRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", handleShortcut);
+    return () => document.removeEventListener("keydown", handleShortcut);
+  }, []);
 
   // Build params object from URL search params
   const params = {
@@ -137,7 +481,6 @@ export function HomeClient() {
 
   // Reset page and tools when filters change
   useEffect(() => {
-    // eslint-disable-next-line
     setTools([]);
     setPage(1);
     setTotalPages(1);
@@ -210,32 +553,101 @@ export function HomeClient() {
 
       {/* 2. Hero Section */}
       <section
-        className="relative w-full flex flex-col items-center pt-16 pb-10 px-6"
+        className="relative w-full flex flex-col items-center pt-4 pb-6 px-6"
         style={{
           backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
         }}
       >
-        {/* ambient signal glow behind headline — clipped to this layer only,
-            so it doesn't constrain the search dropdown's overlay below */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-[0.12] blur-[100px]"
-            style={{ backgroundColor: 'var(--color-signal)' }}
-          />
-        </div>
+        {/* ambient signal glow behind headline */}
+        <div
+          className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-[0.12] blur-[100px]"
+          style={{ backgroundColor: 'var(--color-signal)' }}
+        />
 
         <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
-          <h1 className="max-w-[820px] text-2xl sm:text-4xl lg:text-[48px] font-black tracking-tight leading-[1.1] mb-6 sm:mb-8 select-none text-white text-balance">
-            The best AI, in one signal.
+          <h1 className="max-w-[820px] text-2xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.1] mb-4 sm:mb-6 select-none text-white text-balance">
+            The Home of Everything AI
           </h1>
 
-          <p className="max-w-xl text-[15px] sm:text-base text-[#A1A1AA] leading-relaxed mb-8 select-none">
-            Cut through the noise. Discover, compare, and track the AI tools,
-            models, and companies that actually matter.
-          </p>
+          <form
+            action="/tools"
+            method="GET"
+            ref={searchContainerRef}
+            className="relative w-full max-w-[520px] mx-auto mb-4 sm:mb-5 group"
+          >
+            <div
+              className="relative w-full rounded-xl border border-[#232326]/70 bg-[#111113] h-[38px] sm:h-[42px] flex items-center px-3.5 sm:px-4 pr-[4.5rem] transition-colors duration-150"
+              style={{ borderColor: undefined }}
+            >
+              <Search size={13} className="mr-2 sm:mr-2.5 text-[#71717A] shrink-0" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                name="q"
+                defaultValue={params.q}
+                placeholder="Search AI tools, models, companies…"
+                onFocus={() => setSearchOpen(true)}
+                className="w-full bg-transparent text-[12px] sm:text-[13px] text-white placeholder:text-[#71717A] focus:outline-none"
+              />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                <kbd className="hidden sm:inline-flex h-6 select-none items-center gap-0.5 rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 font-mono text-[10px] text-[#71717A] pointer-events-none">
+                  <span>⌘</span>K
+                </kbd>
+              </div>
+            </div>
+            <style jsx>{`
+              form:focus-within > div {
+                border-color: var(--color-signal) !important;
+                box-shadow: 0 0 0 3px var(--color-signal-dim);
+              }
+            `}</style>
 
-          <HeroSearchBar defaultValue={params.q} />
+            {searchOpen && (
+              <div className="search-scope absolute left-0 right-0 top-[calc(100%+8px)] z-30 max-h-[70vh] overflow-y-auto rounded-xl border border-search-border bg-search-bg shadow-2xl shadow-black/40 text-left">
+                <div className="border-b border-search-border p-2">
+                  {QUICK_LINKS.map((link) => {
+                    const Icon = link.icon;
+                    return (
+                      <Link
+                        key={link.label}
+                        href={link.href}
+                        onClick={() => setSearchOpen(false)}
+                        className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
+                      >
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
+                          <Icon size={14} />
+                        </span>
+                        {link.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                <div className="p-2">
+                  <div className="px-2 py-2 text-center text-[11px] font-medium uppercase tracking-wide text-search-text-tertiary">
+                    Browse by type
+                  </div>
+                  {BROWSE_BY_TYPE.map((link) => {
+                    const Icon = link.icon;
+                    return (
+                      <Link
+                        key={link.label}
+                        href={link.href}
+                        onClick={() => setSearchOpen(false)}
+                        className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
+                      >
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
+                          <Icon size={14} />
+                        </span>
+                        {link.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </form>
 
           <div className="mb-3">
             <HeroFeatureChips />
@@ -252,65 +664,36 @@ export function HomeClient() {
         </div>
       </div>
 
-        {/* Directory nav strip — single row, sits just above the tools list */}
+      {/* Directory nav strip — single row, evenly spread, sits just above the tools list */}
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
         <div className="mx-auto w-full max-w-[1600px]">
-          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none w-full">
+          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto">
             {DIRECTORY_CARDS.map((card) => {
               const Icon = card.icon;
-              const isPersonal = card.name === "Personal";
-              const isCreativity = card.name === "Creativity";
-
-              if (isPersonal || isCreativity) {
-                const isSelected = expandedMode === (isPersonal ? "personal" : "creativity");
-                return (
-                  <button
-                    key={card.name}
-                    type="button"
-                    onClick={(e) => toggleExpanded(isPersonal ? "personal" : "creativity", e)}
-                    className="group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-[#232326]/60 bg-[#0d0d10] px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-colors duration-200"
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = card.color;
-                      e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.borderColor = "";
-                        e.currentTarget.style.boxShadow = "";
-                      }
-                    }}
-                    style={
-                      isSelected
-                        ? { borderColor: card.color, boxShadow: `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55` }
-                        : undefined
-                    }
-                  >
-                    <div
-                      className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border"
-                      style={{ backgroundColor: `${card.color}1a`, borderColor: `${card.color}40` }}
-                    >
-                      <Icon size={10} strokeWidth={1.75} style={{ color: card.color }} />
-                    </div>
-                    <span className="text-[10px] sm:text-[11.5px] font-bold tracking-tight text-white whitespace-nowrap">
-                      {card.name}
-                    </span>
-                  </button>
-                );
-              }
+              const mode = card.name.toLowerCase() as DirectoryMode;
+              const isSelected = expandedMode === mode;
 
               return (
-                <a
+                <button
                   key={card.name}
-                  href={card.href}
+                  type="button"
+                  onClick={(e) => toggleExpanded(mode, e)}
                   className="group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-[#232326]/60 bg-[#0d0d10] px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-colors duration-200"
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = card.color;
                     e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "";
-                    e.currentTarget.style.boxShadow = "";
+                    if (!isSelected) {
+                      e.currentTarget.style.borderColor = "";
+                      e.currentTarget.style.boxShadow = "";
+                    }
                   }}
+                  style={
+                    isSelected
+                      ? { borderColor: card.color, boxShadow: `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55` }
+                      : undefined
+                  }
                 >
                   <div
                     className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border"
@@ -321,7 +704,7 @@ export function HomeClient() {
                   <span className="text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
                     {card.name}
                   </span>
-                </a>
+                </button>
               );
             })}
           </div>
@@ -329,37 +712,53 @@ export function HomeClient() {
       </div>
 
       {/* Parallel Secondary Categories Row */}
-      {expandedMode !== null && (
-        <div className="w-full px-4 sm:px-6 lg:px-8 pt-2.5 pb-1 animate-in fade-in slide-in-from-top-1 duration-200">
-          <div className="mx-auto w-full max-w-[1600px] flex justify-start md:justify-center">
-            <div className={`flex flex-nowrap items-center gap-2 overflow-x-auto scrollbar-none py-2 bg-[#0d0d10] border rounded-xl px-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)] max-w-full transition-all duration-300 ${
-              expandedMode === "personal" ? "border-[#A78BFA]/30" : "border-[#FFC53D]/30"
-            }`}>
-              {(expandedMode === "personal" ? PERSONAL_CATEGORIES : CREATIVITY_CATEGORIES).map((cat) => {
-                const isSelected = activeSubcategory === cat;
-                const activeBg = expandedMode === "personal" ? "bg-[#A78BFA]" : "bg-[#FFC53D]";
-                const activeShadow = expandedMode === "personal" ? "shadow-[0_2px_8px_rgba(167,139,250,0.4)]" : "shadow-[0_2px_8px_rgba(255,197,61,0.4)]";
-                const hoverBorder = expandedMode === "personal" ? "hover:border-[#A78BFA]/40" : "hover:border-[#FFC53D]/40";
+      {expandedMode !== null && (() => {
+        const subConfig = getSubcategoriesAndColor(expandedMode);
+        if (!subConfig) return null;
+        const { list, color } = subConfig;
 
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={(e) => handleInlineCategoryClick(cat, e)}
-                    className={`rounded-full px-3 py-1 text-[9.5px] font-bold whitespace-nowrap transition-colors duration-200 border ${
-                      isSelected
-                        ? `${activeBg} text-black border-transparent ${activeShadow}`
-                        : `text-neutral-400 hover:text-white bg-transparent border-transparent ${hoverBorder} hover:bg-white/[0.02]`
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                );
-              })}
+        return (
+          <div className="w-full px-4 sm:px-6 lg:px-8 pt-2.5 pb-1 animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="mx-auto w-full max-w-[1600px] flex justify-start md:justify-center">
+              <div className="flex flex-nowrap items-center gap-2 overflow-x-auto scrollbar-none py-2 bg-[#0d0d10]/40 rounded-xl px-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)] max-w-full transition-all duration-300">
+                {list.map((cat) => {
+                  const isSelected = activeSubcategory === cat;
+
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={(e) => handleSubcategoryClick(cat, e)}
+                      className={`rounded-full px-3 py-1 text-[9.5px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                        isSelected
+                          ? "text-black border-transparent"
+                          : "text-neutral-400 hover:text-white bg-transparent border-transparent hover:bg-white/[0.02]"
+                      }`}
+                      style={
+                        isSelected
+                          ? { backgroundColor: color, boxShadow: `0 2px 8px ${color}66` }
+                          : undefined
+                      }
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.borderColor = `${color}66`;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.borderColor = "transparent";
+                        }
+                      }}
+                    >
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Tools Section — full width so the data table can use the whole screen */}
       <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">

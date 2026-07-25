@@ -2,49 +2,50 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useUser } from '@/hooks/use-user';
 import Plus from 'lucide-react/dist/esm/icons/plus';
 
-const NAV_LINKS = [
-  { href: "/tools?category=business", label: "Business AI" },
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/tools", label: "Resources" },
-  { href: "/#newsletter", label: "Newsletter" },
-];
-
 export function Header() {
   const { user, isLoading } = useUser();
-  const pathname = usePathname();
   
   return (
-    <header className="sticky top-0 z-50 w-full h-[68px] border-b border-border/20 bg-background/50 backdrop-blur-md flex items-center relative">
+    <header className="sticky top-0 z-50 w-full border-b border-border/20 bg-background/50 backdrop-blur-md py-4 relative">
       {/* Center: Nav links, centered against the full page width, not just the inner container */}
       <nav className="hidden md:flex items-center gap-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-        {NAV_LINKS.map(({ href, label }) => {
-          const isActive = pathname === href || (href !== "/" && pathname.startsWith(href.split("#")[0].split("?")[0]));
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`text-[12px] font-bold transition-colors text-center ${
-                isActive ? "text-[#6E56CF]" : "text-foreground-muted hover:text-white"
-              }`}
-            >
-              {label}
-            </Link>
-          );
-        })}
+        <Link
+          href="/tools?category=business"
+          className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
+        >
+          Business AI
+        </Link>
+        <Link
+          href="/leaderboard"
+          className="text-[12px] font-bold text-[#6E56CF] hover:text-white transition-colors text-center"
+        >
+          Leaderboard
+        </Link>
+        <Link
+          href="/tools"
+          className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
+        >
+          Resources
+        </Link>
+        <Link
+          href="/#newsletter"
+          className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
+        >
+          Newsletter
+        </Link>
       </nav>
 
-      <div className="mx-auto max-w-[1440px] px-8 flex items-center justify-between w-full relative gap-2">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-8 flex items-center justify-between relative gap-2">
         {/* Left: The AI Signal Logo */}
         <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group shrink-0 min-w-0">
           <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-white text-black font-black text-sm sm:text-base transition-transform group-hover:scale-105 active:scale-95 border border-border">
             S
           </div>
           <span className="text-sm sm:text-base font-bold tracking-tight text-white transition-colors truncate">
-            The AI Signal
+            AI Orbit
           </span>
         </Link>
 
