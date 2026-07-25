@@ -181,10 +181,7 @@ model AIModel {
   tasks            TaskModel[]
   
   websiteUrl    String?
-  modelType     String?
-  status        String    @default("ACTIVE")
   capabilities  String[]  @default([])
-  categories    String[]  @default([])
   
   @@index([providerId])
 }
