@@ -190,7 +190,7 @@ export function HomeClient() {
   }, [isLoading, isFetchingMore, page, totalPages]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white overflow-x-hidden">
       {/* 1. Sticky Header */}
       <Header />
 
@@ -202,11 +202,15 @@ export function HomeClient() {
           backgroundSize: '32px 32px',
         }}
       >
-        {/* ambient signal glow behind headline */}
-        <div
-          className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-[0.12] blur-[100px]"
-          style={{ backgroundColor: 'var(--color-signal)' }}
-        />
+        {/* ambient signal glow behind headline — clipped in its own layer so it
+            can't push the page width out on narrow viewports, independent of
+            the section (which must stay unclipped for the search dropdown) */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-[0.12] blur-[100px]"
+            style={{ backgroundColor: 'var(--color-signal)' }}
+          />
+        </div>
 
         <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
           <h1 className="max-w-[820px] text-2xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.1] mb-4 sm:mb-6 select-none text-white text-balance">
