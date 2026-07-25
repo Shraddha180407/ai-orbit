@@ -115,7 +115,7 @@ export function DevicesClient() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [activePill, setActivePill] = useState<string | null>(null);
   const [priceMin, setPriceMin] = useState(0);
-  const [priceMax, setPriceMax] = useState(5000);
+  const [priceMax, setPriceMax] = useState(10000);
   const [activePriceFilter, setActivePriceFilter] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -141,7 +141,7 @@ export function DevicesClient() {
 
   function clearAllFilters() {
     setNameSearch(""); setNameInput(""); setSelectedCategory(ALL_CATEGORIES);
-    setSelectedAvailability("All"); setPriceMin(0); setPriceMax(5000);
+    setSelectedAvailability("All"); setPriceMin(0); setPriceMax(10000);
     setActivePriceFilter(false); setActivePill(null); setCurrentPage(1);
   }
 
@@ -234,19 +234,19 @@ export function DevicesClient() {
           <div className="relative h-5 mb-4">
             <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-[#232326] rounded-full" />
             <div className="absolute top-1/2 -translate-y-1/2 h-1 bg-[#6E56CF] rounded-full"
-              style={{ left: `${(priceMin/5000)*100}%`, right: `${100-(priceMax/5000)*100}%` }} />
-            <input type="range" min={0} max={5000} step={10} value={priceMin}
+              style={{ left: `${(priceMin/10000)*100}%`, right: `${100-(priceMax/10000)*100}%` }} />
+            <input type="range" min={0} max={10000} step={100} value={priceMin}
               onChange={(e) => { const val = Math.min(Number(e.target.value), priceMax-10); setPriceMin(val); setActivePriceFilter(true); setCurrentPage(1); }}
-              className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: priceMin > 4500 ? 5 : 3 }} />
-            <input type="range" min={0} max={5000} step={10} value={priceMax}
+              className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: priceMin > 9000 ? 5 : 3 }} />
+            <input type="range" min={0} max={10000} step={100} value={priceMax}
               onChange={(e) => { const val = Math.max(Number(e.target.value), priceMin+10); setPriceMax(val); setActivePriceFilter(true); setCurrentPage(1); }}
               className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: 4 }} />
             <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
-              style={{ left: `calc(${(priceMin/5000)*100}% - 7px)` }} />
+              style={{ left: `calc(${(priceMin/10000)*100}% - 7px)` }} />
             <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
-              style={{ left: `calc(${(priceMax/5000)*100}% - 7px)` }} />
+              style={{ left: `calc(${(priceMax/10000)*100}% - 7px)` }} />
           </div>
-          <button onClick={() => { setPriceMin(0); setPriceMax(5000); setActivePriceFilter(false); setCurrentPage(1); setOpenDropdown(null); }}
+          <button onClick={() => { setPriceMin(0); setPriceMax(10000); setActivePriceFilter(false); setCurrentPage(1); setOpenDropdown(null); }}
             className="w-full text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors">
             Reset
           </button>
@@ -448,12 +448,11 @@ export function DevicesClient() {
       {/* ── LIST VIEW ── */}
       {viewMode === "list" && (
         <div>
-          {/* ✅ Outer container matches ToolListView exactly */}
-          <div className="rounded-lg border border-[#232326]/60 bg-[#131316]/10 overflow-hidden">
-            <div className="overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
-              <div ref={dropdownRef} className={`${COL_MIN_WIDTH} relative`}>
+          {/*  Outer container matches ToolListView exactly */}
+          <div className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
+              <div ref={dropdownRef} style={{ minWidth: '900px' }} className="relative bg-[#0a0a0c]">
 
-                {/* ✅ Header row matches ToolListView exactly */}
+                {/* Header row matches ToolListView exactly */}
                 <div className="border-b border-[#232326]/60 bg-[#131316]/40">
                   <div className={`grid ${COL_TEMPLATE} items-center gap-4 px-4 py-2`}>
 
@@ -555,19 +554,19 @@ export function DevicesClient() {
                           <div className="relative h-5 mb-4">
                             <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-[#232326] rounded-full" />
                             <div className="absolute top-1/2 -translate-y-1/2 h-1 bg-[#6E56CF] rounded-full"
-                              style={{ left: `${(priceMin/5000)*100}%`, right: `${100-(priceMax/5000)*100}%` }} />
-                            <input type="range" min={0} max={5000} step={10} value={priceMin}
+                              style={{ left: `${(priceMin/10000)*100}%`, right: `${100-(priceMax/10000)*100}%` }} />
+                            <input type="range" min={0} max={10000} step={100} value={priceMin}
                               onChange={(e) => { const val = Math.min(Number(e.target.value), priceMax-10); setPriceMin(val); setActivePriceFilter(true); setCurrentPage(1); }}
-                              className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: priceMin > 4500 ? 5 : 3 }} />
-                            <input type="range" min={0} max={5000} step={10} value={priceMax}
+                              className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: priceMin > 9000 ? 5 : 3 }} />
+                            <input type="range" min={0} max={10000} step={100} value={priceMax}
                               onChange={(e) => { const val = Math.max(Number(e.target.value), priceMin+10); setPriceMax(val); setActivePriceFilter(true); setCurrentPage(1); }}
                               className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: 4 }} />
                             <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
-                              style={{ left: `calc(${(priceMin/5000)*100}% - 7px)` }} />
-                            <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
-                              style={{ left: `calc(${(priceMax/5000)*100}% - 7px)` }} />
-                          </div>
-                          <button onClick={() => { setPriceMin(0); setPriceMax(5000); setActivePriceFilter(false); setCurrentPage(1); setOpenDropdown(null); }}
+                              style={{ left: `calc(${(priceMin/10000)*100}% - 7px)` }} />
+            <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
+              style={{ left: `calc(${(priceMax/10000)*100}% - 7px)` }} />
+          </div>
+          <button onClick={() => { setPriceMin(0); setPriceMax(10000);setActivePriceFilter(false); setCurrentPage(1); setOpenDropdown(null); }}
                             className="w-full text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors">Reset</button>
                         </div>
                       )}
@@ -580,11 +579,11 @@ export function DevicesClient() {
                     </button>
 
                     {/* MAIN TASK col */}
-                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">MAIN TASK</span>
+                    <span className="hidden lg:block text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">MAIN TASK</span>
                   </div>
                 </div>
 
-                {/* ✅ Rows — matches ToolListView row structure exactly */}
+                {/*  Rows — matches ToolListView row structure exactly */}
                 {isLoading ? (
                   <div className="flex flex-col divide-y divide-[#232326]/60">
                     {[...Array(8)].map((_, i) => (
@@ -606,13 +605,13 @@ export function DevicesClient() {
                 ) : filtered.length === 0 ? (
                   <div className="py-20 text-center text-[#52525B] text-sm">No devices found.</div>
                 ) : (
-                  <div role="list" className="flex flex-col divide-y divide-[#232326]/60">
+                  <div role="list" className="flex flex-col">
                     {visible.map((device) => (
                       <Link
                         key={device.id}
                         href={`/devices/${device.slug || device.id}`}
                         role="listitem"
-                        className={`group grid ${COL_TEMPLATE} items-center gap-4 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none`}
+                        className={`group grid ${COL_TEMPLATE} items-center gap-4 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none border-b border-[#232326]/60`}
                       >
                         {/* Col 1: Logo */}
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
@@ -664,7 +663,7 @@ export function DevicesClient() {
                         </div>
 
                         {/* Col 8: Main Task */}
-<div>
+<div className="hidden lg:block">
   {device.mainTask ? (
     <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors whitespace-nowrap">
   {device.mainTask}
@@ -706,7 +705,6 @@ export function DevicesClient() {
                 )}
 
               </div>
-            </div>
           </div>
         </div>
       )}
