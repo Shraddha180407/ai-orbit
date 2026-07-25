@@ -259,7 +259,7 @@ export function DevicesClient() {
     <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
 
       {/* ── HERO HEADER (matches home page) ── */}
-      <div className="relative flex flex-col items-center text-center pt-12 pb-8 overflow-hidden">
+      <div className="relative flex flex-col items-center text-center pt-6 pb-5 overflow-hidden">
         {/* Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[280px] rounded-full blur-[120px] opacity-30 pointer-events-none"
           style={{ background: "radial-gradient(ellipse, #E91E8C 0%, transparent 70%)" }} />
@@ -268,10 +268,10 @@ export function DevicesClient() {
         <div className="absolute top-4 right-1/3 w-[400px] h-[200px] rounded-full blur-[100px] opacity-20 pointer-events-none"
           style={{ background: "radial-gradient(ellipse, #C2185B 0%, transparent 70%)" }} />
 
-        <h1 className="relative text-4xl md:text-6xl font-black text-white tracking-tight mb-3">
+        <h1 className="relative text-3xl md:text-5xl font-black text-white tracking-tight mb-2">
           AI Devices & Wearables
         </h1>
-        <p className="relative text-[#71717A] text-sm md:text-base max-w-lg mb-6">
+        <p className="relative text-[#71717A] text-xs md:text-sm max-w-lg mb-4">
           Discover and track the AI devices and wearables that actually matter.
         </p>
 
