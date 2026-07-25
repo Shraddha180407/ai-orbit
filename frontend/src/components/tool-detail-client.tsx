@@ -206,7 +206,7 @@ export function ToolDetailClient() {
             href={tool.websiteUrl}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 sm:py-2 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover hover:-translate-y-0.5"
+            className="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 sm:py-2 text-sm font-semibold text-black shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover hover:-translate-y-0.5"
           >
             Visit Website
             <ArrowUpRight size={16} aria-hidden="true" />
