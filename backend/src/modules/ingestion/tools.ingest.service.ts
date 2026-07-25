@@ -57,6 +57,19 @@ export class ToolsIngestService {
             tagIds.push(tag.id);
           }
 
+          // 3.5 Upsert Integrations
+          const integrationIds: string[] = [];
+          if (toolData.integrations) {
+            for (const i of toolData.integrations) {
+              const integration = await tx.integration.upsert({
+                where: { slug: i.slug },
+                create: { slug: i.slug, name: i.name, logoUrl: i.logoUrl || null },
+                update: { name: i.name, logoUrl: i.logoUrl || null }
+              });
+              integrationIds.push(integration.id);
+            }
+          }
+
           // 4. Check if Tool already exists to determine if it's create or update for summary
           const existingTool = await tx.tool.findUnique({
             where: { slug: toolData.slug }
@@ -79,6 +92,7 @@ export class ToolsIngestService {
           if (existingTool) {
             await tx.toolCategory.deleteMany({ where: { toolId: existingTool.id } });
             await tx.toolTag.deleteMany({ where: { toolId: existingTool.id } });
+            await tx.toolIntegration.deleteMany({ where: { toolId: existingTool.id } });
           }
 
           await tx.tool.upsert({
@@ -91,17 +105,29 @@ export class ToolsIngestService {
               logoUrl: toolData.logoUrl || null,
               features: toolData.features,
               screenshots: toolData.screenshots,
+              pros: toolData.pros,
+              cons: toolData.cons,
+              releaseDate: toolData.releaseDate,
               pricingModel: toolData.pricingModel,
               pricingAmount: toolData.pricingAmount || null,
               billingFrequency: toolData.billingFrequency,
               isOpenSource: toolData.isOpenSource,
               isTrending: toolData.isTrending,
+              verified: toolData.verified,
+              compatibility: toolData.compatibility,
+              targetUsers: toolData.targetUsers,
+              hasApi: toolData.hasApi,
+              apiDocsUrl: toolData.apiDocsUrl || null,
+              performanceScore: toolData.performanceScore || null,
               companyId,
               categories: {
                 create: categoryIds.map(cId => ({ categoryId: cId }))
               },
               tags: {
                 create: tagIds.map(tId => ({ tagId: tId }))
+              },
+              integrations: {
+                create: integrationIds.map(iId => ({ integrationId: iId }))
               }
             },
             update: {
@@ -111,17 +137,29 @@ export class ToolsIngestService {
               logoUrl: toolData.logoUrl || null,
               features: toolData.features,
               screenshots: toolData.screenshots,
+              pros: toolData.pros,
+              cons: toolData.cons,
+              releaseDate: toolData.releaseDate,
               pricingModel: toolData.pricingModel,
               pricingAmount: toolData.pricingAmount || null,
               billingFrequency: toolData.billingFrequency,
               isOpenSource: toolData.isOpenSource,
               isTrending: toolData.isTrending,
+              verified: toolData.verified,
+              compatibility: toolData.compatibility,
+              targetUsers: toolData.targetUsers,
+              hasApi: toolData.hasApi,
+              apiDocsUrl: toolData.apiDocsUrl || null,
+              performanceScore: toolData.performanceScore || null,
               companyId,
               categories: {
                 create: categoryIds.map(cId => ({ categoryId: cId }))
               },
               tags: {
                 create: tagIds.map(tId => ({ tagId: tId }))
+              },
+              integrations: {
+                create: integrationIds.map(iId => ({ integrationId: iId }))
               }
             }
           });
