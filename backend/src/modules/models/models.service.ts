@@ -1,4 +1,3 @@
-// @ts-nocheck — remove after "TypeScript: Restart TS Server" (stale Prisma types in IDE)
 import { PrismaClient, Prisma } from '@prisma/client';
 import type { ModelsListQuery } from './models.schema.js';
 
