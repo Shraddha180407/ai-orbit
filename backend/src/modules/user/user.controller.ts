@@ -1,55 +1,35 @@
 import { Context } from 'hono';
 import { UserService } from './user.service.js';
-import { logger } from '../../lib/logger.js';
+import { AppError } from '../../lib/error.js';
 
 export class UserController {
   constructor(private service: UserService) {}
 
   async getSavedTools(c: Context) {
-    try {
-      const savedTools = await this.service.getSavedTools(c.get('user').id);
-      return c.json({ savedTools });
-    } catch (error: unknown) {
-      logger.error('Failed to get saved tools:', error);
-      return c.json({ error: 'Failed to fetch saved tools' }, 500);
-    }
+    const savedTools = await this.service.getSavedTools(c.get('user').id);
+    return c.json({ savedTools });
   }
 
   async removeSavedTool(c: Context) {
-    try {
-      const id = c.req.param('id');
-      if (!id) return c.json({ error: 'id is required' }, 400);
-      
-      const result = await this.service.removeSavedTool(id, c.get('user').id);
-      return c.json(result);
-    } catch (error: unknown) {
-      logger.error('Failed to remove saved tool:', error);
-      return c.json({ error: 'Failed to remove saved tool' }, 500);
-    }
+    const id = c.req.param('id');
+    if (!id) throw AppError.BadRequest('id is required');
+    
+    const result = await this.service.removeSavedTool(id, c.get('user').id);
+    return c.json(result);
   }
 
   async getHistory(c: Context) {
-    try {
-      const history = await this.service.getHistory(c.get('user').id);
-      return c.json(history); // Frontend expects an array directly
-    } catch (error: unknown) {
-      logger.error('Failed to get history:', error);
-      return c.json({ error: 'Failed to fetch history' }, 500);
-    }
+    const history = await this.service.getHistory(c.get('user').id);
+    return c.json(history); // Frontend expects an array directly
   }
 
   async recordHistory(c: Context) {
-    try {
-      const body = await c.req.json();
-      if (!body.toolId) {
-        return c.json({ error: 'toolId is required' }, 400);
-      }
-      
-      const result = await this.service.recordHistory(body.toolId, c.get('user').id);
-      return c.json(result);
-    } catch (error: unknown) {
-      logger.error('Failed to record history:', error);
-      return c.json({ error: 'Failed to record history' }, 500);
+    const body = await c.req.json();
+    if (!body.toolId) {
+      throw AppError.BadRequest('toolId is required');
     }
+    
+    const result = await this.service.recordHistory(body.toolId, c.get('user').id);
+    return c.json(result);
   }
 }

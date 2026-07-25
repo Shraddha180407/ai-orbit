@@ -33,9 +33,11 @@ type Bindings = {
   INGESTION_TOKEN: string
 }
 
+import { errorHandler } from './middleware/error.js'
+
 const app = new Hono<{ Bindings: Bindings }>()
 
-
+app.onError(errorHandler)
 // Enable CORS middleware so the frontend Next.js can make HTTP calls
 app.use('*', cors({
   origin: (origin) => {
