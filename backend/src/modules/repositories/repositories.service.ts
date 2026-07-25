@@ -48,6 +48,7 @@ export class RepositoriesService {
     language?: string;
     topic?: string;
     q?: string;
+    owner?: string;
   }) {
     const limit = Math.min(
       Number.isFinite(params.limit) ? Math.max(1, params.limit!) : DEFAULT_LIMIT,
@@ -61,6 +62,7 @@ export class RepositoriesService {
       language: params.language,
       topic: params.topic,
       q: params.q,
+      owner: params.owner,
     });
 
     const orderBy = this.buildOrderBy(sort);
@@ -83,8 +85,34 @@ export class RepositoriesService {
     const pageItems = hasMore ? items.slice(0, limit) : items;
     const nextCursor = hasMore ? pageItems[pageItems.length - 1].id : null;
 
+    // Resolve company slugs dynamically to avoid N+1 query overhead
+    const owners = [...new Set(pageItems.map(item => item.owner))];
+    const companies = await this.prisma.company.findMany({
+      where: {
+        OR: [
+          { slug: { in: owners, mode: 'insensitive' } },
+          { name: { in: owners, mode: 'insensitive' } }
+        ]
+      },
+      select: {
+        slug: true,
+        name: true
+      }
+    });
+
+    const companyMap = new Map<string, string>();
+    for (const c of companies) {
+      companyMap.set(c.slug.toLowerCase(), c.slug);
+      companyMap.set(c.name.toLowerCase(), c.slug);
+    }
+
+    const itemsWithCompany = pageItems.map(item => ({
+      ...item,
+      companySlug: companyMap.get(item.owner.toLowerCase()) || null
+    }));
+
     return {
-      items: pageItems,
+      items: itemsWithCompany,
       nextCursor,
       hasMore,
       total,
@@ -92,16 +120,36 @@ export class RepositoriesService {
   }
 
   async getRepositoryBySlug(slug: string) {
-    return this.prisma.repository.findUnique({
+    const repo = await this.prisma.repository.findUnique({
       where: { slug },
       select: DETAIL_SELECT,
     });
+
+    if (!repo) return null;
+
+    const company = await this.prisma.company.findFirst({
+      where: {
+        OR: [
+          { slug: { equals: repo.owner, mode: 'insensitive' } },
+          { name: { equals: repo.owner, mode: 'insensitive' } }
+        ]
+      },
+      select: {
+        slug: true
+      }
+    });
+
+    return {
+      ...repo,
+      companySlug: company?.slug || null
+    };
   }
 
   private buildWhereClause(filters: {
     language?: string;
     topic?: string;
     q?: string;
+    owner?: string;
   }): Prisma.RepositoryWhereInput {
     const conditions: Prisma.RepositoryWhereInput[] = [];
 
@@ -113,6 +161,15 @@ export class RepositoriesService {
 
     if (filters.topic) {
       conditions.push({ topics: { has: filters.topic } });
+    }
+
+    if (filters.owner) {
+      conditions.push({
+        OR: [
+          { owner: { equals: filters.owner, mode: 'insensitive' } },
+          { owner: { equals: `${filters.owner}-ai`, mode: 'insensitive' } }
+        ]
+      });
     }
 
     if (filters.q && filters.q.trim().length > 0) {
@@ -141,5 +198,59 @@ export class RepositoriesService {
       default:
         return [{ stars: 'desc' }, { id: 'asc' }];
     }
+  }
+
+  async listRepositoryOwners() {
+    // 1. Group by owner and retrieve counts
+    const ownersGrouped = await this.prisma.repository.groupBy({
+      by: ['owner'],
+      _count: {
+        id: true,
+      },
+    });
+
+    // 2. Query all curated companies
+    const companies = await this.prisma.company.findMany({
+      select: {
+        slug: true,
+        name: true,
+        logoUrl: true,
+      },
+    });
+
+    // 3. Map owners and enrich with company info
+    const ownersMap = ownersGrouped.map((group) => {
+      const owner = group.owner;
+      const repositoryCount = group._count.id;
+
+      // Clean owner suffix logic (e.g. suno-ai -> suno)
+      const cleanOwner = owner.replace(/-ai$/, '').toLowerCase();
+
+      // Find matching company
+      const matchingCompany = companies.find(
+        (c) => c.slug.toLowerCase() === cleanOwner || c.name.toLowerCase() === cleanOwner
+      );
+
+      if (matchingCompany) {
+        return {
+          owner,
+          displayName: matchingCompany.name,
+          companySlug: matchingCompany.slug,
+          logoUrl: matchingCompany.logoUrl,
+          repositoryCount,
+        };
+      }
+
+      return {
+        owner,
+        displayName: owner,
+        companySlug: null,
+        logoUrl: null,
+        repositoryCount,
+      };
+    });
+
+    // 4. Sort by repositoryCount desc
+    return ownersMap.sort((a, b) => b.repositoryCount - a.repositoryCount);
   }
 }

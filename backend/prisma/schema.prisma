@@ -21,6 +21,29 @@ enum BillingFrequency {
   NA
 }
 
+enum Platform {
+  WEB
+  WINDOWS
+  MACOS
+  LINUX
+  IOS
+  ANDROID
+  CHROME_EXTENSION
+}
+
+enum UserPersona {
+  DEVELOPERS
+  DESIGNERS
+  STUDENTS
+  MARKETERS
+  WRITERS
+  RESEARCHERS
+  EDUCATORS
+  SALES
+  ENTERPRISE
+  CONTENT_CREATORS
+}
+
 // ---- Stub models owned by other modules ----
 // Module 4 (Companies) and Module 11 (Auth) will extend these.
 // Do not add fields here beyond what Module 3 needs for its relations.
@@ -60,28 +83,32 @@ model User {
   collections         Collection[]
   collectionBookmarks CollectionBookmark[]
   taskBookmarks       TaskBookmark[]
-    linkBookmarks       LinkBookmark[]
+  linkBookmarks       LinkBookmark[]
 
-  reportsMade         Report[] @relation("Reporter")
-  reportsAgainst      Report[] @relation("ReportedUser")
-  tasksCreated        Task[]               @relation("TaskCreator")
-  taskLikes           TaskLike[]           @relation("TaskLikeUser")
-  taskSubscriptions   TaskSubscriber[]     @relation("TaskSubscriberUser")
+  reportsMade       Report[]         @relation("Reporter")
+  reportsAgainst    Report[]         @relation("ReportedUser")
+  tasksCreated      Task[]           @relation("TaskCreator")
+  taskLikes         TaskLike[]       @relation("TaskLikeUser")
+  taskSubscriptions TaskSubscriber[] @relation("TaskSubscriberUser")
+  toolVotes         ToolVote[]
 }
-
-
 
 // ---- Module 3: AI Tools ----
 
 model Tool {
-  id          String   @id @default(cuid())
-  slug        String   @unique
+  id          String  @id @default(cuid())
+  slug        String  @unique
   name        String
   logoUrl     String?
   description String
   websiteUrl  String
+
   screenshots String[] @default([])
   features    String[] @default([])
+  pros        String[] @default([])
+  cons        String[] @default([])
+
+  releaseDate DateTime?
 
   pricingModel     PricingModel
   pricingAmount    Decimal?         @db.Decimal(10, 2)
@@ -89,17 +116,27 @@ model Tool {
 
   isOpenSource Boolean @default(false)
   isTrending   Boolean @default(false)
+  verified     Boolean @default(false)
+
+  compatibility Platform[]
+  targetUsers   UserPersona[]
+
+  hasApi     Boolean @default(false)
+  apiDocsUrl String?
+
+  performanceScore Float?
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
 
-  categories ToolCategory[]
-  tags       ToolTag[]
+  categories   ToolCategory[]
+  tags         ToolTag[]
+  integrations ToolIntegration[]
 
-  reviews     Review[]
-  bookmarks   Bookmark[]
-  reports     Report[]
-  history     ToolHistory[]
+  reviews   Review[]
+  bookmarks Bookmark[]
+  reports   Report[]
+  history   ToolHistory[]
 
   alternatives  Tool[]     @relation("ToolAlternatives")
   alternativeOf Tool[]     @relation("ToolAlternatives")
@@ -110,6 +147,9 @@ model Tool {
   avgRating   Float @default(0)
   reviewCount Int   @default(0)
 
+  upvoteCount Int        @default(0)
+  votes       ToolVote[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -119,6 +159,9 @@ model Tool {
   @@index([pricingModel])
   @@index([createdAt])
   @@index([avgRating])
+  @@index([releaseDate])
+  @@index([isTrending])
+  @@index([verified])
 }
 
 model Category {
@@ -158,6 +201,39 @@ model ToolTag {
 
   @@id([toolId, tagId])
   @@index([tagId])
+}
+
+model Integration {
+  id      String  @id @default(cuid())
+  slug    String  @unique
+  name    String
+  logoUrl String?
+
+  tools ToolIntegration[]
+}
+
+model ToolIntegration {
+  toolId        String
+  integrationId String
+
+  tool        Tool        @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@id([toolId, integrationId])
+  @@index([integrationId])
+}
+
+model ToolVote {
+  userId String
+  toolId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tool Tool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([userId, toolId])
+  @@index([toolId])
 }
 
 model Review {
@@ -390,29 +466,29 @@ enum Availability {
 }
 
 model Device {
-  id                String   @id @default(cuid())
-  name              String
-  slug              String   @unique
-  manufacturer      String
-  category          String
-  availability      Availability @default(Announced)
-  price             String?
-  year              String
-  month             String?
-  description       String
-  imageUrl          String
+  id                  String       @id @default(cuid())
+  name                String
+  slug                String       @unique
+  manufacturer        String
+  category            String
+  availability        Availability @default(Announced)
+  price               String?
+  year                String
+  month               String?
+  description         String
+  imageUrl            String
   manufacturerLogoUrl String
-  mainTask          String
-  formFactor        String?
-  country           String?
-  ram               String?
-  aiFeatures        String[] @default([])
-  primaryUseCases   String[] @default([])
-  additionalInfo    String?
-  buyUrl            String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now()) @updatedAt
-  tasks              TaskDevice[]
+  mainTask            String
+  formFactor          String?
+  country             String?
+  ram                 String?
+  aiFeatures          String[]     @default([])
+  primaryUseCases     String[]     @default([])
+  additionalInfo      String?
+  buyUrl              String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @default(now()) @updatedAt
+  tasks               TaskDevice[]
 }
 
 // ---- Auth Module ----
@@ -610,6 +686,7 @@ model CollectionBookmark {
 
   @@unique([userId, collectionId])
 }
+
 // ---- Module: Tasks ----
 
 enum TaskDifficulty {
@@ -748,22 +825,22 @@ model TaskBookmark {
 }
 
 model Report {
-  id             String   @id @default(cuid())
-  status         String   @default("OPEN")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @default(now()) @updatedAt
+  id        String   @id @default(cuid())
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
-  reporterId     String
-  reporter       User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User   @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
 
   reportedUserId String?
-  reportedUser   User?    @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reportedUser   User?   @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
 
   reportedToolId String?
-  reportedTool   Tool?    @relation(fields: [reportedToolId], references: [id], onDelete: Cascade)
+  reportedTool   Tool?   @relation(fields: [reportedToolId], references: [id], onDelete: Cascade)
 
   reportedNewsId String?
-  reportedNews   News?    @relation(fields: [reportedNewsId], references: [id], onDelete: Cascade)
+  reportedNews   News?   @relation(fields: [reportedNewsId], references: [id], onDelete: Cascade)
 }
 
 model LinkBookmark {

@@ -136,7 +136,7 @@ export async function fetchAllNews(): Promise<any[]> {
   return res.json();
 }
 
-import { Repository, RepositoryListResponse, RepositoryDetailResponse } from "./types";
+import { Repository, RepositoryListResponse, RepositoryDetailResponse, RepositoryOwnerListItem } from "./types";
 
 export interface FetchRepositoriesOptions {
   limit?: number;
@@ -145,10 +145,11 @@ export interface FetchRepositoriesOptions {
   language?: string;
   topic?: string;
   q?: string;
+  owner?: string;
 }
 
 export async function fetchRepositories(options: FetchRepositoriesOptions = {}): Promise<RepositoryListResponse> {
-  const { limit, cursor, sort, language, topic, q } = options;
+  const { limit, cursor, sort, language, topic, q, owner } = options;
 
   const url = new URL(`${API_URL}/api/v1/repositories`);
   if (limit) url.searchParams.set("limit", limit.toString());
@@ -157,6 +158,7 @@ export async function fetchRepositories(options: FetchRepositoriesOptions = {}):
   if (language) url.searchParams.set("language", language);
   if (topic) url.searchParams.set("topic", topic);
   if (q) url.searchParams.set("q", q);
+  if (owner) url.searchParams.set("owner", owner);
 
   const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) {
@@ -308,4 +310,11 @@ export async function toggleTaskSubscription(slug: string): Promise<boolean> {
     console.error("Failed to subscribe to task:", err);
     return false;
   }
+}
+
+export async function fetchRepositoryOwners(): Promise<RepositoryOwnerListItem[]> {
+  const url = `${API_URL}/api/v1/repositories/owners`;
+  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
 }

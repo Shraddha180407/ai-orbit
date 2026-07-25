@@ -30,6 +30,7 @@ export class RepositoriesController {
         language: c.req.query('language') || undefined,
         topic: c.req.query('topic') || undefined,
         q: c.req.query('q') || undefined,
+        owner: c.req.query('owner') || undefined,
       });
 
       return c.json(result);
@@ -55,6 +56,21 @@ export class RepositoriesController {
     } catch (error: unknown) {
       logger.error('Error fetching repository:', error);
       return c.json({ error: 'Failed to fetch repository' }, 500);
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+
+  async listRepositoryOwners(c: Context) {
+    const prisma = getPrisma(c.env);
+    const service = new RepositoriesService(prisma);
+
+    try {
+      const owners = await service.listRepositoryOwners();
+      return c.json(owners);
+    } catch (error: any) {
+      console.error('Error listing repository owners:', error);
+      return c.json({ error: 'Failed to fetch repository owners' }, 500);
     } finally {
       await prisma.$disconnect();
     }

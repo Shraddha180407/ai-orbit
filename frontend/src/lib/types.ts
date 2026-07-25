@@ -245,6 +245,7 @@ export type Repository = {
   readmeHtml?: string;
   readmeFetchedAt?: string;
   defaultBranch?: string;
+  companySlug?: string | null;
 };
 
 export type RepositoryListResponse = {
@@ -322,3 +323,12 @@ export type CollectionSort =
   | "most_related_models"
   | "most_related_companies"
   | "featured_first";
+  
+export type RepositoryOwnerListItem = {
+  owner: string;
+  displayName: string;
+  companySlug: string | null;
+  logoUrl: string | null;
+  repositoryCount: number;
+  searchText?: string;
+};
