@@ -64,7 +64,7 @@ export class ModelsService {
   }
 
   async getModelById(id: string) {
-    return this.prisma.aIModel.findUnique({
+    const model = await this.prisma.aIModel.findUnique({
       where: { id },
       include: {
         provider: {
@@ -77,5 +77,24 @@ export class ModelsService {
         },
       },
     });
+
+    if (!model) {
+      throw new Error('Model not found');
+    }
+
+    // Related models: share modality or category overlap, excluding self
+  const relatedModels = await this.prisma.aIModel.findMany({
+  where: {
+    id: { not: model.id },
+    OR: model.modality.split(",").map((m) => ({
+      modality: { contains: m.trim(), mode: "insensitive" },
+    })),
+  },
+  select: { id: true, name: true, description: true, modality: true, releaseDate: true },
+  take: 6,
+});
+
+  return { ...model, relatedModels };
+
   }
 }
