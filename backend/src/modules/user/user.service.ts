@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { AppError } from '../../lib/error.js';
 
 export class UserService {
   constructor(private prisma: PrismaClient) {}
@@ -30,7 +31,9 @@ export class UserService {
   async removeSavedTool(id: string, userId: string) {
     // Verify ownership before deleting
     const bookmark = await this.prisma.bookmark.findUnique({ where: { id } });
-    if (!bookmark || bookmark.userId !== userId) return { success: false };
+    if (!bookmark || bookmark.userId !== userId) {
+      throw AppError.NotFound('Saved tool not found or unauthorized');
+    }
 
     await this.prisma.bookmark.delete({ where: { id } });
     return { success: true };
