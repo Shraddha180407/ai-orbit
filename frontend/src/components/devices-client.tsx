@@ -217,16 +217,16 @@ export function DevicesClient() {
   }
 
   const PriceRangeDropdown = ({ id }: { id: string }) => (
-    <div className="relative shrink-0">
+  <div className="relative w-full">
       <button
         onClick={() => setOpenDropdown(openDropdown === id ? null : id)}
-        className={`flex items-center gap-1.5 bg-[#131316] border text-sm rounded-lg px-3 py-2 transition-colors whitespace-nowrap ${activePriceFilter ? "border-[#6E56CF] text-[#6E56CF]" : "border-[#232326] text-[#A1A1AA] hover:text-white"}`}
+        className={`flex items-center justify-between w-full bg-[#131316] border text-sm rounded-lg px-3 py-2 transition-colors ${activePriceFilter ? "border-[#6E56CF] text-[#6E56CF]" : "border-[#232326] text-[#A1A1AA] hover:text-white"}`}
       >
         {activePriceFilter ? `$${priceMin}–$${priceMax}` : "Price Range"}
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       {openDropdown === id && (
-        <div className="absolute top-10 right-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-4 min-w-[220px]">
+        <div className="absolute top-11 left-0 right-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-4">
           <div className="flex justify-between text-[10px] text-[#A1A1AA] mb-3">
             <span>Min: <span className="text-white font-bold">${priceMin.toLocaleString()}</span></span>
             <span>Max: <span className="text-white font-bold">${priceMax.toLocaleString()}</span></span>
@@ -235,10 +235,10 @@ export function DevicesClient() {
             <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-[#232326] rounded-full" />
             <div className="absolute top-1/2 -translate-y-1/2 h-1 bg-[#6E56CF] rounded-full"
               style={{ left: `${(priceMin/10000)*100}%`, right: `${100-(priceMax/10000)*100}%` }} />
-            <input type="range" min={0} max={10000} step={10} value={priceMin}
+            <input type="range" min={0} max={10000} step={100} value={priceMin}
               onChange={(e) => { const val = Math.min(Number(e.target.value), priceMax-10); setPriceMin(val); setActivePriceFilter(true); setCurrentPage(1); }}
               className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: priceMin > 9000 ? 5 : 3 }} />
-            <input type="range" min={0} max={10000} step={10} value={priceMax}
+            <input type="range" min={0} max={10000} step={100} value={priceMax}
               onChange={(e) => { const val = Math.max(Number(e.target.value), priceMin+10); setPriceMax(val); setActivePriceFilter(true); setCurrentPage(1); }}
               className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: 4 }} />
             <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
@@ -377,8 +377,8 @@ export function DevicesClient() {
       {/* ── GRID VIEW ── */}
       {viewMode === "grid" && (
         <div>
-          <div className="flex flex-wrap gap-3 mb-5 items-center">
-            <div className="flex gap-2 flex-1 min-w-[180px]">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5 items-center">
+            <div className="flex gap-2">
               <input type="text" placeholder="Search devices..." value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { setNameSearch(nameInput); setCurrentPage(1); } }}
@@ -387,7 +387,7 @@ export function DevicesClient() {
                 className="text-xs bg-[#6E56CF] hover:bg-[#7C66DF] text-white px-3 py-2 rounded-lg transition-colors font-semibold shrink-0">Apply</button>
             </div>
             <select value={selectedCategory} onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
-              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] flex-1 min-w-[140px]">
+              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] w-full">
               <option value={ALL_CATEGORIES}>All Categories</option>
               {categories.map((c) => <option key={c}>{c}</option>)}
             </select>
@@ -401,7 +401,7 @@ export function DevicesClient() {
             </select>
             <select value={`${sortKey}-${sortDir}`}
               onChange={(e) => { const [key, dir] = e.target.value.split("-"); setSortKey(key as SortKey); setSortDir(dir as "asc" | "desc"); setCurrentPage(1); }}
-              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] flex-1 min-w-[160px]">
+              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] w-full">
               <option value="release-desc">Sort: Newest First</option>
               <option value="release-asc">Sort: Oldest First</option>
               <option value="name-asc">Sort: Name A→Z</option>
@@ -448,12 +448,11 @@ export function DevicesClient() {
       {/* ── LIST VIEW ── */}
       {viewMode === "list" && (
         <div>
-          {/* ✅ Outer container matches ToolListView exactly */}
-          <div className="rounded-lg border border-[#232326]/60 bg-[#131316]/10 overflow-hidden">
-            <div className="overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
-              <div ref={dropdownRef} className={`${COL_MIN_WIDTH} relative`}>
+          {/*  Outer container matches ToolListView exactly */}
+          <div className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
+              <div ref={dropdownRef} style={{ minWidth: '900px' }} className="relative bg-[#0a0a0c]">
 
-                {/* ✅ Header row matches ToolListView exactly */}
+                {/* Header row matches ToolListView exactly */}
                 <div className="border-b border-[#232326]/60 bg-[#131316]/40">
                   <div className={`grid ${COL_TEMPLATE} items-center gap-4 px-4 py-2`}>
 
@@ -556,18 +555,18 @@ export function DevicesClient() {
                             <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-[#232326] rounded-full" />
                             <div className="absolute top-1/2 -translate-y-1/2 h-1 bg-[#6E56CF] rounded-full"
                               style={{ left: `${(priceMin/10000)*100}%`, right: `${100-(priceMax/10000)*100}%` }} />
-                            <input type="range" min={0} max={10000} step={10} value={priceMin}
+                            <input type="range" min={0} max={10000} step={100} value={priceMin}
                               onChange={(e) => { const val = Math.min(Number(e.target.value), priceMax-10); setPriceMin(val); setActivePriceFilter(true); setCurrentPage(1); }}
                               className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: priceMin > 9000 ? 5 : 3 }} />
-                            <input type="range" min={0} max={10000} step={10} value={priceMax}
+                            <input type="range" min={0} max={10000} step={100} value={priceMax}
                               onChange={(e) => { const val = Math.max(Number(e.target.value), priceMin+10); setPriceMax(val); setActivePriceFilter(true); setCurrentPage(1); }}
                               className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: 4 }} />
                             <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
                               style={{ left: `calc(${(priceMin/10000)*100}% - 7px)` }} />
-                            <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
-                              style={{ left: `calc(${(priceMax/10000)*100}% - 7px)` }} />
-                          </div>
-                          <button onClick={() => { setPriceMin(0); setPriceMax(10000); setActivePriceFilter(false); setCurrentPage(1); setOpenDropdown(null); }}
+            <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
+              style={{ left: `calc(${(priceMax/10000)*100}% - 7px)` }} />
+          </div>
+          <button onClick={() => { setPriceMin(0); setPriceMax(10000);setActivePriceFilter(false); setCurrentPage(1); setOpenDropdown(null); }}
                             className="w-full text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors">Reset</button>
                         </div>
                       )}
@@ -580,11 +579,11 @@ export function DevicesClient() {
                     </button>
 
                     {/* MAIN TASK col */}
-                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">MAIN TASK</span>
+                    <span className="hidden lg:block text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">MAIN TASK</span>
                   </div>
                 </div>
 
-                {/* ✅ Rows — matches ToolListView row structure exactly */}
+                {/*  Rows — matches ToolListView row structure exactly */}
                 {isLoading ? (
                   <div className="flex flex-col divide-y divide-[#232326]/60">
                     {[...Array(8)].map((_, i) => (
@@ -606,13 +605,13 @@ export function DevicesClient() {
                 ) : filtered.length === 0 ? (
                   <div className="py-20 text-center text-[#52525B] text-sm">No devices found.</div>
                 ) : (
-                  <div role="list" className="flex flex-col divide-y divide-[#232326]/60">
+                  <div role="list" className="flex flex-col">
                     {visible.map((device) => (
                       <Link
                         key={device.id}
                         href={`/devices/${device.slug || device.id}`}
                         role="listitem"
-                        className={`group grid ${COL_TEMPLATE} items-center gap-4 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none`}
+                        className={`group grid ${COL_TEMPLATE} items-center gap-4 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none border-b border-[#232326]/60`}
                       >
                         {/* Col 1: Logo */}
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
@@ -664,9 +663,9 @@ export function DevicesClient() {
                         </div>
 
                         {/* Col 8: Main Task */}
-<div>
+<div className="hidden lg:block">
   {device.mainTask ? (
-    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
+    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors whitespace-nowrap">
   {device.mainTask}
 </span>
   ) : <span className="text-[12px] font-mono text-[#71717A]">—</span>}
@@ -706,7 +705,6 @@ export function DevicesClient() {
                 )}
 
               </div>
-            </div>
           </div>
         </div>
       )}

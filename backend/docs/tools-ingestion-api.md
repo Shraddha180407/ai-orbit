@@ -32,14 +32,24 @@ The API expects a top-level JSON object containing a `tools` array.
 | `logoUrl` | `string` (URL) | No | URL to the tool's logo. |
 | `screenshots` | `string[]` | No | Array of screenshot URLs. Default is `[]`. |
 | `features` | `string[]` | No | Array of feature strings. Default is `[]`. |
+| `pros` | `string[]` | No | Array of pros strings. Default is `[]`. |
+| `cons` | `string[]` | No | Array of cons strings. Default is `[]`. |
+| `releaseDate` | `string` (ISO date) | No | The release date of the tool. |
 | `pricingModel` | `string` | **Yes** | Must be one of: `"FREE"`, `"FREEMIUM"`, `"PAID"`, `"FREE_TRIAL"` |
 | `pricingAmount` | `number` | No | Numerical price. |
 | `billingFrequency`| `string` | No | Must be one of: `"MONTHLY"`, `"YEARLY"`, `"ONE_TIME"`, `"NA"`. Default is `"NA"`. |
 | `isOpenSource` | `boolean` | No | Indicates if the tool is open source. Default is `false`. |
 | `isTrending` | `boolean` | No | Indicates if the tool is currently trending. Default is `false`. |
+| `verified` | `boolean` | No | Indicates if the tool is verified. Default is `false`. |
+| `compatibility` | `string[]` | No | Supported platforms. E.g. `"WEB"`, `"WINDOWS"`, `"MACOS"`, `"IOS"`, `"ANDROID"`, `"CHROME_EXTENSION"`, `"LINUX"`. Default is `[]`. |
+| `targetUsers` | `string[]` | No | Target personas. E.g. `"DEVELOPERS"`, `"DESIGNERS"`, `"STUDENTS"`, `"MARKETERS"`. Default is `[]`. |
+| `hasApi` | `boolean` | No | Indicates if the tool provides an API. Default is `false`. |
+| `apiDocsUrl` | `string` (URL) | No | URL to the API documentation. |
+| `performanceScore` | `number` | No | A numerical performance score. |
 | `company` | `object` | No | Details about the parent company. See Company Object. |
 | `categories` | `object[]` | No | Array of categories this tool belongs to. See Entity Object. |
 | `tags` | `object[]` | No | Array of tags describing the tool. See Entity Object. |
+| `integrations` | `object[]` | No | Array of integrations the tool supports. See Integration Object. |
 
 ### Company Object
 | Field | Type | Required | Description |
@@ -53,6 +63,13 @@ The API expects a top-level JSON object containing a `tools` array.
 |---|---|---|---|
 | `slug` | `string` | **Yes** | Unique identifier for the category/tag. |
 | `name` | `string` | **Yes** | Display name of the category/tag. |
+
+### Integration Object
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `slug` | `string` | **Yes** | Unique identifier for the integration. |
+| `name` | `string` | **Yes** | Display name of the integration. |
+| `logoUrl` | `string` (URL) | No | URL to the integration's logo. |
 
 ---
 
@@ -72,7 +89,16 @@ The API expects a top-level JSON object containing a `tools` array.
       "billingFrequency": "MONTHLY",
       "isOpenSource": false,
       "isTrending": true,
+      "verified": true,
       "features": ["Text generation", "Image generation"],
+      "pros": ["Fast generation", "High quality"],
+      "cons": ["Expensive tier", "Steep learning curve"],
+      "releaseDate": "2023-01-01T00:00:00Z",
+      "compatibility": ["WEB", "IOS"],
+      "targetUsers": ["DESIGNERS", "CONTENT_CREATORS"],
+      "hasApi": true,
+      "apiDocsUrl": "https://orbit-ai.example.com/docs",
+      "performanceScore": 9.5,
       "screenshots": [
         "https://orbit-ai.example.com/screenshot1.png"
       ],
@@ -88,6 +114,10 @@ The API expects a top-level JSON object containing a `tools` array.
       "tags": [
         { "slug": "text-to-image", "name": "Text to Image" },
         { "slug": "cool", "name": "Cool" }
+      ],
+      "integrations": [
+        { "slug": "slack", "name": "Slack", "logoUrl": "https://slack.com/logo.png" },
+        { "slug": "figma", "name": "Figma" }
       ]
     }
   ]
