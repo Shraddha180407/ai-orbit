@@ -241,6 +241,7 @@ export class AuthService {
     if (!dbUser) throw AppError.NotFound('User not found.');
     
     if (dbUser.password) {
+      if (!data.currentPassword) throw AppError.BadRequest('Current password is required.');
       const isValid = await bcrypt.compare(data.currentPassword, dbUser.password);
       if (!isValid) throw AppError.Unauthorized('Incorrect current password.');
     }
