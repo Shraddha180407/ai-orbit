@@ -34,6 +34,8 @@ export function ModelsClient() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [providers, setProviders] = useState<{ slug: string; name: string; count: number }[]>([]);
+  const [modalities, setModalities] = useState<{ modality: string; count: number }[]>([]);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -112,6 +114,8 @@ export function ModelsClient() {
         if (page === 1) setModels(data.items);
         else setModels((prev) => [...prev, ...data.items]);
         setTotalPages(data.pagination.totalPages || 1);
+        if (data.filters?.providers) setProviders(data.filters.providers);
+        if (data.filters?.modalities) setModalities(data.filters.modalities);
       } catch (e) {
         console.error("Failed to fetch models:", e);
       } finally {
@@ -139,12 +143,18 @@ export function ModelsClient() {
     };
   }, [isLoading, isFetchingMore, page, totalPages]);
 
-  const setSort = (value: string) => {
+  const patchQuery = (patch: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value && value !== "newest") params.set("sort", value);
-    else params.delete("sort");
+    for (const [key, value] of Object.entries(patch)) {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    }
     const qs = params.toString();
     router.push(qs ? `/models?${qs}` : "/models");
+  };
+
+  const setSort = (value: string) => {
+    patchQuery({ sort: value && value !== "newest" ? value : null });
   };
 
   const reloadFirstPage = async () => {
@@ -246,7 +256,39 @@ export function ModelsClient() {
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="relative inline-flex items-center">
+              <select
+                value={provider || ""}
+                onChange={(e) => patchQuery({ provider: e.target.value || null })}
+                className="appearance-none rounded-lg border border-[#232326] bg-[#131316] pl-3 pr-8 py-1 text-xs font-semibold text-white hover:border-neutral-500 focus:outline-none transition-all cursor-pointer h-7 max-w-[140px]"
+              >
+                <option value="">All companies</option>
+                {providers.map((p) => (
+                  <option key={p.slug} value={p.slug}>
+                    {p.name} ({p.count})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={11} className="absolute right-2 text-[#71717A] pointer-events-none" />
+            </div>
+
+            <div className="relative inline-flex items-center">
+              <select
+                value={modality || ""}
+                onChange={(e) => patchQuery({ modality: e.target.value || null })}
+                className="appearance-none rounded-lg border border-[#232326] bg-[#131316] pl-3 pr-8 py-1 text-xs font-semibold text-white hover:border-neutral-500 focus:outline-none transition-all cursor-pointer h-7 max-w-[160px]"
+              >
+                <option value="">All types</option>
+                {modalities.map((m) => (
+                  <option key={m.modality} value={m.modality}>
+                    {m.modality} ({m.count})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={11} className="absolute right-2 text-[#71717A] pointer-events-none" />
+            </div>
+
             <div className="flex items-center gap-2 select-none">
               <span className="text-xs text-[#71717A]">Sort by</span>
               <div className="relative inline-flex items-center">

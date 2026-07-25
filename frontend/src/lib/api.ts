@@ -92,6 +92,7 @@ export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListR
       totalPages: 1,
       hasMore: false,
     },
+    filters: { providers: [], modalities: [] },
   };
 
   const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
@@ -109,6 +110,7 @@ export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListR
         totalPages: 1,
         hasMore: false,
       },
+      filters: { providers: [], modalities: [] },
     };
   }
   return data as ModelsListResponse;
@@ -120,7 +122,7 @@ export async function fetchAllModels(): Promise<AIModel[]> {
   return data.items;
 }
 
-export async function fetchModelById(id: string): Promise<AIModel | null> {
+export async function fetchModelById(id: string): Promise<import("./types").ModelDetail | null> {
   const url = `${API_URL}/api/v1/models/${encodeURIComponent(id)}`;
   const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) return null;

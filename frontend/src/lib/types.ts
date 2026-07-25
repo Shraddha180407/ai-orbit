@@ -192,6 +192,20 @@ export type ModelsListResponse = {
     totalPages: number;
     hasMore: boolean;
   };
+  filters?: {
+    providers: { slug: string; name: string; count: number }[];
+    modalities: { modality: string; count: number }[];
+  };
+};
+
+export type ModelTaskLink = {
+  task: { id: string; slug: string; title: string };
+};
+
+export type ModelDetail = AIModel & {
+  tasks?: ModelTaskLink[];
+  relatedModels?: AIModel[];
+  updatedAt?: string;
 };
 
 export type ModelsSortOption = "newest" | "oldest" | "alphabetical" | "releaseDate";
