@@ -31,6 +31,8 @@ interface RepositoryTableProps {
   isRepoFilterOpen: boolean;
   onToggleRepoFilter: () => void;
   onCloseRepoFilter: () => void;
+  companySearchAliases?: Record<string, string[]>;
+  companySearchKeys?: Record<string, string>;
 }
 
 export function RepositoryTable({
@@ -59,6 +61,8 @@ export function RepositoryTable({
   isRepoFilterOpen,
   onToggleRepoFilter,
   onCloseRepoFilter,
+  companySearchAliases,
+  companySearchKeys,
 }: RepositoryTableProps) {
   return (
     <div 
@@ -127,6 +131,8 @@ export function RepositoryTable({
               searchPlaceholder="Search companies..."
               allLabel="All companies"
               id="company-filter-dropdown"
+              searchAliases={companySearchAliases}
+              searchKeys={companySearchKeys}
             />
           </div>
 
