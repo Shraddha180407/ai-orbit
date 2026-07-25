@@ -3,20 +3,25 @@ import bcrypt from 'bcryptjs';
 import { generateVerificationToken, hashToken } from '../../lib/tokens.js';
 import { sendVerificationLinkEmail, sendPasswordResetEmail } from '../../lib/mailer.js';
 import { AppError } from '../../lib/error.js';
+import { z } from 'zod';
+import {
+  signupSchema,
+  loginSchema,
+  verifyEmailSchema,
+  emailOnlySchema,
+  resetPasswordSchema
+} from './auth.schema.js';
 
 export class AuthService {
   private prisma: PrismaClient;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private env: any;
+  private env: Record<string, string | undefined>;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(prisma: PrismaClient, env: any) {
+  constructor(prisma: PrismaClient, env: Record<string, string | undefined>) {
     this.prisma = prisma;
     this.env = env;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async signup(data: any) {
+  async signup(data: z.infer<typeof signupSchema>) {
     const email = data.email.trim().toLowerCase();
     const existingUser = await this.prisma.user.findFirst({
       where: { email: { equals: email, mode: 'insensitive' } }
@@ -52,8 +57,7 @@ export class AuthService {
     return user;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async login(data: any) {
+  async login(data: z.infer<typeof loginSchema>) {
     const email = data.email.trim().toLowerCase();
     const user = await this.prisma.user.findFirst({
       where: { email: { equals: email, mode: 'insensitive' } }
@@ -75,8 +79,7 @@ export class AuthService {
     return user;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async verifyEmail(data: any) {
+  async verifyEmail(data: z.infer<typeof verifyEmailSchema>) {
     const email = data.email.trim().toLowerCase();
     const identifier = `verify:${email}`;
     const hashedToken = hashToken(data.token);
@@ -114,8 +117,7 @@ export class AuthService {
     return user;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async resendVerification(data: any) {
+  async resendVerification(data: z.infer<typeof emailOnlySchema>) {
     const email = data.email.trim().toLowerCase();
     const user = await this.prisma.user.findFirst({
       where: { email: { equals: email, mode: 'insensitive' } }
@@ -145,8 +147,7 @@ export class AuthService {
     return { message: 'Verification email resent.' };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async forgotPassword(data: any) {
+  async forgotPassword(data: z.infer<typeof emailOnlySchema>) {
     const email = data.email.trim().toLowerCase();
     const user = await this.prisma.user.findFirst({
       where: { email: { equals: email, mode: 'insensitive' } }
@@ -172,8 +173,7 @@ export class AuthService {
     return { message: 'Password reset email sent.' };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async resetPassword(data: any) {
+  async resetPassword(data: z.infer<typeof resetPasswordSchema>) {
     const email = data.email.trim().toLowerCase();
     const identifier = `reset:${email}`;
     const hashedToken = hashToken(data.token);
@@ -234,8 +234,7 @@ export class AuthService {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async updatePassword(userId: string, data: any) {
+  async updatePassword(userId: string, data: { currentPassword?: string; newPassword: string }) {
     const dbUser = await this.prisma.user.findUnique({
       where: { id: userId }
     });

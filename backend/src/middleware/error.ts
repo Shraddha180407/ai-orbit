@@ -1,12 +1,12 @@
 import { Context } from 'hono';
 import type { ErrorHandler } from 'hono';
+import type { StatusCode } from 'hono/utils/http-status';
 import { AppError } from '../lib/error.js';
 import { logger } from '../lib/logger.js';
 
 export const errorHandler: ErrorHandler = (err: Error, c: Context) => {
   if (err instanceof AppError) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return c.json({ error: err.message }, err.statusCode as any);
+    return c.json({ error: err.message }, err.statusCode as StatusCode);
   }
 
   // Handle unexpected errors (e.g. Prisma errors, Syntax errors, etc.)
