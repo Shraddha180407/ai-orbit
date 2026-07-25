@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Search from 'lucide-react/dist/esm/icons/search';
 import Wrench from 'lucide-react/dist/esm/icons/wrench';
@@ -62,333 +62,8 @@ const DIRECTORY_CARDS = [
   { name: "Creativity", href: "/tools?category=creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
 
-const TOOLS_SUB = [
-  "Writing & Content",
-  "Image Generation",
-  "Video Generation & Editing",
-  "Audio & Voice",
-  "Chatbots & AI Assistants",
-  "Coding & Development",
-  "Marketing & SEO",
-  "Productivity",
-  "Business & Analytics",
-  "Education & Research"
-];
-
-const TASKS_SUB = [
-  "Content Creation",
-  "Image Creation",
-  "Video Creation",
-  "Audio & Music",
-  "Coding & Development",
-  "Data Analysis",
-  "Research & Summarization",
-  "Productivity & Automation",
-  "Marketing & Sales",
-  "Customer Support"
-];
-
-const COMPANIES_SUB = [
-  "AI Model Providers",
-  "AI Startups",
-  "Enterprise AI",
-  "Healthcare AI",
-  "Finance AI",
-  "Marketing AI",
-  "Developer Tools",
-  "Robotics & Automation",
-  "Education AI",
-  "Creative AI"
-];
-
-const NEWS_SUB = [
-  "AI Industry News",
-  "Product Launches",
-  "Research & Innovations",
-  "Company Updates",
-  "Open Source",
-  "Regulations & Policy",
-  "Events & Conferences",
-  "Tutorials & Guides",
-  "Interviews & Opinions",
-  "Market Trends"
-];
-
-const VIDEOS_SUB = [
-  "Product Demos",
-  "Tutorials",
-  "AI News & Updates",
-  "Model Showcases",
-  "Podcasts & Interviews",
-  "Webinars & Workshops",
-  "Conferences & Events",
-  "Case Studies",
-  "Reviews & Comparisons",
-  "Educational Content"
-];
-
-const REPOSITORIES_SUB = [
-  "Large Language Models (LLMs)",
-  "Computer Vision",
-  "Generative AI",
-  "AI Frameworks & Libraries",
-  "NLP (Natural Language Processing)",
-  "Robotics & Automation",
-  "MLOps & Deployment",
-  "Data Science & Analytics",
-  "AI Agents",
-  "Tutorials & Examples"
-];
-
-const ROBOTS_SUB = [
-  "Humanoid Robots",
-  "Industrial Robots",
-  "Service Robots",
-  "Healthcare Robots",
-  "Educational Robots",
-  "Autonomous Mobile Robots (AMRs)",
-  "Drones & Aerial Robots",
-  "Companion Robots",
-  "Agricultural Robots",
-  "Research & Defense Robots"
-];
-
-const MCP_SUB = [
-  "Official MCP Servers",
-  "Developer Tools",
-  "Databases",
-  "File Systems & Storage",
-  "Productivity & Office",
-  "APIs & Web Services",
-  "Cloud & DevOps",
-  "AI & ML Platforms",
-  "Browser & Web Automation",
-  "Community & Open Source"
-];
-
-const DEVICES_SUB = [
-  "AI PCs & Laptops",
-  "Smartphones",
-  "Smart Home Devices",
-  "Wearables",
-  "AI Cameras",
-  "Audio Devices",
-  "AR/VR & Mixed Reality",
-  "Edge AI Devices",
-  "Robotics Hardware",
-  "Development Boards"
-];
-
-const COLLECTIONS_SUB = [
-  "Featured Collections",
-  "Productivity Collections",
-  "Creative Collections",
-  "Developer Collections",
-  "Business Collections",
-  "Education Collections",
-  "Industry Collections",
-  "Open Source Collections",
-  "Trending Collections",
-  "New Collections"
-];
-
-const MODELS_SUB = [
-  "Large Language Models (LLMs)",
-  "Image Generation Models",
-  "Video Generation Models",
-  "Audio & Speech Models",
-  "Multimodal Models",
-  "Code Generation Models",
-  "Embedding Models",
-  "Reasoning Models",
-  "Vision Models",
-  "Open Source Models"
-];
-
-const PERSONAL_SUB = [
-  "Productivity",
-  "Chatbots",
-  "Writing",
-  "Audio",
-  "Customer Support",
-  "Video",
-  "Image Generation",
-  "Marketing"
-];
-
-const CREATIVITY_SUB = [
-  "Image Generation",
-  "Video",
-  "Audio",
-  "Marketing",
-  "Design",
-  "Productivity",
-  "Chatbots",
-  "Customer Support"
-];
-
-const SUBCATEGORY_SLUG_MAP: Record<string, string> = {
-  "Writing & Content": "productivity",
-  "Coding & Development": "productivity",
-  "Business & Analytics": "productivity",
-  "Education & Research": "chatbots",
-
-  "Content Creation": "productivity",
-  "Image Creation": "image-generation",
-  "Video Creation": "video",
-  "Audio & Music": "audio",
-  "Data Analysis": "productivity",
-  "Research & Summarization": "chatbots",
-  "Productivity & Automation": "productivity",
-  "Marketing & Sales": "marketing",
-  "Customer Support": "customer-support",
-
-  "Large Language Models (LLMs)": "chatbots",
-  "Image Generation Models": "image-generation",
-  "Video Generation Models": "video",
-  "Audio & Speech Models": "audio",
-  "Multimodal Models": "chatbots",
-  "Code Generation Models": "productivity",
-  "Embedding Models": "productivity",
-  "Reasoning Models": "chatbots",
-  "Vision Models": "image-generation",
-  "Open Source Models": "productivity",
-
-  "AI Model Providers": "chatbots",
-  "AI Startups": "productivity",
-  "Enterprise AI": "productivity",
-  "Healthcare AI": "customer-support",
-  "Finance AI": "productivity",
-  "Marketing AI": "marketing",
-  "Developer Tools": "productivity",
-  "Robotics & Automation": "productivity",
-  "Education AI": "productivity",
-  "Creative AI": "image-generation",
-
-  "AI Industry News": "productivity",
-  "Product Launches": "productivity",
-  "Research & Innovations": "chatbots",
-  "Company Updates": "productivity",
-  "Open Source": "productivity",
-  "Regulations & Policy": "productivity",
-  "Events & Conferences": "productivity",
-  "Tutorials & Guides": "productivity",
-  "Interviews & Opinions": "chatbots",
-  "Market Trends": "marketing",
-
-  "Product Demos": "video",
-  "Tutorials": "video",
-  "AI News & Updates": "video",
-  "Model Showcases": "video",
-  "Podcasts & Interviews": "video",
-  "Webinars & Workshops": "video",
-  "Conferences & Events": "video",
-  "Case Studies": "video",
-  "Reviews & Comparisons": "video",
-  "Educational Content": "video",
-
-  "Computer Vision": "image-generation",
-  "Generative AI": "image-generation",
-  "AI Frameworks & Libraries": "productivity",
-  "NLP (Natural Language Processing)": "chatbots",
-  "MLOps & Deployment": "productivity",
-  "Data Science & Analytics": "productivity",
-  "AI Agents": "chatbots",
-  "Tutorials & Examples": "productivity",
-
-  "Humanoid Robots": "chatbots",
-  "Industrial Robots": "productivity",
-  "Service Robots": "customer-support",
-  "Healthcare Robots": "customer-support",
-  "Educational Robots": "productivity",
-  "Autonomous Mobile Robots (AMRs)": "productivity",
-  "Drones & Aerial Robots": "video",
-  "Companion Robots": "chatbots",
-  "Agricultural Robots": "productivity",
-  "Research & Defense Robots": "productivity",
-
-  "Official MCP Servers": "productivity",
-  "Databases": "productivity",
-  "File Systems & Storage": "productivity",
-  "Productivity & Office": "productivity",
-  "APIs & Web Services": "productivity",
-  "Cloud & DevOps": "productivity",
-  "AI & ML Platforms": "productivity",
-  "Browser & Web Automation": "productivity",
-  "Community & Open Source": "productivity",
-
-  "AI PCs & Laptops": "productivity",
-  "Smartphones": "productivity",
-  "Smart Home Devices": "productivity",
-  "Wearables": "audio",
-  "AI Cameras": "video",
-  "Audio Devices": "audio",
-  "AR/VR & Mixed Reality": "video",
-  "Edge AI Devices": "productivity",
-  "Robotics Hardware": "productivity",
-  "Development Boards": "productivity",
-
-  "Featured Collections": "productivity",
-  "Productivity Collections": "productivity",
-  "Creative Collections": "image-generation",
-  "Developer Collections": "productivity",
-  "Business Collections": "productivity",
-  "Education Collections": "productivity",
-  "Industry Collections": "productivity",
-  "Open Source Collections": "productivity",
-  "Trending Collections": "productivity",
-  "New Collections": "productivity",
-
-  "Writing": "productivity",
-  "Design": "image-generation"
-};
-
-function mapSubcategoryToSlug(name: string): string {
-  if (SUBCATEGORY_SLUG_MAP[name]) {
-    return SUBCATEGORY_SLUG_MAP[name];
-  }
-  return name.toLowerCase().replace(/ & /g, "-").replace(/\s+/g, "-");
-}
-
-function getSubcategoriesAndColor(mode: DirectoryMode) {
-  switch (mode) {
-    case 'tools': return { list: TOOLS_SUB, color: "#FFC53D" };
-    case 'tasks': return { list: TASKS_SUB, color: "#FB923C" };
-    case 'companies': return { list: COMPANIES_SUB, color: "#38BDF8" };
-    case 'news': return { list: NEWS_SUB, color: "#FF6B4A" };
-    case 'videos': return { list: VIDEOS_SUB, color: "#F87171" };
-    case 'robots': return { list: ROBOTS_SUB, color: "#2DD4BF" };
-    case 'devices': return { list: DEVICES_SUB, color: "#F472B6" };
-    case 'models': return { list: MODELS_SUB, color: "#A78BFA" };
-    case 'repositories': return { list: REPOSITORIES_SUB, color: "#22D3EE" };
-    case 'mcp': return { list: MCP_SUB, color: "#818CF8" };
-    case 'collections': return { list: COLLECTIONS_SUB, color: "#34D399" };
-    case 'personal': return { list: PERSONAL_SUB, color: "#FBBF24" };
-    case 'creativity': return { list: CREATIVITY_SUB, color: "#E879F9" };
-  }
-}
-
-export type DirectoryMode = 
-  | 'tools' 
-  | 'tasks' 
-  | 'companies' 
-  | 'news' 
-  | 'videos' 
-  | 'robots' 
-  | 'devices' 
-  | 'models' 
-  | 'repositories' 
-  | 'mcp' 
-  | 'collections' 
-  | 'personal' 
-  | 'creativity';
-
 export function HomeClient() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-
-  const [expandedMode, setExpandedMode] = useState<DirectoryMode | null>(null);
-  const [activeSubcategory, setActiveSubcategory] = useState<string | null>(null);
 
   const [tools, setTools] = useState<any[]>([]);
   const [page, setPage] = useState(1);
@@ -401,38 +76,6 @@ export function HomeClient() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
-
-  const toggleExpanded = (mode: DirectoryMode, e: React.MouseEvent<HTMLButtonElement>) => {
-    const next = expandedMode === mode ? null : mode;
-    setExpandedMode(next);
-    setActiveSubcategory(null);
-    const search = new URLSearchParams(window.location.search);
-    search.delete("category");
-    router.push(`/?${search.toString()}`);
-    e.currentTarget.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center"
-    });
-  };
-
-  const handleSubcategoryClick = (subcategoryName: string, e: React.MouseEvent<HTMLButtonElement>) => {
-    const nextSub = activeSubcategory === subcategoryName ? null : subcategoryName;
-    setActiveSubcategory(nextSub);
-
-    const search = new URLSearchParams(window.location.search);
-    if (nextSub === null) {
-      search.delete("category");
-    } else {
-      search.set("category", mapSubcategoryToSlug(subcategoryName));
-    }
-    router.push(`/?${search.toString()}`);
-    e.currentTarget.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center"
-    });
-  };
 
   // Close the search dropdown on outside click or Escape.
   useEffect(() => {
@@ -670,30 +313,19 @@ export function HomeClient() {
           <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto">
             {DIRECTORY_CARDS.map((card) => {
               const Icon = card.icon;
-              const mode = card.name.toLowerCase() as DirectoryMode;
-              const isSelected = expandedMode === mode;
-
               return (
-                <button
+                <a
                   key={card.name}
-                  type="button"
-                  onClick={(e) => toggleExpanded(mode, e)}
+                  href={card.href}
                   className="group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-[#232326]/60 bg-[#0d0d10] px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-colors duration-200"
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = card.color;
                     e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
                   }}
                   onMouseLeave={(e) => {
-                    if (!isSelected) {
-                      e.currentTarget.style.borderColor = "";
-                      e.currentTarget.style.boxShadow = "";
-                    }
+                    e.currentTarget.style.borderColor = "";
+                    e.currentTarget.style.boxShadow = "";
                   }}
-                  style={
-                    isSelected
-                      ? { borderColor: card.color, boxShadow: `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55` }
-                      : undefined
-                  }
                 >
                   <div
                     className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border"
@@ -704,61 +336,12 @@ export function HomeClient() {
                   <span className="text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
                     {card.name}
                   </span>
-                </button>
+                </a>
               );
             })}
           </div>
         </div>
       </div>
-
-      {/* Parallel Secondary Categories Row */}
-      {expandedMode !== null && (() => {
-        const subConfig = getSubcategoriesAndColor(expandedMode);
-        if (!subConfig) return null;
-        const { list, color } = subConfig;
-
-        return (
-          <div className="w-full px-4 sm:px-6 lg:px-8 pt-2.5 pb-1 animate-in fade-in slide-in-from-top-1 duration-200">
-            <div className="mx-auto w-full max-w-[1600px] flex justify-start md:justify-center">
-              <div className="flex flex-nowrap items-center gap-2 overflow-x-auto scrollbar-none py-2 bg-[#0d0d10]/40 rounded-xl px-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)] max-w-full transition-all duration-300">
-                {list.map((cat) => {
-                  const isSelected = activeSubcategory === cat;
-
-                  return (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={(e) => handleSubcategoryClick(cat, e)}
-                      className={`rounded-full px-3 py-1 text-[9.5px] font-bold whitespace-nowrap transition-all duration-200 border ${
-                        isSelected
-                          ? "text-black border-transparent"
-                          : "text-neutral-400 hover:text-white bg-transparent border-transparent hover:bg-white/[0.02]"
-                      }`}
-                      style={
-                        isSelected
-                          ? { backgroundColor: color, boxShadow: `0 2px 8px ${color}66` }
-                          : undefined
-                      }
-                      onMouseEnter={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.borderColor = `${color}66`;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.borderColor = "transparent";
-                        }
-                      }}
-                    >
-                      {cat}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
 
       {/* Tools Section — full width so the data table can use the whole screen */}
       <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
