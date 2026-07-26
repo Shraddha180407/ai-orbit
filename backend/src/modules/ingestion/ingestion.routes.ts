@@ -22,7 +22,7 @@ const router = new Hono<{
   };
 }>();
 
-router.post("/run", zValidator("query", ingestionRunQuerySchema), IngestionController.run);
+router.post("/run", requireIngestionToken, zValidator("query", ingestionRunQuerySchema), IngestionController.run);
 
 router.post("/tools", requireIngestionToken, async (c) => {
   try {
