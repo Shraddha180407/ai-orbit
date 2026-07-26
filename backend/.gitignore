@@ -38,3 +38,6 @@ meta.json
 temp.js
 
 dist
+
+# test coverage
+coverage/

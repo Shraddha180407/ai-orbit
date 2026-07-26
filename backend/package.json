@@ -9,7 +9,10 @@
     "ingest": "tsx scripts/ingest.ts",
     "sync-repos": "tsx scripts/sync-repositories.ts",
     "seed": "tsx prisma/seed.ts",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.8.0",
@@ -37,12 +40,14 @@
     "@types/node": "^20.11.17",
     "@types/nodemailer": "^8.0.1",
     "@types/ws": "^8.18.1",
+    "@vitest/coverage-v8": "^4.1.10",
     "dotenv": "^17.4.2",
     "eslint": "^9.39.5",
     "globals": "^17.7.0",
     "tsx": "^4.23.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.65.0",
+    "vitest": "^4.1.10",
     "wrangler": "^4.110.0"
   }
 }
