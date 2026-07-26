@@ -1,7 +1,6 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { marked } from "marked";
 import { logger } from "../src/lib/logger.js";
 
 // ---------------------------------------------------------------------------
@@ -23,8 +22,6 @@ const GITHUB_TOPICS = [
 ];
 
 const SEARCH_API_DELAY_MS = 2500; // 30 req/min → ~2s gap, add buffer
-const REST_BATCH_SIZE = 50;
-const REST_BATCH_DELAY_MS = 1000;
 const DB_BATCH_SIZE = 100;
 const SEARCH_PER_PAGE = 100;
 const SEARCH_MAX_PAGES = 10;
@@ -66,11 +63,6 @@ interface GitHubSearchResponse {
   items: GitHubRepo[];
 }
 
-interface GitHubReadmeResponse {
-  content: string;
-  encoding: string;
-}
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -104,14 +96,6 @@ function githubHeaders(): Record<string, string> {
   return {
     Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
     Accept: "application/vnd.github.mercy-preview+json",
-    "User-Agent": "aiorbit-sync-script",
-  };
-}
-
-function restHeaders(): Record<string, string> {
-  return {
-    Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-    Accept: "application/vnd.github.v3+json",
     "User-Agent": "aiorbit-sync-script",
   };
 }
@@ -171,33 +155,6 @@ async function searchReposByTopic(topic: string): Promise<GitHubRepo[]> {
   return allRepos;
 }
 
-async function fetchReadme(owner: string, name: string): Promise<string | null> {
-  const url = `https://api.github.com/repos/${owner}/${name}/readme`;
-
-  try {
-    const res = await fetch(url, { headers: restHeaders() });
-
-    if (!res.ok) {
-      // 404 = no README, other errors = skip
-      return null;
-    }
-
-    const data: GitHubReadmeResponse = await res.json();
-
-    if (data.encoding !== "base64") {
-      logger.warn(`  ⚠ Unexpected encoding "${data.encoding}" for ${owner}/${name}`);
-      return null;
-    }
-
-    const markdown = Buffer.from(data.content, "base64").toString("utf-8");
-    const html = await marked.parse(markdown) as string;
-    return html;
-  } catch (err) {
-    logger.error(`  ✗ README fetch error for ${owner}/${name}:`, err);
-    return null;
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Field mapping
 // ---------------------------------------------------------------------------
@@ -220,13 +177,11 @@ interface MappedRepo {
   defaultBranch: string;
   logoUrl: string;
   brandColor: null;
-  readmeHtml: string | null;
-  readmeFetchedAt: Date | null;
   githubCreatedAt: Date;
   syncedAt: Date;
 }
 
-function mapRepo(repo: GitHubRepo, readmeHtml: string | null): MappedRepo {
+function mapRepo(repo: GitHubRepo): MappedRepo {
   const now = new Date();
   const slug = buildSlug(repo.owner.login, repo.name);
 
@@ -248,8 +203,6 @@ function mapRepo(repo: GitHubRepo, readmeHtml: string | null): MappedRepo {
     defaultBranch: repo.default_branch,
     logoUrl: repo.owner.avatar_url,
     brandColor: null,
-    readmeHtml,
-    readmeFetchedAt: readmeHtml ? now : null,
     githubCreatedAt: new Date(repo.created_at),
     syncedAt: now,
   };
@@ -280,8 +233,6 @@ async function upsertRepo(prisma: PrismaClient, repo: MappedRepo): Promise<void>
       defaultBranch: repo.defaultBranch,
       logoUrl: repo.logoUrl,
       brandColor: repo.brandColor,
-      readmeHtml: repo.readmeHtml,
-      readmeFetchedAt: repo.readmeFetchedAt,
       githubCreatedAt: repo.githubCreatedAt,
       syncedAt: repo.syncedAt,
     },
@@ -301,8 +252,6 @@ async function upsertRepo(prisma: PrismaClient, repo: MappedRepo): Promise<void>
       defaultBranch: repo.defaultBranch,
       logoUrl: repo.logoUrl,
       brandColor: repo.brandColor,
-      readmeHtml: repo.readmeHtml,
-      readmeFetchedAt: repo.readmeFetchedAt,
       githubCreatedAt: repo.githubCreatedAt,
       syncedAt: repo.syncedAt,
     },
@@ -355,40 +304,14 @@ async function main(): Promise<void> {
 
   logger.info(`\n--- Discovery complete: ${uniqueRepos.length} unique repos ---\n`);
 
-  // Phase 2: Fetch READMEs in batches
-  logger.info("Fetching READMEs...");
-  const readmeMap = new Map<number, string | null>();
-  let readmeFailures = 0;
-
-  for (let i = 0; i < uniqueRepos.length; i++) {
-    const repo = uniqueRepos[i];
-    const readme = await fetchReadme(repo.owner.login, repo.name);
-    readmeMap.set(repo.id, readme);
-
-    if (readme === null) readmeFailures++;
-
-    if ((i + 1) % 25 === 0 || i === uniqueRepos.length - 1) {
-      logger.info(
-        `  README progress: ${i + 1}/${uniqueRepos.length} (${readmeFailures} failures)`
-      );
-    }
-
-    if ((i + 1) % REST_BATCH_SIZE === 0 && i < uniqueRepos.length - 1) {
-      await sleep(REST_BATCH_DELAY_MS);
-    }
-  }
-
-  logger.info(`\nREADME fetch complete: ${uniqueRepos.length - readmeFailures} success, ${readmeFailures} failures\n`);
-
-  // Phase 3: Upsert to database in batches
+  // Phase 2: Upsert to database in batches
   logger.info("Writing to database...");
   let upserted = 0;
   let dbErrors = 0;
 
   for (let i = 0; i < uniqueRepos.length; i++) {
     const repo = uniqueRepos[i];
-    const readme = readmeMap.get(repo.id) ?? null;
-    const mapped = mapRepo(repo, readme);
+    const mapped = mapRepo(repo);
 
     try {
       await upsertRepo(prisma, mapped);
@@ -411,7 +334,6 @@ async function main(): Promise<void> {
   logger.info(`Total repos discovered: ${uniqueRepos.length}`);
   logger.info(`Total upserted:         ${upserted}`);
   logger.info(`DB errors:              ${dbErrors}`);
-  logger.info(`README fetch failures:  ${readmeFailures}`);
   logger.info(`Time taken:             ${elapsed}s`);
 }
 

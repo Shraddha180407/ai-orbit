@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import { marked } from 'marked';
 
 const VALID_SORTS = ['stars_desc', 'newest', 'name_asc'] as const;
 type SortOption = (typeof VALID_SORTS)[number];
@@ -29,8 +30,6 @@ const LIST_SELECT = {
 
 const DETAIL_SELECT = {
   ...LIST_SELECT,
-  readmeHtml: true,
-  readmeFetchedAt: true,
   defaultBranch: true,
 } as const;
 
@@ -119,7 +118,7 @@ export class RepositoriesService {
     };
   }
 
-  async getRepositoryBySlug(slug: string) {
+  async getRepositoryBySlug(slug: string, githubToken?: string) {
     const repo = await this.prisma.repository.findUnique({
       where: { slug },
       select: DETAIL_SELECT,
@@ -139,10 +138,49 @@ export class RepositoriesService {
       }
     });
 
+    const readmeHtml = await this.fetchReadmeFromGitHub(
+      repo.owner,
+      repo.name,
+      githubToken,
+    );
+
     return {
       ...repo,
+      readmeHtml,
+      readmeFetchedAt: readmeHtml !== null ? new Date().toISOString() : null,
       companySlug: company?.slug || null
     };
+  }
+
+  private async fetchReadmeFromGitHub(
+    owner: string,
+    name: string,
+    githubToken?: string,
+  ): Promise<string | null> {
+    if (!githubToken) return null;
+
+    try {
+      const url = `https://api.github.com/repos/${owner}/${name}/readme`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${githubToken}`,
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'aiorbit-backend',
+        },
+      });
+
+      if (!res.ok) return null;
+
+      const data: { content: string; encoding: string } = await res.json();
+
+      if (data.encoding !== 'base64') return null;
+
+      const markdown = Buffer.from(data.content, 'base64').toString('utf-8');
+      const html = await marked.parse(markdown) as string;
+      return html;
+    } catch {
+      return null;
+    }
   }
 
   private buildWhereClause(filters: {

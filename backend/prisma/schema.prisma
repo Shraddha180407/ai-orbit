@@ -404,8 +404,6 @@ model Repository {
   defaultBranch   String    @default("main")
   logoUrl         String?
   brandColor      String?
-  readmeHtml      String?
-  readmeFetchedAt DateTime?
   githubCreatedAt DateTime
   syncedAt        DateTime
   createdAt       DateTime  @default(now())
