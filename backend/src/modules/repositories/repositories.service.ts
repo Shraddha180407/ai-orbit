@@ -7,6 +7,13 @@ type SortOption = (typeof VALID_SORTS)[number];
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 
+// Cloudflare Workers extends CacheStorage with a `default` property that the
+// DOM's CacheStorage interface (lib.dom.d.ts) does not include.  We declare a
+// narrow local type so we can access it without `any`.
+interface CfCacheStorage {
+  readonly default: Cache;
+}
+
 const LIST_SELECT = {
   id: true,
   slug: true,
@@ -159,6 +166,20 @@ export class RepositoriesService {
   ): Promise<string | null> {
     if (!githubToken) return null;
 
+    const cacheKey = new Request(`https://internal-cache/readme/${owner}/${name}`);
+    const cache = (caches as unknown as CfCacheStorage).default;
+
+    // Check cache first
+    try {
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        const cachedData = (await cached.json()) as { readmeHtml: string };
+        return cachedData.readmeHtml;
+      }
+    } catch {
+      // Cache read failure — fall through to live fetch
+    }
+
     try {
       const url = `https://api.github.com/repos/${owner}/${name}/readme`;
       const res = await fetch(url, {
@@ -177,6 +198,25 @@ export class RepositoriesService {
 
       const markdown = Buffer.from(data.content, 'base64').toString('utf-8');
       const html = await marked.parse(markdown) as string;
+
+      // Cache successful fetch (do NOT cache null/empty results)
+      if (html) {
+        try {
+          const response = new Response(
+            JSON.stringify({ readmeHtml: html, fetchedAt: new Date().toISOString() }),
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'max-age=86400',
+              },
+            },
+          );
+          await cache.put(cacheKey, response.clone());
+        } catch {
+          // Cache write failure — non-critical, ignore
+        }
+      }
+
       return html;
     } catch {
       return null;
