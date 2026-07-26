@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-
 import { CollectionGrid } from "@/components/collections/CollectionGrid";
 import { CollectionSearch } from "@/components/collections/CollectionSearch";
 import CollectionFilters from "@/components/collections/CollectionFilters";
@@ -23,7 +22,6 @@ export default function CollectionsPageClient({ initialItems, initialNextCursor 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sort, setSort] = useState("recently_updated");
-
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [creatorType, setCreatorType] = useState<CreatorType | undefined>(undefined);
   const [updatedWithin, setUpdatedWithin] = useState("");
@@ -31,13 +29,11 @@ export default function CollectionsPageClient({ initialItems, initialNextCursor 
   const [hasRelatedModels, setHasRelatedModels] = useState(false);
   const [hasRelatedCompanies, setHasRelatedCompanies] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-
   const [items, setItems] = useState<CollectionListItem[]>(initialItems ?? []);
   const [cursor, setCursor] = useState<string | null>(initialNextCursor ?? null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const abortRef = useRef<AbortController | null>(null);
   const hasInitialData = useRef(initialItems != null);
 
@@ -77,14 +73,11 @@ export default function CollectionsPageClient({ initialItems, initialNextCursor 
       hasInitialData.current = false;
       return;
     }
-
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-
     setLoading(true);
     setError(null);
-
     fetchCollections(filterParams, controller.signal)
       .then((data) => {
         setItems(data.items);
@@ -94,7 +87,6 @@ export default function CollectionsPageClient({ initialItems, initialNextCursor 
         if (err.name !== "AbortError") setError(err.message);
       })
       .finally(() => setLoading(false));
-
     return () => controller.abort();
   }, [filterParams]);
 
@@ -102,7 +94,6 @@ export default function CollectionsPageClient({ initialItems, initialNextCursor 
     if (!cursor) return;
     setLoadingMore(true);
     setError(null);
-
     try {
       const data = await fetchCollections({ ...filterParams, cursor });
       setItems((prev) => [...prev, ...data.items]);
@@ -123,18 +114,37 @@ export default function CollectionsPageClient({ initialItems, initialNextCursor 
     setSelectedCategories([]);
   };
 
+  const hasActiveFilters =
+    !!creatorType ||
+    !!updatedWithin ||
+    featuredOnly ||
+    hasRelatedModels ||
+    hasRelatedCompanies ||
+    selectedCategories.length > 0;
+
+  const activeFilterCount =
+    (creatorType ? 1 : 0) +
+    (updatedWithin ? 1 : 0) +
+    (featuredOnly ? 1 : 0) +
+    (hasRelatedModels ? 1 : 0) +
+    (hasRelatedCompanies ? 1 : 0) +
+    selectedCategories.length;
+
   return (
     <>
       <CollectionsHeader />
 
-      <main className="mx-auto max-w-7xl px-6 pb-16">
-        <div className="mb-6 flex items-center gap-3">
-          <CollectionSearch value={search} onChange={setSearch} />
+      <main className="w-full px-4 sm:px-6 lg:px-8 pb-16 max-w-7xl mx-auto">
+        {/* Controls row */}
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          <div className="flex-1 min-w-[240px]">
+            <CollectionSearch value={search} onChange={setSearch} />
+          </div>
 
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value)}
-            className="h-10 rounded-lg border border-[#232326] bg-[#18181B] px-3 text-xs text-white"
+            className="h-11 rounded-xl border border-[#232326] bg-[#0D0D0F] px-3 text-xs text-white focus:outline-none focus:border-[#6E56CF] transition-colors"
           >
             <option value="recently_updated">Recently Updated</option>
             <option value="oldest_updated">Oldest Updated</option>
@@ -148,10 +158,33 @@ export default function CollectionsPageClient({ initialItems, initialNextCursor 
 
           <button
             onClick={() => setIsFilterOpen(true)}
-            className="h-10 rounded-lg border border-[#232326] bg-[#18181B] px-4 text-xs font-semibold text-white"
+            className={`h-11 flex items-center gap-2 rounded-xl border px-4 text-xs font-semibold transition-colors ${
+              hasActiveFilters
+                ? "border-[#6E56CF] bg-[#6E56CF]/10 text-[#6E56CF]"
+                : "border-[#232326] bg-[#0D0D0F] text-white hover:border-[#6E56CF]/60"
+            }`}
           >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="4" y1="6" x2="20" y2="6" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+              <line x1="11" y1="18" x2="13" y2="18" />
+            </svg>
             Filters
+            {activeFilterCount > 0 && (
+              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#6E56CF] px-1 text-[10px] text-white">
+                {activeFilterCount}
+              </span>
+            )}
           </button>
+
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="h-11 rounded-xl border border-[#232326] bg-[#0D0D0F] px-3 text-xs text-[#A1A1AA] hover:text-white hover:border-[#6E56CF]/60 transition-colors"
+            >
+              Clear
+            </button>
+          )}
         </div>
 
         <CollectionFilters
@@ -173,25 +206,25 @@ export default function CollectionsPageClient({ initialItems, initialNextCursor 
         />
 
         {error && (
-          <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {error}
           </div>
         )}
 
         {loading ? (
-          <div className="py-16 text-center text-sm text-[#A1A1AA]">
-            Loading collections…
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-64 animate-pulse bg-[#131316] rounded-xl border border-[#232326]/60" />
+            ))}
           </div>
         ) : (
           <CollectionGrid collections={items} />
         )}
 
         {cursor && !loading && (
-          <LoadMoreButton
-            loading={loadingMore}
-            disabled={loadingMore}
-            onClick={handleLoadMore}
-          />
+          <div className="flex justify-center mt-6">
+            <LoadMoreButton loading={loadingMore} disabled={loadingMore} onClick={handleLoadMore} />
+          </div>
         )}
 
         <CollectionsClosingCTA />

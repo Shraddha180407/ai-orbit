@@ -1,4 +1,5 @@
 "use client";
+
 import React from "react";
 import type { CreatorType } from "@/lib/types";
 import { X } from "lucide-react";
@@ -65,7 +66,7 @@ export default function CollectionFilters({
             <h2 className="text-lg font-bold text-white">Filters</h2>
             <button
               onClick={onClose}
-              className="p-2 text-[#A1A1AA] hover:text-white hover:bg-[#18181B] rounded-lg"
+              className="p-2 text-[#A1A1AA] hover:text-white hover:bg-[#18181B] rounded-lg transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
@@ -82,10 +83,10 @@ export default function CollectionFilters({
                   <button
                     key={type.label}
                     onClick={() => onCreatorTypeChange(type.value)}
-                    className={`h-9 text-xs rounded-lg border font-semibold capitalize ${
+                    className={`h-9 text-xs rounded-lg border font-semibold capitalize transition-colors ${
                       creatorType === type.value
-                        ? "bg-white text-black border-white"
-                        : "bg-[#18181B] border-[#232326] text-[#A1A1AA] hover:border-neutral-500"
+                        ? "bg-[#6E56CF] text-white border-[#6E56CF]"
+                        : "bg-[#18181B] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/60"
                     }`}
                   >
                     {type.label}
@@ -109,8 +110,8 @@ export default function CollectionFilters({
                         onClick={() => toggleCategory(cat)}
                         className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors ${
                           isSelected
-                            ? "bg-white text-black border-white"
-                            : "bg-[#18181B] border-[#232326] text-[#A1A1AA] hover:border-neutral-500"
+                            ? "bg-[#6E56CF] text-white border-[#6E56CF]"
+                            : "bg-[#18181B] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/60"
                         }`}
                       >
                         {cat}
@@ -129,7 +130,7 @@ export default function CollectionFilters({
               <select
                 value={updatedWithin}
                 onChange={(e) => onUpdatedWithinChange(e.target.value)}
-                className="w-full h-10 bg-[#18181B] border border-[#232326] rounded-lg px-3 text-xs text-white outline-none"
+                className="w-full h-10 bg-[#18181B] border border-[#232326] rounded-lg px-3 text-xs text-white outline-none focus:border-[#6E56CF] transition-colors"
               >
                 <option value="">Anytime</option>
                 <option value="7d">Last 7 Days</option>
@@ -143,33 +144,30 @@ export default function CollectionFilters({
               <label className="text-xs font-bold text-[#71717A] uppercase tracking-wider block">
                 Attributes
               </label>
-
               <label className="flex items-center gap-3 text-xs text-white cursor-pointer">
                 <input
                   type="checkbox"
                   checked={featuredOnly}
                   onChange={(e) => onFeaturedOnlyChange(e.target.checked)}
-                  className="rounded border-[#232326] bg-[#18181B] h-4 w-4"
+                  className="rounded border-[#232326] bg-[#18181B] h-4 w-4 accent-[#6E56CF]"
                 />
                 <span>Featured Collections Only</span>
               </label>
-
               <label className="flex items-center gap-3 text-xs text-white cursor-pointer">
                 <input
                   type="checkbox"
                   checked={hasRelatedModels}
                   onChange={(e) => onHasRelatedModelsChange(e.target.checked)}
-                  className="rounded border-[#232326] bg-[#18181B] h-4 w-4"
+                  className="rounded border-[#232326] bg-[#18181B] h-4 w-4 accent-[#6E56CF]"
                 />
                 <span>Has AI Models Linked</span>
               </label>
-
               <label className="flex items-center gap-3 text-xs text-white cursor-pointer">
                 <input
                   type="checkbox"
                   checked={hasRelatedCompanies}
                   onChange={(e) => onHasRelatedCompaniesChange(e.target.checked)}
-                  className="rounded border-[#232326] bg-[#18181B] h-4 w-4"
+                  className="rounded border-[#232326] bg-[#18181B] h-4 w-4 accent-[#6E56CF]"
                 />
                 <span>Has Companies Linked</span>
               </label>
@@ -180,13 +178,13 @@ export default function CollectionFilters({
         <div className="flex gap-3 pt-6 border-t border-[#232326] mt-6">
           <button
             onClick={onReset}
-            className="flex-1 h-11 bg-[#18181B] border border-[#232326] text-white font-semibold text-xs rounded-xl hover:border-neutral-500"
+            className="flex-1 h-11 bg-[#18181B] border border-[#232326] text-white font-semibold text-xs rounded-xl hover:border-[#6E56CF]/60 transition-colors"
           >
             Reset All
           </button>
           <button
             onClick={onClose}
-            className="flex-1 h-11 bg-white text-black font-semibold text-xs rounded-xl hover:bg-neutral-200"
+            className="flex-1 h-11 bg-[#6E56CF] text-white font-semibold text-xs rounded-xl hover:bg-[#7C66DF] transition-colors"
           >
             Apply Filters
           </button>
