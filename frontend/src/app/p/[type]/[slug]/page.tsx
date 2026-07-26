@@ -78,12 +78,11 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   if (type === "news") return <ArticlePageClient />;
   if (type === "tasks") return <TaskDetailClient />;
 
-  const entityTypeMap: Record<string, any> = {
+  const entityTypeMap: Record<string, "device" | "country" | "fundraise" | "investor" | "robot"> = {
     devices: "device",
     countries: "country",
     fundraises: "fundraise",
     investors: "investor",
-    models: "model",
     robots: "robot",
   };
 

@@ -62,10 +62,11 @@ function BoolPill({
 }
 
 // Logo | Name | Company | Type | Primary Task | Released | Open Source | Compare
+// Logo track matches h-10/w-10 (40px). Horizontal scroll below ~960px.
 const COL_TEMPLATE =
-  "grid-cols-[40px_minmax(200px,2.2fr)_minmax(120px,1fr)_minmax(100px,0.9fr)_minmax(120px,1fr)_minmax(100px,0.9fr)_minmax(100px,0.85fr)_minmax(100px,0.85fr)]";
+  "grid-cols-[40px_minmax(180px,2.2fr)_minmax(110px,1fr)_minmax(90px,0.85fr)_minmax(110px,1fr)_minmax(100px,0.9fr)_minmax(90px,0.8fr)_minmax(100px,0.85fr)]";
 
-const COL_MIN_WIDTH = "min-w-[980px]";
+const COL_MIN_WIDTH = "min-w-[960px]";
 
 const COLUMN_HEADERS = [
   { label: "MODEL", align: "" },
@@ -76,7 +77,7 @@ const COLUMN_HEADERS = [
   { label: "RELEASED", align: "" },
   { label: "OPEN SOURCE", align: "" },
   { label: "COMPARE", align: "text-right" },
-];
+] as const;
 
 function ModelRow({
   model,
@@ -99,16 +100,18 @@ function ModelRow({
   return (
     <Link
       href={`/models/${model.id}`}
-      className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none`}
+      className={`group relative grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none`}
     >
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
+      <span className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal,#6E56CF)] transition-all duration-200 group-hover:h-[70%]" />
+
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
         {companyLogo ? (
           <Image
             src={companyLogo}
             alt={`${companyName} logo`}
-            width={40}
-            height={40}
-            className="h-9 w-9 object-contain"
+            width={36}
+            height={36}
+            className="h-8 w-8 object-contain"
           />
         ) : (
           <span className="text-sm font-bold text-neutral-900">{model.name.charAt(0)}</span>
@@ -124,27 +127,27 @@ function ModelRow({
 
       <div className="min-w-0 truncate text-[12px] text-white">{companyName}</div>
 
-      <div className="min-w-0 truncate">
+      <div className="min-w-0 overflow-hidden">
         {typeLabel ? (
-          <CategoryChip label={typeLabel} />
+          <CategoryChip label={typeLabel} className="max-w-full truncate" />
         ) : (
           <span className="text-[11px] text-[#71717A]">—</span>
         )}
       </div>
 
-      <div className="hidden min-w-0 truncate text-[11px] text-[#A1A1AA] sm:block">
+      <div className="min-w-0 truncate text-[11px] text-[#A1A1AA]">
         {primaryTask || <span className="text-[#71717A]">—</span>}
       </div>
 
-      <div className="hidden text-[11px] font-mono text-[#A1A1AA] sm:block">
+      <div className="text-[11px] font-mono text-[#A1A1AA]">
         {formatReleased(model.releaseDate)}
       </div>
 
-      <div className="hidden sm:block">
+      <div>
         <BoolPill value={openSource} trueLabel="YES" falseLabel="NO" />
       </div>
 
-      <div className="hidden text-right sm:block">
+      <div className="text-right">
         <button
           type="button"
           disabled={!isSelected && isCompareFull}
@@ -204,9 +207,9 @@ export function ModelListView({
           {Array.from({ length: skeletonRows }).map((_, i) => (
             <div
               key={i}
-              className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2.5`}
+              className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2.5`}
             >
-              <div className="h-11 w-11 animate-pulse rounded-lg bg-[#18181C]" />
+              <div className="h-10 w-10 animate-pulse rounded-lg bg-[#18181C]" />
               <div className="space-y-1.5">
                 <div className="h-3 w-40 animate-pulse rounded bg-[#18181C]" />
                 <div className="h-2 w-64 animate-pulse rounded bg-[#18181C]" />
@@ -240,10 +243,14 @@ export function ModelListView({
 
   return (
     <>
-      <div className="flex flex-col rounded-lg border border-[#232326]/60 bg-[#131316]/10 overflow-hidden">
+      <div
+        className={`flex flex-col rounded-lg border border-[#232326]/60 bg-[#131316]/10 overflow-hidden ${
+          compareSet.length > 0 ? "mb-24" : ""
+        }`}
+      >
         <div className="overflow-x-auto">
           <div className="border-b border-[#232326]/60 bg-[#131316]/40">
-            <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2`}>
+            <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2`}>
               {COLUMN_HEADERS.map((h) => (
                 <span
                   key={h.label}

@@ -43,7 +43,8 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/:type(collections|countries|devices|fundraises|investors|models|news|robots|tasks|tools|videos)/:slug",
+        // `models` intentionally omitted — real routes live at app/models/[id] and app/models/compare
+        source: "/:type(collections|countries|devices|fundraises|investors|news|robots|tasks|tools|videos)/:slug",
         destination: "/p/:type/:slug",
       },
     ];

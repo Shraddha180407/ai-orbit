@@ -63,6 +63,7 @@ export function ModelDetailClient() {
 
   const [model, setModel] = useState<ModelDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [bookmarked, setBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -70,17 +71,31 @@ export function ModelDetailClient() {
     if (!id) return;
     let active = true;
     setLoading(true);
-    fetchModelById(id).then((data) => {
-      if (!active) return;
-      if (!data) {
-        notFound();
-        return;
-      }
-      setModel(data);
-      setBookmarked(isModelBookmarked(data.id));
-      setLoading(false);
-      document.title = `${data.name} — AI Model | AI Orbit`;
-    });
+    setLoadError(null);
+    setModel(null);
+
+    fetchModelById(id)
+      .then((data) => {
+        if (!active) return;
+        if (data) {
+          setModel(data);
+          setBookmarked(isModelBookmarked(data.id));
+          document.title = `${data.name} — AI Model | AI Orbit`;
+        } else {
+          setModel(null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        setModel(null);
+        setLoadError(
+          err instanceof Error ? err.message : "Failed to load model",
+        );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
     return () => {
       active = false;
     };
@@ -98,7 +113,37 @@ export function ModelDetailClient() {
     );
   }
 
-  if (!model) return null;
+  if (loadError) {
+    return (
+      <main className="mx-auto max-w-[1100px] px-4 py-6 md:px-6 md:py-10 flex-1 w-full">
+        <Link
+          href="/models"
+          className="inline-flex items-center gap-1.5 text-sm text-[#71717A] hover:text-white transition-colors"
+        >
+          <ArrowLeft size={14} />
+          AI Models
+        </Link>
+        <div className="mt-8 rounded-xl border border-[#232326]/60 bg-[#131316]/40 p-6 text-center">
+          <p className="text-sm font-semibold text-white">Couldn’t load this model</p>
+          <p className="mt-2 text-xs text-[#A1A1AA]">{loadError}</p>
+          <p className="mt-1 text-[11px] text-[#71717A]">
+            Check that the API is running and NEXT_PUBLIC_API_URL points at it.
+          </p>
+          <Link
+            href="/models"
+            className="mt-4 inline-flex rounded-lg border border-[#232326]/60 bg-[#18181C] px-4 py-2 text-sm font-semibold text-white hover:border-neutral-500 transition-colors"
+          >
+            Back to models
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (!model) {
+    notFound();
+    return null;
+  }
 
   const companyName = model.provider?.name || model.creator;
   const typeLabel = model.type || model.modality || "—";

@@ -242,7 +242,7 @@ export function ModelsClient() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
+    <div className="flex-1 w-full flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       {/* Toolbar — search + sort, homepage density */}
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-6 pb-2">
         <div className="mx-auto w-full max-w-[1600px] flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

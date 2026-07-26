@@ -124,8 +124,11 @@ export async function fetchAllModels(): Promise<AIModel[]> {
 
 export async function fetchModelById(id: string): Promise<import("./types").ModelDetail | null> {
   const url = `${API_URL}/api/v1/models/${encodeURIComponent(id)}`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return null;
+  const res = await fetch(url, { cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    throw new Error(`Failed to load model (${res.status})`);
+  }
   return res.json();
 }
 
