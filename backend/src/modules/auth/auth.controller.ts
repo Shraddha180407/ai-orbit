@@ -2,7 +2,6 @@ import { Context } from 'hono';
 import { setCookie, deleteCookie } from 'hono/cookie';
 import { sign } from 'jsonwebtoken';
 import { AuthService } from './auth.service.js';
-import { logger } from '../../lib/logger.js';
 import { 
   signupSchema, 
   loginSchema, 
@@ -12,6 +11,7 @@ import {
 } from './auth.schema.js';
 import { rateLimit, getIp } from '../../lib/rate-limit.js';
 import { getPrisma } from '../../lib/prisma.js';
+import { AppError } from '../../lib/error.js';
 
 export class AuthController {
   
@@ -26,22 +26,15 @@ export class AuthController {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
     }
 
-    try {
-      const body = await c.req.json();
-      const result = signupSchema.safeParse(body);
-      
-      if (!result.success) {
-        return c.json({ error: result.error.issues[0].message }, 400);
-      }
-
-      await this.getService(c).signup(result.data);
-      return c.json({ success: true, message: 'Verification email sent.' }, 201);
-    } catch (error: unknown) {
-      if (error instanceof Error && error.message === 'Email is already in use.') {
-        return c.json({ error: error.message }, 409);
-      }
-      return c.json({ error: 'Failed to create account.' }, 500);
+    const body = await c.req.json();
+    const result = signupSchema.safeParse(body);
+    
+    if (!result.success) {
+      throw AppError.BadRequest(result.error.issues[0].message);
     }
+
+    await this.getService(c).signup(result.data);
+    return c.json({ success: true, message: 'Verification email sent.' }, 201);
   }
 
   async login(c: Context) {
@@ -51,45 +44,32 @@ export class AuthController {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
     }
 
-    try {
-      const body = await c.req.json();
-      const result = loginSchema.safeParse(body);
-      
-      if (!result.success) {
-        return c.json({ error: result.error.issues[0].message }, 400);
-      }
-
-      const user = await this.getService(c).login(result.data);
-      const jwtSecret = c.env?.JWT_SECRET || process.env.JWT_SECRET;
-
-      const token = sign(
-        { id: user.id, email: user.email, name: user.name, role: user.role }, 
-        jwtSecret!, 
-        { expiresIn: '7d' }
-      );
-      
-      const isProd = c.req.url.startsWith('https://');
-      setCookie(c, 'auth_token', token, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? 'None' : 'Lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7
-      });
-
-      return c.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        if (error.message === 'Invalid email or password.') {
-          return c.json({ error: error.message }, 401);
-        }
-        if (error.message === 'Please verify your email before logging in.') {
-          return c.json({ error: error.message }, 403);
-        }
-      }
-      logger.error("LOGIN ERROR:", error);
-      return c.json({ error: 'Failed to login.' }, 500);
+    const body = await c.req.json();
+    const result = loginSchema.safeParse(body);
+    
+    if (!result.success) {
+      throw AppError.BadRequest(result.error.issues[0].message);
     }
+
+    const user = await this.getService(c).login(result.data);
+    const jwtSecret = c.env?.JWT_SECRET || process.env.JWT_SECRET;
+
+    const token = sign(
+      { id: user.id, email: user.email, name: user.name, role: user.role }, 
+      jwtSecret!, 
+      { expiresIn: '7d' }
+    );
+    
+    const isProd = c.req.url.startsWith('https://');
+    setCookie(c, 'auth_token', token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'None' : 'Lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7
+    });
+
+    return c.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   }
 
   async logout(c: Context) {
@@ -102,50 +82,38 @@ export class AuthController {
   }
 
   async getMe(c: Context) {
-    try {
-      const user = c.get('user');
-      const dbUser = await this.getService(c).getMe(user.id);
-      return c.json({ success: true, user: dbUser });
-    } catch (_error) {
-      return c.json({ error: 'User not found' }, 404);
-    }
+    const user = c.get('user');
+    const dbUser = await this.getService(c).getMe(user.id);
+    return c.json({ success: true, user: dbUser });
   }
 
   async verifyEmail(c: Context) {
-    try {
-      const body = await c.req.json();
-      const result = verifyEmailSchema.safeParse(body);
-      
-      if (!result.success) {
-        return c.json({ error: result.error.issues[0].message }, 400);
-      }
-
-      const user = await this.getService(c).verifyEmail(result.data);
-      const jwtSecret = c.env?.JWT_SECRET || process.env.JWT_SECRET;
-
-      const token = sign(
-        { id: user.id, email: user.email, name: user.name, role: user.role }, 
-        jwtSecret!, 
-        { expiresIn: '7d' }
-      );
-      
-      const isProd = c.req.url.startsWith('https://');
-      setCookie(c, 'auth_token', token, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? 'None' : 'Lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7
-      });
-
-      return c.json({ success: true, message: 'Email verified successfully.' });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : undefined;
-      if (message?.includes('expired') || message?.includes('Invalid') || message?.includes('not found')) {
-         return c.json({ error: message }, 400);
-      }
-      return c.json({ error: 'An unexpected error occurred during verification.' }, 500);
+    const body = await c.req.json();
+    const result = verifyEmailSchema.safeParse(body);
+    
+    if (!result.success) {
+      throw AppError.BadRequest(result.error.issues[0].message);
     }
+
+    const user = await this.getService(c).verifyEmail(result.data);
+    const jwtSecret = c.env?.JWT_SECRET || process.env.JWT_SECRET;
+
+    const token = sign(
+      { id: user.id, email: user.email, name: user.name, role: user.role }, 
+      jwtSecret!, 
+      { expiresIn: '7d' }
+    );
+    
+    const isProd = c.req.url.startsWith('https://');
+    setCookie(c, 'auth_token', token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'None' : 'Lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7
+    });
+
+    return c.json({ success: true, message: 'Email verified successfully.' });
   }
 
   async resendVerification(c: Context) {
@@ -155,22 +123,15 @@ export class AuthController {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
     }
 
-    try {
-      const body = await c.req.json();
-      const result = emailOnlySchema.safeParse(body);
-      
-      if (!result.success) {
-        return c.json({ error: result.error.issues[0].message }, 400);
-      }
-
-      const response = await this.getService(c).resendVerification(result.data);
-      return c.json({ success: true, message: response.message });
-    } catch (error: unknown) {
-      if (error instanceof Error && error.message === 'Email is already verified.') {
-        return c.json({ error: error.message }, 400);
-      }
-      return c.json({ error: 'Failed to resend verification email.' }, 500);
+    const body = await c.req.json();
+    const result = emailOnlySchema.safeParse(body);
+    
+    if (!result.success) {
+      throw AppError.BadRequest(result.error.issues[0].message);
     }
+
+    const response = await this.getService(c).resendVerification(result.data);
+    return c.json({ success: true, message: response.message });
   }
 
   async forgotPassword(c: Context) {
@@ -180,19 +141,15 @@ export class AuthController {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
     }
 
-    try {
-      const body = await c.req.json();
-      const result = emailOnlySchema.safeParse(body);
-      
-      if (!result.success) {
-        return c.json({ error: result.error.issues[0].message }, 400);
-      }
-
-      const response = await this.getService(c).forgotPassword(result.data);
-      return c.json({ success: true, message: response.message });
-    } catch (_error) {
-      return c.json({ error: 'Failed to send password reset email.' }, 500);
+    const body = await c.req.json();
+    const result = emailOnlySchema.safeParse(body);
+    
+    if (!result.success) {
+      throw AppError.BadRequest(result.error.issues[0].message);
     }
+
+    const response = await this.getService(c).forgotPassword(result.data);
+    return c.json({ success: true, message: response.message });
   }
 
   async resetPassword(c: Context) {
@@ -202,67 +159,46 @@ export class AuthController {
       return c.json({ error: `Too many requests. Please try again in ${retryAfter} seconds.` }, 429);
     }
 
-    try {
-      const body = await c.req.json();
-      const result = resetPasswordSchema.safeParse(body);
-      
-      if (!result.success) {
-        return c.json({ error: result.error.issues[0].message }, 400);
-      }
-
-      await this.getService(c).resetPassword(result.data);
-      return c.json({ success: true, message: 'Password has been reset successfully.' });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : undefined;
-      if (message?.includes('Invalid') || message?.includes('expired')) {
-        return c.json({ error: message }, 400);
-      }
-      return c.json({ error: 'Failed to reset password.' }, 500);
+    const body = await c.req.json();
+    const result = resetPasswordSchema.safeParse(body);
+    
+    if (!result.success) {
+      throw AppError.BadRequest(result.error.issues[0].message);
     }
+
+    await this.getService(c).resetPassword(result.data);
+    return c.json({ success: true, message: 'Password has been reset successfully.' });
   }
 
   async deleteAccount(c: Context) {
-    try {
-      const user = c.get('user');
-      await this.getService(c).deleteAccount(user.id);
+    const user = c.get('user');
+    await this.getService(c).deleteAccount(user.id);
 
-      const isProd = c.req.url.startsWith('https://');
-      deleteCookie(c, 'auth_token', { 
-        path: '/',
-        secure: isProd,
-        sameSite: isProd ? 'None' : 'Lax',
-      });
+    const isProd = c.req.url.startsWith('https://');
+    deleteCookie(c, 'auth_token', { 
+      path: '/',
+      secure: isProd,
+      sameSite: isProd ? 'None' : 'Lax',
+    });
 
-      return c.json({ success: true, message: 'Account deleted successfully' });
-    } catch (error: unknown) {
-      logger.error('Delete account error:', error);
-      return c.json({ error: error instanceof Error ? error.message : 'Failed to delete account' }, 500);
-    }
+    return c.json({ success: true, message: 'Account deleted successfully' });
   }
 
   async getSettings(c: Context) {
-    try {
-      const user = c.get('user');
-      const settings = await this.getService(c).getSettings(user.id);
-      return c.json(settings);
-    } catch (_error) {
-      return c.json({ error: 'Failed to fetch settings' }, 500);
-    }
+    const user = c.get('user');
+    const settings = await this.getService(c).getSettings(user.id);
+    return c.json(settings);
   }
 
   async updatePassword(c: Context) {
-    try {
-      const user = c.get('user');
-      const body = await c.req.json();
-      
-      if (!body.newPassword || body.newPassword.length < 6) {
-        return c.json({ error: 'New password must be at least 6 characters long' }, 400);
-      }
-      
-      await this.getService(c).updatePassword(user.id, body);
-      return c.json({ success: true, message: 'Password updated successfully' });
-    } catch (error: unknown) {
-      return c.json({ error: error instanceof Error ? error.message : 'Failed to update password' }, 400);
+    const user = c.get('user');
+    const body = await c.req.json();
+    
+    if (!body.newPassword || body.newPassword.length < 6) {
+      throw AppError.BadRequest('New password must be at least 6 characters long');
     }
+    
+    await this.getService(c).updatePassword(user.id, body);
+    return c.json({ success: true, message: 'Password updated successfully' });
   }
 }

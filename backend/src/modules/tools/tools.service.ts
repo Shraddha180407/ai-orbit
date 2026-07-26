@@ -13,6 +13,8 @@ type ToolCard = {
   createdAt: Date;
   isOpenSource: boolean;
   isTrending: boolean;
+  verified: boolean;
+  upvoteCount: number;
   categories: { category: { slug: string; name: string } }[];
   tags: { tag: { slug: string; name: string } }[];
   _count: { reviews: number; bookmarks: number };
@@ -84,6 +86,8 @@ export class ToolsService {
       createdAt: true,
       isOpenSource: true,
       isTrending: true,
+      verified: true,
+      upvoteCount: true,
       categories: { select: { category: { select: { slug: true, name: true } } } },
       tags: { select: { tag: { select: { slug: true, name: true } } } },
       _count: { select: { reviews: true, bookmarks: true } },
@@ -135,15 +139,28 @@ export class ToolsService {
         websiteUrl: true,
         screenshots: true,
         features: true,
+        pros: true,
+        cons: true,
+        releaseDate: true,
         pricingModel: true,
         pricingAmount: true,
         billingFrequency: true,
         avgRating: true,
         reviewCount: true,
+        upvoteCount: true,
+        isOpenSource: true,
+        isTrending: true,
+        verified: true,
+        compatibility: true,
+        targetUsers: true,
+        hasApi: true,
+        apiDocsUrl: true,
+        performanceScore: true,
         createdAt: true,
         company: { select: { slug: true, name: true, logoUrl: true } },
         categories: { select: { category: { select: { slug: true, name: true } } } },
         tags: { select: { tag: { select: { slug: true, name: true } } } },
+        integrations: { select: { integration: { select: { slug: true, name: true, logoUrl: true } } } },
         _count: { select: { reviews: true, bookmarks: true } },
       },
     });
@@ -177,6 +194,8 @@ export class ToolsService {
         createdAt: true,
         isOpenSource: true,
         isTrending: true,
+        verified: true,
+        upvoteCount: true,
         categories: { select: { category: { select: { slug: true, name: true } } } },
         tags: { select: { tag: { select: { slug: true, name: true } } } },
         _count: { select: { reviews: true, bookmarks: true } },

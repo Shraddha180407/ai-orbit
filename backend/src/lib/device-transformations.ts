@@ -91,11 +91,13 @@ export function validateImageUrl(url: string | null): string | null {
     return null;
   }
 
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+  const trimmed = url.trim();
+
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
     return null;
   }
 
-  return url.trim();
+  return trimmed;
 }
 
 export function transformDeviceForListing(device: Device) {

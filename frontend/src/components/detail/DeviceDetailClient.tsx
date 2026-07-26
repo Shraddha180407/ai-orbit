@@ -293,7 +293,7 @@ export function DeviceDetailClient() {
                 className="mt-2 inline-flex items-center gap-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors w-fit"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                Buy now
+                Learn More
               </a>
             )}
           </div>
@@ -305,19 +305,19 @@ export function DeviceDetailClient() {
             <h2 className="text-xs font-bold text-[#A1A1AA] uppercase tracking-widest">Specifications</h2>
           </div>
           <div className="divide-y divide-[#232326]">
-            {device.formFactor && <SpecRowDivider label="Form factor" value={device.formFactor} />}
-            {device.ram && <SpecRowDivider label="RAM" value={device.ram} />}
-            {device.country && <SpecRowDivider label="Made in" value={device.country} />}
-            <SpecRowDivider label="Release date" value={device.month || device.year || "—"} />
+  {device.formFactor && <SpecRowDivider label="Form factor" value={device.formFactor} />}
+  {device.ram && <SpecRowDivider label="RAM" value={device.ram} />}
+  {device.country && <SpecRowDivider label="Made in" value={device.country} />}
+  <SpecRowDivider label="Release date" value={device.month || device.year || "—"} />
             {device.aiFeatures && device.aiFeatures.length > 0 && (
               <div className="flex items-start gap-4 px-6 py-4">
                 <span className="text-sm text-[#52525B] w-36 shrink-0">AI features</span>
                 <div className="flex flex-wrap gap-2">
                   {device.aiFeatures.map((f) => (
-                    <span key={f} className="text-xs bg-[#18181C] border border-[#232326] text-[#A1A1AA] px-3 py-1 rounded-full">
-                      {f}
-                    </span>
-                  ))}
+  <span key={f} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
+    {f}
+  </span>
+))}
                 </div>
               </div>
             )}
@@ -326,10 +326,10 @@ export function DeviceDetailClient() {
                 <span className="text-sm text-[#52525B] w-36 shrink-0">Primary use cases</span>
                 <div className="flex flex-wrap gap-2">
                   {device.primaryUseCases.map((u) => (
-                    <span key={u} className="text-xs bg-[#18181C] border border-[#232326] text-[#A1A1AA] px-3 py-1 rounded-full">
-                      {u}
-                    </span>
-                  ))}
+  <span key={u} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
+    {u}
+  </span>
+))}
                 </div>
               </div>
             )}
@@ -473,10 +473,10 @@ function SimilarDeviceImage({ name, imageUrl, color }: { name: string; imageUrl:
 
   return (
     <img
-      src={imageUrl}
-      alt={name}
-      className="w-full h-full object-cover"
-      onError={() => setFailed(true)}
-    />
+  src={imageUrl}
+  alt={name}
+  className="w-full h-full object-cover object-center scale-105 group-hover:scale-110 transition-transform duration-500"
+  onError={() => setFailed(true)}
+/>
   );
 }
