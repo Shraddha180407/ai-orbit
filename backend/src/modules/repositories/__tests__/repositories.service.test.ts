@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RepositoriesService } from '../repositories.service.js';
 
 function createMockPrisma() {
@@ -40,8 +40,6 @@ const REPO_ITEM = {
 
 const REPO_DETAIL = {
   ...REPO_ITEM,
-  readmeHtml: '<h1>Whisper</h1>',
-  readmeFetchedAt: new Date('2025-01-01'),
   defaultBranch: 'main',
 };
 
@@ -53,6 +51,7 @@ describe('RepositoriesService', () => {
     prisma = createMockPrisma();
     service = new RepositoriesService(prisma as never);
     vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('listRepositories', () => {
@@ -409,6 +408,27 @@ describe('RepositoriesService', () => {
   });
 
   describe('getRepositoryBySlug', () => {
+    let mockCache: { match: ReturnType<typeof vi.fn>; put: ReturnType<typeof vi.fn> };
+
+    beforeEach(() => {
+      mockCache = {
+        match: vi.fn().mockResolvedValue(undefined),
+        put: vi.fn().mockResolvedValue(undefined),
+      };
+      Object.defineProperty(globalThis, 'caches', {
+        value: { default: mockCache },
+        writable: true,
+        configurable: true,
+      });
+      vi.spyOn(global, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ content: '', encoding: 'none' }), { status: 404 }),
+      );
+    });
+
+    afterEach(() => {
+      Object.defineProperty(globalThis, 'caches', { value: undefined, writable: true, configurable: true });
+    });
+
     it('returns null when repo not found', async () => {
       prisma.repository.findUnique.mockResolvedValue(null);
 
@@ -422,10 +442,12 @@ describe('RepositoriesService', () => {
       prisma.repository.findUnique.mockResolvedValue(REPO_DETAIL);
       prisma.company.findFirst.mockResolvedValue({ slug: 'openai' });
 
-      const result = await service.getRepositoryBySlug('openai-whisper');
+      const result = await service.getRepositoryBySlug('openai-whisper', 'fake-token');
 
       expect(result).toEqual({
         ...REPO_DETAIL,
+        readmeHtml: null,
+        readmeFetchedAt: null,
         companySlug: 'openai',
       });
     });
@@ -434,30 +456,81 @@ describe('RepositoriesService', () => {
       prisma.repository.findUnique.mockResolvedValue(REPO_DETAIL);
       prisma.company.findFirst.mockResolvedValue(null);
 
-      const result = await service.getRepositoryBySlug('openai-whisper');
+      const result = await service.getRepositoryBySlug('openai-whisper', 'fake-token');
 
       expect(result).toEqual({
         ...REPO_DETAIL,
+        readmeHtml: null,
+        readmeFetchedAt: null,
         companySlug: null,
       });
     });
 
-    it('uses DETAIL_SELECT with readme fields', async () => {
+    it('uses DETAIL_SELECT with defaultBranch but without readme fields', async () => {
       prisma.repository.findUnique.mockResolvedValue(null);
 
       await service.getRepositoryBySlug('test');
 
       const call = prisma.repository.findUnique.mock.calls[0][0];
-      expect(call.select).toHaveProperty('readmeHtml', true);
-      expect(call.select).toHaveProperty('readmeFetchedAt', true);
       expect(call.select).toHaveProperty('defaultBranch', true);
+      expect(call.select).not.toHaveProperty('readmeHtml');
+      expect(call.select).not.toHaveProperty('readmeFetchedAt');
+    });
+
+    it('fetches readme from GitHub when token is provided', async () => {
+      prisma.repository.findUnique.mockResolvedValue(REPO_DETAIL);
+      prisma.company.findFirst.mockResolvedValue(null);
+
+      const markdown = Buffer.from('# Hello').toString('base64');
+      vi.spyOn(global, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({ content: markdown, encoding: 'base64' }),
+          { status: 200 },
+        ),
+      );
+
+      const result = await service.getRepositoryBySlug('openai-whisper', 'fake-token');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://api.github.com/repos/openai/whisper/readme',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer fake-token',
+          }),
+        }),
+      );
+      expect(result?.readmeHtml).toBe('<h1>Hello</h1>\n');
+      expect(result?.readmeFetchedAt).toBeTruthy();
+    });
+
+    it('returns readmeHtml null when GitHub fetch fails', async () => {
+      prisma.repository.findUnique.mockResolvedValue(REPO_DETAIL);
+      prisma.company.findFirst.mockResolvedValue(null);
+
+      vi.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'));
+
+      const result = await service.getRepositoryBySlug('openai-whisper', 'fake-token');
+
+      expect(result?.readmeHtml).toBeNull();
+      expect(result?.readmeFetchedAt).toBeNull();
+    });
+
+    it('returns readmeHtml null when no token is provided', async () => {
+      prisma.repository.findUnique.mockResolvedValue(REPO_DETAIL);
+      prisma.company.findFirst.mockResolvedValue(null);
+
+      const result = await service.getRepositoryBySlug('openai-whisper');
+
+      expect(global.fetch).not.toHaveBeenCalled();
+      expect(result?.readmeHtml).toBeNull();
+      expect(result?.readmeFetchedAt).toBeNull();
     });
 
     it('looks up company by owner name case-insensitively', async () => {
       prisma.repository.findUnique.mockResolvedValue(REPO_DETAIL);
       prisma.company.findFirst.mockResolvedValue({ slug: 'OpenAI' });
 
-      await service.getRepositoryBySlug('openai-whisper');
+      await service.getRepositoryBySlug('openai-whisper', 'fake-token');
 
       expect(prisma.company.findFirst).toHaveBeenCalledWith({
         where: {
@@ -468,6 +541,44 @@ describe('RepositoriesService', () => {
         },
         select: { slug: true },
       });
+    });
+
+    it('returns cached readme on cache hit without calling GitHub', async () => {
+      prisma.repository.findUnique.mockResolvedValue(REPO_DETAIL);
+      prisma.company.findFirst.mockResolvedValue(null);
+
+      const cachedHtml = '<h1>Cached README</h1>';
+      mockCache.match.mockResolvedValue(
+        new Response(JSON.stringify({ readmeHtml: cachedHtml, fetchedAt: '2025-01-01T00:00:00Z' })),
+      );
+
+      const result = await service.getRepositoryBySlug('openai-whisper', 'fake-token');
+
+      expect(result?.readmeHtml).toBe(cachedHtml);
+      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockCache.match).toHaveBeenCalled();
+      expect(mockCache.put).not.toHaveBeenCalled();
+    });
+
+    it('caches successful GitHub fetch for next request', async () => {
+      prisma.repository.findUnique.mockResolvedValue(REPO_DETAIL);
+      prisma.company.findFirst.mockResolvedValue(null);
+
+      const markdown = Buffer.from('# Hello').toString('base64');
+      vi.spyOn(global, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({ content: markdown, encoding: 'base64' }),
+          { status: 200 },
+        ),
+      );
+
+      const result = await service.getRepositoryBySlug('openai-whisper', 'fake-token');
+
+      expect(result?.readmeHtml).toBe('<h1>Hello</h1>\n');
+      expect(mockCache.put).toHaveBeenCalledWith(
+        expect.any(Request),
+        expect.any(Response),
+      );
     });
   });
 

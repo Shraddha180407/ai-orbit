@@ -1,10 +1,18 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import { marked } from 'marked';
 
 const VALID_SORTS = ['stars_desc', 'newest', 'name_asc'] as const;
 type SortOption = (typeof VALID_SORTS)[number];
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
+
+// Cloudflare Workers extends CacheStorage with a `default` property that the
+// DOM's CacheStorage interface (lib.dom.d.ts) does not include.  We declare a
+// narrow local type so we can access it without `any`.
+interface CfCacheStorage {
+  readonly default: Cache;
+}
 
 const LIST_SELECT = {
   id: true,
@@ -29,8 +37,6 @@ const LIST_SELECT = {
 
 const DETAIL_SELECT = {
   ...LIST_SELECT,
-  readmeHtml: true,
-  readmeFetchedAt: true,
   defaultBranch: true,
 } as const;
 
@@ -119,7 +125,7 @@ export class RepositoriesService {
     };
   }
 
-  async getRepositoryBySlug(slug: string) {
+  async getRepositoryBySlug(slug: string, githubToken?: string) {
     const repo = await this.prisma.repository.findUnique({
       where: { slug },
       select: DETAIL_SELECT,
@@ -139,10 +145,85 @@ export class RepositoriesService {
       }
     });
 
+    const readmeHtml = await this.fetchReadmeFromGitHub(
+      repo.owner,
+      repo.name,
+      githubToken,
+    );
+
     return {
       ...repo,
+      readmeHtml,
+      readmeFetchedAt: readmeHtml !== null ? new Date().toISOString() : null,
       companySlug: company?.slug || null
     };
+  }
+
+  private async fetchReadmeFromGitHub(
+    owner: string,
+    name: string,
+    githubToken?: string,
+  ): Promise<string | null> {
+    if (!githubToken) return null;
+
+    const cacheKey = new Request(`https://internal-cache/readme/${owner}/${name}`);
+    const cache = (caches as unknown as CfCacheStorage).default;
+
+    // Check cache first
+    try {
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        const cachedData = (await cached.json()) as { readmeHtml: string };
+        return cachedData.readmeHtml;
+      }
+    } catch {
+      // Cache read failure — fall through to live fetch
+    }
+
+    try {
+      const url = `https://api.github.com/repos/${owner}/${name}/readme`;
+      const headers: Record<string, string> = {
+        Accept: 'application/vnd.github.v3+json',
+        'User-Agent': 'aiorbit-backend',
+      };
+
+      if (githubToken) {
+        headers['Authorization'] = `Bearer ${githubToken}`;
+      }
+
+      const res = await fetch(url, { headers });
+
+      if (!res.ok) return null;
+
+      const data: { content: string; encoding: string } = await res.json();
+
+      if (data.encoding !== 'base64') return null;
+
+      const markdown = Buffer.from(data.content, 'base64').toString('utf-8');
+      const html = await marked.parse(markdown) as string;
+
+      // Cache successful fetch (do NOT cache null/empty results)
+      if (html) {
+        try {
+          const response = new Response(
+            JSON.stringify({ readmeHtml: html, fetchedAt: new Date().toISOString() }),
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'max-age=86400',
+              },
+            },
+          );
+          await cache.put(cacheKey, response.clone());
+        } catch {
+          // Cache write failure — non-critical, ignore
+        }
+      }
+
+      return html;
+    } catch {
+      return null;
+    }
   }
 
   private buildWhereClause(filters: {

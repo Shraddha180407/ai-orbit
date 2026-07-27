@@ -404,8 +404,6 @@ model Repository {
   defaultBranch   String    @default("main")
   logoUrl         String?
   brandColor      String?
-  readmeHtml      String?
-  readmeFetchedAt DateTime?
   githubCreatedAt DateTime
   syncedAt        DateTime
   createdAt       DateTime  @default(now())
@@ -448,16 +446,63 @@ model Video {
   @@index([views])
 }
 
+enum RobotCategory {
+  HUMANOID
+  MOBILE
+  MANIPULATOR
+  DRONE
+  INDUSTRIAL
+  WAREHOUSE
+  HEALTHCARE
+  HOME
+  AGRICULTURAL
+  DEFENSE
+  SERVICE
+  COMPANION
+  OTHER
+}
+
+enum RobotAvailability {
+  ANNOUNCED
+  COMMERCIALLY_AVAILABLE
+  DISCONTINUED
+  IN_DEVELOPMENT
+  IN_PRODUCTION
+  PAUSED
+  PILOT
+  PRE_ORDER
+  PROTOTYPE
+}
+
+enum AutonomyLevel {
+  TELEOPERATED
+  ASSISTED
+  SEMI_AUTONOMOUS
+  HIGHLY_AUTONOMOUS
+  FULLY_AUTONOMOUS
+}
+
 model Robot {
-  id           String      @id @default(cuid())
-  name         String
-  category     String
-  manufacturer String
-  year         String
-  description  String
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @default(now()) @updatedAt
-  tasks        TaskRobot[]
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  name            String
+  thumbnailUrl    String?
+  company         String
+  country         String
+  category        RobotCategory
+  availability    RobotAvailability
+  price           String?
+  releaseDate     String?
+  mainTask        String?
+  autonomyLevel   AutonomyLevel?
+  primaryUseCases String[]
+  websiteUrl      String?
+  about           String?
+  specs           String?
+  mediaUrls       String[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  tasks           TaskRobot[]
 }
 
 enum Availability {

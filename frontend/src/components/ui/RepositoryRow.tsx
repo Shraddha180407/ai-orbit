@@ -9,7 +9,6 @@ import { Repository } from "@/lib/types";
 
 interface RepositoryRowProps {
   repo: Repository;
-  rank: number;
 }
 
 // Reusable subcomponents to reduce duplicated markup
@@ -49,7 +48,7 @@ const getRelativeTime = (dateStr?: string | null) => {
   }
 };
 
-export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: RepositoryRowProps) {
+export const RepositoryRow = React.memo(function RepositoryRow({ repo }: RepositoryRowProps) {
   const router = useRouter();
   
   const starCount = repo.stars;
@@ -79,15 +78,11 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
         }}
         aria-label={`View details for ${repo.name} repository`}
         style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
-        className="hidden sm:grid grid-cols-[30px_minmax(0,2.5fr)_minmax(0,1.8fr)_minmax(0,1.5fr)_60px] md:grid-cols-[30px_minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] lg:grid-cols-[30px_minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] xl:grid-cols-[30px_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none group border-b border-white/[0.06] last:border-b-0 cursor-pointer"
+        className="hidden sm:grid grid-cols-[minmax(0,2.5fr)_minmax(0,1.8fr)_minmax(0,1.5fr)_60px] md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] lg:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none group border-b border-white/[0.06] last:border-b-0 cursor-pointer"
       >
-        {/* Column 1: Rank */}
-        <div className="text-[11px] text-[#71717A] font-mono text-center shrink-0">
-          {rank}
-        </div>
 
         {/* Column 2: Repository Name (Vertically Centered) */}
-        <div className="min-w-0 flex items-center h-full text-left">
+        <div className="min-w-0 flex items-center h-full text-left pl-5">
           <RepositoryTitle name={repo.name} className="group-hover:text-white transition-colors" />
         </div>
 
@@ -173,7 +168,6 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo, rank }: R
         <div className="flex-1 min-w-0">
           {/* Row 1: Title & Owner */}
           <div className="flex items-baseline min-w-0">
-            <span className="text-[11px] font-mono text-[#71717A] mr-1.5 shrink-0">#{rank}</span>
             <RepositoryTitle name={repo.name} />
             <span className="text-[13px] text-[#71717A] ml-2 shrink-0">by {repo.owner}</span>
           </div>
