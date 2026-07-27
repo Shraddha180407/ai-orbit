@@ -182,13 +182,16 @@ export class RepositoriesService {
 
     try {
       const url = `https://api.github.com/repos/${owner}/${name}/readme`;
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${githubToken}`,
-          Accept: 'application/vnd.github.v3+json',
-          'User-Agent': 'aiorbit-backend',
-        },
-      });
+      const headers: Record<string, string> = {
+        Accept: 'application/vnd.github.v3+json',
+        'User-Agent': 'aiorbit-backend',
+      };
+
+      if (githubToken) {
+        headers['Authorization'] = `Bearer ${githubToken}`;
+      }
+
+      const res = await fetch(url, { headers });
 
       if (!res.ok) return null;
 
