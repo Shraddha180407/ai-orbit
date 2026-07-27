@@ -8,6 +8,7 @@ import { logger } from "../src/lib/logger.js";
 // ---------------------------------------------------------------------------
 
 const GITHUB_TOPICS = [
+  // Original 45
   "llm", "chatbot", "ai-agent", "machine-learning", "deep-learning",
   "computer-vision", "nlp", "text-to-image", "text-to-speech",
   "speech-recognition", "rag", "langchain", "openai", "stable-diffusion",
@@ -19,6 +20,22 @@ const GITHUB_TOPICS = [
   "recommendation-system", "anomaly-detection", "ocr", "tts",
   "voice-cloning", "ai-agents", "autonomous-agents", "ai-writing",
   "ai-copilot", "semantic-search", "artificial-intelligence",
+  // Expansion batch (~55 new topics)
+  "gan", "diffusion", "multimodal", "vision-language-model", "speech-synthesis",
+  "knowledge-graph", "graph-neural-network", "time-series", "federated-learning",
+  "edge-ai", "quantization", "model-compression", "knowledge-distillation",
+  "synthetic-data", "data-augmentation", "feature-engineering",
+  "hyperparameter-tuning", "model-serving", "inference-optimization", "onnx",
+  "tensorrt", "robotics", "self-driving-car", "drug-discovery", "protein-folding",
+  "genomics", "ai-safety", "ai-alignment", "interpretability", "explainable-ai",
+  "causal-inference", "bayesian-inference", "probabilistic-programming",
+  "simulation", "agent-based-modeling", "llm-evaluation", "benchmark", "dataset",
+  "ml-pipeline", "feature-store", "model-registry", "experiment-tracking",
+  "ai-ethics", "bias-detection", "content-moderation", "spam-detection",
+  "fraud-detection", "sentiment-analysis", "text-classification",
+  "named-entity-recognition", "question-answering", "text-summarization",
+  "machine-translation", "multilingual-nlp", "image-classification",
+  "object-detection", "image-segmentation",
 ];
 
 const SEARCH_API_DELAY_MS = 2500; // 30 req/min → ~2s gap, add buffer
@@ -110,7 +127,7 @@ async function searchReposByTopic(topic: string): Promise<GitHubRepo[]> {
   for (let page = 1; page <= SEARCH_MAX_PAGES; page++) {
     const url =
       `https://api.github.com/search/repositories` +
-      `?q=topic:${encodeURIComponent(topic)}+stars:>50` +
+      `?q=topic:${encodeURIComponent(topic)}+stars:>30` +
       `&sort=stars&order=desc&per_page=${SEARCH_PER_PAGE}&page=${page}`;
 
     try {
