@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, PricingModel, BillingFrequency, Availability } from "@prisma/client";
+import { PrismaClient, PricingModel, BillingFrequency, Availability, RobotCategory, RobotAvailability, AutonomyLevel } from "@prisma/client";
 import { logger } from "../src/lib/logger.js";
 
 import { Pool } from 'pg';
@@ -2140,25 +2140,88 @@ async function main() {
   // schema). Removed rather than fixed with fabricated data — not this
   // module's data to seed.
 
-  logger.info("Seeding Robots...");
+logger.info("Seeding Robots...");
   await prisma.robot.deleteMany({});
+  
   const seedRobots = [
     {
       name: "Figure 02",
-      category: "Humanoid Robot",
-      manufacturer: "Figure AI",
-      year: "2024",
-      description: "A commercial-grade humanoid robot powered by OpenAI speech-to-speech models, designed for factory logistics and tasks.",
+      slug: "figure-02",
+      company: "Figure AI",
+      country: "United States",
+      category: RobotCategory.HUMANOID,
+      availability: RobotAvailability.IN_DEVELOPMENT,
+      releaseDate: "2024",
+      about: "A commercial-grade humanoid robot powered by OpenAI speech-to-speech models, designed for factory logistics and tasks.",
+      mainTask: "Factory Logistics",
+      autonomyLevel: AutonomyLevel.HIGHLY_AUTONOMOUS,
+      primaryUseCases: ["Manufacturing", "Warehouse Operations"],
+      mediaUrls: [],
     },
     {
       name: "Unitree H1",
-      category: "Bipedal Humanoid",
-      manufacturer: "Unitree Robotics",
-      year: "2023",
-      description: "A bipedal robot capable of running, backflips, and walking up stairs, utilizing deep reinforcement learning control loops.",
+      slug: "unitree-h1",
+      company: "Unitree Robotics",
+      country: "China",
+      category: RobotCategory.HUMANOID,
+      availability: RobotAvailability.COMMERCIALLY_AVAILABLE,
+      price: "$90,000",
+      releaseDate: "2023",
+      about: "A bipedal robot capable of running, backflips, and walking up stairs, utilizing deep reinforcement learning control loops.",
+      mainTask: "Research & Mobility",
+      autonomyLevel: AutonomyLevel.SEMI_AUTONOMOUS,
+      primaryUseCases: ["Research", "Industrial Inspection"],
+      mediaUrls: [],
     },
+    {
+      name: "Spot",
+      slug: "spot",
+      company: "Boston Dynamics",
+      country: "United States",
+      category: RobotCategory.MOBILE,
+      availability: RobotAvailability.COMMERCIALLY_AVAILABLE,
+      price: "$74,500",
+      releaseDate: "2019",
+      about: "An agile mobile robot that navigates terrain with unprecedented mobility, allowing you to automate routine inspection tasks and data capture safely.",
+      mainTask: "Industrial Inspection",
+      autonomyLevel: AutonomyLevel.SEMI_AUTONOMOUS,
+      primaryUseCases: ["Site Mapping", "Security", "Inspection"],
+      mediaUrls: [],
+    },
+    {
+      name: "Optimus Gen 2",
+      slug: "optimus-gen-2",
+      company: "Tesla",
+      country: "United States",
+      category: RobotCategory.HUMANOID,
+      availability: RobotAvailability.PROTOTYPE,
+      releaseDate: "2025",
+      about: "A general-purpose bipedal humanoid robot being developed by Tesla, intended to perform tasks that are unsafe, repetitive or boring.",
+      mainTask: "General Labor",
+      autonomyLevel: AutonomyLevel.HIGHLY_AUTONOMOUS,
+      primaryUseCases: ["Manufacturing", "Repetitive Labor"],
+      mediaUrls: [],
+    },
+    {
+      name: "Ameca",
+      slug: "ameca",
+      company: "Engineered Arts",
+      country: "United Kingdom",
+      category: RobotCategory.HUMANOID,
+      availability: RobotAvailability.COMMERCIALLY_AVAILABLE,
+      price: "N/A",
+      releaseDate: "2021",
+      about: "The world's most advanced human-shaped robot representing the forefront of human-robotics technology, specifically designed as a platform for AI.",
+      mainTask: "Human-Robot Interaction",
+      autonomyLevel: AutonomyLevel.SEMI_AUTONOMOUS,
+      primaryUseCases: ["Entertainment", "Education", "Research"],
+      mediaUrls: [],
+    }
   ];
-  await prisma.robot.createMany({ data: seedRobots });
+
+  await prisma.robot.createMany({ 
+    data: seedRobots 
+  });
 
   const seedDevices = [
   {

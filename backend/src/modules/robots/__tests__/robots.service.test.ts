@@ -25,6 +25,13 @@ describe('RobotsService', () => {
 
       expect(mockPrisma.robot.findMany).toHaveBeenCalledWith({
         orderBy: { createdAt: 'desc' },
+        include: {
+          tasks: {
+            include: {
+              task: true,
+            },
+          },
+        },
       });
       expect(result).toEqual(robots);
     });
