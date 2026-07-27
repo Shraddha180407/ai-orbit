@@ -79,7 +79,7 @@ export class ModelsService {
     });
 
     if (!model) {
-      throw new Error('Model not found');
+      return null;
     }
 
     // Related models: share modality or category overlap, excluding self

@@ -213,11 +213,23 @@ function mapRepo(repo: GitHubRepo): MappedRepo {
 // ---------------------------------------------------------------------------
 
 async function upsertRepo(prisma: PrismaClient, repo: MappedRepo): Promise<void> {
+  // Check for slug collision with a different repo already in DB
+  const existing = await prisma.repository.findUnique({
+    where: { slug: repo.slug },
+    select: { githubId: true },
+  });
+
+  let slug = repo.slug;
+  if (existing && existing.githubId !== repo.githubId) {
+    const suffix = repo.githubId.toString().slice(-6);
+    slug = `${repo.slug}-${suffix}`;
+  }
+
   await prisma.repository.upsert({
     where: { githubId: repo.githubId },
     create: {
       githubId: repo.githubId,
-      slug: repo.slug,
+      slug,
       name: repo.name,
       owner: repo.owner,
       ownerAvatarUrl: repo.ownerAvatarUrl,

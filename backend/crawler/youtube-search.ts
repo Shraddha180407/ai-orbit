@@ -1,5 +1,15 @@
 import { logger } from "./logger.js";
 
+interface YouTubeSearchResponse {
+  items?: Array<{
+    id?: { videoId?: string };
+    snippet?: {
+      publishedAt?: string;
+    };
+  }>;
+  nextPageToken?: string;
+}
+
 const API_BASE = "https://www.googleapis.com/youtube/v3";
 
 /**
@@ -122,11 +132,11 @@ export async function discoverVideos(): Promise<DiscoveredVideo[]> {
         }
         break;
       }
-      const json = await res.json();
+      const json = (await res.json()) as YouTubeSearchResponse;
 
       for (const item of json.items ?? []) {
         const id = item.id?.videoId;
-        if (id && !seen.has(id)) {
+        if (id && !seen.has(id) && item.snippet?.publishedAt) {
           seen.set(id, { videoId: id, publishedAt: item.snippet.publishedAt });
         }
       }

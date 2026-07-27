@@ -408,10 +408,25 @@ describe('RepositoriesService', () => {
   });
 
   describe('getRepositoryBySlug', () => {
+    let mockCache: { match: ReturnType<typeof vi.fn>; put: ReturnType<typeof vi.fn> };
+
     beforeEach(() => {
+      mockCache = {
+        match: vi.fn().mockResolvedValue(undefined),
+        put: vi.fn().mockResolvedValue(undefined),
+      };
+      Object.defineProperty(globalThis, 'caches', {
+        value: { default: mockCache },
+        writable: true,
+        configurable: true,
+      });
       vi.spyOn(global, 'fetch').mockResolvedValue(
         new Response(JSON.stringify({ content: '', encoding: 'none' }), { status: 404 }),
       );
+    });
+
+    afterEach(() => {
+      Object.defineProperty(globalThis, 'caches', { value: undefined, writable: true, configurable: true });
     });
 
     it('returns null when repo not found', async () => {
@@ -526,6 +541,44 @@ describe('RepositoriesService', () => {
         },
         select: { slug: true },
       });
+    });
+
+    it('returns cached readme on cache hit without calling GitHub', async () => {
+      prisma.repository.findUnique.mockResolvedValue(REPO_DETAIL);
+      prisma.company.findFirst.mockResolvedValue(null);
+
+      const cachedHtml = '<h1>Cached README</h1>';
+      mockCache.match.mockResolvedValue(
+        new Response(JSON.stringify({ readmeHtml: cachedHtml, fetchedAt: '2025-01-01T00:00:00Z' })),
+      );
+
+      const result = await service.getRepositoryBySlug('openai-whisper', 'fake-token');
+
+      expect(result?.readmeHtml).toBe(cachedHtml);
+      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockCache.match).toHaveBeenCalled();
+      expect(mockCache.put).not.toHaveBeenCalled();
+    });
+
+    it('caches successful GitHub fetch for next request', async () => {
+      prisma.repository.findUnique.mockResolvedValue(REPO_DETAIL);
+      prisma.company.findFirst.mockResolvedValue(null);
+
+      const markdown = Buffer.from('# Hello').toString('base64');
+      vi.spyOn(global, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({ content: markdown, encoding: 'base64' }),
+          { status: 200 },
+        ),
+      );
+
+      const result = await service.getRepositoryBySlug('openai-whisper', 'fake-token');
+
+      expect(result?.readmeHtml).toBe('<h1>Hello</h1>\n');
+      expect(mockCache.put).toHaveBeenCalledWith(
+        expect.any(Request),
+        expect.any(Response),
+      );
     });
   });
 
