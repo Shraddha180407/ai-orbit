@@ -105,7 +105,7 @@ export class CollectionsIngestService {
             }
           });
         }, {
-          timeout: 10000 
+          timeout: 10000
         });
 
         const insertedCol = await prisma.collection.findUnique({
@@ -120,8 +120,8 @@ export class CollectionsIngestService {
         } else {
           summary.created++;
         }
-      } catch (err: any) {
-        const message = err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : (typeof err === 'object' ? JSON.stringify(err) : String(err));
         logger.error(`Error ingesting collection ${colData.slug}:`, err);
         summary.errors.push({
           slug: colData.slug,
