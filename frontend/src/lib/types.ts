@@ -327,6 +327,8 @@ export type Device = {
   primaryUseCases?: string[];
   additionalInfo?: string | null;
   buyUrl?: string | null;
+  images?: string[];
+  videoUrl?: string | null;
 };
 
 
