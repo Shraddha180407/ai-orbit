@@ -106,15 +106,16 @@ function NewsRow({ article, sources, isAdmin, onEdit, onDelete }: { article: New
       className="group relative border-b border-white/[0.03] transition-all duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#18181C]/60 hover:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_8px_24px_rgba(0,0,0,0.18)]"
       style={{ ["--row-accent" as string]: "var(--color-signal)" }}
     >
-      {/* Column 1: Left accent line + Headline & Publisher logo */}
-      <td className="relative py-3.5 pl-4 pr-4">
+      {/* Column 1: Left accent line + Headline & Square Publisher logo */}
+      <td className="relative py-2.5 pl-4 pr-4">
         <span className="absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
         <Link href={`/news/${article.id}`} className="flex items-center gap-3.5">
-          <span className="relative block h-[48px] w-[85px] shrink-0 overflow-hidden rounded-md bg-white p-1 transition-transform duration-300 ease-out group-hover:scale-[1.04] group-hover:shadow-[0_0_0_1.5px_var(--color-signal)] flex items-center justify-center shadow-sm">
-            <PublisherIcon source={source} box={40} />
+          {/* Square logo container matching manager's request */}
+          <span className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-white p-1 transition-transform duration-300 ease-out group-hover:scale-[1.05] group-hover:shadow-[0_0_0_1.5px_var(--color-signal)] flex items-center justify-center shadow-sm">
+            <PublisherIcon source={source} box={36} />
           </span>
           <span className="min-w-0">
-            <span className="line-clamp-2 text-[15px] font-medium leading-snug text-white transition-colors group-hover:text-[#F5A623]">
+            <span className="line-clamp-2 text-[14.5px] font-medium leading-snug text-white transition-colors group-hover:text-[#F5A623]">
               {article.headline}
             </span>
             {article.dek && (
@@ -127,14 +128,14 @@ function NewsRow({ article, sources, isAdmin, onEdit, onDelete }: { article: New
       </td>
 
       {/* Column 2: Posted */}
-      <td className="whitespace-nowrap px-4 py-3.5 font-mono text-[13.5px] text-[#A1A1AA]">
+      <td className="whitespace-nowrap px-4 py-2.5 font-mono text-[13px] text-[#A1A1AA]">
         {publishedLabel(article.hours)}
       </td>
 
       {/* Column 3: Category */}
-      <td className="whitespace-nowrap px-4 py-3.5">
+      <td className="whitespace-nowrap px-4 py-2.5">
         {primaryTopic ? (
-          <span className="inline-flex items-center rounded-full border border-[#232326] bg-[#131316] px-2.5 py-1 font-mono text-[12px] font-medium text-white">
+          <span className="inline-flex items-center rounded-full border border-[#232326] bg-[#131316] px-2.5 py-0.5 font-mono text-[11.5px] font-medium text-white">
             {primaryTopic}
           </span>
         ) : (
@@ -143,14 +144,14 @@ function NewsRow({ article, sources, isAdmin, onEdit, onDelete }: { article: New
       </td>
 
       {/* Column 4: Publisher Channel */}
-      <td className="whitespace-nowrap px-4 py-3.5">
+      <td className="whitespace-nowrap px-4 py-2.5">
         <a
           href={article.articleUrl || "#"}
           target="_blank"
           rel="noopener noreferrer"
           className="group/publisher inline-flex items-center gap-1.5"
         >
-          <span className="text-[13.5px] font-medium text-[#A1A1AA] transition-colors group-hover/publisher:text-[#F5A623]">
+          <span className="text-[13px] font-medium text-[#A1A1AA] transition-colors group-hover/publisher:text-[#F5A623]">
             {source?.name || "AI Publisher"}
           </span>
           <ArrowUpRight
@@ -161,7 +162,7 @@ function NewsRow({ article, sources, isAdmin, onEdit, onDelete }: { article: New
       </td>
 
       {/* Column 5: Actions */}
-      <td className="px-4 py-3.5 text-right whitespace-nowrap">
+      <td className="px-4 py-2.5 text-right whitespace-nowrap">
         <div className="flex items-center justify-end gap-1.5">
           <NewsRowActions article={article} />
           {isAdmin && (
@@ -194,19 +195,19 @@ export function NewsTable({ articles, sources, isAdmin, onEdit, onDelete }: News
       <table className="w-full min-w-[720px] border-collapse">
         <thead>
           <tr className="border-b border-[#232326] bg-[#131316]/70">
-            <th className="select-none px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-[#71717A] pl-4">
+            <th className="select-none px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A] pl-4">
               HEADLINE
             </th>
-            <th className="select-none px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               POSTED
             </th>
-            <th className="select-none px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               CATEGORY
             </th>
-            <th className="select-none px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               PUBLISHER
             </th>
-            <th className="select-none px-4 py-[9.6px] text-right font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-[#71717A] pr-4">
+            <th className="select-none px-4 py-2 text-right font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A] pr-4">
               ACTIONS
             </th>
           </tr>
@@ -233,7 +234,7 @@ export function NewsTableSkeleton({ rows = 8 }: { rows?: number }) {
     <div className="overflow-x-auto rounded-xl border border-[#232326]/70 bg-[#0d0d10]">
       <div className="flex flex-col divide-y divide-[#232326]/60">
         {Array.from({ length: rows }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 px-4 py-3.5">
+          <div key={i} className="flex items-center gap-4 px-4 py-2.5">
             <div className="h-11 w-11 animate-pulse rounded-lg bg-[#18181C]" />
             <div className="space-y-1.5 flex-1">
               <div className="h-3 w-40 animate-pulse rounded bg-[#18181C]" />
@@ -251,7 +252,7 @@ export function NewsTableSkeleton({ rows = 8 }: { rows?: number }) {
 
 export function NewsTableEmpty({ searchActive = false }: { searchActive?: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[#232326]/70 bg-[#0d0d10] py-16 text-center shadow-xl">
+    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[#232326]/70 bg-[#0d0d10] py-12 text-center shadow-xl">
       <SearchX size={28} className="text-[#71717A]" aria-hidden="true" />
       <div>
         <p className="text-sm font-medium text-white">{searchActive ? "No stories match your filters" : "No stories yet"}</p>
