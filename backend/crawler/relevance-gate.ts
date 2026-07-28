@@ -2,6 +2,20 @@ import type { ToolCategory } from "./types.js";
 import { TOOL_CATEGORIES } from "./types.js";
 import { logger } from "./logger.js";
 
+interface GeminiResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{ text?: string }>;
+    };
+  }>;
+}
+
+interface GroqResponse {
+  choices?: Array<{
+    message?: { content?: string };
+  }>;
+}
+
 export type CandidateVideo = {
   videoId: string;
   title: string;
@@ -85,7 +99,7 @@ async function classifyWithGemini(batch: CandidateVideo[]): Promise<GateLabel[] 
       return null;
     }
 
-    const json = await res.json();
+    const json = (await res.json()) as GeminiResponse;
     const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) return null;
 
@@ -134,7 +148,7 @@ async function classifyWithGroq(batch: CandidateVideo[]): Promise<GateLabel[] | 
     return null;
   }
 
-  const json = await res.json();
+  const json = (await res.json()) as GroqResponse;
   const content = json?.choices?.[0]?.message?.content;
   if (!content) return null;
 

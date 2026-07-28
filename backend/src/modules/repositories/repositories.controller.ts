@@ -48,7 +48,7 @@ export class RepositoriesController {
     const slug = c.req.param('slug') || '';
 
     try {
-      const repo = await service.getRepositoryBySlug(slug);
+      const repo = await service.getRepositoryBySlug(slug, c.env.GITHUB_TOKEN);
       if (!repo) {
         return c.json({ error: 'Repository not found' }, 404);
       }

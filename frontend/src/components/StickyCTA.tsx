@@ -69,7 +69,7 @@ export function StickyCTA({ name, logoUrl, websiteUrl, avgRating, reviewCount }:
         href={websiteUrl}
         target="_blank"
         rel="noopener noreferrer nofollow"
-        className="inline-flex items-center gap-1 text-xs font-bold text-white bg-accent px-3.5 py-2 rounded-lg shadow-md shadow-accent/20 hover:bg-accent-hover transition-all active:scale-95"
+        className="inline-flex items-center gap-1 text-xs font-bold text-black bg-accent px-3.5 py-2 rounded-lg shadow-md shadow-accent/20 hover:bg-accent-hover transition-all active:scale-95"
       >
         Visit
         <ArrowUpRight size={13} />

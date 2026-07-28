@@ -227,6 +227,13 @@ export function RepositoriesClient() {
     router.push(`/repositories?${params.toString()}`);
   };
 
+  function handleResetFilters() {
+    setSelectedLicense(null);
+    setRepoSearchQuery("");
+    setActiveRepoSearch("");
+    router.push("/repositories");
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <main className="mx-auto max-w-[1440px] px-8 py-12 flex-1 w-full">
@@ -279,12 +286,12 @@ export function RepositoriesClient() {
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="grid grid-cols-[30px_minmax(0,2.5fr)_minmax(0,1.8fr)_minmax(0,1.5fr)_60px] md:grid-cols-[30px_minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] lg:grid-cols-[30px_minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] xl:grid-cols-[30px_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] w-full animate-pulse border-b border-white/[0.06] last:border-b-0"
+                className="grid grid-cols-[minmax(0,2.5fr)_minmax(0,1.8fr)_minmax(0,1.5fr)_60px] md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] lg:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] w-full animate-pulse border-b border-white/[0.06] last:border-b-0"
               >
-                {/* Col 1 */}
-                <div className="h-3 w-4 rounded bg-white/[0.04] mx-auto" />
                 {/* Col 2 */}
-                <div className="h-3 w-1/3 rounded bg-white/[0.04]" />
+                <div className="pl-5">
+                  <div className="h-3 w-1/3 rounded bg-white/[0.04]" />
+                </div>
                 {/* Col 3 */}
                 <div className="h-3 w-1/2 rounded bg-white/[0.04] hidden md:block" />
                 {/* Col 4 */}
@@ -302,10 +309,6 @@ export function RepositoriesClient() {
               </div>
             ))}
           </RepositoryTable>
-        ) : repos.length === 0 ? (
-          <div className="text-center py-20 border border-[#232326] bg-[#131316] rounded-xl">
-            <p className="text-[#A1A1AA] text-sm">No repositories found.</p>
-          </div>
         ) : (
           <RepositoryTable
             sortField={sortField}
@@ -334,12 +337,25 @@ export function RepositoriesClient() {
             onToggleRepoFilter={() => setIsRepoFilterOpen(prev => !prev)}
             onCloseRepoFilter={() => setIsRepoFilterOpen(false)}
           >
-            {sortedRepos.map((repo: Repository, index: number) => (
-              <RepositoryRow key={repo.id} repo={repo} rank={index + 1} />
-            ))}
+            {sortedRepos.length === 0 ? (
+              <div className="text-center py-16 px-4 bg-[#131316]/20 rounded-b-xl w-full flex flex-col items-center">
+                <p className="text-[#A1A1AA] text-sm font-medium mb-1">No repositories found.</p>
+                <p className="text-white/40 text-xs mb-5">Try adjusting or clearing your filters.</p>
+                <button
+                  onClick={handleResetFilters}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-white/[0.08] hover:bg-white/[0.12] active:bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.12] rounded-lg transition-colors cursor-pointer focus:outline-none"
+                >
+                  Reset Filters
+                </button>
+              </div>
+            ) : (
+              sortedRepos.map((repo: Repository) => (
+                <RepositoryRow key={repo.id} repo={repo} />
+              ))
+            )}
 
             {/* Sentinel for infinite scroll */}
-            {hasNextPage && (
+            {hasNextPage && sortedRepos.length > 0 && (
               <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
               </div>

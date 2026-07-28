@@ -61,10 +61,74 @@ export async function fetchCompanyDetails(slug: string): Promise<any> {
   return res.json();
 }
 
-export async function fetchAllModels(): Promise<any[]> {
-  const url = `${API_URL}/api/v1/models`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return [];
+import type { AIModel, ModelsListResponse, ModelsSortOption } from "./types";
+
+export interface ModelsQuery {
+  search?: string;
+  provider?: string;
+  modality?: string;
+  creator?: string;
+  sort?: ModelsSortOption;
+  page?: number;
+  limit?: number;
+}
+
+export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListResponse> {
+  const url = new URL(`${API_URL}/api/v1/models`);
+  if (params.search) url.searchParams.set("search", params.search);
+  if (params.provider) url.searchParams.set("provider", params.provider);
+  if (params.modality) url.searchParams.set("modality", params.modality);
+  if (params.creator) url.searchParams.set("creator", params.creator);
+  if (params.sort) url.searchParams.set("sort", params.sort);
+  if (params.page) url.searchParams.set("page", String(params.page));
+  if (params.limit) url.searchParams.set("limit", String(params.limit));
+
+  const empty: ModelsListResponse = {
+    items: [],
+    pagination: {
+      page: params.page ?? 1,
+      limit: params.limit ?? 20,
+      total: 0,
+      totalPages: 1,
+      hasMore: false,
+    },
+    filters: { providers: [], modalities: [] },
+  };
+
+  const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
+  if (!res.ok) return empty;
+
+  const data = await res.json();
+  // Tolerate legacy array responses during rollout.
+  if (Array.isArray(data)) {
+    return {
+      items: data as AIModel[],
+      pagination: {
+        page: 1,
+        limit: data.length,
+        total: data.length,
+        totalPages: 1,
+        hasMore: false,
+      },
+      filters: { providers: [], modalities: [] },
+    };
+  }
+  return data as ModelsListResponse;
+}
+
+/** @deprecated Prefer fetchModels — kept for callers that only need the first page's items. */
+export async function fetchAllModels(): Promise<AIModel[]> {
+  const data = await fetchModels({ page: 1, limit: 100 });
+  return data.items;
+}
+
+export async function fetchModelById(id: string): Promise<import("./types").ModelDetail | null> {
+  const url = `${API_URL}/api/v1/models/${encodeURIComponent(id)}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    throw new Error(`Failed to load model (${res.status})`);
+  }
   return res.json();
 }
 

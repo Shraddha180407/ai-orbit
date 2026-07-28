@@ -5,6 +5,36 @@ import { getPrisma } from '../../lib/prisma.js';
 import { sign } from 'jsonwebtoken';
 import { setCookie } from 'hono/cookie';
 
+interface GoogleTokenResponse {
+  access_token?: string;
+  expires_in?: number;
+  token_type?: string;
+}
+
+interface GoogleUserResponse {
+  email?: string;
+  name?: string;
+  picture?: string;
+  verified_email?: boolean;
+}
+
+interface GitHubAccessTokenResponse {
+  access_token?: string;
+  error?: string;
+}
+
+interface GitHubUserResponse {
+  email?: string | null;
+  name?: string | null;
+  login?: string;
+  avatar_url?: string;
+}
+
+interface GitHubEmailResponse {
+  email: string;
+  primary: boolean;
+}
+
 const authRoutes = new Hono();
 const authController = new AuthController();
 
@@ -68,16 +98,16 @@ authRoutes.get('/google/callback', async (c) => {
       const errText = await tokenRes.text();
       throw new Error(`Google token error: ${errText}`);
     }
-    const tokenData = await tokenRes.json();
+    const tokenData = (await tokenRes.json()) as GoogleTokenResponse;
 
     const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` }
     });
     
     if (!userRes.ok) throw new Error('Failed to get user info');
-    const userData = await userRes.json();
+    const userData = (await userRes.json()) as GoogleUserResponse;
 
-    const email = userData.email.toLowerCase();
+    const email = userData.email?.toLowerCase() ?? '';
     
     const prisma = getPrisma(c.env);
     let user = await prisma.user.findUnique({ where: { email } });
@@ -160,7 +190,7 @@ authRoutes.get('/github/callback', async (c) => {
       const errText = await tokenRes.text();
       throw new Error(`Github token error: ${errText}`);
     }
-    const tokenData = await tokenRes.json();
+    const tokenData = (await tokenRes.json()) as GitHubAccessTokenResponse;
     if (tokenData.error) throw new Error(tokenData.error);
 
     const userRes = await fetch('https://api.github.com/user', {
@@ -171,9 +201,9 @@ authRoutes.get('/github/callback', async (c) => {
     });
     
     if (!userRes.ok) throw new Error('Failed to get github user info');
-    const userData = await userRes.json();
+    const userData = (await userRes.json()) as GitHubUserResponse;
 
-    let email = userData.email;
+    let email = userData.email ?? null;
     if (!email) {
       const emailRes = await fetch('https://api.github.com/user/emails', {
         headers: { 
@@ -181,8 +211,8 @@ authRoutes.get('/github/callback', async (c) => {
           'User-Agent': 'The-AI-Signal-App'
         }
       });
-      const emailsData = await emailRes.json();
-      const primaryEmail = emailsData.find((e: { primary: boolean; email: string }) => e.primary);
+      const emailsData = (await emailRes.json()) as GitHubEmailResponse[];
+      const primaryEmail = emailsData.find((e) => e.primary);
       if (primaryEmail) email = primaryEmail.email;
     }
 

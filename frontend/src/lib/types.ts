@@ -155,6 +155,13 @@ export type Company = {
   }[];
 };
 
+export type AIModelProvider = {
+  id: string;
+  slug: string;
+  name: string;
+  logoUrl: string | null;
+};
+
 export type AIModel = {
   id: string;
   name: string;
@@ -164,7 +171,44 @@ export type AIModel = {
   parameterSize: string;
   contextWindow: string;
   releaseDate: string;
+  createdAt?: string;
+  /** Linked Company when providerId is set; null otherwise. */
+  provider?: AIModelProvider | null;
+  /**
+   * PRD columns — optional until backend adds them.
+   * UI shows "—" when missing.
+   */
+  type?: string | null;
+  primaryTask?: string | null;
+  openSource?: boolean | null;
 };
+
+export type ModelsListResponse = {
+  items: AIModel[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+  filters?: {
+    providers: { slug: string; name: string; count: number }[];
+    modalities: { modality: string; count: number }[];
+  };
+};
+
+export type ModelTaskLink = {
+  task: { id: string; slug: string; title: string };
+};
+
+export type ModelDetail = AIModel & {
+  tasks?: ModelTaskLink[];
+  relatedModels?: AIModel[];
+  updatedAt?: string;
+};
+
+export type ModelsSortOption = "newest" | "oldest" | "alphabetical" | "releaseDate";
 
 export type News = {
   id: string;

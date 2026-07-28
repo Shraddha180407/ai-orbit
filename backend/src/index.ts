@@ -31,6 +31,7 @@ type Bindings = {
   CLOUDINARY_API_KEY: string
   CLOUDINARY_API_SECRET: string
   INGESTION_TOKEN: string
+  GITHUB_TOKEN: string
 }
 
 import { errorHandler } from './middleware/error.js'
