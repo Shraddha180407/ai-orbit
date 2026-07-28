@@ -12,6 +12,8 @@ import { newsIngestPayloadSchema } from "./news.ingest.schema.js";
 import { NewsIngestService } from "./news.ingest.service.js";
 import { videosIngestPayloadSchema } from "./videos.ingest.schema.js";
 import { VideosIngestService } from "./videos.ingest.service.js";
+import { robotsIngestPayloadSchema } from "./robots.ingest.schema.js";
+import { RobotsIngestService } from "./robots.ingest.service.js";
 import { getPrisma } from "../../lib/prisma.js";
 
 const router = new Hono<{
@@ -125,6 +127,32 @@ router.post("/videos", requireIngestionToken, async (c) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "An unexpected error occurred during videos ingestion";
     logger.error("Videos ingestion error:", err);
+    return c.json({
+      error: "INTERNAL_SERVER_ERROR",
+      message
+    }, 500);
+  }
+});
+
+router.post("/robots", requireIngestionToken, async (c) => {
+  try {
+    const body = await c.req.json();
+    
+    const parsed = robotsIngestPayloadSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({
+        error: "VALIDATION_FAILED",
+        issues: parsed.error.issues
+      }, 422);
+    }
+
+    const prisma = getPrisma(c.env);
+    const summary = await RobotsIngestService.ingestRobots(prisma, parsed.data);
+    
+    return c.json(summary, 200);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "An unexpected error occurred during robots ingestion";
+    logger.error("Robots ingestion error:", err);
     return c.json({
       error: "INTERNAL_SERVER_ERROR",
       message
