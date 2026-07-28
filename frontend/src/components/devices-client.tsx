@@ -6,6 +6,21 @@ import { Device } from "@/lib/types";
 import { fetchAllDevices } from "@/lib/api";
 import { DEVICES_DATA, DeviceData, getMainTaskColor } from "@/data/devices";
 import Flame    from 'lucide-react/dist/esm/icons/flame';
+import Wrench      from 'lucide-react/dist/esm/icons/wrench';
+import Building2   from 'lucide-react/dist/esm/icons/building-2';
+import BrainCircuit from 'lucide-react/dist/esm/icons/brain-circuit';
+import Newspaper   from 'lucide-react/dist/esm/icons/newspaper';
+import Video       from 'lucide-react/dist/esm/icons/video';
+import GitBranch   from 'lucide-react/dist/esm/icons/git-branch';
+import Layers      from 'lucide-react/dist/esm/icons/layers';
+import ListChecks  from 'lucide-react/dist/esm/icons/list-checks';
+import Bot         from 'lucide-react/dist/esm/icons/bot';
+import Cpu         from 'lucide-react/dist/esm/icons/cpu';
+import Plug        from 'lucide-react/dist/esm/icons/plug';
+import FolderHeart from 'lucide-react/dist/esm/icons/folder-heart';
+import UserCircle  from 'lucide-react/dist/esm/icons/user-circle';
+import Palette     from 'lucide-react/dist/esm/icons/palette';
+import Smartphone  from 'lucide-react/dist/esm/icons/smartphone';
 import Star     from 'lucide-react/dist/esm/icons/star';
 import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
 import Gift     from 'lucide-react/dist/esm/icons/gift';
@@ -260,112 +275,200 @@ export function DevicesClient() {
   );
 
   return (
-    <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
+    <div className="w-full flex-1 flex flex-col">
 
       {/* ── HERO HEADER (matches home page) ── */}
-      <div className="relative flex flex-col items-center text-center pt-6 pb-5 overflow-hidden">
-        {/* Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[280px] rounded-full blur-[120px] opacity-30 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse, #E91E8C 0%, transparent 70%)" }} />
-        <div className="absolute top-4 left-1/3 w-[400px] h-[200px] rounded-full blur-[100px] opacity-20 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse, #FF1F8C 0%, transparent 70%)" }} />
-        <div className="absolute top-4 right-1/3 w-[400px] h-[200px] rounded-full blur-[100px] opacity-20 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse, #C2185B 0%, transparent 70%)" }} />
-
-        <h1 className="relative text-3xl md:text-5xl font-black text-white tracking-tight mb-2">
-          AI Devices & Wearables
-        </h1>
-        <p className="relative text-[#71717A] text-xs md:text-sm max-w-lg mb-4">
-          Discover and track the AI devices and wearables that actually matter.
-        </p>
-
-        {/* Search bar */}
-        <div className="relative w-full max-w-xl mb-5">
-          <input
-            type="text"
-            placeholder="Search devices, manufacturers..."
-            value={nameInput}
-            onChange={(e) => { setNameInput(e.target.value); setNameSearch(e.target.value); setCurrentPage(1); }}
-            className="w-full bg-[#0D0D0F] border border-[#232326] text-white text-sm rounded-xl px-5 py-3 pr-10 placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF] transition-colors"
+      {/* ── HERO HEADER (exact home page match) ── */}
+      <section
+        className="relative w-full flex flex-col items-center pt-4 pb-6 px-6"
+        style={{
+          backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      >
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-[0.12] blur-[100px]"
+            style={{ backgroundColor: 'var(--color-signal)' }}
           />
-          <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#52525B]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
         </div>
 
-        {/* Filter pills */}
-        <div className="relative flex flex-wrap items-center justify-center gap-2 mb-2">
-          {[
-            { label: "Trending", filter: "trending",  Icon: Flame,     color: "#FF6B4A" },
-            { label: "Popular",  filter: "popular",   Icon: Star,      color: "#FFC53D" },
-            { label: "New",      filter: "new",       Icon: Sparkles,  color: "#A78BFA" },
-            { label: "Available",filter: "Available", Icon: Gift,      color: "#34D399" },
-            { label: "Wearables",filter: "wearable",  Icon: Trophy,    color: "#38BDF8" },
-          ].map(({ label, filter, Icon, color }) => {
-            const isActive = activePill === filter;
-            return (
-              <button
-                key={filter}
-                onClick={() => {
-                  if (isActive) {
-                    setActivePill(null);
-                    setSortKey("release"); setSortDir("desc");
-                    setSelectedAvailability("All"); setSelectedCategory(ALL_CATEGORIES);
-                    setCurrentPage(1);
-                  } else {
-                    setActivePill(filter);
-                    if (filter === "trending")   { setSortKey("release"); setSortDir("desc"); setSelectedAvailability("All"); setSelectedCategory(ALL_CATEGORIES); }
-                    else if (filter === "popular")   { setSortKey("price"); setSortDir("desc"); setSelectedAvailability("All"); setSelectedCategory(ALL_CATEGORIES); }
-                    else if (filter === "new")       { setSortKey("release"); setSortDir("desc"); setSelectedAvailability("All"); setSelectedCategory(ALL_CATEGORIES); }
-                    else if (filter === "Available") { setSelectedAvailability("Available"); setSortKey("release"); setSortDir("desc"); setSelectedCategory(ALL_CATEGORIES); }
-                    else if (filter === "wearable")  { setSelectedCategory("AI Wearable"); setSelectedAvailability("All"); setSortKey("release"); setSortDir("desc"); }
-                    setCurrentPage(1);
-                  }
+        <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
+          <h1 className="max-w-[820px] text-2xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.1] mb-4 sm:mb-6 select-none text-white text-balance">
+            AI Devices & Wearables
+          </h1>
+
+          {/* Search bar */}
+          <div className="relative w-full max-w-[520px] mx-auto mb-4 sm:mb-5">
+            <div className="relative w-full rounded-xl border border-[#232326]/70 bg-[#111113] h-[38px] sm:h-[42px] flex items-center px-3.5 sm:px-4 transition-colors duration-150 focus-within:border-[#6E56CF] focus-within:shadow-[0_0_0_3px_rgba(110,86,207,0.15)]">
+              <svg className="mr-2 sm:mr-2.5 text-[#71717A] shrink-0" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+              <input
+                type="text"
+                placeholder="Search AI devices, manufacturers…"
+                value={nameInput}
+                onChange={(e) => { setNameInput(e.target.value); setNameSearch(e.target.value); setCurrentPage(1); }}
+                className="w-full bg-transparent text-[12px] sm:text-[13px] text-white placeholder:text-[#71717A] focus:outline-none"
+              />
+              <kbd className="hidden sm:inline-flex h-6 select-none items-center gap-0.5 rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 font-mono text-[10px] text-[#71717A] pointer-events-none ml-2">
+                <span>⌘</span>K
+              </kbd>
+            </div>
+          </div>
+
+          {/* Filter chips — same structure as HeroFeatureChips */}
+          <div className="hero-chip-row w-full max-w-4xl relative z-10 flex items-center justify-center overflow-hidden select-none mb-2">
+            <div className="flex flex-nowrap items-center" style={{ gap: "calc(10px * var(--chip-scale))" }}>
+              {[
+                { name: "Trending",  Icon: Flame,    color: "#FF6B4A", action: () => { setSortKey("release"); setSortDir("desc"); setSelectedAvailability("All"); setSelectedCategory(ALL_CATEGORIES); } },
+                { name: "Popular",   Icon: Star,     color: "#FFC53D", action: () => { setSortKey("price");   setSortDir("desc"); setSelectedAvailability("All"); setSelectedCategory(ALL_CATEGORIES); } },
+                { name: "New",       Icon: Sparkles, color: "#A78BFA", action: () => { setSortKey("release"); setSortDir("desc"); setSelectedAvailability("All"); setSelectedCategory(ALL_CATEGORIES); } },
+                { name: "Available", Icon: Gift,     color: "#34D399", action: () => { setSelectedAvailability("Available"); setSortKey("release"); setSortDir("desc"); setSelectedCategory(ALL_CATEGORIES); } },
+                { name: "Wearables", Icon: Trophy,   color: "#38BDF8", action: () => { setSelectedCategory("AI Wearable"); setSelectedAvailability("All"); setSortKey("release"); setSortDir("desc"); } },
+              ].map(({ name, Icon, color, action }) => {
+                const isActive = activePill === name;
+                return (
+                  <button
+                    key={name}
+                    onClick={() => {
+                      if (isActive) {
+                        setActivePill(null);
+                        setSortKey("release"); setSortDir("desc");
+                        setSelectedAvailability("All"); setSelectedCategory(ALL_CATEGORIES);
+                      } else {
+                        setActivePill(name);
+                        action();
+                      }
+                      setCurrentPage(1);
+                    }}
+                    className="group inline-flex shrink-0 whitespace-nowrap items-center rounded-full border bg-[#0d0d10] font-medium transition-colors duration-150"
+                    style={{
+                      borderColor: isActive ? color : `${color}40`,
+                      color: isActive ? "#ffffff" : "#a1a1aa",
+                      height: "calc(28px * var(--chip-scale))",
+                      paddingLeft: "calc(8px * var(--chip-scale))",
+                      paddingRight: "calc(12px * var(--chip-scale))",
+                      gap: "calc(6px * var(--chip-scale))",
+                      fontSize: "calc(12px * var(--chip-scale))",
+                    }}
+                  >
+                    <span
+                      className="flex shrink-0 items-center justify-center rounded-full border transition-colors duration-150"
+                      style={{
+                        backgroundColor: isActive ? color : "transparent",
+                        borderColor: color,
+                        width: "calc(16px * var(--chip-scale))",
+                        height: "calc(16px * var(--chip-scale))",
+                      }}
+                    >
+                      <Icon
+                        strokeWidth={2.25}
+                        style={{
+                          color: isActive ? "#000000" : color,
+                          width: "calc(9px * var(--chip-scale))",
+                          height: "calc(9px * var(--chip-scale))",
+                        }}
+                      />
+                    </span>
+                    <span>{name}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <style jsx>{`
+              .hero-chip-row { --chip-scale: clamp(0.5, calc((100vw - 48px) / 560px), 1); }
+            `}</style>
+          </div>
+        </div>
+      </section>
+
+{/* ── DIRECTORY STRIP (exact home page match) ── */}
+      <div className="border-b border-[#232326]/40 w-full" />
+
+      {/* Sort control — mirrors home page exactly */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="w-full flex justify-end">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[#71717A]">Sort by</span>
+            <div className="relative">
+              <select
+                value={`${sortKey}-${sortDir}`}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "release-desc") { setSortKey("release"); setSortDir("desc"); }
+                  else if (val === "release-asc") { setSortKey("release"); setSortDir("asc"); }
+                  else if (val === "name-asc")    { setSortKey("name");    setSortDir("asc"); }
+                  else if (val === "name-desc")   { setSortKey("name");    setSortDir("desc"); }
+                  else if (val === "price-desc")  { setSortKey("price");   setSortDir("desc"); }
+                  setCurrentPage(1);
                 }}
-                className={`group inline-flex items-center gap-1.5 rounded-full px-3 h-[28px] text-[11px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.03] active:scale-[0.98] ${
-                  isActive ? "shadow-md" : "bg-[#131316]/70"
-                }`}
-                style={
-                  isActive
-                    ? { backgroundColor: `${color}18`, borderColor: `${color}99`, boxShadow: `0 4px 12px -6px ${color}55` }
-                    : { borderColor: `${color}55` }
-                }
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.boxShadow = `0 6px 14px -8px ${color}77`;
-                    e.currentTarget.style.borderColor = color;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.boxShadow = "";
-                    e.currentTarget.style.borderColor = `${color}55`;
-                  }
-                }}
+                className="appearance-none bg-[#0d0d10] border border-[#232326] text-white text-xs rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:border-[#6E56CF] cursor-pointer hover:border-[#3a3a3d] transition-colors"
               >
-                <span
-                  className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:rotate-[8deg]"
-                  style={{ backgroundColor: isActive ? "rgba(0,0,0,0.15)" : `${color}22` }}
-                >
-                  <Icon
-                    size={10}
-                    strokeWidth={2.25}
-                    style={{ color, filter: `drop-shadow(0 0 4px ${color}99)` }}
-                  />
-                </span>
-                <span style={{ color }}>{label}</span>
-              </button>
-            );
-          })}
+                <option value="release-desc">Newest</option>
+                <option value="release-asc">Oldest</option>
+                <option value="price-desc">Price (High–Low)</option>
+                <option value="name-asc">Name (A–Z)</option>
+                <option value="name-desc">Name (Z–A)</option>
+              </select>
+              <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#71717A]" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </div>
         </div>
       </div>
 
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
+        <div className="w-full">
+          <div className="flex items-stretch gap-1.5 sm:gap-2 w-full">
+            {[
+              { name: "Tools",        href: "/tools",        Icon: Wrench,       color: "#FFC53D" },
+              { name: "Tasks",        href: "/tasks",        Icon: ListChecks,   color: "#FB923C" },
+              { name: "Companies",    href: "/companies",    Icon: Building2,    color: "#38BDF8" },
+              { name: "News",         href: "/news",         Icon: Newspaper,    color: "#FF6B4A" },
+              { name: "Videos",       href: "/videos",       Icon: Video,        color: "#F87171" },
+              { name: "Robots",       href: "/robots",       Icon: Bot,          color: "#2DD4BF" },
+              { name: "Devices",      href: "/devices",      Icon: Smartphone,   color: "#F472B6" },
+              { name: "Models",       href: "/models",       Icon: BrainCircuit, color: "#A78BFA" },
+              { name: "Repositories", href: "/repositories", Icon: GitBranch,    color: "#22D3EE" },
+              { name: "MCP",          href: "/tools",        Icon: Plug,         color: "#818CF8" },
+              { name: "Collections",  href: "/collections",  Icon: FolderHeart,  color: "#34D399" },
+              { name: "Personal",     href: "/tools?category=personal",   Icon: UserCircle, color: "#FBBF24" },
+              { name: "Creativity",   href: "/tools?category=creativity", Icon: Palette,    color: "#E879F9" },
+            ].map(({ name, href, Icon, color }) => (
+              <a
+                key={name}
+                href={href}
+                className="group flex flex-1 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-[#232326]/60 bg-[#0d0d10] px-2 py-1.5 sm:py-2 text-center transition-colors duration-200 min-w-0"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = color;
+                  e.currentTarget.style.boxShadow = `0 0 0 1px ${color}, 0 8px 20px -6px ${color}55`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "";
+                  e.currentTarget.style.boxShadow = "";
+                }}
+              >
+                <div
+                  className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border"
+                  style={{ backgroundColor: `${color}1a`, borderColor: `${color}40` }}
+                >
+                  <Icon size={10} strokeWidth={1.75} style={{ color }} />
+                </div>
+                <span className="text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
+                  {name}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
 
+      
       {/* ── LIST VIEW ── */}
-<div>
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8">
           {/*  Outer container matches ToolListView exactly */}
           <div className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
-              <div ref={dropdownRef} style={{ minWidth: '900px' }} className="relative bg-[#0a0a0c]">
+              <div ref={dropdownRef} style={{ minWidth: '900px' }} className="relative bg-[#000000]">
 
                 {/* Header row matches ToolListView exactly */}
                 <div className="border-b border-[#232326]/60 bg-[#131316]/40">
@@ -650,7 +753,7 @@ export function DevicesClient() {
 
               </div>
           </div>
-        </div>
-    </main>
+      </div>
+    </div>
   );
 }
