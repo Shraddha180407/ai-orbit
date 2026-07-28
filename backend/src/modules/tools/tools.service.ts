@@ -11,12 +11,14 @@ type ToolCard = {
   billingFrequency: string | null;
   avgRating: number;
   createdAt: Date;
+  releaseDate: Date | null;
   isOpenSource: boolean;
   isTrending: boolean;
   verified: boolean;
   upvoteCount: number;
   categories: { category: { slug: string; name: string } }[];
   tags: { tag: { slug: string; name: string } }[];
+  ttasks?: { task: { slug: string; title: string } }[];
   _count: { reviews: number; bookmarks: number };
   company: { slug: string; name: string } | null;
 };
@@ -84,12 +86,14 @@ export class ToolsService {
       billingFrequency: true,
       avgRating: true,
       createdAt: true,
+      releaseDate: true,
       isOpenSource: true,
       isTrending: true,
       verified: true,
       upvoteCount: true,
       categories: { select: { category: { select: { slug: true, name: true } } } },
       tags: { select: { tag: { select: { slug: true, name: true } } } },
+      ttasks: { select: { task: { select: { slug: true, title: true } } } },
       _count: { select: { reviews: true, bookmarks: true } },
       company: { select: { slug: true, name: true } }
     };
@@ -192,12 +196,14 @@ export class ToolsService {
         billingFrequency: true,
         avgRating: true,
         createdAt: true,
+        releaseDate: true,
         isOpenSource: true,
         isTrending: true,
         verified: true,
         upvoteCount: true,
         categories: { select: { category: { select: { slug: true, name: true } } } },
         tags: { select: { tag: { select: { slug: true, name: true } } } },
+        ttasks: { select: { task: { select: { slug: true, title: true } } } },
         _count: { select: { reviews: true, bookmarks: true } },
         company: { select: { slug: true, name: true } }
     };

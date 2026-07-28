@@ -12,9 +12,11 @@ export type ToolCardData = {
   billingFrequency: BillingFrequency;
   categories: { category: { slug: string; name: string } }[];
   tags: { tag: { slug: string; name: string } }[];
+  ttasks?: { task: { slug: string; title: string } }[];
   _count: { reviews: number; bookmarks: number };
   avgRating: number | null;
   company: { slug: string; name: string } | null;
+  releaseDate?: string | null;
 };
 
 export type SortOption = "newest" | "oldest" | "name-asc" | "name-desc" | "rating";
@@ -62,6 +64,12 @@ export type ToolDetailData = {
   categories: { category: { slug: string; name: string } }[];
   tags: { tag: { slug: string; name: string } }[];
   _count: { reviews: number; bookmarks: number };
+  releaseDate?: string | null;
+  isOpenSource?: boolean;
+  compatibility?: string[];
+  targetUsers?: string[];
+  hasApi?: boolean;
+  apiDocsUrl?: string | null;
 };
 
 export type SimilarToolData = {
