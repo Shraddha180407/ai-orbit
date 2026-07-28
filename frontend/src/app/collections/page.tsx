@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import CollectionsPageClient from "./CollectionsPageClient";
 import type { CollectionsApiResponse } from "@/lib/types";
+import { mockCollections } from "@/lib/mockCollections";
 
 export const runtime = "edge";
 
@@ -49,7 +50,7 @@ export default async function CollectionsPage() {
         </main>
       }>
         <CollectionsPageClient 
-          initialItems={initialData.items} 
+          initialItems={mockCollections} 
           initialNextCursor={initialData.nextCursor} 
         />
       </Suspense>

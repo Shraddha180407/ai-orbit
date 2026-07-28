@@ -8,7 +8,6 @@ import { Footer } from "@/components/Footer";
 import { mockCollections } from "@/lib/mockCollections";
 import type { CollectionListItem } from "@/lib/types";
 
-// Align with Prisma CreatorType enum
 type DbCreatorType = "EDITORIAL" | "COMMUNITY";
 
 interface NormalizedTool {
