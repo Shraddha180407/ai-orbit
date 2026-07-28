@@ -8,6 +8,8 @@ import { toolsIngestPayloadSchema } from "./tools.ingest.schema.js";
 import { ToolsIngestService } from "./tools.ingest.service.js";
 import { devicesIngestPayloadSchema } from "./devices.ingest.schema.js";
 import { DevicesIngestService } from "./devices.ingest.service.js";
+import { newsIngestPayloadSchema } from "./news.ingest.schema.js";
+import { NewsIngestService } from "./news.ingest.service.js";
 import { getPrisma } from "../../lib/prisma.js";
 
 const router = new Hono<{
@@ -69,6 +71,32 @@ router.post("/devices", requireIngestionToken, async (c) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "An unexpected error occurred during devices ingestion";
     logger.error("Devices ingestion error:", err);
+    return c.json({
+      error: "INTERNAL_SERVER_ERROR",
+      message
+    }, 500);
+  }
+});
+
+router.post("/news", requireIngestionToken, async (c) => {
+  try {
+    const body = await c.req.json();
+    
+    const parsed = newsIngestPayloadSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({
+        error: "VALIDATION_FAILED",
+        issues: parsed.error.issues
+      }, 422);
+    }
+
+    const prisma = getPrisma(c.env);
+    const summary = await NewsIngestService.ingestNews(prisma, parsed.data);
+    
+    return c.json(summary, 200);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "An unexpected error occurred during news ingestion";
+    logger.error("News ingestion error:", err);
     return c.json({
       error: "INTERNAL_SERVER_ERROR",
       message
