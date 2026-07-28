@@ -16,6 +16,11 @@ const AVAILABILITY_STYLES: Record<string, string> = {
   Discontinued: "bg-[#3a1a1a] text-[#f87171] border border-[#5a2a2a]",
 };
 
+const ROW_ACCENT_COLORS = [
+  "#6E56CF", "#E85D4A", "#0082FB", "#34A853",
+  "#FF9900", "#E91E8C", "#00BCD4", "#FF6B35",
+];
+
 function getFaviconUrl(manufacturer: string, slug: string): string {
   const mfr = (manufacturer || "").toLowerCase().replace(/\s+/g, "");
   const domain = slug.toLowerCase().replace(/[^a-z0-9-]/g, "").split("-")[0];
@@ -356,23 +361,22 @@ export function DeviceDetailClient() {
               <h2 className="text-xs font-bold text-[#A1A1AA] uppercase tracking-widest">Similar Devices</h2>
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {similar.map((d) => (
-                <Link
-                  key={d.id}
-                  href={`/devices/${d.slug || d.id}`}
-                  className="rounded-xl border border-[#232326] bg-[#0D0D0F] transition-all group overflow-hidden"
-                  style={{}}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = `${d.mainTaskColor || '#6E56CF'}60`; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}
-                >
+              {similar.map((d, idx) => (
+  <Link
+    key={d.id}
+    href={`/devices/${d.slug || d.id}`}
+    className="rounded-xl border border-[#232326] bg-[#0D0D0F] transition-all group overflow-hidden"
+    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = `${ROW_ACCENT_COLORS[idx % ROW_ACCENT_COLORS.length]}60`; }}
+    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}
+  >
                   {/* Image with overlays */}
                   <div className="relative h-52 bg-[#18181C] flex items-center justify-center overflow-hidden">
                     <SimilarDeviceImage name={d.name} imageUrl={d.imageUrl} color={d.mainTaskColor} />
                     {/* Name overlay bottom left */}
                     <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
                       <p className="text-xs font-bold text-white truncate group-hover:text-white transition-colors"
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = d.mainTaskColor || '#6E56CF'; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'white'; }}>
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = ROW_ACCENT_COLORS[idx % ROW_ACCENT_COLORS.length]; }}
+onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'white'; }}>
                         {d.name}
                       </p>
                       <p className="text-[10px] text-[#A1A1AA]">{d.category} · {d.manufacturer}</p>
