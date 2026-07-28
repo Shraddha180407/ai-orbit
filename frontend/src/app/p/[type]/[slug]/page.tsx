@@ -9,6 +9,7 @@ import { EntityDetail } from "@/components/detail/EntityDetail";
 import { DeviceDetailClient } from "@/components/detail/DeviceDetailClient";
 import { TaskDetailClient } from "@/components/detail/TaskDetailClient";
 import { RepositoryDetailPage } from "@/components/repository-detail/RepositoryDetailPage";
+import { CompanyDetailClient } from "@/components/company-detail-client";
 import { SERVER_API_URL } from "@/lib/api";
 
 interface UnifiedEntityPageProps {
@@ -79,6 +80,7 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   if (type === "news") return <ArticlePageClient />;
   if (type === "tasks") return <TaskDetailClient />;
   if (type === "repositories") return <RepositoryDetailPage slug={slug} />;
+  if (type === "companies") return <CompanyDetailClient />;
 
   const entityTypeMap: Record<string, "device" | "country" | "fundraise" | "investor" | "robot"> = {
     devices: "device",
