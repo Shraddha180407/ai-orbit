@@ -180,16 +180,16 @@ export function CompaniesClient() {
                   </h3>
                 </div>
 
-                {/* Column 3: Headquarters */}
+                {/* Column 3: Tools Count */}
                 <div className="text-sm text-[#A1A1AA] flex items-center gap-1 truncate">
-                  <MapPin size={12} className="shrink-0 text-[#71717A]" />
-                  <span>{company.headquarters || "Global HQ"}</span>
+                  <span className="text-[#71717A]">Tools:</span>
+                  <span className="font-medium text-white">{company._count?.tools || 0}</span>
                 </div>
 
-                {/* Column 4: Founded Year */}
+                {/* Column 4: AI Models Count */}
                 <div className="text-sm text-[#A1A1AA] truncate">
-                  <span className="sm:hidden text-xs text-[#71717A] mr-1">Founded:</span>
-                  {company.foundedYear || "N/A"}
+                  <span className="sm:hidden text-xs text-[#71717A] mr-1">Models:</span>
+                  <span className="font-medium text-white">{company._count?.aiModels || 0}</span>
                 </div>
 
                 {/* Column 5: Action Link */}

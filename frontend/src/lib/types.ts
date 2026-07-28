@@ -139,10 +139,8 @@ export type Company = {
   slug: string;
   name: string;
   logoUrl: string | null;
-  description: string | null;
-  websiteUrl: string | null;
-  foundedYear: string | null;
-  headquarters: string | null;
+  description?: string | null;
+  websiteUrl?: string | null;
   tools?: {
     id: string;
     slug: string;
@@ -153,6 +151,20 @@ export type Company = {
     avgRating: number;
     _count: { reviews: number };
   }[];
+  aiModels?: {
+    id: string;
+    name: string;
+    description: string;
+    contextWindow: string;
+    parameterSize: string;
+    modality: string;
+    releaseDate: string;
+  }[];
+  _count?: {
+    tools: number;
+    aiModels: number;
+    collectionCompanies?: number;
+  };
 };
 
 export type AIModelProvider = {
