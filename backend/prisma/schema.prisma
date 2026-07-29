@@ -487,6 +487,7 @@ model Robot {
   id              String            @id @default(cuid())
   slug            String            @unique
   name            String
+  logoUrl         String?
   thumbnailUrl    String?
   company         String
   country         String

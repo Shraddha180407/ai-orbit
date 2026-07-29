@@ -299,6 +299,7 @@ export type Video = {
 export type Robot = {
   id: string;
   name: string;
+  logoUrl?: string | null;
   category: string;
   manufacturer: string;
   year: string;
