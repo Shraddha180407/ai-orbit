@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { logger } from "../src/lib/logger.js";
+import { buildRepoSlug, resolveSlugCollision } from "../src/lib/repository-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -98,17 +99,6 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function sanitizeSlug(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function buildSlug(owner: string, name: string): string {
-  return sanitizeSlug(`${owner}-${name}`);
-}
-
 function githubHeaders(): Record<string, string> {
   return {
     Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
@@ -200,7 +190,7 @@ interface MappedRepo {
 
 function mapRepo(repo: GitHubRepo): MappedRepo {
   const now = new Date();
-  const slug = buildSlug(repo.owner.login, repo.name);
+  const slug = buildRepoSlug(repo.owner.login, repo.name);
 
   return {
     githubId: repo.id,
@@ -230,17 +220,7 @@ function mapRepo(repo: GitHubRepo): MappedRepo {
 // ---------------------------------------------------------------------------
 
 async function upsertRepo(prisma: PrismaClient, repo: MappedRepo): Promise<void> {
-  // Check for slug collision with a different repo already in DB
-  const existing = await prisma.repository.findUnique({
-    where: { slug: repo.slug },
-    select: { githubId: true },
-  });
-
-  let slug = repo.slug;
-  if (existing && existing.githubId !== repo.githubId) {
-    const suffix = repo.githubId.toString().slice(-6);
-    slug = `${repo.slug}-${suffix}`;
-  }
+  const slug = await resolveSlugCollision(prisma, repo.slug, repo.githubId);
 
   await prisma.repository.upsert({
     where: { githubId: repo.githubId },

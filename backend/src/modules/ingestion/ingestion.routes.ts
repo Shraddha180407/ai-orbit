@@ -14,6 +14,8 @@ import { videosIngestPayloadSchema } from "./videos.ingest.schema.js";
 import { VideosIngestService } from "./videos.ingest.service.js";
 import { robotsIngestPayloadSchema } from "./robots.ingest.schema.js";
 import { RobotsIngestService } from "./robots.ingest.service.js";
+import { repositoriesIngestPayloadSchema } from "./repositories.ingest.schema.js";
+import { RepositoriesIngestService } from "./repositories.ingest.service.js";
 import { getPrisma } from "../../lib/prisma.js";
 import { modelsIngestPayloadSchema } from "./models.ingest.schema.js";
 import { ModelsIngestService } from "./models.ingest.service.js";
@@ -180,6 +182,32 @@ router.post("/robots", requireIngestionToken, async (c) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "An unexpected error occurred during robots ingestion";
     logger.error("Robots ingestion error:", err);
+    return c.json({
+      error: "INTERNAL_SERVER_ERROR",
+      message
+    }, 500);
+  }
+});
+
+router.post("/repositories", requireIngestionToken, async (c) => {
+  try {
+    const body = await c.req.json();
+    
+    const parsed = repositoriesIngestPayloadSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({
+        error: "VALIDATION_FAILED",
+        issues: parsed.error.issues
+      }, 422);
+    }
+
+    const prisma = getPrisma(c.env);
+    const summary = await RepositoriesIngestService.ingestRepositories(prisma, parsed.data);
+    
+    return c.json(summary, 200);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "An unexpected error occurred during repositories ingestion";
+    logger.error("Repositories ingestion error:", err);
     return c.json({
       error: "INTERNAL_SERVER_ERROR",
       message

@@ -41,6 +41,14 @@ describe('CompaniesService', () => {
 
       expect(prisma.company.findMany).toHaveBeenCalledWith({
         orderBy: { name: 'asc' },
+        include: {
+          _count: {
+            select: {
+              tools: true,
+              aiModels: true,
+            }
+          }
+        }
       });
       expect(result).toEqual(companies);
     });
@@ -80,6 +88,20 @@ describe('CompaniesService', () => {
               avgRating: true,
               _count: { select: { reviews: true } },
             },
+          },
+          aiModels: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              contextWindow: true,
+              parameterSize: true,
+              modality: true,
+              releaseDate: true,
+            },
+          },
+          _count: {
+            select: { tools: true, aiModels: true, collectionCompanies: true },
           },
         },
       });
