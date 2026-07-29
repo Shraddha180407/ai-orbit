@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import X from "lucide-react/dist/esm/icons/x";
-import Search from "lucide-react/dist/esm/icons/search";
-import Newspaper from "lucide-react/dist/esm/icons/newspaper";
 import { Plus } from "lucide-react";
 import { FilterChips } from "./FilterChips";
 import { TopicChip } from "./TopicChip";
@@ -220,58 +218,6 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
   return (
     <main className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 flex flex-col">
-      {/* Homepage-style Hero Section for News — Tight compact padding */}
-      <section
-        className="relative w-full flex flex-col items-center pt-6 pb-6 px-6 mb-5 rounded-2xl border border-[#232326]/70 bg-[#0d0d10] overflow-hidden shadow-xl"
-        style={{
-          backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-        }}
-      >
-        {/* Ambient Signal Glow */}
-        <div
-          className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] rounded-full opacity-[0.14] blur-[100px]"
-          style={{ backgroundColor: 'var(--color-signal)' }}
-        />
-
-        <div className="mx-auto max-w-[1200px] w-full flex flex-col items-center text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#232326] bg-[#131316] text-[11px] font-semibold text-[#A1A1AA] mb-3 shadow-sm">
-            <Newspaper size={13} className="text-[#FF6B4A]" />
-            <span>AI NEWS & ANNOUNCEMENTS</span>
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl lg:text-[40px] font-black tracking-tight text-white mb-2 text-balance leading-[1.1]">
-            {category ? catLabel ?? category : "The Latest AI Ecosystem News"}
-          </h1>
-
-          <p className="text-xs sm:text-sm text-[#A1A1AA] max-w-xl text-balance mb-4 font-normal">
-            Coverage across AI models, research breakthroughs, funding rounds, and industry announcements.
-          </p>
-
-          {/* Integrated Search Bar */}
-          <div className="relative w-full max-w-[480px]">
-            <div className="relative w-full rounded-xl border border-[#232326]/80 bg-[#111113] h-[38px] flex items-center px-3.5 focus-within:border-[#F5A623] focus-within:ring-2 focus-within:ring-[#F5A623]/20 transition-all duration-150">
-              <Search size={14} className="mr-2 text-[#71717A] shrink-0" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search AI news, topics, publishers..."
-                className="w-full bg-transparent text-xs text-white placeholder:text-[#71717A] focus:outline-none font-sans"
-              />
-              {query && (
-                <button
-                  onClick={() => setQuery("")}
-                  className="text-[#71717A] hover:text-white text-xs font-bold px-1.5 py-0.5 rounded transition-colors"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Toolbar & Filter Chips */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1">
