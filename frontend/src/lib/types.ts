@@ -12,11 +12,12 @@ export type ToolCardData = {
   billingFrequency: BillingFrequency;
   categories: { category: { slug: string; name: string } }[];
   tags: { tag: { slug: string; name: string } }[];
-  ttasks?: { task: { slug: string; title: string } }[];
   _count: { reviews: number; bookmarks: number };
   avgRating: number | null;
   company: { slug: string; name: string } | null;
-  releaseDate?: string | null;
+  createdAt: string;
+  isOpenSource: boolean;
+  isTrending: boolean;
 };
 
 export type SortOption = "newest" | "oldest" | "name-asc" | "name-desc" | "rating";
@@ -64,12 +65,8 @@ export type ToolDetailData = {
   categories: { category: { slug: string; name: string } }[];
   tags: { tag: { slug: string; name: string } }[];
   _count: { reviews: number; bookmarks: number };
-  releaseDate?: string | null;
-  isOpenSource?: boolean;
-  compatibility?: string[];
-  targetUsers?: string[];
-  hasApi?: boolean;
-  apiDocsUrl?: string | null;
+  isOpenSource: boolean;
+  isTrending: boolean;
 };
 
 export type SimilarToolData = {
@@ -82,36 +79,18 @@ export type SimilarToolData = {
   avgRating: number | null;
 };
 
-export interface CreatorProfile {
-  id: string;
-  name: string;
-  image: string | null;
-}
+// ============================================================
+// APPEND THIS to the END of frontend/src/lib/types.ts
+// Do not remove or modify any existing type above it (ToolCardData,
+// ToolDetailData, etc. belong to Module 3).
+// ============================================================
 
-export interface CollectionCategory {
-  categoryName: string;
-}
+export type CollectionsSearchParams = {
+  category?: string;
+  page?: string;
+};
 
-export interface CollectionListItem {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  isFeatured: boolean;
-  creatorType: "EDITORIAL" | "COMMUNITY";
-  toolCount: number;
-  updatedAt: string;
-  creator: CreatorProfile;
-  categories: CollectionCategory[];
-  isBookmarked?: boolean;   // ← add this
-  previewTools?: { logoUrl: string | null; name: string }[];
-  _count: {
-    relatedModels: number;
-    relatedCompanies: number;
-  };
-}
-
-export interface CollectionDetailData {
+export type CollectionListItem = {
   id: string;
   slug: string;
   title: string;
@@ -121,26 +100,21 @@ export interface CollectionDetailData {
   featured: boolean;
   updatedAt: string;
   toolCount: number;
-  tools: ToolCardData[];
-}
+  previewTools: { logoUrl: string | null; name: string }[];
+};
 
-export interface CollectionsApiResponse {
-  items: CollectionListItem[];
-  nextCursor: string | null;
-  error?: string;
-}
-
-export interface CollectionFilterParams {
-  search?: string;
-  category?: string[];
-  creatorType?: "EDITORIAL" | "COMMUNITY";
-  hasRelatedModels?: boolean;
-  hasRelatedCompanies?: boolean;
-  featured?: boolean;
-  updatedWithin?: string;
-  sort?: string;
-  cursor?: string;
-}
+export type CollectionDetailData = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  curatedBy: string;
+  category: string;
+  featured: boolean;
+  updatedAt: string;
+  toolCount: number;
+  tools: ToolCardData[]; // reuses Module 3's existing ToolCardData shape
+};
 
 export type CompanyType = 'AI_NATIVE' | 'MODEL_COMPANIES' | 'TOOL_COMPANIES' | 'PROFITABLE' | 'UNICORNS';
 
@@ -151,9 +125,11 @@ export type Company = {
   logoUrl: string | null;
   description?: string | null;
   website?: string | null;
+  websiteUrl?: string | null;
   country?: string | null;
   city?: string | null;
-  foundedYear?: number | null;
+  foundedYear?: number | string | null;
+  headquarters?: string | null;
   type?: CompanyType[];
   sector?: string | null;
   verified?: boolean;
@@ -210,44 +186,7 @@ export type AIModel = {
   parameterSize: string;
   contextWindow: string;
   releaseDate: string;
-  createdAt?: string;
-  /** Linked Company when providerId is set; null otherwise. */
-  provider?: AIModelProvider | null;
-  /**
-   * PRD columns — optional until backend adds them.
-   * UI shows "—" when missing.
-   */
-  type?: string | null;
-  primaryTask?: string | null;
-  openSource?: boolean | null;
 };
-
-export type ModelsListResponse = {
-  items: AIModel[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasMore: boolean;
-  };
-  filters?: {
-    providers: { slug: string; name: string; count: number }[];
-    modalities: { modality: string; count: number }[];
-  };
-};
-
-export type ModelTaskLink = {
-  task: { id: string; slug: string; title: string };
-};
-
-export type ModelDetail = AIModel & {
-  tasks?: ModelTaskLink[];
-  relatedModels?: AIModel[];
-  updatedAt?: string;
-};
-
-export type ModelsSortOption = "newest" | "oldest" | "alphabetical" | "releaseDate";
 
 export type News = {
   id: string;
@@ -284,7 +223,6 @@ export type Repository = {
   readmeHtml?: string;
   readmeFetchedAt?: string;
   defaultBranch?: string;
-  companySlug?: string | null;
 };
 
 export type RepositoryListResponse = {
@@ -308,21 +246,40 @@ export type Video = {
   duration: string;
   views: string;
   publishedAt: string;
-  // Optional backend fields
-  youtubeId?: string;
-  authorName?: string;
-  toolCategory?: string;
-  description?: string;
 };
 
-export type Robot = {
+export type RobotListItem = {
   id: string;
+  slug: string;
   name: string;
-  logoUrl?: string | null;
+  logoUrl: string | null;
+  thumbnailUrl: string | null;
+  company: string;
+  country: string | null;
   category: string;
-  manufacturer: string;
-  year: string;
-  description: string;
+  availability: string;
+  price: string | null;
+  releaseDate: string | null;
+  mainTask: string | null;
+  autonomyLevel: string | null;
+  primaryUseCases: string[];
+  websiteUrl: string | null;
+  about: string;
+  specs: string | null;
+  mediaUrls: string[];
+  tasks: { id: string; title: string; slug: string }[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type Robot = RobotListItem & {
+  tasks: {
+    id: string;
+    slug: string;
+    title: string;
+    description?: string;
+    category?: { slug: string; name: string };
+  }[];
 };
 
 export type Device = {
@@ -337,8 +294,6 @@ export type Device = {
   price?: string | null;
   month?: string | null;
   imageUrl?: string | null;
-  images?: string[];
-  videoUrl?: string | null;
   manufacturerLogoUrl?: string | null;
   mainTask?: string | null;
   mainTaskColor?: string | null;
@@ -349,28 +304,4 @@ export type Device = {
   primaryUseCases?: string[];
   additionalInfo?: string | null;
   buyUrl?: string | null;
-};
-
-
-export type CreatorType = "EDITORIAL" | "COMMUNITY";
-
-export type CollectionSort =
-  | "recently_updated"
-  | "oldest_updated"
-  | "name_asc"
-  | "name_desc"
-  | "most_tools"
-  | "fewest_tools"
-  | "most_bookmarked"
-  | "most_related_models"
-  | "most_related_companies"
-  | "featured_first";
-  
-export type RepositoryOwnerListItem = {
-  owner: string;
-  displayName: string;
-  companySlug: string | null;
-  logoUrl: string | null;
-  repositoryCount: number;
-  searchText?: string;
 };
