@@ -114,7 +114,7 @@ export function transformDeviceForListing(device: Device) {
     month: formatMonth(device.month),
     description: device.description,
     imageUrl: validateImageUrl(device.imageUrl) || device.imageUrl || '',
-    images: device.imageUrl ? [device.imageUrl] : [],
+    images: device.images || [],
     manufacturerLogoUrl: validateImageUrl(device.manufacturerLogoUrl) || device.manufacturerLogoUrl || '',
     mainTask: device.mainTask,
     mainTaskColor: TASK_COLORS[device.mainTask] || TASK_COLORS["Default"],
@@ -133,6 +133,7 @@ export function transformDeviceForDetail(device: Device & { tasks?: unknown[] })
     ...listingData,
     ram: device.ram,
     additionalInfo: device.additionalInfo,
+    videoUrl: device.videoUrl || null,
     tasks: device.tasks || []
   };
 }

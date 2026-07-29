@@ -2241,6 +2241,12 @@ logger.info("Seeding Robots...");
     month: "Jan, 2024",
     description: "A pocket companion device utilizing a Large Action Model (LAM) designed to execute online app actions on your behalf.",
     imageUrl: "https://m.media-amazon.com/images/I/41d-IfutmxL.jpg", 
+    images: [
+      "https://m.media-amazon.com/images/I/41d-IfutmxL.jpg",
+      "https://techcrunch.com/wp-content/uploads/2024/01/rabbit-r1-hero.jpg?fit=1024%2C576",
+      "https://www.theverge.com/wp-content/uploads/2024/01/Rabbit-R1-Review-2.jpg?fit=1024%2C576"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=example-rabbit-r1",
     manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqt-drKgbn-v1CvxdzoyKUNNjH6Q_ppxN2qbh6h3meyQ&s=10",
     mainTask: "AI-powered app automation",
     formFactor: "Pocket-sized",
@@ -2263,6 +2269,12 @@ logger.info("Seeding Robots...");
     month: "Oct, 2023",
     description: "Stylish smart glasses with integrated Meta AI, allowing you to ask questions about what you are looking at through the built-in camera.",
     imageUrl: "https://m.media-amazon.com/images/I/51YS2aa2--L._AC_UF1000,1000_QL80_.jpg",
+    images: [
+      "https://m.media-amazon.com/images/I/51YS2aa2--L._AC_UF1000,1000_QL80_.jpg",
+      "https://www.meta.com/smart-glasses/images/meta-glasses-hero.jpg",
+      "https://www.theverge.com/wp-content/uploads/2023/10/meta-ray-ban-smglasses-review-2.jpg?fit=1024%2C576"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=meta-rayban-glasses",
     manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqfbTP6UVlD7B38a6uRgD7vNt6GYXB780xoQa7veixCw&s=10",
     mainTask: "Multimodal visual assistance",
     formFactor: "Eyewear",
@@ -2284,6 +2296,12 @@ logger.info("Seeding Robots...");
     month: "Aug, 2024",
     description: "A personalized AI wearable that records your meetings and conversations, providing instant summaries and transcriptions.",
     imageUrl: "https://www.limitless.ai/media/pendant/black/UpdatedPendantAngledOn.webp",
+    images: [
+      "https://www.limitless.ai/media/pendant/black/UpdatedPendantAngledOn.webp",
+      "https://www.limitless.ai/media/pendant/black/UpdatedPendantFront.webp",
+      "https://www.limitless.ai/media/pendant/black/UpdatedPendantSide.webp"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=limitless-pendant-demo",
     manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvBvCARCbE5sLvWhJXmXFwrVzDFu5tATl84jMVESJfLw&s=10",
     mainTask: "Meeting transcription & memory",
     formFactor: "Pendant / Clip",
@@ -2305,6 +2323,10 @@ logger.info("Seeding Robots...");
     month: "Apr, 2024",
     description: "Open-source, lightweight AI glasses that provide a heads-up display (HUD) powered by OpenAI and Perplexity.",
     imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRndpQutm_8ZHmbv3QFRuEkxMXknoBuc1sPetPK7HUtS5rzrnI4M-L0PvbE&s=10",
+    images: ["https://brilliant.xyz/images/frame-hero.jpg",
+      "https://techcrunch.com/wp-content/uploads/2024/04/brilliant-labs-frame-review-2.jpg?fit=1024%2C576"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=brilliant-labs-frame",
     manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSx4o32nl7E6RbBHMcjv-p_Ja_eHu0M77RiEqIW81USiMzQzkGas7ruYBjk&s=10",
     mainTask: "Heads-up visual search",
     formFactor: "Eyewear",
@@ -2326,6 +2348,12 @@ logger.info("Seeding Robots...");
     month: "Nov, 2023",
     description: "A credit-card sized voice recorder that snaps to the back of your phone, utilizing ChatGPT to transcribe and summarize calls and meetings.",
     imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUWIuVVBPOiJ-PHCrjIa4WP5fK0zsOVjfurP1MIcm6GA&s",
+    images: [
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUWIuVVBPOiJ-PHCrjIa4WP5fK0zsOVjfurP1MIcm6GA&s",
+      "https://www.plaud.ai/images/note-front.jpg",
+      "https://www.plaud.ai/images/note-side.jpg"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=plaud-note-demo",
     manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkAkzJtf1nr96s5wzF6C5vrxz-VbdDliwbZMtXbg_RyQ&s=10",
     mainTask: "Call & audio summarization",
     formFactor: "Magnetic Card",

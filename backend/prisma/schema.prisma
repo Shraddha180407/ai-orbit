@@ -526,6 +526,8 @@ model Device {
   month               String?
   description         String
   imageUrl            String
+  images              String[]     @default([])
+  videoUrl            String?
   manufacturerLogoUrl String
   mainTask            String
   formFactor          String?

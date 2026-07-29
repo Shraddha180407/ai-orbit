@@ -13,6 +13,8 @@ export const deviceSchema = z.object({
   month: z.string().optional().nullable(),
   description: z.string(),
   imageUrl: z.string().url(),
+  images: z.array(z.string().url()).default([]),
+  videoUrl: z.string().url().optional().nullable(),
   manufacturerLogoUrl: z.string().url(),
   mainTask: z.string(),
   formFactor: z.string().optional().nullable(),

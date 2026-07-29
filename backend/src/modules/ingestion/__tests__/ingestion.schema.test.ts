@@ -143,6 +143,8 @@ describe('deviceSchema', () => {
     year: '2024',
     description: 'A test device',
     imageUrl: 'https://img.com/device.jpg',
+    images: ['https://img.com/device1.jpg', 'https://img.com/device2.jpg'],
+    videoUrl: 'https://youtube.com/watch?v=test',
     manufacturerLogoUrl: 'https://logo.com/m.png',
     mainTask: 'Assistance',
   };
@@ -198,6 +200,8 @@ describe('devicesIngestPayloadSchema', () => {
         {
           slug: 'd1', name: 'Device', manufacturer: 'Acme', category: 'Robot',
           year: '2024', description: 'desc', imageUrl: 'https://img.com/i.jpg',
+          images: ['https://img.com/i1.jpg', 'https://img.com/i2.jpg'],
+          videoUrl: 'https://youtube.com/watch?v=demo',
           manufacturerLogoUrl: 'https://logo.com/l.png', mainTask: 'Task',
         },
       ],
