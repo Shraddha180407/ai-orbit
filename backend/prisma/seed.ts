@@ -2057,7 +2057,13 @@ async function main() {
     { name: "Qwen2.5-72B-Instruct", creator: "Alibaba", contextWindow: "128K tokens", parameterSize: "72 Billion", modality: "Text, Code", releaseDate: "September 2024", description: "Highly capable open model with state of the art instruction-following and math capabilities." },
     { name: "Qwen2.5-Coder-32B-Instruct", creator: "Alibaba", contextWindow: "128K tokens", parameterSize: "32 Billion", modality: "Code", releaseDate: "September 2024", description: "Top performing open-weights coding model." }
   ];
-  await prisma.aIModel.createMany({ data: seedModels });
+  
+  const seedModelsWithSlug = seedModels.map(model => ({
+    ...model,
+    slug: model.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+  }));
+  
+  await prisma.aIModel.createMany({ data: seedModelsWithSlug });
 
   // News is no longer static-seeded — the news module gets its data from
   // real RSS ingestion (`npm run ingest`), not mock rows. See

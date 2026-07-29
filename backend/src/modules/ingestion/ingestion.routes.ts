@@ -147,6 +147,20 @@ router.post("/models", requireIngestionToken, async (c) => {
       }, 422);
     }
 
+    const prisma = getPrisma(c.env);
+    const summary = await ModelsIngestService.ingestModels(prisma, parsed.data);
+    
+    return c.json(summary, 200);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "An unexpected error occurred during models ingestion";
+    logger.error("Models ingestion error:", err);
+    return c.json({
+      error: "INTERNAL_SERVER_ERROR",
+      message
+    }, 500);
+  }
+});
+
 router.post("/robots", requireIngestionToken, async (c) => {
   try {
     const body = await c.req.json();
