@@ -27,6 +27,7 @@ The API expects a top-level JSON object containing a `robots` array.
 |---|---|---|---|
 | `slug` | `string` | **Yes** | URL-friendly slug for the robot (e.g., "tesla-optimus-gen-2"). |
 | `name` | `string` | **Yes** | The name of the robot. |
+| `logoUrl` | `string` | No | URL to a logo image. |
 | `thumbnailUrl` | `string` | No | URL to a thumbnail image. |
 | `company` | `string` | **Yes** | The company that created the robot. |
 | `country` | `string` | **Yes** | The country of origin. |
@@ -71,6 +72,7 @@ Nested inside `Task.category`.
     {
       "slug": "tesla-optimus",
       "name": "Tesla Optimus Gen 2",
+      "logoUrl": "https://example.com/optimus-logo.png",
       "thumbnailUrl": "https://example.com/optimus.jpg",
       "company": "Tesla",
       "country": "USA",

@@ -66,6 +66,7 @@ export class RobotsIngestService {
             create: {
               slug: robotData.slug,
               name: robotData.name,
+              logoUrl: robotData.logoUrl,
               thumbnailUrl: robotData.thumbnailUrl,
               company: robotData.company,
               country: robotData.country,
@@ -86,6 +87,7 @@ export class RobotsIngestService {
             },
             update: {
               name: robotData.name,
+              logoUrl: robotData.logoUrl,
               thumbnailUrl: robotData.thumbnailUrl,
               company: robotData.company,
               country: robotData.country,

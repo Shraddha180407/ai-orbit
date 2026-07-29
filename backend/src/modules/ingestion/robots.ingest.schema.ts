@@ -15,6 +15,7 @@ const taskSchema = z.object({
 export const robotSchema = z.object({
   slug: z.string(),
   name: z.string(),
+  logoUrl: z.string().nullable().optional(),
   thumbnailUrl: z.string().nullable().optional(),
   company: z.string(),
   country: z.string(),

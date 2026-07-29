@@ -69,6 +69,7 @@ export class RobotTransformer {
       price: robot.price ? robot.price : 'N/A', 
       releaseDate: robot.releaseDate ? robot.releaseDate : '-',
       mainTask: robot.mainTask,
+      logoUrl: robot.logoUrl,
       thumbnailUrl: robot.thumbnailUrl,
       autonomyLevel: this.formatAutonomy(robot.autonomyLevel),
       primaryUseCases: robot.primaryUseCases,

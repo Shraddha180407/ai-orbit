@@ -97,10 +97,18 @@ export function RobotsClient() {
                 key={robot.id}
                 className="group grid grid-cols-1 sm:grid-cols-[40px_1fr_180px_120px] gap-4 items-center p-4 bg-transparent hover:bg-[#18181C]/40 transition-all w-full"
               >
-                {/* Column 1: Initials */}
-                <div className="h-10 w-10 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60 shrink-0">
-                  {robot.name.charAt(0)}
-                </div>
+                {/* Column 1: Logo or Initials */}
+                {robot.logoUrl ? (
+                  <img
+                    src={robot.logoUrl}
+                    alt={`${robot.name} logo`}
+                    className="h-10 w-10 rounded-lg object-cover bg-[#18181C] border border-[#232326]/60 shrink-0"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-lg bg-[#18181C] flex items-center justify-center font-bold text-white uppercase border border-[#232326]/60 shrink-0">
+                    {robot.name.charAt(0)}
+                  </div>
+                )}
 
                 {/* Column 2: Name + Description */}
                 <div className="min-w-0">
