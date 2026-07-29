@@ -86,7 +86,7 @@ export function VoteButtons({ up, down, id, layout = "row", fluid = false }: Vot
         style={on ? { backgroundColor: "var(--color-signal)" } : undefined}
       >
         <ArrowIcon size={14} />
-        <span className="min-w-[1.5ch]">{count.toLocaleString()}</span>
+        <span className="min-w-[1.5ch]">{count.toLocaleString("en-US")}</span>
       </button>
     );
   };

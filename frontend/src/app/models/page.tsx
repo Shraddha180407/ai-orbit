@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Header } from "@/components/Header";
+import { GlobalHero } from "@/components/GlobalHero";
 import { Footer } from "@/components/Footer";
 import { ModelsClient } from "@/components/models-client";
 
@@ -14,6 +15,7 @@ export default function ModelsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white">
       <Header />
+      <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
       <Suspense
         fallback={
           <div className="w-full px-4 sm:px-6 lg:px-8 pt-6 pb-2 flex-1">

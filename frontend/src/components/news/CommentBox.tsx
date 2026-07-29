@@ -81,7 +81,7 @@ export function CommentBox({ id, initialComments }: CommentBoxProps) {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-foreground">{c.authorName}</span>
-                  <span className="text-[11px] font-mono text-foreground-faint">{new Date(c.createdAt).toLocaleString()}</span>
+                  <span className="text-[11px] font-mono text-foreground-faint">{new Date(c.createdAt).toLocaleString("en-US")}</span>
                 </div>
                 <p className="text-sm leading-relaxed text-foreground-muted mt-1.5">{c.body}</p>
               </div>

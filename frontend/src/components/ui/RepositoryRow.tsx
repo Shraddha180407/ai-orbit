@@ -105,13 +105,13 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo }: Reposit
         {/* Column 4: Stars */}
         <div className="text-[13px] text-[#A1A1AA] font-mono flex items-center justify-center gap-[6px] whitespace-nowrap w-full">
           <Star size={16} className="text-[#71717A]/80 fill-[#71717A]/10 shrink-0" />
-          <span>{starCount.toLocaleString()}</span>
+          <span>{starCount.toLocaleString("en-US")}</span>
         </div>
 
         {/* Column 5: Forks */}
         <div className="text-[13px] text-[#A1A1AA] font-mono flex items-center justify-center gap-[6px] hidden lg:flex whitespace-nowrap w-full">
           <GitFork size={16} className="text-[#71717A]/80 shrink-0" />
-          <span>{forksCount.toLocaleString()}</span>
+          <span>{forksCount.toLocaleString("en-US")}</span>
         </div>
 
         {/* Column 6: License Badge */}
@@ -175,11 +175,11 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo }: Reposit
           {/* Row 2: Stats Inline Bar */}
           <div className="flex flex-wrap items-center gap-1.5 text-[13px] text-[#71717A] font-mono mt-1">
             <span className="flex items-center gap-0.5">
-              ⭐ {starCount.toLocaleString()}
+              ⭐ {starCount.toLocaleString("en-US")}
             </span>
             <span>·</span>
             <span className="flex items-center gap-0.5">
-              🍴 {forksCount.toLocaleString()}
+              🍴 {forksCount.toLocaleString("en-US")}
             </span>
             {licenseText && (
               <>

@@ -74,7 +74,7 @@ function formatCompact(n: number): string {
 }
 
 function formatCount(n: number): string {
-  return n > 0 ? n.toLocaleString() : "-";
+  return n > 0 ? n.toLocaleString("en-US") : "-";
 }
 
 /** Cycles through a small set of icon/color pairs so each task row gets a
@@ -161,7 +161,7 @@ export function TasksTable({ items, total }: TasksTableProps) {
           {category ? `${category} Tasks` : "Tasks"}
         </h1>
       </div>
-      <p className="mb-3 text-xs text-search-text-tertiary">{total.toLocaleString()} tasks</p>
+      <p className="mb-3 text-xs text-search-text-tertiary">{total.toLocaleString("en-US")} tasks</p>
 
       {/* Show: pills */}
       <div className="mb-4 flex items-center gap-2.5">

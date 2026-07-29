@@ -171,7 +171,7 @@ function formatPostedAgo(minutes: number): string {
 }
 
 function formatSalary(n: number): string {
-  return `$${n.toLocaleString()}`;
+  return `$${n.toLocaleString("en-US")}`;
 }
 
 function LocationIcon({ type }: { type: LocationType }) {

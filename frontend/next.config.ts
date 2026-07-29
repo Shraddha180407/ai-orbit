@@ -3,29 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "i.ytimg.com" },
-      { protocol: "https", hostname: "yt3.ggpht.com" }, // channel/author avatars
-      { protocol: "https", hostname: "picsum.photos" }, // search module mock thumbnails
-      {
-        protocol: "https",
-        hostname: "www.google.com",
-      },
-      {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-      },
-      {
-        protocol: "https",
-        hostname: "orbit-ai.example.com",
-      },
-      {
-        protocol: "https",
-        hostname: "*.gstatic.com",
-      },
-      {
-        protocol: "https",
-        hostname: "ui-avatars.com",
-      },
+      { protocol: "https", hostname: "**" },
+      { protocol: "http", hostname: "**" },
     ],
   },
 
