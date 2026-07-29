@@ -6,6 +6,7 @@ import {
   parseCommaSeparated,
   validateImageUrl,
   transformDeviceForListing,
+  transformDeviceForDetail,
 } from '../device-transformations.js';
 
 describe('generateSlug', () => {
@@ -179,6 +180,7 @@ describe('transformDeviceForListing', () => {
     month: '2024-09',
     description: 'A powerful phone',
     imageUrl: 'https://example.com/iphone.png',
+    images: ['https://example.com/iphone.png'],
     manufacturerLogoUrl: 'https://example.com/apple-logo.png',
     mainTask: 'Productivity',
     formFactor: 'Bar',
@@ -223,6 +225,7 @@ describe('transformDeviceForListing', () => {
     const result = transformDeviceForListing({
       ...baseDevice,
       imageUrl: null,
+      images: null,
     } as never);
     expect(result.imageUrl).toBe('');
     expect(result.images).toEqual([]);
@@ -252,5 +255,47 @@ describe('transformDeviceForListing', () => {
     } as never);
     expect(result.aiFeatures).toEqual([]);
     expect(result.primaryUseCases).toEqual([]);
+  });
+
+  describe('transformDeviceForDetail', () => {
+    it('includes videoUrl field when present', () => {
+      const deviceWithVideo = {
+        ...baseDevice,
+        videoUrl: 'https://www.youtube.com/watch?v=example',
+      } as never;
+      
+      const result = transformDeviceForDetail(deviceWithVideo);
+      expect(result.videoUrl).toBe('https://www.youtube.com/watch?v=example');
+    });
+
+    it('sets videoUrl to null when not present', () => {
+      const deviceWithoutVideo = {
+        ...baseDevice,
+        videoUrl: null,
+      } as never;
+      
+      const result = transformDeviceForDetail(deviceWithoutVideo);
+      expect(result.videoUrl).toBeNull();
+    });
+
+    it('includes images array from device', () => {
+      const deviceWithImages = {
+        ...baseDevice,
+        images: ['https://example.com/device1.jpg', 'https://example.com/device2.jpg'],
+      } as never;
+      
+      const result = transformDeviceForDetail(deviceWithImages);
+      expect(result.images).toEqual(['https://example.com/device1.jpg', 'https://example.com/device2.jpg']);
+    });
+
+    it('includes empty images array when not present', () => {
+      const deviceWithoutImages = {
+        ...baseDevice,
+        images: [],
+      } as never;
+      
+      const result = transformDeviceForDetail(deviceWithoutImages);
+      expect(result.images).toEqual([]);
+    });
   });
 });
