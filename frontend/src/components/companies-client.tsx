@@ -199,12 +199,12 @@ export function CompaniesClient() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      <main className="mx-auto max-w-[1440px] px-4 sm:px-8 py-8 flex-1 w-full">
-        <div className="relative flex items-center justify-center gap-2 mb-6 overflow-x-auto pb-1 scrollbar-hide">
+    <>
+      <main className="mx-auto max-w-[1440px] px-4 sm:px-8 pt-2 pb-8 flex-1 w-full selection:bg-neutral-800 selection:text-white">
+        <div className="relative flex items-center justify-center gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
           <button
             onClick={() => setActiveType(null)}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap ${
+            className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition-all whitespace-nowrap ${
               activeType === null
                 ? 'bg-white text-black border-white'
                 : 'bg-transparent text-[#A1A1AA] border-[#2A2A2E] hover:border-[#555] hover:text-white'
@@ -216,7 +216,7 @@ export function CompaniesClient() {
             <button
               key={ct.value}
               onClick={() => setActiveType(activeType === ct.value ? null : ct.value)}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap ${
+              className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition-all whitespace-nowrap ${
                 activeType === ct.value
                   ? 'bg-white text-black border-white'
                   : 'bg-transparent text-[#A1A1AA] border-[#2A2A2E] hover:border-[#555] hover:text-white'
@@ -227,7 +227,7 @@ export function CompaniesClient() {
           ))}
 
           {isAdmin && (
-            <Button className="absolute right-0 bg-white text-black hover:bg-neutral-200 h-8 text-xs" onClick={openAdd}>
+            <Button className="absolute right-0 bg-white text-black hover:bg-neutral-200 h-7 px-3 text-[11px]" onClick={openAdd}>
               <Plus className="h-3 w-3 mr-1" /> Add Company
             </Button>
           )}
@@ -235,22 +235,22 @@ export function CompaniesClient() {
 
         {/* Table */}
         {isLoading ? (
-          <div className="rounded-xl border border-[#1C1C1F] overflow-hidden bg-[#0A0A0C]">
+          <div className="w-full">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-16 animate-pulse bg-[#131316]/50 border-b border-[#1C1C1F] last:border-b-0" />
+              <div key={i} className="h-16 animate-pulse bg-[#131316]/50 border-b border-[#1C1C1F]" />
             ))}
           </div>
         ) : filteredAndSorted.length === 0 ? (
-          <div className="text-center py-20 border border-[#1C1C1F] bg-[#0A0A0C] rounded-xl">
+          <div className="text-center py-20">
             <p className="text-[#71717A] text-sm">
               {q ? `No companies match "${q}".` : "No companies found."}
             </p>
           </div>
         ) : (
-          <div className="rounded-xl border border-[#1C1C1F] overflow-hidden bg-[#0A0A0C]">
+          <div className="w-full">
            <div className="overflow-x-auto">
             {/* Table Header */}
-            <div className="grid grid-cols-[minmax(220px,2fr)_100px_120px_120px_90px_90px_140px_70px_70px] gap-3 items-center px-4 py-3 border-b border-[#1C1C1F] bg-[#0D0D0F] min-w-[1100px]">
+            <div className="grid grid-cols-[minmax(220px,2fr)_100px_120px_120px_90px_90px_140px_70px_70px] gap-3 items-center px-4 py-3 border-b border-[#1C1C1F] min-w-[1100px]">
               <SortableHeader label="Company" field="name" />
               <SortableHeader label="Country" field="country" />
               <SortableHeader label="Valuation" field="valuation" />
@@ -363,6 +363,6 @@ export function CompaniesClient() {
           <div><label className="text-xs text-[#8A8F98]">Logo URL (optional)</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="https://..." value={formData.logoUrl} onChange={e => setFormData({...formData, logoUrl: e.target.value})} /></div>
         </div>
       </Modal>
-    </div>
+    </>
   );
 }
