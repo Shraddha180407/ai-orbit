@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import Search from 'lucide-react/dist/esm/icons/search';
 import Wrench from 'lucide-react/dist/esm/icons/wrench';
@@ -60,6 +60,7 @@ const DIRECTORY_CARDS = [
 
 export function GlobalHero() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const q = searchParams.get("q") || "";
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -223,25 +224,33 @@ export function GlobalHero() {
           <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto">
             {DIRECTORY_CARDS.map((card) => {
               const Icon = card.icon;
+              const isSelected = card.href === "/" ? pathname === "/" : pathname?.startsWith(card.href);
               const isNew = card.name === "New";
               
               return (
-                <a
+                <Link
                   key={card.name}
                   href={card.href}
                   className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${
-                    isNew ? 'border-transparent' : 'border-[#232326]/60 bg-[#0d0d10]'
+                    (isNew && isSelected) ? 'border-transparent' : 'border-[#232326]/60 bg-[#0d0d10]'
                   }`}
                   onMouseEnter={(e) => {
-                    if (!isNew) e.currentTarget.style.borderColor = card.color;
+                    if (!(isNew && isSelected)) e.currentTarget.style.borderColor = card.color;
                     e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
                   }}
                   onMouseLeave={(e) => {
-                    if (!isNew) e.currentTarget.style.borderColor = "";
-                    e.currentTarget.style.boxShadow = "";
+                    if (!isSelected) {
+                      e.currentTarget.style.borderColor = "";
+                      e.currentTarget.style.boxShadow = "";
+                    }
                   }}
+                  style={
+                    isSelected && !isNew
+                      ? { borderColor: card.color, boxShadow: `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55` }
+                      : undefined
+                  }
                 >
-                  {isNew && (
+                  {isNew && isSelected && (
                     <>
                       <div 
                         className="absolute inset-[-100%] animate-[spin_3s_linear_infinite] opacity-70"
@@ -261,7 +270,7 @@ export function GlobalHero() {
                   <span className="relative z-10 text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
                     {card.name}
                   </span>
-                </a>
+                </Link>
               );
             })}
           </div>

@@ -1,14 +1,72 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 
 import { ToolListView } from "@/components/ToolListView";
 import { API_URL } from "@/lib/api";
 import type { SortOption } from "@/lib/types";
 
-export function ToolsClient({ defaultCategory }: { defaultCategory?: string }) {
+type DirectoryMode = "tools" | "personal" | "creativity";
+
+const CATEGORY_MAP = {
+  tools: [
+    { name: "All", slug: "" },
+    { name: "Writing", slug: "writing" },
+    { name: "Image Generation", slug: "image-generation" },
+    { name: "Video Generation", slug: "video" },
+    { name: "Audio", slug: "audio" },
+    { name: "Chatbots", slug: "chatbots" },
+    { name: "Coding", slug: "coding" },
+    { name: "Marketing", slug: "marketing" },
+    { name: "Productivity", slug: "productivity" },
+    { name: "Business", slug: "business" },
+    { name: "Education", slug: "education" }
+  ],
+  personal: [
+    { name: "All", slug: "" },
+    { name: "Productivity", slug: "productivity" },
+    { name: "Chatbots", slug: "chatbots" },
+    { name: "Writing", slug: "writing" },
+    { name: "Audio", slug: "audio" },
+    { name: "Customer Support", slug: "customer-support" },
+    { name: "Video", slug: "video" },
+    { name: "Image Generation", slug: "image-generation" },
+    { name: "Marketing", slug: "marketing" }
+  ],
+  creativity: [
+    { name: "All", slug: "" },
+    { name: "Image Generation", slug: "image-generation" },
+    { name: "Video", slug: "video" },
+    { name: "Writing", slug: "writing" },
+    { name: "Audio", slug: "audio" },
+    { name: "Design", slug: "design" },
+    { name: "Marketing", slug: "marketing" },
+    { name: "Productivity", slug: "productivity" },
+    { name: "Coding", slug: "coding" }
+  ]
+} as const;
+
+export function ToolsClient({ 
+  defaultMode, 
+  defaultCategory 
+}: { 
+  defaultMode?: DirectoryMode; 
+  defaultCategory?: string; 
+}) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  const [mode] = useState<DirectoryMode>(() => {
+    if (defaultMode) return defaultMode;
+    if (pathname?.includes("personal")) return "personal";
+    if (pathname?.includes("creativity")) return "creativity";
+    return "tools";
+  });
+
+  const [activeCategory, setActiveCategory] = useState<string>(() => {
+    return defaultCategory || searchParams.get("category") || "";
+  });
 
   const [tools, setTools] = useState<any[]>([]);
   const [page, setPage] = useState(1);
@@ -20,7 +78,7 @@ export function ToolsClient({ defaultCategory }: { defaultCategory?: string }) {
   // Build params object from URL search params
   const params = {
     q: searchParams.get("q") || undefined,
-    category: searchParams.get("category") || defaultCategory || undefined,
+    category: activeCategory || undefined,
     pricing: searchParams.get("pricing") || undefined,
     sort: (searchParams.get("sort") || undefined) as SortOption | undefined,
   };
@@ -94,9 +152,40 @@ export function ToolsClient({ defaultCategory }: { defaultCategory?: string }) {
     };
   }, [isLoading, isFetchingMore, page, totalPages]);
 
+  const categories = CATEGORY_MAP[mode] || CATEGORY_MAP.tools;
+
   return (
     <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
       <div className="mx-auto w-full max-w-[1600px] space-y-3">
+        {/* Top Sliding Category Row */}
+        <div className="mb-2 flex items-center justify-start md:justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+          {categories.map((topic) => {
+            const isSelected = activeCategory === topic.slug;
+            return (
+              <button
+                key={topic.name}
+                onClick={(e) => {
+                  setActiveCategory(topic.slug);
+                  const targetPath = topic.slug ? `/${mode}/${topic.slug}` : `/${mode}`;
+                  window.history.pushState(null, "", targetPath);
+                  e.currentTarget.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "center"
+                  });
+                }}
+                className={`rounded-full px-2.5 py-0.5 text-[8.5px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                  isSelected
+                    ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                    : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+                }`}
+              >
+                {topic.name}
+              </button>
+            );
+          })}
+        </div>
+
         <ToolListView
           tools={tools}
           loading={isLoading && page === 1}
