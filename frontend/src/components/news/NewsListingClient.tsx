@@ -2,10 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import X from "lucide-react/dist/esm/icons/x";
-<<<<<<< HEAD
-=======
 import Search from "lucide-react/dist/esm/icons/search";
->>>>>>> upstream/main
 import { Plus } from "lucide-react";
 import { FilterChips } from "./FilterChips";
 import { TopicChip } from "./TopicChip";
