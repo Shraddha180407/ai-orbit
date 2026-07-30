@@ -8,6 +8,8 @@ import { ArticlePageClient } from "@/components/article-page-client";
 import { EntityDetail } from "@/components/detail/EntityDetail";
 import { DeviceDetailClient } from "@/components/detail/DeviceDetailClient";
 import { TaskDetailClient } from "@/components/detail/TaskDetailClient";
+import { RepositoryDetailPage } from "@/components/repository-detail/RepositoryDetailPage";
+import { CompanyDetailClient } from "@/components/company-detail-client";
 import { SERVER_API_URL } from "@/lib/api";
 
 interface UnifiedEntityPageProps {
@@ -69,7 +71,7 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
 
 export default async function UnifiedEntityPage({ params }: UnifiedEntityPageProps) {
   const resolvedParams = await params;
-  const type = resolvedParams.type;
+  const { type, slug } = resolvedParams;
   
   
   if (type === "tools") return <ToolDetailClient />;
@@ -77,13 +79,14 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   if (type === "videos") return <VideoDetailsClient />;
   if (type === "news") return <ArticlePageClient />;
   if (type === "tasks") return <TaskDetailClient />;
+  if (type === "repositories") return <RepositoryDetailPage slug={slug} />;
+  if (type === "companies") return <CompanyDetailClient />;
 
-  const entityTypeMap: Record<string, any> = {
+  const entityTypeMap: Record<string, "device" | "country" | "fundraise" | "investor" | "robot"> = {
     devices: "device",
     countries: "country",
     fundraises: "fundraise",
     investors: "investor",
-    models: "model",
     robots: "robot",
   };
 

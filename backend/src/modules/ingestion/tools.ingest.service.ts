@@ -70,6 +70,16 @@ export class ToolsIngestService {
             }
           }
 
+          // 3.6 Handle Tasks (Connect existing)
+          let taskIds: string[] = [];
+          if (toolData.tasks && toolData.tasks.length > 0) {
+            const validTasks = await tx.task.findMany({
+              where: { slug: { in: toolData.tasks.map(t => t.slug) } },
+              select: { id: true }
+            });
+            taskIds = validTasks.map(t => t.id);
+          }
+
           // 4. Check if Tool already exists to determine if it's create or update for summary
           const existingTool = await tx.tool.findUnique({
             where: { slug: toolData.slug }
@@ -93,6 +103,7 @@ export class ToolsIngestService {
             await tx.toolCategory.deleteMany({ where: { toolId: existingTool.id } });
             await tx.toolTag.deleteMany({ where: { toolId: existingTool.id } });
             await tx.toolIntegration.deleteMany({ where: { toolId: existingTool.id } });
+            await tx.taskTool.deleteMany({ where: { toolId: existingTool.id } });
           }
 
           await tx.tool.upsert({
@@ -128,6 +139,9 @@ export class ToolsIngestService {
               },
               integrations: {
                 create: integrationIds.map(iId => ({ integrationId: iId }))
+              },
+              ttasks: {
+                create: taskIds.map(taskId => ({ taskId }))
               }
             },
             update: {
@@ -160,6 +174,9 @@ export class ToolsIngestService {
               },
               integrations: {
                 create: integrationIds.map(iId => ({ integrationId: iId }))
+              },
+              ttasks: {
+                create: taskIds.map(taskId => ({ taskId }))
               }
             }
           });

@@ -10,6 +10,14 @@ export class CompaniesService {
   async listCompanies() {
     return this.prisma.company.findMany({
       orderBy: { name: 'asc' },
+      include: {
+        _count: {
+          select: {
+            tools: true,
+            aiModels: true,
+          }
+        }
+      }
     });
   }
 
@@ -28,6 +36,20 @@ export class CompaniesService {
             avgRating: true,
             _count: { select: { reviews: true } }
           }
+        },
+        aiModels: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            contextWindow: true,
+            parameterSize: true,
+            modality: true,
+            releaseDate: true
+          }
+        },
+        _count: {
+          select: { tools: true, aiModels: true, collectionCompanies: true }
         }
       }
     });

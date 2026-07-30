@@ -1,11 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
 import X from "lucide-react/dist/esm/icons/x";
+import Search from "lucide-react/dist/esm/icons/search";
 import { Plus } from "lucide-react";
-import { NewsSearchBar } from "@/components/ui/NewsSearchBar";
 import { FilterChips } from "./FilterChips";
 import { TopicChip } from "./TopicChip";
 import { NewsList } from "./NewsList";
@@ -36,16 +34,6 @@ interface NewsListingClientProps {
   initialTopic?: string;
 }
 
-/**
- * Same page shape as ToolsClient.tsx: a "Back to Home" link, an
- * `<h1>`+count header, a search bar, a filter-chip row, then the listing
- * table — same classes/spacing throughout (`mx-auto max-w-[1070px] px-6
- * py-10`, `text-2xl font-semibold text-foreground` h1, etc.) so /news reads
- * as the same product as /tools, not a separate visual system.
- *
- * Data fetching itself (pagination/full-list upgrade, filter/sort state) is
- * unchanged from before — only the presentation was rewritten.
- */
 export function NewsListingClient({ category, initialTopic }: NewsListingClientProps) {
   const { user } = useUser();
   const isAdmin = user?.role === 'ADMIN';
@@ -130,7 +118,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   useEffect(() => {
     if (category || initialTopic) loadFull();
     else loadPage(1, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once on mount; category/initialTopic only ever come from the URL at first render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -209,15 +197,12 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   list = sortArticles(list, sort, sources);
 
   const emptyKind: "search" | "empty" = query || selectedTopics.length || selectedSources.length ? "search" : "empty";
-  const total = mode === "paginated" ? serverTotal : list.length;
-
   const cat = category ? categories.find((c) => c.key === category) : null;
   const catLabel = category ? cat?.label ?? category : null;
 
   if (isLoadingInitial) {
     return (
-      <main className="mx-auto max-w-[1070px] px-6 py-10">
-        <div className="h-24 animate-pulse rounded-lg bg-[#18181C] mb-8" />
+      <main className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 flex flex-col">
         <LoadingSkeleton />
       </main>
     );
@@ -225,83 +210,94 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
   if (initialError) {
     return (
-      <main className="mx-auto max-w-[1070px] px-6 py-10">
+      <main className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 flex flex-col">
         <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-[1070px] px-6 py-10">
-      <Link href="/" className="mb-6 inline-flex items-center gap-1.5 text-sm text-foreground-muted hover:text-white transition-colors">
-        <ArrowLeft size={16} />
-        Back to Home
-      </Link>
-
-      <header className="mb-8 flex flex-col gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">{category ? catLabel ?? category : "AI News"}</h1>
-          <p className="mt-1 text-sm text-foreground-muted">
-            {total} {category ? `${catLabel ?? category} ` : ""}stor{total === 1 ? "y" : "ies"} across the AI ecosystem
-          </p>
-        </div>
-        {isAdmin && (
-          <Button className="self-start bg-white text-black hover:bg-neutral-200" onClick={openAdd}>
-            <Plus className="h-4 w-4 mr-2" /> Add News
-          </Button>
-        )}
-        <NewsSearchBar value={query} onChange={setQuery} />
-      </header>
-
-      <div className="space-y-5 mb-8">
-        <div className="space-y-2">
-          <span className="block text-[10px] font-mono tracking-widest text-foreground-faint uppercase">Filters</span>
+    <main className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 flex flex-col">
+      {/* Toolbar & Search & Filter Chips */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1">
+          <span className="text-[10px] uppercase tracking-wider text-[#71717A] font-bold select-none pr-1">
+            FILTER:
+          </span>
           <FilterChips items={filterChips} value={filter} onChange={setFilter} />
         </div>
 
-        {(selectedTopics.length > 0 || selectedSources.length > 0) && (
-          <div className="flex items-center gap-2 flex-wrap pt-2">
-            {selectedTopics.map((t) => (
-              <TopicChip key={"t" + t} active onClick={() => toggleTopic(t)}>
-                {t}
-                <X size={12} className="ml-1.5" />
-              </TopicChip>
-            ))}
-            {selectedSources.map((s) => (
-              <TopicChip key={"s" + s} active onClick={() => toggleSource(s)}>
-                {sources[s]?.name}
-                <X size={12} className="ml-1.5" />
-              </TopicChip>
-            ))}
-            <button
-              onClick={() => {
-                setSelectedTopics([]);
-                setSelectedSources([]);
-              }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground-muted hover:bg-surface-raised hover:text-foreground transition-all active:scale-95"
-            >
-              <X size={12} aria-hidden="true" />
-              Clear all filters
-            </button>
+        <div className="relative w-full max-w-[320px] shrink-0">
+          <div className="relative w-full rounded-lg border border-[#232326]/80 bg-[#111113] h-[34px] flex items-center px-3 focus-within:border-[#F5A623] focus-within:ring-2 focus-within:ring-[#F5A623]/20 transition-all duration-150">
+            <Search size={13} className="mr-2 text-[#71717A] shrink-0" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search news..."
+              className="w-full bg-transparent text-xs text-white placeholder:text-[#71717A] focus:outline-none font-sans"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="text-[#71717A] hover:text-white text-xs font-bold px-1 py-0.5 rounded transition-colors"
+              >
+                <X size={13} />
+              </button>
+            )}
           </div>
+        </div>
+
+        {isAdmin && (
+          <Button className="bg-white text-black hover:bg-neutral-200 h-8 text-xs font-bold px-3 rounded-lg shrink-0" onClick={openAdd}>
+            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add News
+          </Button>
         )}
       </div>
 
-      <div className="space-y-6">
+      {(selectedTopics.length > 0 || selectedSources.length > 0) && (
+        <div className="flex items-center gap-2 flex-wrap pb-3">
+          {selectedTopics.map((t) => (
+            <TopicChip key={"t" + t} active onClick={() => toggleTopic(t)}>
+              {t}
+              <X size={12} className="ml-1.5" />
+            </TopicChip>
+          ))}
+          {selectedSources.map((s) => (
+            <TopicChip key={"s" + s} active onClick={() => toggleSource(s)}>
+              {sources[s]?.name}
+              <X size={12} className="ml-1.5" />
+            </TopicChip>
+          ))}
+          <button
+            onClick={() => {
+              setSelectedTopics([]);
+              setSelectedSources([]);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#232326] bg-[#131316] px-3 py-1.5 text-xs font-medium text-[#A1A1AA] hover:border-[#F5A623] hover:text-white transition-all active:scale-95"
+          >
+            <X size={12} aria-hidden="true" />
+            Clear all filters
+          </button>
+        </div>
+      )}
+
+      {/* News Table List matching Video Table UI */}
+      <div className="space-y-4">
         <NewsList articles={list} sources={sources} emptyKind={emptyKind} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
 
         {mode === "paginated" && list.length > 0 && (
-          <div ref={sentinelRef} className="flex items-center justify-center py-8">
+          <div ref={sentinelRef} className="flex items-center justify-center py-6">
             {isLoadingMore && <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />}
             {!isLoadingMore && loadMoreError && (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-foreground-faint">Couldn&apos;t load more stories.</span>
+                <span className="text-sm text-[#71717A]">Couldn&apos;t load more stories.</span>
                 <button onClick={() => loadPage(nextPage, true)} className="text-sm font-semibold text-white hover:underline">
                   Retry
                 </button>
               </div>
             )}
-            {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-foreground-faint">You&apos;re all caught up</span>}
+            {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-[#71717A]">You&apos;re all caught up</span>}
           </div>
         )}
       </div>

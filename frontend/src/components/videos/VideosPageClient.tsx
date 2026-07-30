@@ -90,15 +90,15 @@ export function VideosPageClient({
 
         <div className="flex flex-wrap gap-x-6 gap-y-1 font-mono text-[13.5px] text-secondary">
           <span className="text-muted">
-            Loaded <span className="font-semibold text-primary">{videos.length.toLocaleString()}</span>
+            Loaded <span className="font-semibold text-primary">{videos.length.toLocaleString("en-US")}</span>
             {" / "}
-            <span className="font-semibold text-primary">{total.toLocaleString()}</span>
+            <span className="font-semibold text-primary">{total.toLocaleString("en-US")}</span>
           </span>
           <span className="text-muted">
             Channels <span className="font-semibold text-primary">{channelCount}</span>
           </span>
           <span className="text-muted">
-            Views <span className="font-semibold text-primary">{totalViews.toLocaleString()}</span>
+            Views <span className="font-semibold text-primary">{totalViews.toLocaleString("en-US")}</span>
           </span>
         </div>
       </div>

@@ -29,11 +29,17 @@ type ToolTabsProps = {
     pricingAmount: string | null;
     billingFrequency: BillingFrequency;
     createdAt: Date | string;
+    releaseDate?: string | null;
     company: { slug: string; name: string } | null;
     categories: { category: { slug: string; name: string } }[];
     tags: { tag: { slug: string; name: string } }[];
     avgRating: number | null;
     reviewCount: number;
+    isOpenSource?: boolean;
+    compatibility?: string[];
+    targetUsers?: string[];
+    hasApi?: boolean;
+    apiDocsUrl?: string | null;
   };
   reviews: ReviewData[];
 };
@@ -161,25 +167,29 @@ export function ToolTabs({ tool, reviews }: ToolTabsProps) {
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center justify-between border-b border-border/40 py-2.5 text-sm">
-                <span className="text-foreground-muted flex items-center gap-2">
-                  <Calculator size={14} className="text-foreground-faint" />
-                  Pricing Structure
-                </span>
-                <span className="font-semibold text-foreground capitalize">
-                  {tool.pricingModel.toLowerCase().replace("_", " ")}
-                </span>
-              </div>
+              {tool.pricingModel && (
+                <div className="flex items-center justify-between border-b border-border/40 py-2.5 text-sm">
+                  <span className="text-foreground-muted flex items-center gap-2">
+                    <Calculator size={14} className="text-foreground-faint" />
+                    Pricing Structure
+                  </span>
+                  <span className="font-semibold text-foreground capitalize">
+                    {tool.pricingModel.toLowerCase().replace("_", " ")}
+                  </span>
+                </div>
+              )}
 
-              <div className="flex items-center justify-between border-b border-border/40 py-2.5 text-sm">
-                <span className="text-foreground-muted flex items-center gap-2">
-                  <Globe size={14} className="text-foreground-faint" />
-                  Base Cost
-                </span>
-                <span className="font-semibold text-foreground">
-                  {tool.pricingAmount ? `$${tool.pricingAmount}` : "Free"}
-                </span>
-              </div>
+              {(tool.pricingAmount || tool.pricingModel === "FREE") && (
+                <div className="flex items-center justify-between border-b border-border/40 py-2.5 text-sm">
+                  <span className="text-foreground-muted flex items-center gap-2">
+                    <Globe size={14} className="text-foreground-faint" />
+                    Base Cost
+                  </span>
+                  <span className="font-semibold text-foreground">
+                    {tool.pricingAmount ? `$${tool.pricingAmount}` : "Free"}
+                  </span>
+                </div>
+              )}
 
               {tool.company && (
                 <div className="flex items-center justify-between border-b border-border/40 py-2.5 text-sm">
@@ -191,13 +201,35 @@ export function ToolTabs({ tool, reviews }: ToolTabsProps) {
                 </div>
               )}
 
-              <div className="flex items-center justify-between border-b border-border/40 py-2.5 text-sm">
-                <span className="text-foreground-muted flex items-center gap-2">
-                  <Info size={14} className="text-foreground-faint" />
-                  Launch Month
-                </span>
-                <span className="font-semibold text-foreground">{formatDate(tool.createdAt)}</span>
-              </div>
+              {tool.releaseDate && (
+                <div className="flex items-center justify-between border-b border-border/40 py-2.5 text-sm">
+                  <span className="text-foreground-muted flex items-center gap-2">
+                    <Info size={14} className="text-foreground-faint" />
+                    Release Date
+                  </span>
+                  <span className="font-semibold text-foreground">{formatDate(tool.releaseDate)}</span>
+                </div>
+              )}
+              
+              {tool.isOpenSource !== undefined && tool.isOpenSource && (
+                <div className="flex items-center justify-between border-b border-border/40 py-2.5 text-sm">
+                  <span className="text-foreground-muted flex items-center gap-2">
+                    <Info size={14} className="text-foreground-faint" />
+                    Open Source
+                  </span>
+                  <span className="font-semibold text-foreground">Yes</span>
+                </div>
+              )}
+
+              {tool.hasApi && (
+                <div className="flex items-center justify-between border-b border-border/40 py-2.5 text-sm">
+                  <span className="text-foreground-muted flex items-center gap-2">
+                    <Info size={14} className="text-foreground-faint" />
+                    API
+                  </span>
+                  <span className="font-semibold text-foreground">Available</span>
+                </div>
+              )}
             </div>
 
             {/* Tags Chip block */}

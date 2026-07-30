@@ -98,7 +98,7 @@ export function RequestsList({ items }: RequestsListProps) {
         <div className="flex shrink-0 items-center gap-4 rounded-xl border border-search-border bg-search-surface px-5 py-3">
           <div className="text-center">
             <p className="text-xl font-semibold tabular-nums text-search-text-primary">
-              {FULFILLED_COUNT.toLocaleString()}
+              {FULFILLED_COUNT.toLocaleString("en-US")}
             </p>
             <p className="text-[11px] text-search-text-tertiary">requests fulfilled</p>
           </div>

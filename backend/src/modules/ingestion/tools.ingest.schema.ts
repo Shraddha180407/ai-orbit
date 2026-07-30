@@ -54,6 +54,11 @@ export const toolSchema = z.object({
     slug: z.string(),
     name: z.string(),
     logoUrl: z.string().url().optional().nullable()
+  })).default([]),
+
+  tasks: z.array(z.object({
+    slug: z.string(),
+    name: z.string().optional()
   })).default([])
 });
 

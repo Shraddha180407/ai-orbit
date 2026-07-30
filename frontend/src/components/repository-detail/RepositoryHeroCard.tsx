@@ -105,13 +105,13 @@ export function RepositoryHeroCard({ repo }: RepositoryHeroCardProps) {
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[13px] text-white/60 font-mono">
         <div className="flex items-center gap-1.5 whitespace-nowrap">
           <Star size={15} className="text-[#71717A]/80 fill-[#71717A]/10 shrink-0" />
-          <span className="font-semibold text-white/80">{repo.stars.toLocaleString()}</span>
+          <span className="font-semibold text-white/80">{repo.stars.toLocaleString("en-US")}</span>
           <span className="text-white/40">stars</span>
         </div>
 
         <div className="flex items-center gap-1.5 whitespace-nowrap">
           <GitFork size={15} className="text-[#71717A]/80 shrink-0" />
-          <span className="font-semibold text-white/80">{forksCount.toLocaleString()}</span>
+          <span className="font-semibold text-white/80">{forksCount.toLocaleString("en-US")}</span>
           <span className="text-white/40">forks</span>
         </div>
 

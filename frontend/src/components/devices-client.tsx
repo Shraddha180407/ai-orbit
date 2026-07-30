@@ -6,6 +6,21 @@ import { Device } from "@/lib/types";
 import { fetchAllDevices } from "@/lib/api";
 import { DEVICES_DATA, DeviceData, getMainTaskColor } from "@/data/devices";
 import Flame    from 'lucide-react/dist/esm/icons/flame';
+import Wrench      from 'lucide-react/dist/esm/icons/wrench';
+import Building2   from 'lucide-react/dist/esm/icons/building-2';
+import BrainCircuit from 'lucide-react/dist/esm/icons/brain-circuit';
+import Newspaper   from 'lucide-react/dist/esm/icons/newspaper';
+import Video       from 'lucide-react/dist/esm/icons/video';
+import GitBranch   from 'lucide-react/dist/esm/icons/git-branch';
+import Layers      from 'lucide-react/dist/esm/icons/layers';
+import ListChecks  from 'lucide-react/dist/esm/icons/list-checks';
+import Bot         from 'lucide-react/dist/esm/icons/bot';
+import Cpu         from 'lucide-react/dist/esm/icons/cpu';
+import Plug        from 'lucide-react/dist/esm/icons/plug';
+import FolderHeart from 'lucide-react/dist/esm/icons/folder-heart';
+import UserCircle  from 'lucide-react/dist/esm/icons/user-circle';
+import Palette     from 'lucide-react/dist/esm/icons/palette';
+import Smartphone  from 'lucide-react/dist/esm/icons/smartphone';
 import Star     from 'lucide-react/dist/esm/icons/star';
 import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
 import Gift     from 'lucide-react/dist/esm/icons/gift';
@@ -19,6 +34,11 @@ const AVAILABILITY_STYLES: Record<string, string> = {
   Announced: "bg-[#2a2a1a] text-[#facc15] border border-[#4a4a2a]",
   Discontinued: "bg-[#3a1a1a] text-[#f87171] border border-[#5a2a2a]",
 };
+
+const ROW_ACCENT_COLORS = [
+  "#6E56CF", "#E85D4A", "#0082FB", "#34A853",
+  "#FF9900", "#E91E8C", "#00BCD4", "#FF6B35",
+];
 
 function getFaviconUrl(manufacturer: string, slug: string): string {
   const domain = slug.toLowerCase().replace(/[^a-z0-9-]/g, "").split("-")[0];
@@ -104,7 +124,6 @@ export function DevicesClient() {
   const [devices, setDevices] = useState<DeviceData[]>(DEVICES_DATA);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const [nameSearch, setNameSearch] = useState("");
@@ -228,8 +247,8 @@ export function DevicesClient() {
       {openDropdown === id && (
         <div className="absolute top-11 left-0 right-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-4">
           <div className="flex justify-between text-[10px] text-[#A1A1AA] mb-3">
-            <span>Min: <span className="text-white font-bold">${priceMin.toLocaleString()}</span></span>
-            <span>Max: <span className="text-white font-bold">${priceMax.toLocaleString()}</span></span>
+            <span>Min: <span className="text-white font-bold">${priceMin.toLocaleString("en-US")}</span></span>
+            <span>Max: <span className="text-white font-bold">${priceMax.toLocaleString("en-US")}</span></span>
           </div>
           <div className="relative h-5 mb-4">
             <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-[#232326] rounded-full" />
@@ -256,201 +275,15 @@ export function DevicesClient() {
   );
 
   return (
-    <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
+    <div className="w-full flex-1 flex flex-col">
 
-      {/* ── HERO HEADER (matches home page) ── */}
-      <div className="relative flex flex-col items-center text-center pt-6 pb-5 overflow-hidden">
-        {/* Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[280px] rounded-full blur-[120px] opacity-30 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse, #E91E8C 0%, transparent 70%)" }} />
-        <div className="absolute top-4 left-1/3 w-[400px] h-[200px] rounded-full blur-[100px] opacity-20 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse, #FF1F8C 0%, transparent 70%)" }} />
-        <div className="absolute top-4 right-1/3 w-[400px] h-[200px] rounded-full blur-[100px] opacity-20 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse, #C2185B 0%, transparent 70%)" }} />
 
-        <h1 className="relative text-3xl md:text-5xl font-black text-white tracking-tight mb-2">
-          AI Devices & Wearables
-        </h1>
-        <p className="relative text-[#71717A] text-xs md:text-sm max-w-lg mb-4">
-          Discover and track the AI devices and wearables that actually matter.
-        </p>
-
-        {/* Search bar */}
-        <div className="relative w-full max-w-xl mb-5">
-          <input
-            type="text"
-            placeholder="Search devices, manufacturers..."
-            value={nameInput}
-            onChange={(e) => { setNameInput(e.target.value); setNameSearch(e.target.value); setCurrentPage(1); }}
-            className="w-full bg-[#0D0D0F] border border-[#232326] text-white text-sm rounded-xl px-5 py-3 pr-10 placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF] transition-colors"
-          />
-          <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#52525B]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-        </div>
-
-        {/* Filter pills */}
-        <div className="relative flex flex-wrap items-center justify-center gap-2 mb-2">
-          {[
-            { label: "Trending", filter: "trending",  Icon: Flame,     color: "#FF6B4A" },
-            { label: "Popular",  filter: "popular",   Icon: Star,      color: "#FFC53D" },
-            { label: "New",      filter: "new",       Icon: Sparkles,  color: "#A78BFA" },
-            { label: "Available",filter: "Available", Icon: Gift,      color: "#34D399" },
-            { label: "Wearables",filter: "wearable",  Icon: Trophy,    color: "#38BDF8" },
-          ].map(({ label, filter, Icon, color }) => {
-            const isActive = activePill === filter;
-            return (
-              <button
-                key={filter}
-                onClick={() => {
-                  if (isActive) {
-                    setActivePill(null);
-                    setSortKey("release"); setSortDir("desc");
-                    setSelectedAvailability("All"); setSelectedCategory(ALL_CATEGORIES);
-                    setCurrentPage(1);
-                  } else {
-                    setActivePill(filter);
-                    if (filter === "trending")   { setSortKey("release"); setSortDir("desc"); setSelectedAvailability("All"); setSelectedCategory(ALL_CATEGORIES); }
-                    else if (filter === "popular")   { setSortKey("price"); setSortDir("desc"); setSelectedAvailability("All"); setSelectedCategory(ALL_CATEGORIES); }
-                    else if (filter === "new")       { setSortKey("release"); setSortDir("desc"); setSelectedAvailability("All"); setSelectedCategory(ALL_CATEGORIES); }
-                    else if (filter === "Available") { setSelectedAvailability("Available"); setSortKey("release"); setSortDir("desc"); setSelectedCategory(ALL_CATEGORIES); }
-                    else if (filter === "wearable")  { setSelectedCategory("AI Wearable"); setSelectedAvailability("All"); setSortKey("release"); setSortDir("desc"); }
-                    setCurrentPage(1);
-                  }
-                }}
-                className={`group inline-flex items-center gap-1.5 rounded-full px-3 h-[28px] text-[11px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.03] active:scale-[0.98] ${
-                  isActive ? "shadow-md" : "bg-[#131316]/70"
-                }`}
-                style={
-                  isActive
-                    ? { backgroundColor: `${color}18`, borderColor: `${color}99`, boxShadow: `0 4px 12px -6px ${color}55` }
-                    : { borderColor: `${color}55` }
-                }
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.boxShadow = `0 6px 14px -8px ${color}77`;
-                    e.currentTarget.style.borderColor = color;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.boxShadow = "";
-                    e.currentTarget.style.borderColor = `${color}55`;
-                  }
-                }}
-              >
-                <span
-                  className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:rotate-[8deg]"
-                  style={{ backgroundColor: isActive ? "rgba(0,0,0,0.15)" : `${color}22` }}
-                >
-                  <Icon
-                    size={10}
-                    strokeWidth={2.25}
-                    style={{ color, filter: `drop-shadow(0 0 4px ${color}99)` }}
-                  />
-                </span>
-                <span style={{ color }}>{label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* View toggle row */}
-      <div className="flex items-center justify-end mb-4 gap-2">
-        {hasActiveFilters && (
-          <button onClick={clearAllFilters}
-            className="text-xs text-[#A1A1AA] hover:text-white border border-[#232326] hover:border-[#6E56CF] px-3 py-1.5 rounded-lg transition-colors">
-            Clear filters
-          </button>
-        )}
-        <button onClick={() => setViewMode("list")}
-          className={`p-2 rounded-lg border transition-colors ${viewMode === "list" ? "border-[#6E56CF] bg-[#6E56CF]/10 text-[#6E56CF]" : "border-[#232326] text-[#52525B] hover:text-white"}`}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        </button>
-        <button onClick={() => setViewMode("grid")}
-          className={`p-2 rounded-lg border transition-colors ${viewMode === "grid" ? "border-[#6E56CF] bg-[#6E56CF]/10 text-[#6E56CF]" : "border-[#232326] text-[#52525B] hover:text-white"}`}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-        </button>
-      </div>
-
-      {/* ── GRID VIEW ── */}
-      {viewMode === "grid" && (
-        <div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5 items-center">
-            <div className="flex gap-2">
-              <input type="text" placeholder="Search devices..." value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") { setNameSearch(nameInput); setCurrentPage(1); } }}
-                className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 w-full placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF]" />
-              <button onClick={() => { setNameSearch(nameInput); setCurrentPage(1); }}
-                className="text-xs bg-[#6E56CF] hover:bg-[#7C66DF] text-white px-3 py-2 rounded-lg transition-colors font-semibold shrink-0">Apply</button>
-            </div>
-            <select value={selectedCategory} onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
-              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] w-full">
-              <option value={ALL_CATEGORIES}>All Categories</option>
-              {categories.map((c) => <option key={c}>{c}</option>)}
-            </select>
-            <select value={selectedAvailability} onChange={(e) => { setSelectedAvailability(e.target.value); setCurrentPage(1); }}
-              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] flex-1 min-w-[140px]">
-              <option value="All">All Availability</option>
-              <option value="Available">Available</option>
-              <option value="Pre-order">Pre-order</option>
-              <option value="Announced">Announced</option>
-              <option value="Discontinued">Discontinued</option>
-            </select>
-            <select value={`${sortKey}-${sortDir}`}
-              onChange={(e) => { const [key, dir] = e.target.value.split("-"); setSortKey(key as SortKey); setSortDir(dir as "asc" | "desc"); setCurrentPage(1); }}
-              className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] w-full">
-              <option value="release-desc">Sort: Newest First</option>
-              <option value="release-asc">Sort: Oldest First</option>
-              <option value="name-asc">Sort: Name A→Z</option>
-              <option value="name-desc">Sort: Name Z→A</option>
-              <option value="price-asc">Sort: Price Low→High</option>
-              <option value="price-desc">Sort: Price High→Low</option>
-            </select>
-            <PriceRangeDropdown id="grid-price" />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-            {isLoading ? (
-              [...Array(8)].map((_, i) => (
-                <div key={i} className="h-64 animate-pulse bg-[#131316] rounded-xl border border-[#232326]/60" />
-              ))
-            ) : visible.map((device) => (
-              <Link key={device.id} href={`/devices/${device.slug || device.id}`}
-                className="rounded-xl border border-[#232326]/60 bg-[#0D0D0F] hover:border-[#6E56CF]/40 transition-all group overflow-hidden">
-                <div className="relative h-56 bg-[#18181C] flex items-center justify-center overflow-hidden">
-                  <GridImageCell name={device.name} imageUrl={device.imageUrl} color={device.mainTaskColor} />
-                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                    <p className="text-sm font-bold text-white truncate group-hover:text-[#6E56CF] transition-colors">{device.name}</p>
-                    <p className="text-[11px] text-[#A1A1AA]">{device.category} · {device.manufacturer}</p>
-                  </div>
-                  {device.month && (
-                    <div className="absolute top-2 right-2 bg-black/70 text-[10px] text-white px-1.5 py-0.5 rounded">{device.month}</div>
-                  )}
-                </div>
-                <div className="p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    {device.availability ? (
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${AVAILABILITY_STYLES[device.availability]}`}>{device.availability}</span>
-                    ) : <span />}
-                    <span className="text-xs font-bold text-[#4ade80]">{device.price || ""}</span>
-                  </div>
-                  <p className="text-[11px] text-[#A1A1AA] line-clamp-2 leading-relaxed">{device.description}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
+      
       {/* ── LIST VIEW ── */}
-      {viewMode === "list" && (
-        <div>
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8">
           {/*  Outer container matches ToolListView exactly */}
           <div className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
-              <div ref={dropdownRef} style={{ minWidth: '900px' }} className="relative bg-[#0a0a0c]">
+              <div ref={dropdownRef} style={{ minWidth: '900px' }} className="relative bg-[#000000]">
 
                 {/* Header row matches ToolListView exactly */}
                 <div className="border-b border-[#232326]/60 bg-[#131316]/40">
@@ -548,8 +381,8 @@ export function DevicesClient() {
                       {openDropdown === "price" && (
                         <div className="absolute top-8 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-4 min-w-[220px]">
                           <div className="flex justify-between text-[10px] text-[#A1A1AA] mb-3">
-                            <span>Min: <span className="text-white font-bold">${priceMin.toLocaleString()}</span></span>
-                            <span>Max: <span className="text-white font-bold">${priceMax.toLocaleString()}</span></span>
+                            <span>Min: <span className="text-white font-bold">${priceMin.toLocaleString("en-US")}</span></span>
+                            <span>Max: <span className="text-white font-bold">${priceMax.toLocaleString("en-US")}</span></span>
                           </div>
                           <div className="relative h-5 mb-4">
                             <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-[#232326] rounded-full" />
@@ -606,23 +439,52 @@ export function DevicesClient() {
                   <div className="py-20 text-center text-[#52525B] text-sm">No devices found.</div>
                 ) : (
                   <div role="list" className="flex flex-col">
-                    {visible.map((device) => (
+                    {visible.map((device, visibleIndex) => (
                       <Link
-                        key={device.id}
-                        href={`/devices/${device.slug || device.id}`}
-                        role="listitem"
-                        className={`group grid ${COL_TEMPLATE} items-center gap-4 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none border-b border-[#232326]/60`}
-                      >
+  key={device.id}
+  href={`/devices/${device.slug || device.id}`}
+  role="listitem"
+  className={`group grid ${COL_TEMPLATE} items-center gap-4 px-4 py-2.5 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
+  style={{
+    '--accent': ROW_ACCENT_COLORS[visibleIndex % ROW_ACCENT_COLORS.length],
+  } as React.CSSProperties}
+  onMouseEnter={e => {
+    const color = ROW_ACCENT_COLORS[visibleIndex % ROW_ACCENT_COLORS.length];
+    const el = e.currentTarget;
+    el.style.boxShadow = `inset 3px 0 0 ${color}`;
+    const logo = el.querySelector<HTMLElement>('[data-logo="true"]');
+    if (logo) {
+      logo.style.borderColor = color;
+      logo.style.boxShadow = `0 0 8px ${color}55`;
+    }
+    const name = el.querySelector<HTMLElement>('[data-name="true"]');
+    if (name) name.style.color = color;
+  }}
+  onMouseLeave={e => {
+    const el = e.currentTarget;
+    el.style.boxShadow = '';
+    const logo = el.querySelector<HTMLElement>('[data-logo="true"]');
+    if (logo) {
+      logo.style.borderColor = '';
+      logo.style.boxShadow = '';
+    }
+    const name = el.querySelector<HTMLElement>('[data-name="true"]');
+    if (name) name.style.color = '';
+  }}
+>
                         {/* Col 1: Logo */}
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
+                        <div data-logo="true" className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white transition-all duration-200">
                           <LogoCell name={device.name} logoUrl={device.manufacturerLogoUrl} color={device.mainTaskColor} />
                         </div>
 
                         {/* Col 2: Name + description */}
                         <div className="min-w-0">
-                          <h3 className="truncate text-[13px] font-semibold text-white group-hover:text-white">
-                            {device.name}
-                          </h3>
+                         <h3
+  className="truncate text-[13px] font-semibold text-white transition-colors duration-200"
+  data-name="true"
+>
+  {device.name}
+</h3>
                           <p className="mt-0.5 line-clamp-1 text-[11px] text-[#A1A1AA] leading-snug">
                             {device.description}
                           </p>
@@ -706,8 +568,7 @@ export function DevicesClient() {
 
               </div>
           </div>
-        </div>
-      )}
-    </main>
+      </div>
+    </div>
   );
 }

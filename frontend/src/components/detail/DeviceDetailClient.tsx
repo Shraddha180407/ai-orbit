@@ -16,6 +16,11 @@ const AVAILABILITY_STYLES: Record<string, string> = {
   Discontinued: "bg-[#3a1a1a] text-[#f87171] border border-[#5a2a2a]",
 };
 
+const ROW_ACCENT_COLORS = [
+  "#6E56CF", "#E85D4A", "#0082FB", "#34A853",
+  "#FF9900", "#E91E8C", "#00BCD4", "#FF6B35",
+];
+
 function getFaviconUrl(manufacturer: string, slug: string): string {
   const mfr = (manufacturer || "").toLowerCase().replace(/\s+/g, "");
   const domain = slug.toLowerCase().replace(/[^a-z0-9-]/g, "").split("-")[0];
@@ -51,6 +56,8 @@ function mergeDevice(api: Device | null, slug: string): DeviceData | null {
     primaryUseCases: api.primaryUseCases || dummy?.primaryUseCases || [],
     additionalInfo: api.additionalInfo || dummy?.additionalInfo || null,
     buyUrl: api.buyUrl || dummy?.buyUrl || null,
+    images: api.images || dummy?.images || [],
+    videoUrl: api.videoUrl || dummy?.videoUrl || null,
   } as DeviceData;
 }
 
@@ -220,12 +227,14 @@ export function DeviceDetailClient() {
 
         {/* Top Section */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-6 mb-8 items-start">
-          {/* Left: Image */}
-          <DeviceImage
-  name={device.name}
-  imageUrl={device.imageUrl}
-  color={device.mainTaskColor}
-/>
+          {/* Left: Gallery */}
+          <DeviceGallery
+            name={device.name}
+            imageUrl={device.imageUrl}
+            images={device.images}
+            videoUrl={device.videoUrl}
+            color={device.mainTaskColor}
+          />
           {/* Right: Info Card */}
           <div className="rounded-xl border border-[#232326] bg-[#0D0D0F] p-4 md:p-6 flex flex-col gap-3">
 
@@ -356,23 +365,22 @@ export function DeviceDetailClient() {
               <h2 className="text-xs font-bold text-[#A1A1AA] uppercase tracking-widest">Similar Devices</h2>
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {similar.map((d) => (
-                <Link
-                  key={d.id}
-                  href={`/devices/${d.slug || d.id}`}
-                  className="rounded-xl border border-[#232326] bg-[#0D0D0F] transition-all group overflow-hidden"
-                  style={{}}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = `${d.mainTaskColor || '#6E56CF'}60`; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}
-                >
+              {similar.map((d, idx) => (
+  <Link
+    key={d.id}
+    href={`/devices/${d.slug || d.id}`}
+    className="rounded-xl border border-[#232326] bg-[#0D0D0F] transition-all group overflow-hidden"
+    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = `${ROW_ACCENT_COLORS[idx % ROW_ACCENT_COLORS.length]}60`; }}
+    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}
+  >
                   {/* Image with overlays */}
                   <div className="relative h-52 bg-[#18181C] flex items-center justify-center overflow-hidden">
                     <SimilarDeviceImage name={d.name} imageUrl={d.imageUrl} color={d.mainTaskColor} />
                     {/* Name overlay bottom left */}
                     <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
                       <p className="text-xs font-bold text-white truncate group-hover:text-white transition-colors"
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = d.mainTaskColor || '#6E56CF'; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'white'; }}>
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = ROW_ACCENT_COLORS[idx % ROW_ACCENT_COLORS.length]; }}
+onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'white'; }}>
                         {d.name}
                       </p>
                       <p className="text-[10px] text-[#A1A1AA]">{d.category} · {d.manufacturer}</p>
@@ -430,14 +438,33 @@ function SpecRowDivider({ label, value }: { label: string; value: string }) {
   );
 }
 
-function DeviceImage({ name, imageUrl, color }: { name: string; imageUrl: string; color: string }) {
-  const [failed, setFailed] = React.useState(false);
+function DeviceGallery({
+  name, imageUrl, images, videoUrl, color,
+}: {
+  name: string;
+  imageUrl: string;
+  images?: string[];
+  videoUrl?: string | null;
+  color: string;
+}) {
+  // Build full media list: video first (if any), then all images
+  const allImages = images && images.length > 0 ? images : imageUrl ? [imageUrl] : [];
+  const hasVideo = !!videoUrl;
 
-  if (!imageUrl || failed) {
+  // media items: { type: 'video'|'image', src: string }
+  const mediaItems = [
+    ...(hasVideo ? [{ type: 'video' as const, src: videoUrl! }] : []),
+    ...allImages.map((src) => ({ type: 'image' as const, src })),
+  ];
+
+  const [activeIdx, setActiveIdx] = React.useState(hasVideo ? 0 : 0);
+  const [imgFailed, setImgFailed] = React.useState<Record<number, boolean>>({});
+
+  if (mediaItems.length === 0) {
     return (
       <div
-        className="rounded-xl border border-[#232326] self-start w-full h-[380px] flex items-center justify-center"
-        style={{ background: `${color}18` }}
+        className="rounded-xl border border-[#232326] self-start w-full flex items-center justify-center"
+        style={{ background: `${color}18`, minHeight: 320 }}
       >
         <span className="text-[120px] font-black uppercase leading-none" style={{ color }}>
           {name.charAt(0)}
@@ -446,14 +473,91 @@ function DeviceImage({ name, imageUrl, color }: { name: string; imageUrl: string
     );
   }
 
+  const active = mediaItems[activeIdx];
+  const showThumbs = mediaItems.length > 1;
+
+  function getYoutubeEmbedUrl(url: string): string {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+    return match ? `https://www.youtube.com/embed/${match[1]}` : url;
+  }
+
+  function prev() { setActiveIdx((i) => (i === 0 ? mediaItems.length - 1 : i - 1)); }
+  function next() { setActiveIdx((i) => (i === mediaItems.length - 1 ? 0 : i + 1)); }
+
   return (
-    <div className="rounded-xl border border-[#232326] bg-white overflow-hidden self-start">
-      <img
-        src={imageUrl}
-        alt={name}
-        className="w-full object-contain p-6 max-h-[380px]"
-        onError={() => setFailed(true)}
-      />
+    <div className="self-start w-full">
+      {/* Main display */}
+      <div className="relative rounded-xl border border-[#232326] bg-[#0D0D0F] overflow-hidden">
+        {active.type === 'video' ? (
+          <iframe
+            src={getYoutubeEmbedUrl(active.src)}
+            className="w-full aspect-video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : imgFailed[activeIdx] ? (
+          <div className="w-full flex items-center justify-center py-20" style={{ background: `${color}18` }}>
+            <span className="text-[80px] font-black uppercase" style={{ color }}>{name.charAt(0)}</span>
+          </div>
+        ) : (
+          <img
+            src={active.src}
+            alt={`${name} image ${activeIdx + 1}`}
+            className="w-full object-contain"
+            style={{ maxHeight: 420, background: '#fff' }}
+            onError={() => setImgFailed((prev) => ({ ...prev, [activeIdx]: true }))}
+          />
+        )}
+
+        {/* Prev/Next arrows — only if more than 1 media */}
+        {mediaItems.length > 1 && (
+          <>
+            <button
+              onClick={prev}
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <button
+              onClick={next}
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Thumbnail strip */}
+      {showThumbs && (
+        <div className="flex gap-2 mt-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-[#232326] [&::-webkit-scrollbar-thumb]:rounded-full">
+          {mediaItems.map((item, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveIdx(idx)}
+              className={`relative shrink-0 w-16 h-14 rounded-lg overflow-hidden border-2 transition-all ${
+                activeIdx === idx ? 'border-[#6E56CF]' : 'border-[#232326] hover:border-[#52525B]'
+              }`}
+            >
+              {item.type === 'video' ? (
+                <div className="w-full h-full bg-[#18181C] flex flex-col items-center justify-center gap-0.5">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="white" className="opacity-80"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <span className="text-[8px] text-white/60 font-mono">Video</span>
+                </div>
+              ) : (
+                <img
+                  src={item.src}
+                  alt={`thumb ${idx}`}
+                  className="w-full h-full object-cover bg-white"
+                />
+              )}
+              {activeIdx === idx && (
+                <div className="absolute inset-0 bg-[#6E56CF]/10 pointer-events-none" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

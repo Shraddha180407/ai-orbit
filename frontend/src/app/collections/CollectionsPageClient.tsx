@@ -1,201 +1,312 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
+import { CollectionListItem } from "@/lib/types";
 
+// Import modular components
+import { CollectionToolbar } from "@/components/collections/CollectionToolbar";
+import { CollectionFilters } from "@/components/collections/CollectionFilters";
 import { CollectionGrid } from "@/components/collections/CollectionGrid";
-import { CollectionSearch } from "@/components/collections/CollectionSearch";
-import CollectionFilters from "@/components/collections/CollectionFilters";
-import { CollectionsHeader } from "@/components/collections/CollectionHeader";
-import { CollectionsClosingCTA } from "@/components/collections/CollectionsClosingCTA";
-import { LoadMoreButton } from "@/components/collections/LoadMoreButton";
-import { fetchCollections } from "@/lib/collections";
-import type { CollectionListItem, CreatorType } from "@/lib/types";
+import { CollectionListTable } from "@/components/collections/CollectionListTable";
 
-// Delay before firing a search request, so we don't hit the API on every keystroke
-const SEARCH_DEBOUNCE_MS = 350;
+const ALL_CATEGORIES = "All Categories";
+type DbCreatorType = "EDITORIAL" | "COMMUNITY";
+type SortKey = "updated" | "name" | "tools" | "creator";
+
+interface NormalizedCollection {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  creatorName: string;
+  creatorAvatar: string;
+  creatorType: DbCreatorType;
+  isFeatured: boolean;
+  isCurated: boolean;
+  toolCount: number;
+  updatedAt: string;
+  category: string;
+  categoriesList: string[];
+  imageUrl: string;
+  color: string;
+}
+
+const CREATOR_COLORS: Record<DbCreatorType, string> = {
+  EDITORIAL: "#A78BFA",
+  COMMUNITY: "#34D399",
+};
+
+function normalizeCollection(item: any): NormalizedCollection {
+  const name = item.name || item.title || "Unnamed Collection";
+  const slug = item.slug || item.id || "";
+  
+  let creatorName = "Anonymous";
+  let creatorAvatar = "";
+  if (item.creator && typeof item.creator === 'object') {
+    creatorName = item.creator.name || creatorName;
+    creatorAvatar = item.creator.image || item.creator.avatar || item.creator.avatarUrl || "";
+  } else {
+    if (item.creatorName) creatorName = item.creatorName;
+    if (item.creatorAvatar) creatorAvatar = item.creatorAvatar;
+  }
+  
+  const creatorType: DbCreatorType = item.creatorType === "EDITORIAL" ? "EDITORIAL" : "COMMUNITY";
+  const isFeatured = !!(item.isFeatured ?? item.featured);
+  const isCurated = !!(item.isCurated ?? item.curated);
+  const toolCount = typeof item.toolCount === 'number' ? item.toolCount : (item.tools ? item.tools.length : 0);
+
+  let categoriesList: string[] = [];
+  if (Array.isArray(item.categories)) {
+    categoriesList = item.categories.map((c: any) => c.categoryName || c.name || "").filter(Boolean);
+  }
+  const category = categoriesList.length > 0 ? categoriesList[0] : "General";
+
+  const color = item.color || CREATOR_COLORS[creatorType] || "#6E56CF";
+
+  return {
+    id: item.id || slug,
+    slug,
+    name,
+    description: item.description || "",
+    creatorName,
+    creatorAvatar,
+    creatorType,
+    isFeatured,
+    isCurated,
+    toolCount,
+    updatedAt: item.updatedAt || item.updated_at || "",
+    category,
+    categoriesList,
+    imageUrl: item.imageUrl || item.image || "",
+    color,
+  };
+}
+
+const PAGE_SIZE = 20;
 
 interface Props {
   initialItems?: CollectionListItem[];
   initialNextCursor?: string | null;
 }
 
-export default function CollectionsPageClient({ initialItems, initialNextCursor }: Props = {}) {
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [sort, setSort] = useState("recently_updated");
+export default function CollectionsPageClient({ initialItems }: Props) {
+  const [collections, setCollections] = useState<NormalizedCollection[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [creatorType, setCreatorType] = useState<CreatorType | undefined>(undefined);
-  const [updatedWithin, setUpdatedWithin] = useState("");
-  const [featuredOnly, setFeaturedOnly] = useState(false);
-  const [hasRelatedModels, setHasRelatedModels] = useState(false);
-  const [hasRelatedCompanies, setHasRelatedCompanies] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [nameSearch, setNameSearch] = useState("");
+  const [nameInput, setNameInput] = useState("");
+  const [selectedCreatorType, setSelectedCreatorType] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
+  const [sortKey, setSortKey] = useState<SortKey>("updated");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [activePill, setActivePill] = useState<string | null>(null);
 
-  const [items, setItems] = useState<CollectionListItem[]>(initialItems ?? []);
-  const [cursor, setCursor] = useState<string | null>(initialNextCursor ?? null);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [toolsMin, setToolsMin] = useState(0);
+  const [toolsMax, setToolsMax] = useState(100);
+  const [activeToolsFilter, setActiveToolsFilter] = useState(false);
 
-  const abortRef = useRef<AbortController | null>(null);
-  const hasInitialData = useRef(initialItems != null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Debounce search input
   useEffect(() => {
-    const timeout = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timeout);
-  }, [search]);
+    if (initialItems && initialItems.length > 0) {
+      setCollections(initialItems.map(normalizeCollection));
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
+      fetch(`${API_BASE_URL}/collections?sort=recently_updated`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && Array.isArray(data.items)) {
+            setCollections(data.items.map(normalizeCollection));
+          }
+        })
+        .catch(err => console.error("Error loading collections", err))
+        .finally(() => setIsLoading(false));
+    }
+  }, [initialItems]);
 
-  const filterParams = useMemo(
-    () => ({
-      search: debouncedSearch || undefined,
-      creatorType,
-      hasRelatedModels: hasRelatedModels || undefined,
-      hasRelatedCompanies: hasRelatedCompanies || undefined,
-      featured: featuredOnly || undefined,
-      updatedWithin: updatedWithin || undefined,
-      category: selectedCategories.length ? selectedCategories : undefined,
-      sort,
-    }),
-    [
-      debouncedSearch,
-      creatorType,
-      hasRelatedModels,
-      hasRelatedCompanies,
-      featuredOnly,
-      updatedWithin,
-      selectedCategories,
-      sort,
-    ]
-  );
-
-  // Fetch first page whenever filters/search/sort change
   useEffect(() => {
-    // Skip the initial fetch when server-provided data already covers the defaults
-    if (hasInitialData.current) {
-      hasInitialData.current = false;
-      return;
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
     }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+  const hasActiveFilters = nameSearch || selectedCategory !== ALL_CATEGORIES || selectedCreatorType !== "All" || activeToolsFilter || activePill;
 
-    setLoading(true);
-    setError(null);
+  function clearAllFilters() {
+    setNameSearch(""); setNameInput(""); setSelectedCategory(ALL_CATEGORIES);
+    setSelectedCreatorType("All"); setToolsMin(0); setToolsMax(100);
+    setActiveToolsFilter(false); setActivePill(null); setCurrentPage(1);
+  }
 
-    fetchCollections(filterParams, controller.signal)
-      .then((data) => {
-        setItems(data.items);
-        setCursor(data.nextCursor);
-      })
-      .catch((err) => {
-        if (err.name !== "AbortError") setError(err.message);
-      })
-      .finally(() => setLoading(false));
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    collections.forEach((c) => { counts[c.category] = (counts[c.category] || 0) + 1; });
+    return counts;
+  }, [collections]);
 
-    return () => controller.abort();
-  }, [filterParams]);
+  const creatorTypeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    collections.forEach((c) => { if (c.creatorType) counts[c.creatorType] = (counts[c.creatorType] || 0) + 1; });
+    return counts;
+  }, [collections]);
 
-  const handleLoadMore = async () => {
-    if (!cursor) return;
-    setLoadingMore(true);
-    setError(null);
+  const categories = useMemo(() => {
+    return Array.from(new Set(collections.map((c) => c.category).filter(Boolean))).sort();
+  }, [collections]);
 
-    try {
-      const data = await fetchCollections({ ...filterParams, cursor });
-      setItems((prev) => [...prev, ...data.items]);
-      setCursor(data.nextCursor);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoadingMore(false);
+  const filtered = useMemo(() => {
+    let list = [...collections];
+    if (nameSearch.trim()) {
+      const q = nameSearch.toLowerCase();
+      list = list.filter((d) => d.name.toLowerCase().includes(q) || d.creatorName.toLowerCase().includes(q) || d.description.toLowerCase().includes(q));
     }
-  };
+    if (selectedCategory !== ALL_CATEGORIES) list = list.filter((d) => d.category === selectedCategory);
+    if (selectedCreatorType !== "All") list = list.filter((d) => d.creatorType === selectedCreatorType);
+    if (activeToolsFilter) {
+      list = list.filter((d) => d.toolCount >= toolsMin && d.toolCount <= toolsMax);
+    }
+    if (activePill === "featured") {
+      list = list.filter((d) => d.isFeatured);
+    }
+    if (activePill === "editorial") {
+      list = list.filter((d) => d.creatorType === "EDITORIAL");
+    }
+    list.sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "name") cmp = a.name.localeCompare(b.name);
+      else if (sortKey === "creator") cmp = a.creatorName.localeCompare(b.creatorName);
+      else if (sortKey === "tools") cmp = a.toolCount - b.toolCount;
+      else cmp = (a.updatedAt || "").localeCompare(b.updatedAt || "");
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return list;
+  }, [collections, nameSearch, selectedCategory, selectedCreatorType, activeToolsFilter, activePill, toolsMin, toolsMax, sortKey, sortDir]);
 
-  const resetFilters = () => {
-    setCreatorType(undefined);
-    setUpdatedWithin("");
-    setFeaturedOnly(false);
-    setHasRelatedModels(false);
-    setHasRelatedCompanies(false);
-    setSelectedCategories([]);
-  };
+  useEffect(() => { setCurrentPage(1); }, [nameSearch, selectedCategory, selectedCreatorType, sortKey, sortDir, activeToolsFilter, activePill]);
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("desc"); }
+  }
 
   return (
-    <>
-      <CollectionsHeader />
+    <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
+      {/* ── TOOLBAR ── */}
+      <CollectionToolbar
+        nameInput={nameInput}
+        setNameInput={setNameInput}
+        setNameSearch={setNameSearch}
+        setCurrentPage={setCurrentPage}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        hasActiveFilters={!!hasActiveFilters}
+        clearAllFilters={clearAllFilters}
+      />
 
-      <main className="mx-auto max-w-7xl px-6 pb-16">
-        <div className="mb-6 flex items-center gap-3">
-          <CollectionSearch value={search} onChange={setSearch} />
+      {/* ── GRID VIEW ── */}
+      {viewMode === "grid" && (
+        <div>
+          <CollectionFilters 
+            nameInput={nameInput}
+            setNameInput={setNameInput}
+            setNameSearch={setNameSearch}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            categories={categories}
+            selectedCreatorType={selectedCreatorType}
+            setSelectedCreatorType={setSelectedCreatorType}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            setSortKey={setSortKey}
+            setSortDir={setSortDir}
+            toolsMin={toolsMin}
+            toolsMax={toolsMax}
+            setToolsMin={setToolsMin}
+            setToolsMax={setToolsMax}
+            activeToolsFilter={activeToolsFilter}
+            setActiveToolsFilter={setActiveToolsFilter}
+            setCurrentPage={setCurrentPage}
+            openDropdown={openDropdown}
+            setOpenDropdown={setOpenDropdown}
+          />
+          <CollectionGrid items={visible} isLoading={isLoading} />
+        </div>
+      )}
 
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            className="h-10 rounded-lg border border-[#232326] bg-[#18181B] px-3 text-xs text-white"
-          >
-            <option value="recently_updated">Recently Updated</option>
-            <option value="oldest_updated">Oldest Updated</option>
-            <option value="name_asc">Name A–Z</option>
-            <option value="name_desc">Name Z–A</option>
-            <option value="most_tools">Most Tools</option>
-            <option value="fewest_tools">Fewest Tools</option>
-            <option value="most_bookmarked">Most Bookmarked</option>
-            <option value="featured_first">Featured First</option>
-          </select>
+      {/* ── LIST VIEW ── */}
+      {viewMode === "list" && (
+        <div ref={dropdownRef}>
+          <CollectionListTable 
+            items={visible}
+            isLoading={isLoading}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            handleSort={handleSort}
+            openDropdown={openDropdown}
+            setOpenDropdown={setOpenDropdown}
+            nameSearch={nameSearch}
+            nameInput={nameInput}
+            setNameInput={setNameInput}
+            setNameSearch={setNameSearch}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            categories={categories}
+            categoryCounts={categoryCounts}
+            totalCount={collections.length}
+            selectedCreatorType={selectedCreatorType}
+            setSelectedCreatorType={setSelectedCreatorType}
+            creatorTypeCounts={creatorTypeCounts}
+            toolsMin={toolsMin}
+            toolsMax={toolsMax}
+            setToolsMin={setToolsMin}
+            setToolsMax={setToolsMax}
+            activeToolsFilter={activeToolsFilter}
+            setActiveToolsFilter={setActiveToolsFilter}
+            setCurrentPage={setCurrentPage}
+          />
+        </div>
+      )}
 
-          <button
-            onClick={() => setIsFilterOpen(true)}
-            className="h-10 rounded-lg border border-[#232326] bg-[#18181B] px-4 text-xs font-semibold text-white"
-          >
-            Filters
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 px-4 py-6 border-t border-[#232326]/60 mt-4">
+          <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}
+            className="px-3 py-1.5 text-xs rounded-lg border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+            ← Prev
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+            .reduce<(number | string)[]>((acc, p, i, arr) => {
+              if (i > 0 && (p as number) - (arr[i - 1] as number) > 1) acc.push("...");
+              acc.push(p);
+              return acc;
+            }, [])
+            .map((p, i) => p === "..." ? (
+              <span key={`e-${i}`} className="text-[#52525B] text-xs px-1">...</span>
+            ) : (
+              <button key={p} onClick={() => setCurrentPage(p as number)}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${currentPage === p ? "border-[#6E56CF] bg-[#6E56CF] text-white" : "border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF]"}`}>
+                {p}
+              </button>
+            ))}
+          <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+            className="px-3 py-1.5 text-xs rounded-lg border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+            Next →
           </button>
         </div>
-
-        <CollectionFilters
-          isOpen={isFilterOpen}
-          onClose={() => setIsFilterOpen(false)}
-          creatorType={creatorType}
-          onCreatorTypeChange={setCreatorType}
-          updatedWithin={updatedWithin}
-          onUpdatedWithinChange={setUpdatedWithin}
-          featuredOnly={featuredOnly}
-          onFeaturedOnlyChange={setFeaturedOnly}
-          hasRelatedModels={hasRelatedModels}
-          onHasRelatedModelsChange={setHasRelatedModels}
-          hasRelatedCompanies={hasRelatedCompanies}
-          onHasRelatedCompaniesChange={setHasRelatedCompanies}
-          selectedCategories={selectedCategories}
-          onCategoriesChange={setSelectedCategories}
-          onReset={resetFilters}
-        />
-
-        {error && (
-          <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            {error}
-          </div>
-        )}
-
-        {loading ? (
-          <div className="py-16 text-center text-sm text-[#A1A1AA]">
-            Loading collections…
-          </div>
-        ) : (
-          <CollectionGrid collections={items} />
-        )}
-
-        {cursor && !loading && (
-          <LoadMoreButton
-            loading={loadingMore}
-            disabled={loadingMore}
-            onClick={handleLoadMore}
-          />
-        )}
-
-        <CollectionsClosingCTA />
-      </main>
-    </>
+      )}
+    </main>
   );
 }

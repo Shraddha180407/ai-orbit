@@ -50,6 +50,7 @@ The API expects a top-level JSON object containing a `tools` array.
 | `categories` | `object[]` | No | Array of categories this tool belongs to. See Entity Object. |
 | `tags` | `object[]` | No | Array of tags describing the tool. See Entity Object. |
 | `integrations` | `object[]` | No | Array of integrations the tool supports. See Integration Object. |
+| `tasks` | `object[]` | No | Array of tasks the tool is associated with. See Task Object. |
 
 ### Company Object
 | Field | Type | Required | Description |
@@ -70,6 +71,12 @@ The API expects a top-level JSON object containing a `tools` array.
 | `slug` | `string` | **Yes** | Unique identifier for the integration. |
 | `name` | `string` | **Yes** | Display name of the integration. |
 | `logoUrl` | `string` (URL) | No | URL to the integration's logo. |
+
+### Task Object
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `slug` | `string` | **Yes** | Unique identifier for the task. Used to connect the tool to an existing task in the database. |
+| `name` | `string` | No | Display name of the task. |
 
 ---
 
@@ -118,6 +125,10 @@ The API expects a top-level JSON object containing a `tools` array.
       "integrations": [
         { "slug": "slack", "name": "Slack", "logoUrl": "https://slack.com/logo.png" },
         { "slug": "figma", "name": "Figma" }
+      ],
+      "tasks": [
+        { "slug": "image-generation", "name": "Image Generation" },
+        { "slug": "design" }
       ]
     }
   ]

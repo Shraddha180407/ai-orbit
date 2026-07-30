@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, PricingModel, BillingFrequency, Availability } from "@prisma/client";
+import { PrismaClient, PricingModel, BillingFrequency, Availability, RobotCategory, RobotAvailability, AutonomyLevel } from "@prisma/client";
 import { logger } from "../src/lib/logger.js";
 
 import { Pool } from 'pg';
@@ -2057,7 +2057,13 @@ async function main() {
     { name: "Qwen2.5-72B-Instruct", creator: "Alibaba", contextWindow: "128K tokens", parameterSize: "72 Billion", modality: "Text, Code", releaseDate: "September 2024", description: "Highly capable open model with state of the art instruction-following and math capabilities." },
     { name: "Qwen2.5-Coder-32B-Instruct", creator: "Alibaba", contextWindow: "128K tokens", parameterSize: "32 Billion", modality: "Code", releaseDate: "September 2024", description: "Top performing open-weights coding model." }
   ];
-  await prisma.aIModel.createMany({ data: seedModels });
+  
+  const seedModelsWithSlug = seedModels.map(model => ({
+    ...model,
+    slug: model.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+  }));
+  
+  await prisma.aIModel.createMany({ data: seedModelsWithSlug });
 
   // News is no longer static-seeded — the news module gets its data from
   // real RSS ingestion (`npm run ingest`), not mock rows. See
@@ -2140,25 +2146,88 @@ async function main() {
   // schema). Removed rather than fixed with fabricated data — not this
   // module's data to seed.
 
-  logger.info("Seeding Robots...");
+logger.info("Seeding Robots...");
   await prisma.robot.deleteMany({});
+  
   const seedRobots = [
     {
       name: "Figure 02",
-      category: "Humanoid Robot",
-      manufacturer: "Figure AI",
-      year: "2024",
-      description: "A commercial-grade humanoid robot powered by OpenAI speech-to-speech models, designed for factory logistics and tasks.",
+      slug: "figure-02",
+      company: "Figure AI",
+      country: "United States",
+      category: RobotCategory.HUMANOID,
+      availability: RobotAvailability.IN_DEVELOPMENT,
+      releaseDate: "2024",
+      about: "A commercial-grade humanoid robot powered by OpenAI speech-to-speech models, designed for factory logistics and tasks.",
+      mainTask: "Factory Logistics",
+      autonomyLevel: AutonomyLevel.HIGHLY_AUTONOMOUS,
+      primaryUseCases: ["Manufacturing", "Warehouse Operations"],
+      mediaUrls: [],
     },
     {
       name: "Unitree H1",
-      category: "Bipedal Humanoid",
-      manufacturer: "Unitree Robotics",
-      year: "2023",
-      description: "A bipedal robot capable of running, backflips, and walking up stairs, utilizing deep reinforcement learning control loops.",
+      slug: "unitree-h1",
+      company: "Unitree Robotics",
+      country: "China",
+      category: RobotCategory.HUMANOID,
+      availability: RobotAvailability.COMMERCIALLY_AVAILABLE,
+      price: "$90,000",
+      releaseDate: "2023",
+      about: "A bipedal robot capable of running, backflips, and walking up stairs, utilizing deep reinforcement learning control loops.",
+      mainTask: "Research & Mobility",
+      autonomyLevel: AutonomyLevel.SEMI_AUTONOMOUS,
+      primaryUseCases: ["Research", "Industrial Inspection"],
+      mediaUrls: [],
     },
+    {
+      name: "Spot",
+      slug: "spot",
+      company: "Boston Dynamics",
+      country: "United States",
+      category: RobotCategory.MOBILE,
+      availability: RobotAvailability.COMMERCIALLY_AVAILABLE,
+      price: "$74,500",
+      releaseDate: "2019",
+      about: "An agile mobile robot that navigates terrain with unprecedented mobility, allowing you to automate routine inspection tasks and data capture safely.",
+      mainTask: "Industrial Inspection",
+      autonomyLevel: AutonomyLevel.SEMI_AUTONOMOUS,
+      primaryUseCases: ["Site Mapping", "Security", "Inspection"],
+      mediaUrls: [],
+    },
+    {
+      name: "Optimus Gen 2",
+      slug: "optimus-gen-2",
+      company: "Tesla",
+      country: "United States",
+      category: RobotCategory.HUMANOID,
+      availability: RobotAvailability.PROTOTYPE,
+      releaseDate: "2025",
+      about: "A general-purpose bipedal humanoid robot being developed by Tesla, intended to perform tasks that are unsafe, repetitive or boring.",
+      mainTask: "General Labor",
+      autonomyLevel: AutonomyLevel.HIGHLY_AUTONOMOUS,
+      primaryUseCases: ["Manufacturing", "Repetitive Labor"],
+      mediaUrls: [],
+    },
+    {
+      name: "Ameca",
+      slug: "ameca",
+      company: "Engineered Arts",
+      country: "United Kingdom",
+      category: RobotCategory.HUMANOID,
+      availability: RobotAvailability.COMMERCIALLY_AVAILABLE,
+      price: "N/A",
+      releaseDate: "2021",
+      about: "The world's most advanced human-shaped robot representing the forefront of human-robotics technology, specifically designed as a platform for AI.",
+      mainTask: "Human-Robot Interaction",
+      autonomyLevel: AutonomyLevel.SEMI_AUTONOMOUS,
+      primaryUseCases: ["Entertainment", "Education", "Research"],
+      mediaUrls: [],
+    }
   ];
-  await prisma.robot.createMany({ data: seedRobots });
+
+  await prisma.robot.createMany({ 
+    data: seedRobots 
+  });
 
   const seedDevices = [
   {
@@ -2172,6 +2241,12 @@ async function main() {
     month: "Jan, 2024",
     description: "A pocket companion device utilizing a Large Action Model (LAM) designed to execute online app actions on your behalf.",
     imageUrl: "https://m.media-amazon.com/images/I/41d-IfutmxL.jpg", 
+    images: [
+      "https://m.media-amazon.com/images/I/41d-IfutmxL.jpg",
+      "https://techcrunch.com/wp-content/uploads/2024/01/rabbit-r1-hero.jpg?fit=1024%2C576",
+      "https://www.theverge.com/wp-content/uploads/2024/01/Rabbit-R1-Review-2.jpg?fit=1024%2C576"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=example-rabbit-r1",
     manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqt-drKgbn-v1CvxdzoyKUNNjH6Q_ppxN2qbh6h3meyQ&s=10",
     mainTask: "AI-powered app automation",
     formFactor: "Pocket-sized",
@@ -2194,6 +2269,12 @@ async function main() {
     month: "Oct, 2023",
     description: "Stylish smart glasses with integrated Meta AI, allowing you to ask questions about what you are looking at through the built-in camera.",
     imageUrl: "https://m.media-amazon.com/images/I/51YS2aa2--L._AC_UF1000,1000_QL80_.jpg",
+    images: [
+      "https://m.media-amazon.com/images/I/51YS2aa2--L._AC_UF1000,1000_QL80_.jpg",
+      "https://www.meta.com/smart-glasses/images/meta-glasses-hero.jpg",
+      "https://www.theverge.com/wp-content/uploads/2023/10/meta-ray-ban-smglasses-review-2.jpg?fit=1024%2C576"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=meta-rayban-glasses",
     manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqfbTP6UVlD7B38a6uRgD7vNt6GYXB780xoQa7veixCw&s=10",
     mainTask: "Multimodal visual assistance",
     formFactor: "Eyewear",
@@ -2215,6 +2296,12 @@ async function main() {
     month: "Aug, 2024",
     description: "A personalized AI wearable that records your meetings and conversations, providing instant summaries and transcriptions.",
     imageUrl: "https://www.limitless.ai/media/pendant/black/UpdatedPendantAngledOn.webp",
+    images: [
+      "https://www.limitless.ai/media/pendant/black/UpdatedPendantAngledOn.webp",
+      "https://www.limitless.ai/media/pendant/black/UpdatedPendantFront.webp",
+      "https://www.limitless.ai/media/pendant/black/UpdatedPendantSide.webp"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=limitless-pendant-demo",
     manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvBvCARCbE5sLvWhJXmXFwrVzDFu5tATl84jMVESJfLw&s=10",
     mainTask: "Meeting transcription & memory",
     formFactor: "Pendant / Clip",
@@ -2236,6 +2323,10 @@ async function main() {
     month: "Apr, 2024",
     description: "Open-source, lightweight AI glasses that provide a heads-up display (HUD) powered by OpenAI and Perplexity.",
     imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRndpQutm_8ZHmbv3QFRuEkxMXknoBuc1sPetPK7HUtS5rzrnI4M-L0PvbE&s=10",
+    images: ["https://brilliant.xyz/images/frame-hero.jpg",
+      "https://techcrunch.com/wp-content/uploads/2024/04/brilliant-labs-frame-review-2.jpg?fit=1024%2C576"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=brilliant-labs-frame",
     manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSx4o32nl7E6RbBHMcjv-p_Ja_eHu0M77RiEqIW81USiMzQzkGas7ruYBjk&s=10",
     mainTask: "Heads-up visual search",
     formFactor: "Eyewear",
@@ -2257,6 +2348,12 @@ async function main() {
     month: "Nov, 2023",
     description: "A credit-card sized voice recorder that snaps to the back of your phone, utilizing ChatGPT to transcribe and summarize calls and meetings.",
     imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUWIuVVBPOiJ-PHCrjIa4WP5fK0zsOVjfurP1MIcm6GA&s",
+    images: [
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUWIuVVBPOiJ-PHCrjIa4WP5fK0zsOVjfurP1MIcm6GA&s",
+      "https://www.plaud.ai/images/note-front.jpg",
+      "https://www.plaud.ai/images/note-side.jpg"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=plaud-note-demo",
     manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkAkzJtf1nr96s5wzF6C5vrxz-VbdDliwbZMtXbg_RyQ&s=10",
     mainTask: "Call & audio summarization",
     formFactor: "Magnetic Card",

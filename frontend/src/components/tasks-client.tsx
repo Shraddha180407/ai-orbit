@@ -153,7 +153,7 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
     if (!category) {
       return (
         <>
-          <span className="text-[#A1A1AA] font-medium tabular-nums">{total.toLocaleString()}</span> Tasks across all
+          <span className="text-[#A1A1AA] font-medium tabular-nums">{total.toLocaleString("en-US")}</span> Tasks across all
           categories
         </>
       );
@@ -162,7 +162,7 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
     const categoryName = activeCategory?.name ?? category;
     return (
       <>
-        <span className="text-[#A1A1AA] font-medium tabular-nums">{total.toLocaleString()}</span> {categoryName}{" "}
+        <span className="text-[#A1A1AA] font-medium tabular-nums">{total.toLocaleString("en-US")}</span> {categoryName}{" "}
         Tasks
       </>
     );
@@ -179,8 +179,7 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
   }, [showFilter]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      <main className="w-full max-w-none px-6 lg:px-10 xl:px-14 py-8 flex-1">
+      <main className="w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 py-8 flex-1 selection:bg-neutral-800 selection:text-white">
         <nav aria-label="Breadcrumb" className="mb-4">
           <ol className="flex items-center gap-1.5 text-xs text-[#71717A] font-mono">
             <li>
@@ -195,20 +194,11 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
           </ol>
         </nav>
 
-        <div className="mb-5 relative">
-          <div
-            className="pointer-events-none absolute -left-6 -top-10 h-40 w-40 rounded-full opacity-[0.15] blur-3xl"
-            style={{ background: "radial-gradient(circle, #6E56CF, transparent 70%)" }}
-            aria-hidden="true"
-          />
-          <div className="relative flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#18181C] to-[#0A0A0C] border border-[#232326] flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-              <Sparkles className="h-4 w-4 text-[#A78BFA]" aria-hidden="true" />
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">Tasks</h1>
-          </div>
-          {subtitle && <p className="text-sm text-[#71717A] mt-1.5 ml-[46px]">{subtitle}</p>}
-        </div>
+
+        <header className="mb-4">
+          <h1 className="text-2xl font-bold text-white">Tasks</h1>
+          <p className="mt-1 text-sm text-[#A1A1AA]">{subtitle}</p>
+        </header>
 
         <div className="mb-4">
           <TaskFilters
@@ -277,6 +267,5 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
           </div>
         )}
       </main>
-    </div>
   );
 }

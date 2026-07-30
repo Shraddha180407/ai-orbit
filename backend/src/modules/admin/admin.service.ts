@@ -285,7 +285,8 @@ export class AdminService {
   }
   async createModel(data: Record<string, unknown>) {
     const { name, creator, contextWindow, parameterSize, modality, releaseDate, description } = data as { name: string; creator: string; contextWindow: string; parameterSize: string; modality: string; releaseDate: string; description: string };
-    return this.prisma.aIModel.create({ data: { name, creator, contextWindow, parameterSize, modality, releaseDate, description } });
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    return this.prisma.aIModel.create({ data: { slug, name, creator, contextWindow, parameterSize, modality, releaseDate, description } });
   }
   async updateModel(id: string, data: Record<string, unknown>) {
     const { name, creator, contextWindow, parameterSize, modality, releaseDate, description } = data as { name?: string; creator?: string; contextWindow?: string; parameterSize?: string; modality?: string; releaseDate?: string; description?: string };

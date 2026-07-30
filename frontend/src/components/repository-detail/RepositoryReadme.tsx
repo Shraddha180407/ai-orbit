@@ -64,6 +64,47 @@ export function preprocessReadmeHtml(
     }
   );
 
+  // 5. Convert HTML width/height attributes on img tags to inline styles to bypass Tailwind Preflight overrides
+  processed = processed.replace(/<img\b([^>]*?)(\s*\/?)>/gi, (tag, attrs, selfClose) => {
+    const widthMatch = attrs.match(/\bwidth=["']?([^"'\s>]+)["']?/i);
+    const heightMatch = attrs.match(/\bheight=["']?([^"'\s>]+)["']?/i);
+
+    if (!widthMatch && !heightMatch) return tag;
+
+    const styleMatch = attrs.match(/\bstyle=["']([^"']*)["']/i);
+    let existingStyle = styleMatch ? styleMatch[1].trim() : "";
+    if (existingStyle && !existingStyle.endsWith(";")) {
+      existingStyle += ";";
+    }
+
+    let newStyles = "";
+    if (widthMatch) {
+      const w = widthMatch[1];
+      const val = /^\d+(?:\.\d+)?$/.test(w) ? `${w}px` : w;
+      if (!existingStyle.includes("width:")) {
+        newStyles += `width: ${val};`;
+      }
+    }
+    if (heightMatch) {
+      const h = heightMatch[1];
+      const val = /^\d+(?:\.\d+)?$/.test(h) ? `${h}px` : h;
+      if (!existingStyle.includes("height:")) {
+        newStyles += `height: ${val};`;
+      }
+    }
+
+    if (!newStyles) return tag;
+
+    let updatedAttrs = attrs;
+    if (styleMatch) {
+      updatedAttrs = attrs.replace(/\bstyle=["']([^"']*)["']/i, `style="${existingStyle} ${newStyles}"`);
+    } else {
+      updatedAttrs = `${attrs} style="${newStyles}"`;
+    }
+
+    return `<img${updatedAttrs}${selfClose}>`;
+  });
+
   return processed;
 }
 
@@ -98,11 +139,6 @@ export function RepositoryReadme({ readmeHtml, repoOwner, repoName, repoDefaultB
           font-size: 0.875rem; /* 14px */
         }
         
-        /* Left-align all elements that use align="center" placeholders */
-        .readme-content [align="center"],
-        .readme-content div[align="center"] {
-          text-align: left !important;
-        }
 
         .readme-content h1,
         .readme-content h2,
@@ -222,12 +258,11 @@ export function RepositoryReadme({ readmeHtml, repoOwner, repoName, repoDefaultB
         }
 
         .readme-content img {
+          display: inline-block;
           max-width: 100%;
           box-sizing: border-box;
           background-color: transparent;
           border-radius: 0.5rem;
-          height: auto;
-          margin: 1rem 0;
         }
 
         .readme-content hr {

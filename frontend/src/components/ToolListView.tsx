@@ -172,10 +172,10 @@ function ToolRow({
         </p>
       </div>
 
-      {/* Column 3: Task (primary category) */}
+      {/* Column 3: Task */}
       <div className="min-w-0 truncate">
-        {primaryCategory ? (
-          <CategoryChip label={primaryCategory.name} />
+        {tool.ttasks && tool.ttasks.length > 0 ? (
+          <CategoryChip label={tool.ttasks[0].task.title} />
         ) : (
           <span className="text-[11px] text-[#71717A]">—</span>
         )}
@@ -183,7 +183,7 @@ function ToolRow({
 
       {/* Column 4: Released */}
       <div className="hidden text-[11px] font-mono text-[#A1A1AA] sm:block">
-        {formatReleased(tool.createdAt)}
+        {formatReleased(tool.releaseDate)}
       </div>
 
       {/* Column 5: Price (compact) */}

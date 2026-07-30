@@ -12,9 +12,11 @@ export type ToolCardData = {
   billingFrequency: BillingFrequency;
   categories: { category: { slug: string; name: string } }[];
   tags: { tag: { slug: string; name: string } }[];
+  ttasks?: { task: { slug: string; title: string } }[];
   _count: { reviews: number; bookmarks: number };
   avgRating: number | null;
   company: { slug: string; name: string } | null;
+  releaseDate?: string | null;
 };
 
 export type SortOption = "newest" | "oldest" | "name-asc" | "name-desc" | "rating";
@@ -62,6 +64,12 @@ export type ToolDetailData = {
   categories: { category: { slug: string; name: string } }[];
   tags: { tag: { slug: string; name: string } }[];
   _count: { reviews: number; bookmarks: number };
+  releaseDate?: string | null;
+  isOpenSource?: boolean;
+  compatibility?: string[];
+  targetUsers?: string[];
+  hasApi?: boolean;
+  apiDocsUrl?: string | null;
 };
 
 export type SimilarToolData = {
@@ -139,10 +147,8 @@ export type Company = {
   slug: string;
   name: string;
   logoUrl: string | null;
-  description: string | null;
-  websiteUrl: string | null;
-  foundedYear: string | null;
-  headquarters: string | null;
+  description?: string | null;
+  websiteUrl?: string | null;
   tools?: {
     id: string;
     slug: string;
@@ -153,6 +159,27 @@ export type Company = {
     avgRating: number;
     _count: { reviews: number };
   }[];
+  aiModels?: {
+    id: string;
+    name: string;
+    description: string;
+    contextWindow: string;
+    parameterSize: string;
+    modality: string;
+    releaseDate: string;
+  }[];
+  _count?: {
+    tools: number;
+    aiModels: number;
+    collectionCompanies?: number;
+  };
+};
+
+export type AIModelProvider = {
+  id: string;
+  slug: string;
+  name: string;
+  logoUrl: string | null;
 };
 
 export type AIModel = {
@@ -164,7 +191,44 @@ export type AIModel = {
   parameterSize: string;
   contextWindow: string;
   releaseDate: string;
+  createdAt?: string;
+  /** Linked Company when providerId is set; null otherwise. */
+  provider?: AIModelProvider | null;
+  /**
+   * PRD columns — optional until backend adds them.
+   * UI shows "—" when missing.
+   */
+  type?: string | null;
+  primaryTask?: string | null;
+  openSource?: boolean | null;
 };
+
+export type ModelsListResponse = {
+  items: AIModel[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+  filters?: {
+    providers: { slug: string; name: string; count: number }[];
+    modalities: { modality: string; count: number }[];
+  };
+};
+
+export type ModelTaskLink = {
+  task: { id: string; slug: string; title: string };
+};
+
+export type ModelDetail = AIModel & {
+  tasks?: ModelTaskLink[];
+  relatedModels?: AIModel[];
+  updatedAt?: string;
+};
+
+export type ModelsSortOption = "newest" | "oldest" | "alphabetical" | "releaseDate";
 
 export type News = {
   id: string;
@@ -235,6 +299,7 @@ export type Video = {
 export type Robot = {
   id: string;
   name: string;
+  logoUrl?: string | null;
   category: string;
   manufacturer: string;
   year: string;
@@ -253,6 +318,8 @@ export type Device = {
   price?: string | null;
   month?: string | null;
   imageUrl?: string | null;
+  images?: string[];
+  videoUrl?: string | null;
   manufacturerLogoUrl?: string | null;
   mainTask?: string | null;
   mainTaskColor?: string | null;

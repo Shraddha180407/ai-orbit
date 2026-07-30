@@ -222,7 +222,7 @@ describe('RepositoriesController', () => {
       const c = mockContext({}, {});
       await controller.getRepositoryBySlug(c as never);
 
-      expect(mockService.getRepositoryBySlug).toHaveBeenCalledWith('');
+      expect(mockService.getRepositoryBySlug).toHaveBeenCalledWith('', undefined);
     });
   });
 

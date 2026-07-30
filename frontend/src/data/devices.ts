@@ -12,6 +12,7 @@ export type DeviceData = {
   description: string;
   imageUrl: string;
   images?: string[];
+  videoUrl?: string | null;
   manufacturerLogoUrl: string;
   mainTask: string;
   mainTaskColor: string;
@@ -48,6 +49,13 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Productivity", "Automation", "Assistant"],
     additionalInfo: "The Rabbit r1 runs on a Large Action Model (LAM) that can learn how to operate apps on behalf of users. It features a 2.88-inch touchscreen, a 360-degree rotating camera, and a push-to-talk button. The device connects to the cloud to process requests.",
     buyUrl: "https://www.rabbit.tech/rabbit-r1",
+    images: [
+      "https://images.unsplash.com/photo-1512054502232-10a0a035d672?w=800&q=80",
+      "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=800&q=80",
+      "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&q=80",
+      "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=800&q=80",
+    ],
+    videoUrl: "https://youtu.be/ddTV12hErTc?si=cXNHgrNH-hAIgABT",
   },
   {
     id: "cmrkw7rs500755ov373gur8ua",

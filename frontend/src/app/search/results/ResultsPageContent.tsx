@@ -96,7 +96,7 @@ export function ResultsPageContent() {
               {q ? <>Results for &ldquo;{q}&rdquo;</> : "Search results"}
             </h1>
             <p className="text-sm text-search-text-secondary">
-              {isLoading ? "Searching…" : `${data?.total.toLocaleString() ?? 0} results`}
+              {isLoading ? "Searching…" : `${data?.total.toLocaleString("en-US") ?? 0} results`}
             </p>
           </div>
         </div>
@@ -184,7 +184,7 @@ export function ResultsPageContent() {
               onClick={() => setMobileFiltersOpen(false)}
               className="mt-4 w-full rounded-md bg-search-accent px-4 py-2.5 text-sm font-medium text-white"
             >
-              Show {data?.total.toLocaleString() ?? 0} results
+              Show {data?.total.toLocaleString("en-US") ?? 0} results
             </button>
           </div>
         </div>

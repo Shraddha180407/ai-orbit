@@ -7,6 +7,10 @@ function createMockPrisma() {
       findMany: vi.fn(),
       findUnique: vi.fn(),
       count: vi.fn(),
+      groupBy: vi.fn(),
+    },
+    company: {
+      findMany: vi.fn(),
     },
   };
 }
@@ -37,6 +41,8 @@ describe('ModelsService', () => {
     beforeEach(() => {
       prisma.aIModel.findMany.mockResolvedValue([baseModel]);
       prisma.aIModel.count.mockResolvedValue(1);
+      prisma.company.findMany.mockResolvedValue([]);
+      prisma.aIModel.groupBy.mockResolvedValue([]);
     });
 
     it('returns paginated results', async () => {

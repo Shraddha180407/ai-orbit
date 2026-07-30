@@ -3,6 +3,15 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { logger } from "../src/lib/logger.js";
 
+interface YouTubeVideosResponse {
+  items?: Array<{
+    id: string;
+    snippet?: {
+      channelId?: string;
+    };
+  }>;
+}
+
 /**
  * One-off backfill: the normal ingest pipeline (crawler/ingest.ts) only
  * enriches videos that are NOT already known (see the `newIds` filter in
@@ -42,7 +51,7 @@ async function fetchChannelIds(youtubeIds: string[]): Promise<Map<string, string
       logger.error(`[backfill] videos.list failed: ${res.status}`);
       continue;
     }
-    const json = await res.json();
+    const json = (await res.json()) as YouTubeVideosResponse;
     for (const item of json.items ?? []) {
       if (item.snippet?.channelId) {
         result.set(item.id, item.snippet.channelId);

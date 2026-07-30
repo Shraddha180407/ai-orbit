@@ -163,7 +163,7 @@ export function ROICalculator({ pricingModel, pricingAmount, name }: ROICalculat
                 Net Savings
               </div>
               <div className="text-2xl xs:text-3xl font-extrabold text-foreground mt-1 truncate">
-                ${netSavings.toLocaleString()}
+                ${netSavings.toLocaleString("en-US")}
               </div>
               <span className="text-[10px] xs:text-xs text-foreground-faint font-normal block">estimated monthly savings</span>
             </div>
