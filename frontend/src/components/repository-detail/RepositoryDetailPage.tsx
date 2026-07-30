@@ -8,6 +8,8 @@ import { RepositoryHeroCard } from "./RepositoryHeroCard";
 import { RepositoryReadme } from "./RepositoryReadme";
 import { RepositoryLoadingSkeleton } from "./RepositoryLoadingSkeleton";
 import { RepositoryErrorState } from "./RepositoryErrorState";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 interface RepositoryDetailPageProps {
   slug: string;
@@ -37,15 +39,25 @@ export function RepositoryDetailPage({ slug }: RepositoryDetailPageProps) {
     getRepo();
   }, [slug]);
 
+  const wrapLayout = (content: React.ReactNode) => (
+    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
+      <Header />
+      <main className="mx-auto max-w-[1440px] px-8 pt-0 pb-12 flex-1 w-full">
+        {content}
+      </main>
+      <Footer />
+    </div>
+  );
+
   if (isLoading) {
-    return <RepositoryLoadingSkeleton />;
+    return wrapLayout(<RepositoryLoadingSkeleton />);
   }
 
   if (error || !repo) {
-    return <RepositoryErrorState message={error || "Repository not found"} />;
+    return wrapLayout(<RepositoryErrorState message={error || "Repository not found"} />);
   }
 
-  return (
+  return wrapLayout(
     <div className="flex flex-col gap-6">
       <RepositoryBreadcrumb owner={repo.owner} name={repo.name} companySlug={repo.companySlug} />
       <RepositoryHeroCard repo={repo} />
