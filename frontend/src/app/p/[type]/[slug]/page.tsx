@@ -18,7 +18,7 @@ import { CompanyDetailClient } from "@/components/company-detail-client";
 import { SERVER_API_URL } from "@/lib/api";
 
 const VALID_CATEGORIES: Record<string, Set<string>> = {
-  tools: new Set(["writing", "image-generation", "video", "audio", "chatbots", "coding", "marketing", "productivity", "business", "education"]),
+  tools: new Set(["writing", "image-generation", "video", "audio", "chatbots", "coding", "marketing", "productivity", "business", "education", "mcp"]),
   personal: new Set(["productivity", "chatbots", "writing", "audio", "customer-support", "video", "image-generation", "marketing"]),
   creativity: new Set(["image-generation", "video", "audio", "marketing", "design", "productivity", "chatbots", "customer-support"])
 };
