@@ -205,10 +205,6 @@ export default function CollectionsPageClient({ initialItems }: Props) {
     <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
       {/* ── TOOLBAR ── */}
       <CollectionToolbar
-        nameInput={nameInput}
-        setNameInput={setNameInput}
-        setNameSearch={setNameSearch}
-        setCurrentPage={setCurrentPage}
         viewMode={viewMode}
         setViewMode={setViewMode}
         hasActiveFilters={!!hasActiveFilters}
