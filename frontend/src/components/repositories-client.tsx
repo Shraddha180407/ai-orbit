@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Repository, RepositoryOwnerListItem } from "@/lib/types";
 import { fetchRepositories, fetchRepositoryOwners } from "@/lib/api";
-import { RepositoryHero } from "@/components/ui/RepositoryHero";
+
 import { RepositoryTable } from "@/components/ui/RepositoryTable";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 import { RepositoryRow } from "@/components/ui/RepositoryRow";
@@ -237,8 +237,6 @@ export function RepositoriesClient() {
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <main className="mx-auto max-w-[1440px] px-8 py-12 flex-1 w-full">
-        <RepositoryHero />
-
         {/* Active Topic Filter Chip */}
         {selectedTopic && (
           <div className="flex items-center gap-2 mb-6 bg-white/[0.02] border border-white/[0.08] px-3.5 py-2 rounded-lg w-fit shadow-md animate-fade-in">
