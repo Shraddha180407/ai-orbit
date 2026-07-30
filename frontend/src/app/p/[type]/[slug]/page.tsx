@@ -74,7 +74,7 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   const { type, slug } = resolvedParams;
   
   
-  if (type === "tools") return <ToolDetailClient />;
+  if (type === "tools" || type === "personal" || type === "creativity") return <ToolDetailClient />;
   if (type === "collections") return <CollectionDetailClient />;
   if (type === "videos") return <VideoDetailsClient />;
   if (type === "news") return <ArticlePageClient />;

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import GitCompare from 'lucide-react/dist/esm/icons/git-compare';
 import Check from 'lucide-react/dist/esm/icons/check';
@@ -121,11 +121,13 @@ function ToolRow({
   isSelected,
   isCompareFull,
   onToggleCompare,
+  basePath = "/tools"
 }: {
   tool: ListTool;
   isSelected: boolean;
   isCompareFull: boolean;
   onToggleCompare: (tool: ListTool) => void;
+  basePath?: string;
 }) {
   const primaryCategory = tool.categories[0]?.category;
   const isOpenSource = isTruthy(tool.isOpenSource, tool.openSource);
@@ -139,7 +141,7 @@ function ToolRow({
 
   return (
     <Link
-      href={`/tools/${tool.slug}`}
+      href={`${basePath}/${tool.slug}`}
       className={`group relative grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none`}
     >
       {/* Hover marker — grows from the left edge, mirrors the video rows */}
@@ -270,7 +272,13 @@ export function ToolListView({
   skeletonRows = 4,
 }: ToolListViewProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [compareSet, setCompareSet] = useState<ListTool[]>([]);
+
+  let basePath = "/tools";
+  if (pathname === "/personal" || pathname === "/creativity") {
+    basePath = pathname;
+  }
 
   const toggleCompare = (tool: ListTool) => {
     setCompareSet((prev) => {
@@ -363,6 +371,7 @@ export function ToolListView({
                     isSelected={isSelected}
                     isCompareFull={compareSet.length >= MAX_COMPARE}
                     onToggleCompare={toggleCompare}
+                    basePath={basePath}
                   />
                 </div>
               );

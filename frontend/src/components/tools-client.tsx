@@ -7,7 +7,7 @@ import { ToolListView } from "@/components/ToolListView";
 import { API_URL } from "@/lib/api";
 import type { SortOption } from "@/lib/types";
 
-export function ToolsClient() {
+export function ToolsClient({ defaultCategory }: { defaultCategory?: string }) {
   const searchParams = useSearchParams();
 
   const [tools, setTools] = useState<any[]>([]);
@@ -20,7 +20,7 @@ export function ToolsClient() {
   // Build params object from URL search params
   const params = {
     q: searchParams.get("q") || undefined,
-    category: searchParams.get("category") || undefined,
+    category: searchParams.get("category") || defaultCategory || undefined,
     pricing: searchParams.get("pricing") || undefined,
     sort: (searchParams.get("sort") || undefined) as SortOption | undefined,
   };

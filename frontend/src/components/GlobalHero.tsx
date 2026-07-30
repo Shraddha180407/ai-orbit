@@ -54,8 +54,8 @@ const DIRECTORY_CARDS = [
   { name: "Repositories", href: "/repositories", description: "Trending open-source AI repositories on GitHub.", icon: GitBranch, color: "#22D3EE" },
   { name: "MCP", href: "/tools", description: "Model Context Protocol servers and integrations.", icon: Plug, color: "#818CF8" },
   { name: "Collections", href: "/collections", description: "Curated bundles of tools grouped by use case.", icon: FolderHeart, color: "#34D399" },
-  { name: "Personal", href: "/tools?category=personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
-  { name: "Creativity", href: "/tools?category=creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
+  { name: "Personal", href: "/personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
+  { name: "Creativity", href: "/creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
 
 export function GlobalHero() {

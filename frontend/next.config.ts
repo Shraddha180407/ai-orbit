@@ -26,8 +26,12 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: "/:type(personal|creativity)",
+        destination: "/tools",
+      },
+      {
         // `models` intentionally omitted — real routes live at app/models/[id] and app/models/compare
-        source: "/:type(collections|companies|countries|devices|fundraises|investors|news|repositories|robots|tasks|tools|videos)/:slug",
+        source: "/:type(collections|companies|countries|devices|fundraises|investors|news|repositories|robots|tasks|tools|videos|personal|creativity)/:slug",
         destination: "/p/:type/:slug",
       },
     ];
