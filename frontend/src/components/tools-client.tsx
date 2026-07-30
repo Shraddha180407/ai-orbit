@@ -57,12 +57,27 @@ export function ToolsClient({
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  const [mode] = useState<DirectoryMode>(() => {
+  const [mode, setMode] = useState<DirectoryMode>(() => {
     if (defaultMode) return defaultMode;
-    if (pathname?.includes("personal")) return "personal";
-    if (pathname?.includes("creativity")) return "creativity";
+    if (typeof window !== "undefined") {
+      const path = window.location.pathname;
+      if (path.includes("personal")) return "personal";
+      if (path.includes("creativity")) return "creativity";
+    }
     return "tools";
   });
+
+  useEffect(() => {
+    if (defaultMode) return;
+    const path = window.location.pathname;
+    if (path.includes("personal")) {
+      setMode("personal");
+    } else if (path.includes("creativity")) {
+      setMode("creativity");
+    } else {
+      setMode("tools");
+    }
+  }, [defaultMode, pathname]);
 
   const [activeCategory, setActiveCategory] = useState<string>(() => {
     return defaultCategory || searchParams.get("category") || "";
