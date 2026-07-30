@@ -16,6 +16,8 @@ import type { ToolCardData } from "@/lib/types";
 const MAX_COMPARE = 2;
 
 /**
+ * 
+ * 
  * Loose tool shape — extends `ToolCardData` with optional fields the backend
  * may or may not return. Optional fields default to safe values so the row
  * renders even if the API doesn't include them yet.
