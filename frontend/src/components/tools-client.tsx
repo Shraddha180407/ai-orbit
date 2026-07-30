@@ -2,18 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { SearchBar } from "@/components/SearchBar";
-import { TopFilters } from "@/components/TopFilters";
-import { SortDropdown } from "@/components/SortDropdown";
+
 import { ToolGrid } from "@/components/ToolGrid";
 import { Pagination } from "@/components/Pagination";
 import { API_URL } from "@/lib/api";
 import type { SortOption } from "@/lib/types";
 import { useUser } from "@/hooks/use-user";
 import { Button } from "@/components/ui/shadcn-button";
-import { Plus } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -24,10 +19,8 @@ export function ToolsClient() {
   const isAdmin = user?.role === 'ADMIN';
 
   const [tools, setTools] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Admin Modal State
@@ -58,10 +51,8 @@ export function ToolsClient() {
         if (res.ok) {
           const data = await res.json();
           setTools(data.tools || []);
-          setTotal(data.total || 0);
           setPage(data.page || 1);
           setTotalPages(data.totalPages || 1);
-          setCategories(data.categories || []);
         }
       } catch (error) {
         console.error("Failed to fetch tools:", error);
@@ -110,12 +101,6 @@ export function ToolsClient() {
     }
   };
 
-  const openAdd = () => {
-    setEditingId(null);
-    setFormData({ name: '', slug: '', description: '', websiteUrl: '', pricingModel: 'FREE' });
-    setIsModalOpen(true);
-  };
-
   const openEdit = (tool: any) => {
     setEditingId(tool.id);
     setFormData({ name: tool.name || '', slug: tool.slug || '', description: tool.description || '', websiteUrl: tool.websiteUrl || '', pricingModel: tool.pricingModel || 'FREE' });
@@ -124,38 +109,7 @@ export function ToolsClient() {
 
   return (
     <main className="mx-auto max-w-[1070px] px-6 py-10">
-      <Link
-        href="/"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-foreground-muted hover:text-white transition-colors"
-      >
-        <ArrowLeft size={16} />
-        Back to Home
-      </Link>
-
-      <header className="mb-8 flex flex-col gap-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">AI Tools</h1>
-            <p className="mt-1 text-sm text-foreground-muted">
-              {total} tool{total === 1 ? "" : "s"} across every category
-            </p>
-          </div>
-          {isAdmin && (
-            <Button className="bg-white text-black hover:bg-neutral-200" onClick={openAdd}>
-              <Plus className="h-4 w-4 mr-2" /> Add Tool
-            </Button>
-          )}
-        </div>
-        <SearchBar defaultValue={params.q} />
-      </header>
-
-      <TopFilters categories={categories} params={params} />
-
       <div className="space-y-6">
-        <div className="flex items-center justify-end">
-          <SortDropdown />
-        </div>
-
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[1,2,3,4,5,6,7,8].map((i) => (
