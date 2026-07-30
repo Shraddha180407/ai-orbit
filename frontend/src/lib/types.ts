@@ -318,6 +318,8 @@ export type Device = {
   price?: string | null;
   month?: string | null;
   imageUrl?: string | null;
+  images?: string[];
+  videoUrl?: string | null;
   manufacturerLogoUrl?: string | null;
   mainTask?: string | null;
   mainTaskColor?: string | null;
@@ -328,8 +330,6 @@ export type Device = {
   primaryUseCases?: string[];
   additionalInfo?: string | null;
   buyUrl?: string | null;
-  images?: string[];
-  videoUrl?: string | null;
 };
 
 
