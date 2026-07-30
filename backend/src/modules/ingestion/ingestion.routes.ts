@@ -19,6 +19,8 @@ import { RepositoriesIngestService } from "./repositories.ingest.service.js";
 import { getPrisma } from "../../lib/prisma.js";
 import { modelsIngestPayloadSchema } from "./models.ingest.schema.js";
 import { ModelsIngestService } from "./models.ingest.service.js";
+import { companiesIngestPayloadSchema } from "./companies.ingest.schema.js";
+import { CompaniesIngestService } from "./companies.ingest.service.js";
 
 const router = new Hono<{
   Bindings: {
@@ -206,8 +208,32 @@ router.post("/repositories", requireIngestionToken, async (c) => {
     
     return c.json(summary, 200);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "An unexpected error occurred during repositories ingestion";
-    logger.error("Repositories ingestion error:", err);
+    return c.json({
+      error: "INTERNAL_SERVER_ERROR",
+      message: err instanceof Error ? err.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+router.post("/companies", requireIngestionToken, async (c) => {
+  try {
+    const body = await c.req.json();
+    
+    const parsed = companiesIngestPayloadSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({
+        error: "VALIDATION_FAILED",
+        issues: parsed.error.issues
+      }, 422);
+    }
+
+    const prisma = getPrisma(c.env);
+    const summary = await CompaniesIngestService.ingestCompanies(prisma, parsed.data);
+    
+    return c.json(summary, 200);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "An unexpected error occurred during companies ingestion";
+    logger.error("Companies ingestion error:", err);
     return c.json({
       error: "INTERNAL_SERVER_ERROR",
       message

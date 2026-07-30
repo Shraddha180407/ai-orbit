@@ -6,9 +6,10 @@ export class CompaniesController {
   async listCompanies(c: Context) {
     const prisma = getPrisma(c.env);
     const service = new CompaniesService(prisma);
+    const typeFilter = c.req.query('type') || undefined;
 
     try {
-      const companies = await service.listCompanies();
+      const companies = await service.listCompanies(typeFilter);
       return c.json(companies);
     } catch (error: unknown) {
       return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);

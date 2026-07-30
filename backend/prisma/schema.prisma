@@ -44,22 +44,54 @@ enum UserPersona {
   CONTENT_CREATORS
 }
 
+enum CompanyType {
+  AI_NATIVE
+  MODEL_COMPANIES
+  TOOL_COMPANIES
+  PROFITABLE
+  UNICORNS
+}
+
 // ---- Stub models owned by other modules ----
 // Module 4 (Companies) and Module 11 (Auth) will extend these.
 // Do not add fields here beyond what Module 3 needs for its relations.
 
 model Company {
-  id      String  @id @default(cuid())
-  slug    String  @unique
-  name    String
-  logoUrl String?
+  id                 String      @id @default(cuid())
+  slug               String      @unique
+  name               String
+  logoUrl            String?
+  description        String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  website            String?
+  country            String?
+  city               String?
+  foundedYear        Int?
+
+  type               CompanyType[] @default([])
+  sector             String?
+
+  verified           Boolean     @default(false)
+  featured           Boolean     @default(false)
+
+  valuation          BigInt?
+  fundingRaised      BigInt?
+  latestFundingRound String?
+  employeeCount      Int?
+
+  linkedinUrl        String?
+  twitterUrl         String?
+
+  views              Int         @default(0)
+  upvotes            Int         @default(0)
+  impressions        Int         @default(0)
+
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
   collectionCompanies CollectionCompany[]
-  tools               Tool[]
-  aiModels            AIModel[]
+  tools              Tool[]
+  aiModels           AIModel[]
 }
 
 model User {

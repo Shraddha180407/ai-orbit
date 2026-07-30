@@ -142,31 +142,50 @@ export interface CollectionFilterParams {
   cursor?: string;
 }
 
+export type CompanyType = 'AI_NATIVE' | 'MODEL_COMPANIES' | 'TOOL_COMPANIES' | 'PROFITABLE' | 'UNICORNS';
+
 export type Company = {
   id: string;
   slug: string;
   name: string;
   logoUrl: string | null;
   description?: string | null;
-  websiteUrl?: string | null;
+  website?: string | null;
+  country?: string | null;
+  city?: string | null;
+  foundedYear?: number | null;
+  type?: CompanyType[];
+  sector?: string | null;
+  verified?: boolean;
+  featured?: boolean;
+  valuation?: string | null;
+  fundingRaised?: string | null;
+  latestFundingRound?: string | null;
+  employeeCount?: number | null;
+  linkedinUrl?: string | null;
+  twitterUrl?: string | null;
+  views?: number;
+  upvotes?: number;
+  impressions?: number;
   tools?: {
     id: string;
     slug: string;
     name: string;
-    logoUrl: string | null;
-    pricingModel: string;
-    description: string;
-    avgRating: number;
-    _count: { reviews: number };
+    logoUrl?: string | null;
+    pricingModel?: string;
+    description?: string;
+    avgRating?: number;
+    _count?: { reviews: number };
   }[];
   aiModels?: {
     id: string;
+    slug?: string;
     name: string;
-    description: string;
-    contextWindow: string;
-    parameterSize: string;
-    modality: string;
-    releaseDate: string;
+    description?: string;
+    contextWindow?: string;
+    parameterSize?: string;
+    modality?: string;
+    releaseDate?: string;
   }[];
   _count?: {
     tools: number;
