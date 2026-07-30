@@ -1,21 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { TasksClient } from "@/components/tasks-client";
 import type { TaskListResponse } from "@/lib/tasks-api";
-
-vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: any) => (
-    <a href={href} {...props}>{children}</a>
-  ),
-}));
-
-vi.mock("lucide-react/dist/esm/icons/chevron-right", () => ({
-  default: (props: any) => <svg data-testid="chevron-right" {...props} />,
-}));
-vi.mock("lucide-react/dist/esm/icons/sparkles", () => ({
-  default: (props: any) => <svg data-testid="sparkles" {...props} />,
-}));
 
 vi.mock("@/lib/tasks-api", () => ({
   fetchTasks: vi.fn(),
@@ -25,16 +11,6 @@ vi.mock("@/lib/tasks-api", () => ({
 }));
 
 import { fetchTasks, AuthRequiredError } from "@/lib/tasks-api";
-import { TaskFilters } from "@/components/TaskFilters";
-
-vi.mock("@/components/TaskFilters", () => ({
-  TaskFilters: (props: any) => (
-    <div data-testid="task-filters">
-      <input data-testid="search-input" onChange={(e) => props.onSearchChange(e.target.value)} />
-      <button data-testid="category-btn" onClick={() => props.onCategoryChange("coding")}>Coding</button>
-    </div>
-  ),
-}));
 
 const mockTask = {
   id: "t1", slug: "test-task", title: "Test Task", description: "A task",
@@ -57,14 +33,8 @@ describe("TasksClient", () => {
 
   it("renders initial data without fetching", () => {
     render(<TasksClient initialData={mockResponse} />);
-    expect(screen.getAllByText("Tasks").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Test Task")).toBeInTheDocument();
     expect(fetchTasks).not.toHaveBeenCalled();
-  });
-
-  it("shows task count subtitle", () => {
-    render(<TasksClient initialData={mockResponse} />);
-    expect(screen.getByText("Tasks across all categories")).toBeInTheDocument();
   });
 
   it("shows loading skeleton on initial fetch without data", async () => {
@@ -107,15 +77,5 @@ describe("TasksClient", () => {
     expect(screen.getByText("SUBSCRIBERS")).toBeInTheDocument();
     expect(screen.getByText("SAVES")).toBeInTheDocument();
     expect(screen.getByText("TOOLS")).toBeInTheDocument();
-  });
-
-  it("renders task filters component", () => {
-    render(<TasksClient initialData={mockResponse} />);
-    expect(screen.getByTestId("task-filters")).toBeInTheDocument();
-  });
-
-  it("renders breadcrumb navigation", () => {
-    render(<TasksClient initialData={mockResponse} />);
-    expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeInTheDocument();
   });
 });

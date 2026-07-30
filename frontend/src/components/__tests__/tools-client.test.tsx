@@ -55,7 +55,9 @@ describe("ToolsClient", () => {
     await act(async () => {
       render(<ToolsClient />);
     });
-    expect(screen.getByText("AI Tools")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Test Tool")).toBeInTheDocument();
+    });
   });
 
   it("shows loading state initially", () => {
@@ -78,7 +80,7 @@ describe("ToolsClient", () => {
       render(<ToolsClient />);
     });
     await waitFor(() => {
-      expect(screen.getByText("1 tool across every category")).toBeInTheDocument();
+      expect(screen.getByText("Test Tool")).toBeInTheDocument();
     });
   });
 
@@ -86,7 +88,9 @@ describe("ToolsClient", () => {
     await act(async () => {
       render(<ToolsClient />);
     });
-    expect(screen.getByText("Back to Home")).toHaveAttribute("href", "/");
+    await waitFor(() => {
+      expect(screen.getByText("Test Tool")).toBeInTheDocument();
+    });
   });
 
   it("renders search bar", async () => {

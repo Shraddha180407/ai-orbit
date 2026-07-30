@@ -1,22 +1,15 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import Link from "next/link";
-import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right';
-import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
 
 import {
   fetchTasks,
   AuthRequiredError,
   type Task,
-  type Category,
-  type Difficulty,
-  type PricingModel,
   type SortOption,
   type FilterOption,
   type TaskListResponse,
 } from "@/lib/tasks-api";
-import { TaskFilters, type ShowFilter } from "./TaskFilters";
 import { TaskCard } from "./TaskCard";
 import { TaskSkeleton } from "./TaskSkeleton";
 import { EmptyTasks } from "./EmptyTasks";
@@ -29,21 +22,8 @@ type TasksClientProps = {
 
 const COLUMN_LABELS = ["SUBSCRIBERS", "SAVES", "TOOLS", "MODELS", "ROBOTS", "DEVICES"];
 
-function showFilterToApiFilter(show: ShowFilter): FilterOption {
-  switch (show) {
-    case "For You":
-      return "for-you";
-    case "Following":
-      return "following";
-    case "All Tasks":
-    default:
-      return "all";
-  }
-}
-
 export function TasksClient({ initialData }: TasksClientProps) {
   const [tasks, setTasks] = useState<Task[]>(initialData?.tasks ?? []);
-const [categories, setCategories] = useState<Category[]>(initialData?.categories ?? []);
 const [total, setTotal] = useState(initialData?.total ?? 0);
 const [page, setPage] = useState(initialData?.page ?? 1);
 const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
@@ -52,28 +32,14 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
   const [error, setError] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
 
-  const [search, setSearch] = useState("");
-  const [showFilter, setShowFilter] = useState<ShowFilter>("All Tasks");
-  const [category, setCategory] = useState("");
-  const [difficulty, setDifficulty] = useState<Difficulty | "ALL">("ALL");
-  const [pricing, setPricing] = useState<PricingModel | "ALL">("ALL");
-  const [featuredOnly, setFeaturedOnly] = useState(false);
-  const [sort, setSort] = useState<SortOption>("newest");
-
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const queryParams = useMemo(
     () => ({
-      q: search.trim() || undefined,
-      category: category || undefined,
-      difficulty: difficulty === "ALL" ? undefined : difficulty,
-      pricing: pricing === "ALL" ? undefined : pricing,
-      featuredOnly: featuredOnly || undefined,
-      sort,
-      filter: showFilterToApiFilter(showFilter),
+      sort: "newest" as SortOption,
+      filter: "all" as FilterOption,
     }),
-    [search, category, difficulty, pricing, featuredOnly, sort, showFilter]
+    []
   );
 
   const loadPage = useCallback(
@@ -87,7 +53,6 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
         setTotal(data.total);
         setPage(data.page);
         setTotalPages(data.totalPages);
-        if (data.categories?.length) setCategories(data.categories);
       } catch (e) {
         if (e instanceof AuthRequiredError) {
           setAuthRequired(true);
@@ -104,20 +69,10 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
   );
 
   useEffect(() => {
-  if (initialData && search === "" && !category) {
-    return;
-  }
-
-  if (debounceRef.current) clearTimeout(debounceRef.current);
-
-  debounceRef.current = setTimeout(() => {
+    if (initialData) return;
     loadPage(1, false);
-  }, 300);
-
-  return () => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-  };
-}, [queryParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadMore = useCallback(() => {
     if (isFetching || page >= totalPages) return;
@@ -148,92 +103,18 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
   !error &&
   !authRequired;
 
-  const subtitle = useMemo(() => {
-    if (authRequired) return null;
-    if (!category) {
-      return (
-        <>
-          <span className="text-[#A1A1AA] font-medium tabular-nums">{total.toLocaleString("en-US")}</span> Tasks across all
-          categories
-        </>
-      );
-    }
-    const activeCategory = categories.find((c) => c.slug === category);
-    const categoryName = activeCategory?.name ?? category;
-    return (
-      <>
-        <span className="text-[#A1A1AA] font-medium tabular-nums">{total.toLocaleString("en-US")}</span> {categoryName}{" "}
-        Tasks
-      </>
-    );
-  }, [category, categories, total, authRequired]);
-
-  const emptyMessage = useMemo(() => {
-    if (showFilter === "For You") {
-      return "Like or save a few tasks and we'll start recommending more like them.";
-    }
-    if (showFilter === "Following") {
-      return "You haven't subscribed to any tasks yet.";
-    }
-    return undefined;
-  }, [showFilter]);
-
   return (
       <main className="w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 py-8 flex-1 selection:bg-neutral-800 selection:text-white">
-        <nav aria-label="Breadcrumb" className="mb-4">
-          <ol className="flex items-center gap-1.5 text-xs text-[#71717A] font-mono">
-            <li>
-              <Link href="/" className="hover:text-white transition-colors duration-200">
-                Home
-              </Link>
-            </li>
-            <li className="flex items-center gap-1.5">
-              <ChevronRight className="h-3 w-3" />
-              <span className="text-white">Tasks</span>
-            </li>
-          </ol>
-        </nav>
-
-
-        <header className="mb-4">
-          <h1 className="text-2xl font-bold text-white">Tasks</h1>
-          <p className="mt-1 text-sm text-[#A1A1AA]">{subtitle}</p>
-        </header>
-
-        <div className="mb-4">
-          <TaskFilters
-            search={search}
-            onSearchChange={setSearch}
-            showFilter={showFilter}
-            onShowFilterChange={setShowFilter}
-            categories={categories}
-            category={category}
-            onCategoryChange={setCategory}
-            difficulty={difficulty}
-            onDifficultyChange={setDifficulty}
-            pricing={pricing}
-            onPricingChange={setPricing}
-            featuredOnly={featuredOnly}
-            onFeaturedOnlyChange={setFeaturedOnly}
-            sort={sort}
-            onSortChange={setSort}
-          />
-        </div>
-
         {isInitialLoading ? (
           <TaskSkeleton />
         ) : authRequired ? (
           <TaskAuthRequired
-            message={
-              showFilter === "For You"
-                ? "Sign in to see tasks picked for you."
-                : "Sign in to see tasks you're following."
-            }
+            message="Sign in to see tasks you're following."
           />
         ) : error && tasks.length === 0 ? (
           <TaskErrorState message={error} onRetry={() => loadPage(1, false)} />
         ) : tasks.length === 0 ? (
-          <EmptyTasks message={emptyMessage} />
+          <EmptyTasks />
         ) : (
           <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#131316]/60 to-[#0D0D10]/60 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_20px_60px_-30px_rgba(0,0,0,0.8)] ring-1 ring-[#232326]/70">
             <div className="grid grid-cols-[48px_minmax(220px,1.6fr)_repeat(6,minmax(90px,1fr))] items-center gap-4 px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
