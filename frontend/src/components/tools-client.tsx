@@ -38,12 +38,12 @@ const CATEGORY_MAP = {
     { name: "All", slug: "" },
     { name: "Image Generation", slug: "image-generation" },
     { name: "Video", slug: "video" },
-    { name: "Writing", slug: "writing" },
     { name: "Audio", slug: "audio" },
-    { name: "Design", slug: "design" },
     { name: "Marketing", slug: "marketing" },
+    { name: "Design", slug: "design" },
     { name: "Productivity", slug: "productivity" },
-    { name: "Coding", slug: "coding" }
+    { name: "Chatbots", slug: "chatbots" },
+    { name: "Customer Support", slug: "customer-support" }
   ]
 } as const;
 
