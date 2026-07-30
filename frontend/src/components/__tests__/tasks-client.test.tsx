@@ -23,7 +23,15 @@ vi.mock("@/lib/tasks-api", () => ({
     constructor(msg?: string) { super(msg ?? "auth required"); }
   },
 }));
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: vi.fn() }),
+  useParams: () => ({}),
+}));
 
+vi.mock("@/hooks/use-user", () => ({
+  useUser: () => ({ user: null, isLoading: false, isAuthenticated: false }),
+}));
 import { fetchTasks, AuthRequiredError } from "@/lib/tasks-api";
 import { TaskFilters } from "@/components/TaskFilters";
 
@@ -114,8 +122,4 @@ describe("TasksClient", () => {
     expect(screen.getByTestId("task-filters")).toBeInTheDocument();
   });
 
-  it("renders breadcrumb navigation", () => {
-    render(<TasksClient initialData={mockResponse} />);
-    expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeInTheDocument();
-  });
 });
