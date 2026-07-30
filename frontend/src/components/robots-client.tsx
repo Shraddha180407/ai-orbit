@@ -2,7 +2,6 @@
 
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import Cpu from 'lucide-react/dist/esm/icons/cpu';
 import { Robot } from "@/lib/types";
 import { fetchAllRobots } from "@/lib/api";
 
@@ -66,20 +65,6 @@ export function RobotsClient() {
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <main className="mx-auto max-w-[1070px] px-8 py-12 flex-1 w-full">
-        <div className="mb-10">
-          <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2">
-            <Cpu className="text-[#6E56CF]" />
-            Humanoid & Autonomous Robotics
-          </h1>
-          <p className="text-sm text-[#A1A1AA] mt-2">
-            {q ? (
-              <>Showing results for <span className="text-white font-medium">&ldquo;{q}&rdquo;</span></>
-            ) : (
-              "Explore advanced bipedal, wheeled, and multi-joint humanoid agents deploying AI control loop systems."
-            )}
-          </p>
-        </div>
-
         {isLoading ? (
           <div className="flex flex-col divide-y divide-[#232326]/60 border border-[#232326]/60 rounded-xl overflow-hidden bg-[#131316]/10">
             {[1, 2, 3, 4].map((i) => (
