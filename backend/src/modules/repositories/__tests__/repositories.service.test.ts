@@ -515,15 +515,31 @@ describe('RepositoriesService', () => {
       expect(result?.readmeFetchedAt).toBeNull();
     });
 
-    it('returns readmeHtml null when no token is provided', async () => {
+    it('fetches readme from GitHub unauthenticated when no token is provided', async () => {
       prisma.repository.findUnique.mockResolvedValue(REPO_DETAIL);
       prisma.company.findFirst.mockResolvedValue(null);
 
+      vi.spyOn(global, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            content: Buffer.from('# Hello').toString('base64'),
+            encoding: 'base64',
+          }),
+        ),
+      );
+
       const result = await service.getRepositoryBySlug('openai-whisper');
 
-      expect(global.fetch).not.toHaveBeenCalled();
-      expect(result?.readmeHtml).toBeNull();
-      expect(result?.readmeFetchedAt).toBeNull();
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://api.github.com/repos/openai/whisper/readme',
+        expect.objectContaining({
+          headers: expect.not.objectContaining({
+            Authorization: expect.any(String),
+          }),
+        }),
+      );
+      expect(result?.readmeHtml).toBe('<h1>Hello</h1>\n');
+      expect(result?.readmeFetchedAt).toBeTruthy();
     });
 
     it('looks up company by owner name case-insensitively', async () => {
