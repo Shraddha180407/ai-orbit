@@ -195,6 +195,11 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
         </nav>
 
 
+        <header className="mb-4">
+          <h1 className="text-2xl font-bold text-white">Tasks</h1>
+          <p className="mt-1 text-sm text-[#A1A1AA]">{subtitle}</p>
+        </header>
+
         <div className="mb-4">
           <TaskFilters
             search={search}
