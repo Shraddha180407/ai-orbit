@@ -90,14 +90,35 @@ export type CollectionsSearchParams = {
   page?: string;
 };
 
+export type CollectionFilterParams = {
+  search?: string;
+  creatorType?: string;
+  hasRelatedModels?: boolean;
+  hasRelatedCompanies?: boolean;
+  featured?: boolean;
+  updatedWithin?: string;
+  sort?: string;
+  cursor?: string;
+  category?: string[];
+};
+
+export type CollectionsApiResponse = {
+  items: CollectionListItem[];
+  nextCursor?: string | null;
+  total?: number;
+  error?: string;
+};
+
 export type CollectionListItem = {
   id: string;
   slug: string;
+  name?: string;
   title: string;
   description: string;
   curatedBy: string;
   category: string;
   featured: boolean;
+  isFeatured?: boolean;
   updatedAt: string;
   toolCount: number;
   previewTools: { logoUrl: string | null; name: string }[];
@@ -304,4 +325,6 @@ export type Device = {
   primaryUseCases?: string[];
   additionalInfo?: string | null;
   buyUrl?: string | null;
+  images?: string[];
+  videoUrl?: string | null;
 };
