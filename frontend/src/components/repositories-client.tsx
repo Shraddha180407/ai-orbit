@@ -459,7 +459,7 @@ export function RepositoriesClient() {
 
         {isLoading ? (
           <RepositoryTable
-            sortField={sortField}
+            sortField={sortField === "name" ? null : sortField}
             sortOrder={sortOrder}
             onSort={handleSort}
             selectedLicense={selectedLicense}
@@ -513,7 +513,7 @@ export function RepositoriesClient() {
           </RepositoryTable>
         ) : (
           <RepositoryTable
-            sortField={sortField}
+            sortField={sortField === "name" ? null : sortField}
             sortOrder={sortOrder}
             onSort={handleSort}
             selectedLicense={selectedLicense}
