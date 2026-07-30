@@ -83,7 +83,7 @@ function RobotRow({ robot }: { robot: RobotListItem }) {
       </div>
 
       {/* Column 7: Year */}
-      <div className="hidden text-[11px] font-mono text-[#A1A1AA] sm:block text-right">
+      <div className="hidden text-[11px] font-mono text-[#A1A1AA] sm:flex items-center justify-end">
         {robot.releaseDate ? robot.releaseDate.slice(0, 4) : "—"}
       </div>
     </Link>
@@ -254,8 +254,8 @@ export function RobotsClient() {
               {/* Column headers */}
               <div className="border-b border-[#232326]/60 bg-[#131316]/40">
                 <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2`}>
-                  {COLUMN_HEADERS.map((h) => (
-                    <span key={h || "icon"} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">
+                  {COLUMN_HEADERS.map((h, idx) => (
+                    <span key={h || "icon"} className={`text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] ${idx === COLUMN_HEADERS.length - 1 ? "text-right" : ""}`}>
                       {h}
                     </span>
                   ))}
