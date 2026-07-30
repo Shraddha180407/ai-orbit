@@ -164,8 +164,6 @@ export class RepositoriesService {
     name: string,
     githubToken?: string,
   ): Promise<string | null> {
-    if (!githubToken) return null;
-
     const cacheKey = new Request(`https://internal-cache/readme/${owner}/${name}`);
     const cache = (caches as unknown as CfCacheStorage).default;
 

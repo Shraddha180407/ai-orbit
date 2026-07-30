@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import X from "lucide-react/dist/esm/icons/x";
+<<<<<<< HEAD
+=======
+import Search from "lucide-react/dist/esm/icons/search";
+>>>>>>> upstream/main
 import { Plus } from "lucide-react";
 import { FilterChips } from "./FilterChips";
 import { TopicChip } from "./TopicChip";
@@ -202,7 +206,6 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   if (isLoadingInitial) {
     return (
       <main className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 flex flex-col">
-        <div className="h-20 animate-pulse rounded-2xl bg-[#18181C] mb-5" />
         <LoadingSkeleton />
       </main>
     );
@@ -218,13 +221,34 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
   return (
     <main className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 flex flex-col">
-      {/* Toolbar & Filter Chips */}
+      {/* Toolbar & Search & Filter Chips */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1">
           <span className="text-[10px] uppercase tracking-wider text-[#71717A] font-bold select-none pr-1">
             FILTER:
           </span>
           <FilterChips items={filterChips} value={filter} onChange={setFilter} />
+        </div>
+
+        <div className="relative w-full max-w-[320px] shrink-0">
+          <div className="relative w-full rounded-lg border border-[#232326]/80 bg-[#111113] h-[34px] flex items-center px-3 focus-within:border-[#F5A623] focus-within:ring-2 focus-within:ring-[#F5A623]/20 transition-all duration-150">
+            <Search size={13} className="mr-2 text-[#71717A] shrink-0" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search news..."
+              className="w-full bg-transparent text-xs text-white placeholder:text-[#71717A] focus:outline-none font-sans"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="text-[#71717A] hover:text-white text-xs font-bold px-1 py-0.5 rounded transition-colors"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
         </div>
 
         {isAdmin && (

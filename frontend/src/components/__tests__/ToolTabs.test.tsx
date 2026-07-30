@@ -44,6 +44,7 @@ describe("ToolTabs", () => {
     pricingAmount: "29",
     billingFrequency: "MONTHLY" as const,
     createdAt: "2024-01-15",
+    releaseDate: "2024-01-15",
     company: { slug: "acme", name: "Acme Corp" },
     categories: [{ category: { slug: "coding", name: "Coding" } }],
     tags: [{ tag: { slug: "ai", name: "AI" } }],

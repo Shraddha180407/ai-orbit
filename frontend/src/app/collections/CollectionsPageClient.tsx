@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { CollectionListItem } from "@/lib/types";
 
 // Import modular components
-import { CollectionsHeader } from "@/components/collections/CollectionHeader";
+import { CollectionToolbar } from "@/components/collections/CollectionToolbar";
 import { CollectionFilters } from "@/components/collections/CollectionFilters";
 import { CollectionGrid } from "@/components/collections/CollectionGrid";
 import { CollectionListTable } from "@/components/collections/CollectionListTable";
@@ -203,38 +203,17 @@ export default function CollectionsPageClient({ initialItems }: Props) {
 
   return (
     <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
-      {/* ── HERO HEADER ── */}
-      <CollectionsHeader 
+      {/* ── TOOLBAR ── */}
+      <CollectionToolbar
         nameInput={nameInput}
         setNameInput={setNameInput}
         setNameSearch={setNameSearch}
-        activePill={activePill}
-        setActivePill={setActivePill}
-        setSortKey={setSortKey}
-        setSortDir={setSortDir}
-        setSelectedCreatorType={setSelectedCreatorType}
-        setSelectedCategory={setSelectedCategory}
         setCurrentPage={setCurrentPage}
-        totalCollections={collections.length}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        hasActiveFilters={!!hasActiveFilters}
+        clearAllFilters={clearAllFilters}
       />
-
-      {/* View toggle row */}
-      <div className="flex items-center justify-end mb-4 gap-2">
-        {hasActiveFilters && (
-          <button onClick={clearAllFilters}
-            className="text-xs text-[#A1A1AA] hover:text-white border border-[#232326] hover:border-[#6E56CF] px-3 py-1.5 rounded-lg transition-colors">
-            Clear filters
-          </button>
-        )}
-        <button onClick={() => setViewMode("list")}
-          className={`p-2 rounded-lg border transition-colors ${viewMode === "list" ? "border-[#6E56CF] bg-[#6E56CF]/10 text-[#6E56CF]" : "border-[#232326] text-[#52525B] hover:text-white"}`}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        </button>
-        <button onClick={() => setViewMode("grid")}
-          className={`p-2 rounded-lg border transition-colors ${viewMode === "grid" ? "border-[#6E56CF] bg-[#6E56CF]/10 text-[#6E56CF]" : "border-[#232326] text-[#52525B] hover:text-white"}`}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-        </button>
-      </div>
 
       {/* ── GRID VIEW ── */}
       {viewMode === "grid" && (
