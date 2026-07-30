@@ -39,7 +39,10 @@ const BROWSE_BY_TYPE = [
   { label: ENTITY_META.device.label, href: ENTITY_META.device.basePath, icon: ENTITY_META.device.icon },
 ];
 
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
+
 const DIRECTORY_CARDS = [
+  { name: "New", href: "/", description: "Discover the newest AI additions.", icon: Sparkles, color: "#6E56CF" },
   { name: "Tools", href: "/tools", description: "Browse the full AI tools directory, filter by category and pricing.", icon: Wrench, color: "#FFC53D" },
   { name: "Tasks", href: "/tasks", description: "Find the right AI tool for a specific job to be done.", icon: ListChecks, color: "#FB923C" },
   { name: "Companies", href: "/companies", description: "Explore the labs and startups building the AI ecosystem.", icon: Building2, color: "#38BDF8" },
@@ -220,27 +223,42 @@ export function GlobalHero() {
           <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto">
             {DIRECTORY_CARDS.map((card) => {
               const Icon = card.icon;
+              const isNew = card.name === "New";
+              
               return (
                 <a
                   key={card.name}
                   href={card.href}
-                  className="group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-[#232326]/60 bg-[#0d0d10] px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-colors duration-200"
+                  className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${
+                    isNew ? 'border-transparent' : 'border-[#232326]/60 bg-[#0d0d10]'
+                  }`}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = card.color;
+                    if (!isNew) e.currentTarget.style.borderColor = card.color;
                     e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "";
+                    if (!isNew) e.currentTarget.style.borderColor = "";
                     e.currentTarget.style.boxShadow = "";
                   }}
                 >
+                  {isNew && (
+                    <>
+                      <div 
+                        className="absolute inset-[-100%] animate-[spin_3s_linear_infinite] opacity-70"
+                        style={{ 
+                          background: `conic-gradient(from 0deg at 50% 50%, transparent 0%, transparent 60%, ${card.color} 100%)` 
+                        }} 
+                      />
+                      <div className="absolute inset-[1px] rounded-[7px] bg-[#0d0d10]" />
+                    </>
+                  )}
                   <div
-                    className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border"
+                    className="relative z-10 flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border transition-colors"
                     style={{ backgroundColor: `${card.color}1a`, borderColor: `${card.color}40` }}
                   >
                     <Icon size={10} strokeWidth={1.75} style={{ color: card.color }} />
                   </div>
-                  <span className="text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
+                  <span className="relative z-10 text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
                     {card.name}
                   </span>
                 </a>
