@@ -10,10 +10,10 @@ import { fetchAllRobots } from "@/lib/api";
 import { FALLBACK_ROBOTS } from "@/data/robots";
 import { CategoryChip } from "@/components/CategoryChip";
 
-const COL_TEMPLATE = "grid-cols-[44px_minmax(200px,2fr)_minmax(100px,0.9fr)_minmax(110px,1fr)_minmax(90px,0.8fr)_minmax(90px,0.7fr)_minmax(80px,0.6fr)]";
-const COL_MIN_WIDTH = "min-w-[820px]";
+const COL_TEMPLATE = "grid-cols-[44px_minmax(200px,2fr)_minmax(100px,0.9fr)_minmax(110px,1fr)_minmax(80px,0.7fr)_minmax(90px,0.8fr)_minmax(90px,0.7fr)_minmax(90px,0.6fr)]";
+const COL_MIN_WIDTH = "min-w-[920px]";
 
-const COLUMN_HEADERS = ["", "NAME", "CATEGORY", "COMPANY", "AVAILABILITY", "PRICE", "YEAR"];
+const COLUMN_HEADERS = ["", "NAME", "CATEGORY", "COMPANY", "COUNTRY", "AVAILABILITY", "PRICE", "RELEASE DATE"];
 
 const PAGE_SIZE = 20;
 
@@ -71,17 +71,22 @@ function RobotRow({ robot }: { robot: RobotListItem }) {
         {robot.company}
       </div>
 
-      {/* Column 5: Availability */}
+      {/* Column 5: Country */}
+      <div className="hidden text-[11px] font-mono text-[#A1A1AA] sm:block truncate">
+        {robot.country || "—"}
+      </div>
+
+      {/* Column 6: Availability */}
       <div className="hidden sm:block">
         <AvailabilityBadge status={robot.availability} />
       </div>
 
-      {/* Column 6: Price */}
+      {/* Column 7: Price */}
       <div className="hidden text-[11px] font-mono text-[#A1A1AA] sm:block">
         {robot.price && robot.price !== "N/A" ? robot.price : "—"}
       </div>
 
-      {/* Column 7: Year */}
+      {/* Column 8: Release Date */}
       <div className="hidden text-[11px] font-mono text-[#A1A1AA] sm:flex items-center justify-end">
         {robot.releaseDate ? robot.releaseDate.slice(0, 4) : "—"}
       </div>
@@ -102,6 +107,7 @@ function RobotTableSkeleton({ rows = 8 }: { rows?: number }) {
             </div>
             <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
             <div className="h-3 w-24 animate-pulse rounded bg-[#18181C]" />
+            <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
             <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
             <div className="h-3 w-12 animate-pulse rounded bg-[#18181C]" />
             <div className="ml-auto h-3 w-10 animate-pulse rounded bg-[#18181C]" />
