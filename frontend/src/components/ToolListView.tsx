@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import GitCompare from 'lucide-react/dist/esm/icons/git-compare';
 import Check from 'lucide-react/dist/esm/icons/check';
@@ -14,6 +14,8 @@ import ExternalLink from 'lucide-react/dist/esm/icons/external-link';
 import Share2 from 'lucide-react/dist/esm/icons/share-2';
 import BadgeCheck from 'lucide-react/dist/esm/icons/badge-check';
 import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
+import ArrowUp from 'lucide-react/dist/esm/icons/arrow-up';
+import ArrowDown from 'lucide-react/dist/esm/icons/arrow-down';
 import { PricingBadge } from "@/components/PricingBadge";
 import { CategoryChip } from "@/components/CategoryChip";
 import type { ToolCardData } from "@/lib/types";
@@ -126,7 +128,7 @@ const HOME_COLUMN_HEADERS = [
 ];
 
 const DEFAULT_COL_TEMPLATE =
-  "grid-cols-[40px_minmax(250px,3fr)_minmax(120px,1.2fr)_minmax(120px,1.2fr)_minmax(80px,0.8fr)_minmax(100px,1fr)_minmax(120px,1.2fr)_minmax(100px,1fr)_minmax(60px,0.5fr)_minmax(60px,0.5fr)]";
+  "grid-cols-[40px_minmax(280px,4fr)_minmax(120px,1.2fr)_minmax(120px,1.2fr)_minmax(80px,0.8fr)_minmax(100px,1fr)_minmax(120px,1.2fr)_minmax(100px,1fr)_60px_75px]";
 
 const DEFAULT_COL_MIN_WIDTH = "min-w-[1080px]";
 
@@ -134,13 +136,13 @@ const DEFAULT_COLUMN_HEADERS = [
   { label: "", align: "" },
   { label: "TOOL", align: "" },
   { label: "TASK", align: "" },
-  { label: "PRICING", align: "" },
+  { label: "PRICING", align: "", sortKey: "price" },
   { label: "API", align: "" },
   { label: "OPEN-SOURCE", align: "" },
   { label: "COMPATIBILITY", align: "" },
-  { label: "RELEASED", align: "" },
+  { label: "RELEASED", align: "", sortKey: "released" },
   { label: "SHARE", align: "" },
-  { label: "BOOKMARK", align: "text-right" },
+  { label: "BOOKMARK", align: "text-center" },
 ];
 
 // Share Button ---------------------------------------------------------------
@@ -276,7 +278,7 @@ function ToolRow({
 
       {/* Column 2: Name + Description */}
       <div className="min-w-0 flex flex-col justify-center">
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0 w-full">
           <h3 className="truncate text-[13px] font-semibold text-white group-hover:text-white">
             {tool.name}
           </h3>
@@ -286,17 +288,23 @@ function ToolRow({
           {!isHome && tool.isFeatured && (
             <Sparkles size={14} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
           )}
-          {!isHome && tool.websiteUrl && (
-            <a
-              href={tool.websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="text-[#71717A] hover:text-white transition-colors shrink-0"
-              aria-label={`Visit ${tool.name} website`}
-            >
-              <ExternalLink size={14} />
-            </a>
+          {!isHome && (
+            tool.websiteUrl ? (
+              <a
+                href={tool.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-[#71717A] hover:text-white transition-colors shrink-0"
+                aria-label={`Visit ${tool.name} website`}
+              >
+                <ExternalLink size={14} />
+              </a>
+            ) : (
+              <span className="text-[#71717A] opacity-50 shrink-0">
+                <ExternalLink size={14} />
+              </span>
+            )
           )}
           {!isHome && (
             <button
@@ -306,7 +314,7 @@ function ToolRow({
                 e.stopPropagation();
                 onToggleCompare(tool);
               }}
-              className={`transition-colors shrink-0 ${
+              className={`ml-auto mr-4 transition-colors shrink-0 ${
                 isSelected ? "text-[var(--color-signal)]" : "text-[#71717A] hover:text-white"
               }`}
               aria-label={isSelected ? `Remove ${tool.name} from compare` : `Add ${tool.name} to compare`}
@@ -315,7 +323,7 @@ function ToolRow({
             </button>
           )}
         </div>
-        <p className="mt-0.5 line-clamp-1 text-[11px] text-[#A1A1AA] leading-snug">
+        <p className="mt-0.5 truncate text-[11px] text-[#A1A1AA] leading-snug w-full pr-4">
           {tool.description}
         </p>
       </div>
@@ -439,7 +447,7 @@ function ToolRow({
           </div>
 
           {/* Column 10: Bookmark */}
-          <div className="hidden text-right sm:block">
+          <div className="hidden text-center sm:block">
             <HomeBookmarkButton tool={tool} />
           </div>
         </>
@@ -450,13 +458,14 @@ function ToolRow({
 
 // Main component ------------------------------------------------------------
 
-export function ToolListView({
+function ToolListViewInner({
   tools,
   loading = false,
   skeletonRows = 4,
 }: ToolListViewProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isHome = pathname === "/";
   const template = isHome ? HOME_COL_TEMPLATE : DEFAULT_COL_TEMPLATE;
   const minWidth = isHome ? HOME_COL_MIN_WIDTH : DEFAULT_COL_MIN_WIDTH;
@@ -550,14 +559,39 @@ export function ToolListView({
         <div className="overflow-x-auto">
           <div className="border-b border-[#232326]/60 bg-[#131316]/40">
             <div className={`grid ${template} ${minWidth} items-center gap-4 px-4 py-2`}>
-              {headers.map((h, i) => (
-                <span
-                  key={h.label || `header-${i}`}
-                  className={`text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] ${h.align}`}
-                >
-                  {h.label}
-                </span>
-              ))}
+              {headers.map((h, i) => {
+                const isActiveSort = searchParams.get("sort")?.startsWith(h.sortKey || "");
+                const isDesc = searchParams.get("sort") === `${h.sortKey}-desc`;
+                
+                return (
+                  <span
+                    key={h.label || `header-${i}`}
+                    className={`text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] ${h.align}`}
+                  >
+                    {h.sortKey ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextSort = isDesc ? `${h.sortKey}-asc` : `${h.sortKey}-desc`;
+                          const newParams = new URLSearchParams(searchParams.toString());
+                          newParams.set("sort", nextSort);
+                          router.push(`${pathname}?${newParams.toString()}`);
+                        }}
+                        className="flex items-center gap-1 hover:text-white transition-colors uppercase tracking-wider"
+                      >
+                        {h.label}
+                        {isActiveSort ? (
+                          isDesc ? <ArrowDown size={12} /> : <ArrowUp size={12} />
+                        ) : (
+                          <ArrowDown size={12} className="opacity-30" />
+                        )}
+                      </button>
+                    ) : (
+                      h.label
+                    )}
+                  </span>
+                );
+              })}
             </div>
           </div>
 
@@ -642,5 +676,13 @@ export function ToolListView({
         </div>
       )}
     </>
+  );
+}
+
+export function ToolListView(props: ToolListViewProps) {
+  return (
+    <Suspense fallback={<div className="min-h-[400px] w-full rounded-lg border border-[#232326]/60 bg-[#131316]/10 animate-pulse" />}>
+      <ToolListViewInner {...props} />
+    </Suspense>
   );
 }
