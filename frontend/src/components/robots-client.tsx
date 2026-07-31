@@ -3,8 +3,7 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import Search from 'lucide-react/dist/esm/icons/search';
-import Bot from 'lucide-react/dist/esm/icons/bot';
+
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import { RobotListItem } from "@/lib/types";
 import { fetchAllRobots } from "@/lib/api";
@@ -92,7 +91,7 @@ function RobotRow({ robot }: { robot: RobotListItem }) {
 
 function RobotTableSkeleton({ rows = 8 }: { rows?: number }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10">
+    <div className="overflow-x-auto rounded-lg">
       <div className="flex flex-col divide-y divide-[#232326]/60">
         {Array.from({ length: rows }).map((_, i) => (
           <div key={i} className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2.5`}>
@@ -188,33 +187,11 @@ export function RobotsClient() {
   }, [isLoading, visibleCount, filtered.length]);
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 pt-6 pb-8 flex-1">
-      <div className="mx-auto w-full max-w-[1600px] space-y-5">
+    <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
+      <div className="mx-auto w-full max-w-[1600px] space-y-2">
         {/* Page header */}
-        <header className="space-y-4 text-center flex flex-col items-center">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center justify-center gap-2.5">
-              <Bot size={24} className="text-[#2DD4BF]" />
-              Humanoid &amp; Autonomous Robotics
-            </h1>
-            <p className="mt-2 text-sm text-[#A1A1AA]">
-              {filtered.length} robot{filtered.length !== 1 ? "s" : ""} — explore advanced bipedal, wheeled, and multi-joint humanoid agents deploying AI control systems.
-            </p>
-          </div>
+        <header className="text-center flex flex-col items-center">
 
-          {/* Search bar */}
-          <div className="relative w-full max-w-[640px] group">
-            <div className="relative w-full rounded-xl border border-[#232326]/70 bg-[#111113] h-[44px] flex items-center px-4 pr-12 transition-colors duration-150 focus-within:border-[var(--color-signal)] focus-within:shadow-[0_0_0_3px_var(--color-signal-dim)]">
-              <Search size={15} className="mr-2.5 text-[#71717A] shrink-0" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search robots by name, company, category, or country…"
-                className="w-full bg-transparent text-[13px] text-white placeholder:text-[#71717A] focus:outline-none"
-              />
-            </div>
-          </div>
 
           {/* Category filter chips — dynamically generated from data */}
           <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
@@ -223,7 +200,7 @@ export function RobotsClient() {
                 key={cat}
                 type="button"
                 onClick={() => setActiveCategory(cat)}
-                className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-[11px] font-bold tracking-tight transition-colors duration-200 ${
+                className={`inline-flex items-center rounded-md border px-2 py-1 text-[9.5px] font-bold tracking-tight transition-colors duration-200 ${
                   activeCategory === cat
                     ? "border-[#2DD4BF] bg-[#2DD4BF]/10 text-[#2DD4BF] shadow-[0_0_0_1px_#2DD4BF]"
                     : "border-[#232326]/60 bg-[#0d0d10] text-white hover:border-[#2DD4BF]/40 hover:shadow-[0_0_0_1px_#2DD4BF40]"
@@ -249,7 +226,7 @@ export function RobotsClient() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col rounded-lg border border-[#232326]/60 bg-[#131316]/10 overflow-hidden">
+          <div className="flex flex-col rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               {/* Column headers */}
               <div className="border-b border-[#232326]/60 bg-[#131316]/40">
