@@ -15,8 +15,6 @@ import { DeviceDetailClient } from "@/components/detail/DeviceDetailClient";
 import { TaskDetailClient } from "@/components/detail/TaskDetailClient";
 import { RepositoryDetailPage } from "@/components/repository-detail/RepositoryDetailPage";
 import { CompanyDetailClient } from "@/components/company-detail-client";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { RobotDetailClient } from "@/components/detail/RobotDetailClient";
 import { SERVER_API_URL } from "@/lib/api";
 
