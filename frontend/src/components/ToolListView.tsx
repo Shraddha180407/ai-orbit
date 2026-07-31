@@ -10,6 +10,10 @@ import Check from 'lucide-react/dist/esm/icons/check';
 import X from 'lucide-react/dist/esm/icons/x';
 import Star from 'lucide-react/dist/esm/icons/star';
 import Bookmark from 'lucide-react/dist/esm/icons/bookmark';
+import ExternalLink from 'lucide-react/dist/esm/icons/external-link';
+import Share2 from 'lucide-react/dist/esm/icons/share-2';
+import BadgeCheck from 'lucide-react/dist/esm/icons/badge-check';
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
 import { PricingBadge } from "@/components/PricingBadge";
 import { CategoryChip } from "@/components/CategoryChip";
 import type { ToolCardData } from "@/lib/types";
@@ -31,6 +35,11 @@ type ListTool = ToolCardData & {
   openSource?: boolean;
   isTrending?: boolean;
   trending?: boolean;
+  hasApi?: boolean;
+  isVerified?: boolean;
+  isFeatured?: boolean;
+  compatibility?: string[];
+  websiteUrl?: string | null;
 };
 
 type ToolListViewProps = {
@@ -117,22 +126,50 @@ const HOME_COLUMN_HEADERS = [
 ];
 
 const DEFAULT_COL_TEMPLATE =
-  "grid-cols-[40px_minmax(220px,2.4fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(90px,0.8fr)_minmax(110px,1fr)_minmax(110px,0.9fr)_minmax(95px,0.8fr)_minmax(150px,1.2fr)_minmax(110px,0.9fr)]";
+  "grid-cols-[40px_minmax(250px,3fr)_minmax(120px,1.2fr)_minmax(120px,1.2fr)_minmax(80px,0.8fr)_minmax(100px,1fr)_minmax(120px,1.2fr)_minmax(100px,1fr)_minmax(60px,0.5fr)_minmax(60px,0.5fr)]";
 
-const DEFAULT_COL_MIN_WIDTH = "min-w-[960px]";
+const DEFAULT_COL_MIN_WIDTH = "min-w-[1080px]";
 
 const DEFAULT_COLUMN_HEADERS = [
+  { label: "", align: "" },
   { label: "TOOL", align: "" },
-  { label: "NAME", align: "" },
   { label: "TASK", align: "" },
-  { label: "RELEASED", align: "" },
-  { label: "PRICE", align: "" },
-  { label: "REVIEWS", align: "" },
-  { label: "OPEN-SOURCE", align: "" },
-  { label: "TRENDING", align: "" },
   { label: "PRICING", align: "" },
-  { label: "COMPARE", align: "text-right" },
+  { label: "API", align: "" },
+  { label: "OPEN-SOURCE", align: "" },
+  { label: "COMPATIBILITY", align: "" },
+  { label: "RELEASED", align: "" },
+  { label: "SHARE", align: "" },
+  { label: "BOOKMARK", align: "text-right" },
 ];
+
+// Share Button ---------------------------------------------------------------
+
+function ShareButton({ tool }: { tool: ListTool }) {
+  const [copied, setCopied] = useState(false);
+  const handleShare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `${window.location.origin}/tools/${tool.slug}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleShare}
+      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors ${
+        copied
+          ? "border-[var(--color-signal)] text-[var(--color-signal)]"
+          : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
+      }`}
+      aria-label={`Share ${tool.name}`}
+    >
+      {copied ? <Check size={14} /> : <Share2 size={14} />}
+    </button>
+  );
+}
 
 // Bookmark Button for Home --------------------------------------------------
 
@@ -238,10 +275,46 @@ function ToolRow({
       </div>
 
       {/* Column 2: Name + Description */}
-      <div className="min-w-0">
-        <h3 className="truncate text-[13px] font-semibold text-white group-hover:text-white">
-          {tool.name}
-        </h3>
+      <div className="min-w-0 flex flex-col justify-center">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <h3 className="truncate text-[13px] font-semibold text-white group-hover:text-white">
+            {tool.name}
+          </h3>
+          {!isHome && tool.isVerified && (
+            <BadgeCheck size={14} className="shrink-0 text-blue-400" aria-label="Verified" />
+          )}
+          {!isHome && tool.isFeatured && (
+            <Sparkles size={14} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
+          )}
+          {!isHome && tool.websiteUrl && (
+            <a
+              href={tool.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-[#71717A] hover:text-white transition-colors shrink-0"
+              aria-label={`Visit ${tool.name} website`}
+            >
+              <ExternalLink size={14} />
+            </a>
+          )}
+          {!isHome && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleCompare(tool);
+              }}
+              className={`transition-colors shrink-0 ${
+                isSelected ? "text-[var(--color-signal)]" : "text-[#71717A] hover:text-white"
+              }`}
+              aria-label={isSelected ? `Remove ${tool.name} from compare` : `Add ${tool.name} to compare`}
+            >
+              <GitCompare size={14} />
+            </button>
+          )}
+        </div>
         <p className="mt-0.5 line-clamp-1 text-[11px] text-[#A1A1AA] leading-snug">
           {tool.description}
         </p>
@@ -312,50 +385,7 @@ function ToolRow({
             )}
           </div>
 
-          {/* Column 4: Released */}
-          <div className="hidden text-[11px] font-mono text-[#A1A1AA] sm:block">
-            {formatReleased(tool.releaseDate)}
-          </div>
-
-          {/* Column 5: Price (compact) */}
-          <div className="hidden text-[12px] font-mono text-white sm:block">
-            {tool.pricingModel === "FREE" ? (
-              <span className="text-emerald-400">Free</span>
-            ) : showAmount ? (
-              <span>
-                ${tool.pricingAmount}
-                <span className="text-[#71717A]">/mo</span>
-              </span>
-            ) : tool.pricingModel === "FREEMIUM" ? (
-              <span className="text-[#A1A1AA]">Freemium</span>
-            ) : (
-              <span className="text-[#71717A]">—</span>
-            )}
-          </div>
-
-          {/* Column 6: Reviews */}
-          <div className="hidden items-center gap-1 text-[11px] font-mono text-[#A1A1AA] sm:flex">
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <span className="text-white">{tool.avgRating?.toFixed(1) ?? "—"}</span>
-            <span className="text-[#71717A]">({reviewCount})</span>
-          </div>
-
-          {/* Column 7: Open-Source */}
-          <div className="hidden sm:block">
-            <BoolPill value={isOpenSource} trueLabel="YES" falseLabel="NO" />
-          </div>
-
-          {/* Column 8: Trending */}
-          <div className="hidden sm:block">
-            <BoolPill
-              value={isTrending}
-              trueLabel="HOT"
-              falseLabel="—"
-              trueColor="text-orange-400 bg-orange-400/10 border-orange-400/20"
-            />
-          </div>
-
-          {/* Column 9: Pricing (full badge) */}
+          {/* Column 4: Pricing */}
           <div className="hidden sm:block">
             <PricingBadge
               pricingModel={tool.pricingModel}
@@ -364,30 +394,53 @@ function ToolRow({
             />
           </div>
 
-          {/* Column 10: Compare */}
+          {/* Column 5: API */}
+          <div className="hidden sm:block">
+            {tool.hasApi !== undefined ? (
+              <BoolPill value={tool.hasApi} trueLabel="YES" falseLabel="NO" />
+            ) : (
+              <span className="text-[11px] text-[#71717A] font-mono">—</span>
+            )}
+          </div>
+
+          {/* Column 6: Open-Source */}
+          <div className="hidden sm:block">
+            <BoolPill value={isOpenSource} trueLabel="YES" falseLabel="NO" />
+          </div>
+
+          {/* Column 7: Compatibility */}
+          <div className="hidden sm:block min-w-0 truncate">
+            {tool.compatibility && tool.compatibility.length > 0 ? (
+              <div className="flex gap-1">
+                {tool.compatibility.slice(0, 2).map((c, i) => (
+                  <span key={i} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+                    {c}
+                  </span>
+                ))}
+                {tool.compatibility.length > 2 && (
+                  <span className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+                    +{tool.compatibility.length - 2}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className="text-[11px] text-[#71717A] font-mono">—</span>
+            )}
+          </div>
+
+          {/* Column 8: Released */}
+          <div className="hidden text-[11px] font-mono text-[#A1A1AA] sm:block">
+            {formatReleased(tool.releaseDate)}
+          </div>
+
+          {/* Column 9: Share */}
+          <div className="hidden sm:block">
+            <ShareButton tool={tool} />
+          </div>
+
+          {/* Column 10: Bookmark */}
           <div className="hidden text-right sm:block">
-            <button
-              type="button"
-              disabled={!isSelected && isCompareFull}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onToggleCompare(tool);
-              }}
-              className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-mono font-semibold transition-colors ${
-                isSelected
-                  ? "border-transparent text-black"
-                  : !isSelected && isCompareFull
-                  ? "cursor-not-allowed border-[#232326]/40 bg-[#131316] text-[#4a4a4d]"
-                  : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
-              }`}
-              style={isSelected ? { backgroundColor: "var(--color-signal)" } : undefined}
-              aria-label={isSelected ? `Remove ${tool.name} from compare` : `Add ${tool.name} to compare`}
-              aria-pressed={isSelected}
-            >
-              {isSelected ? <Check size={10} /> : <GitCompare size={10} />}
-              {isSelected ? "Added" : "Compare"}
-            </button>
+            <HomeBookmarkButton tool={tool} />
           </div>
         </>
       )}
@@ -458,13 +511,13 @@ export function ToolListView({
               ) : (
                 <>
                   <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
-                  <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
-                  <div className="h-3 w-12 animate-pulse rounded bg-[#18181C]" />
-                  <div className="h-3 w-14 animate-pulse rounded bg-[#18181C]" />
-                  <div className="h-4 w-12 animate-pulse rounded-full bg-[#18181C]" />
-                  <div className="h-4 w-10 animate-pulse rounded-full bg-[#18181C]" />
                   <div className="h-5 w-20 animate-pulse rounded-full bg-[#18181C]" />
-                  <div className="ml-auto h-5 w-16 animate-pulse rounded-md bg-[#18181C]" />
+                  <div className="h-4 w-10 animate-pulse rounded-full bg-[#18181C]" />
+                  <div className="h-4 w-12 animate-pulse rounded-full bg-[#18181C]" />
+                  <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
+                  <div className="h-7 w-7 animate-pulse rounded-md bg-[#18181C]" />
+                  <div className="ml-auto h-7 w-7 animate-pulse rounded-md bg-[#18181C]" />
                 </>
               )}
             </div>
@@ -497,9 +550,9 @@ export function ToolListView({
         <div className="overflow-x-auto">
           <div className="border-b border-[#232326]/60 bg-[#131316]/40">
             <div className={`grid ${template} ${minWidth} items-center gap-4 px-4 py-2`}>
-              {headers.map((h) => (
+              {headers.map((h, i) => (
                 <span
-                  key={h.label}
+                  key={h.label || `header-${i}`}
                   className={`text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] ${h.align}`}
                 >
                   {h.label}
