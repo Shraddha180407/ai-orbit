@@ -1,5 +1,6 @@
 import "dotenv/config";
-import { PrismaClient, PricingModel, BillingFrequency } from "@prisma/client";
+import { PrismaClient, PricingModel, BillingFrequency, Availability, RobotCategory, RobotAvailability, AutonomyLevel } from "@prisma/client";
+import { logger } from "../src/lib/logger.js";
 
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -131,8 +132,6 @@ interface SeedTool {
   features: string[];
   categorySlugs: string[];
   tagSlugs: string[];
-  isOpenSource?: boolean;
-  isTrending?: boolean;
 }
 
 const TOOLS: SeedTool[] = [
@@ -149,7 +148,6 @@ const TOOLS: SeedTool[] = [
     features: ["Web browsing", "Code interpreter", "Custom GPTs", "Voice mode"],
     categorySlugs: ["chatbots", "productivity", "writing", "coding", "research", "customer-support", "marketing"],
     tagSlugs: ["api", "free-trial", "mobile-app"],
-    isTrending: true,
   },
   {
     slug: "claude",
@@ -163,7 +161,6 @@ const TOOLS: SeedTool[] = [
     features: ["Long context window", "Artifacts", "Code execution", "MCP connectors"],
     categorySlugs: ["chatbots", "productivity", "writing", "coding", "research", "customer-support", "marketing"],
     tagSlugs: ["api", "enterprise", "mobile-app"],
-    isOpenSource: true,
   },
   {
     slug: "gemini",
@@ -1703,16 +1700,27 @@ const REVIEWS: { toolSlug: string; rating: number; comment: string }[] = [
   { toolSlug: "perplexity", rating: 4, comment: "Citations make it easy to double check sources compared to other bots." },
 ];
 
+// --- Add this right above async function main() ---
+function getAvailabilityEnum(status: string): Availability {
+  switch (status) {
+    case 'Available': return Availability.Available;
+    case 'Pre-order': return Availability.PreOrder; // Fixes the mismatch!
+    case 'Announced': return Availability.Announced;
+    case 'Discontinued': return Availability.Discontinued;
+    default: return Availability.Announced;
+  }
+}
+
 async function main() {
   const companyBySlug = new Map<string, { id: string }>();
 
   const allTools = TOOLS;
 
-  console.log("Cleaning up old companies...");
+  logger.info("Cleaning up old companies...");
   const activeCompanySlugs = COMPANIES.map((c) => c.slug);
   await prisma.company.deleteMany({ where: { slug: { notIn: activeCompanySlugs } } });
 
-  console.log("Upserting companies...");
+  logger.info("Upserting companies...");
   for (const c of COMPANIES) {
     const company = await prisma.company.upsert({
       where: { slug: c.slug },
@@ -1721,9 +1729,9 @@ async function main() {
     });
     companyBySlug.set(c.slug, company);
   }
-  console.log(`Upserted ${companyBySlug.size} companies.`);
+  logger.info(`Upserted ${companyBySlug.size} companies.`);
 
-  console.log("Upserting categories...");
+  logger.info("Upserting categories...");
   const categoryBySlug = new Map<string, { id: string }>();
   for (const name of CATEGORY_NAMES) {
     const slug = name.toLowerCase().replace(/ & /g, "-").replace(/ /g, "-");
@@ -1734,9 +1742,9 @@ async function main() {
     });
     categoryBySlug.set(slug, category);
   }
-  console.log(`Upserted ${categoryBySlug.size} categories.`);
+  logger.info(`Upserted ${categoryBySlug.size} categories.`);
 
-  console.log("Upserting tags...");
+  logger.info("Upserting tags...");
   const tagBySlug = new Map<string, { id: string }>();
   for (const name of TAG_NAMES) {
     const slug = name.toLowerCase().replace(/ /g, "-");
@@ -1747,9 +1755,9 @@ async function main() {
     });
     tagBySlug.set(slug, tag);
   }
-  console.log(`Upserted ${tagBySlug.size} tags.`);
+  logger.info(`Upserted ${tagBySlug.size} tags.`);
 
-  console.log("Upserting demo users...");
+  logger.info("Upserting demo users...");
   const demoUsers = [
     { email: "reviewer.one@example.com", name: "Aditi Rao" },
     { email: "reviewer.two@example.com", name: "Marcus Webb" },
@@ -1763,13 +1771,13 @@ async function main() {
       })
     )
   );
-  console.log(`Upserted ${users.length} demo users.`);
+  logger.info(`Upserted ${users.length} demo users.`);
 
-  console.log("Cleaning up old tools...");
+  logger.info("Cleaning up old tools...");
   const activeToolSlugs = allTools.map((t) => t.slug);
   await prisma.tool.deleteMany({ where: { slug: { notIn: activeToolSlugs } } });
 
-  console.log("Upserting tools...");
+  logger.info("Upserting tools...");
   const toolBySlug = new Map<string, { id: string }>();
   for (const t of allTools) {
     const companyId = t.companySlug ? companyBySlug.get(t.companySlug)?.id ?? null : null;
@@ -1787,8 +1795,6 @@ async function main() {
         pricingAmount: t.pricingAmount,
         billingFrequency: t.billingFrequency,
         features: t.features,
-        isOpenSource: t.isOpenSource ?? false,
-        isTrending: t.isTrending ?? false,
       },
       create: {
         slug: t.slug,
@@ -1801,13 +1807,11 @@ async function main() {
         pricingAmount: t.pricingAmount,
         billingFrequency: t.billingFrequency,
         features: t.features,
-        isOpenSource: t.isOpenSource ?? false,
-        isTrending: t.isTrending ?? false,
       },
     });
 
     toolBySlug.set(t.slug, tool);
-    console.log(`Upserted tool: ${t.slug}`);
+    logger.info(`Upserted tool: ${t.slug}`);
   }
 
   // Bulk relate categories and tags to tools to optimize connection roundtrips
@@ -1842,9 +1846,9 @@ async function main() {
   if (tagLinks.length > 0) {
     await prisma.toolTag.createMany({ data: tagLinks });
   }
-  console.log(`Relate completed: bulk created ${categoryLinks.length} categories and ${tagLinks.length} tags.`);
+  logger.info(`Relate completed: bulk created ${categoryLinks.length} categories and ${tagLinks.length} tags.`);
 
-  console.log("Seeding tasks...");
+  logger.info("Seeding tasks in batches to prevent connection drops...");
 
   const toolByName = new Map<string, { id: string }>();
   for (const t of allTools) {
@@ -1852,50 +1856,73 @@ async function main() {
     if (tool) toolByName.set(t.name.toLowerCase(), tool);
   }
 
-  for (const t of TASKS) {
-    const categorySlug = t.category.toLowerCase().replace(/ /g, "-");
-    const category = categoryBySlug.get(categorySlug);
+  const taskToolLinks: { taskId: string; toolId: string }[] = [];
+  
+  // 1. Process in batches of 100 to avoid overwhelming the database
+  const BATCH_SIZE = 100; 
 
-    if (!category) {
-      console.warn(`⚠️  Skipping task "${t.title}" — category "${t.category}" not found`);
-      continue;
-    }
+  for (let i = 0; i < TASKS.length; i += BATCH_SIZE) {
+    const batch = TASKS.slice(i, i + BATCH_SIZE);
 
-    const createdTask = await prisma.task.upsert({
-      where: { slug: t.slug },
-      update: {
-        title: t.title,
-        description: t.description,
-        difficulty: t.difficulty,
-        pricingModel: t.pricingModel,
-        isFeatured: t.isFeatured,
-        categoryId: category.id,
-      },
-      create: {
-        slug: t.slug,
-        title: t.title,
-        description: t.description,
-        difficulty: t.difficulty,
-        pricingModel: t.pricingModel,
-        isFeatured: t.isFeatured,
-        categoryId: category.id,
-      },
-    });
+    // Promise.all runs all 100 upserts in this batch simultaneously
+    await Promise.all(
+      batch.map(async (t) => {
+        const categorySlug = t.category.toLowerCase().replace(/ /g, "-");
+        const category = categoryBySlug.get(categorySlug);
 
-    await prisma.taskTool.deleteMany({ where: { taskId: createdTask.id } });
+        if (!category) return;
 
-    for (const toolName of t.recommendedAITools) {
-      const tool = toolByName.get(toolName.toLowerCase());
-      if (!tool) {
-        console.warn(`   ⚠️  Tool "${toolName}" not found for task "${t.title}"`);
-        continue;
-      }
-      await prisma.taskTool.create({ data: { taskId: createdTask.id, toolId: tool.id } });
-    }
+        const createdTask = await prisma.task.upsert({
+          where: { slug: t.slug },
+          update: {
+            title: t.title,
+            description: t.description,
+            difficulty: t.difficulty,
+            pricingModel: t.pricingModel,
+            isFeatured: t.isFeatured,
+            categoryId: category.id,
+          },
+          create: {
+            slug: t.slug,
+            title: t.title,
+            description: t.description,
+            difficulty: t.difficulty,
+            pricingModel: t.pricingModel,
+            isFeatured: t.isFeatured,
+            categoryId: category.id,
+          },
+        });
+
+        // Store relations in memory
+        for (const toolName of t.recommendedAITools) {
+          const tool = toolByName.get(toolName.toLowerCase());
+          if (tool) {
+            taskToolLinks.push({ taskId: createdTask.id, toolId: tool.id });
+          }
+        }
+      })
+    );
+
+    logger.info(`... processed ${Math.min(i + BATCH_SIZE, TASKS.length)} / ${TASKS.length} tasks`);
   }
 
-  console.log(`Seeded ${TASKS.length} tasks.`);
+  logger.info("Wiping old task-tool relations...");
+  await prisma.taskTool.deleteMany({}); 
+
+  logger.info(`Bulk inserting ${taskToolLinks.length} task-tool relations in chunks...`);
   
+  // 2. Chunk the relation inserts too (Neon sometimes drops connections on massive arrays)
+  const RELATION_BATCH_SIZE = 5000;
+  for (let i = 0; i < taskToolLinks.length; i += RELATION_BATCH_SIZE) {
+    const linksBatch = taskToolLinks.slice(i, i + RELATION_BATCH_SIZE);
+    
+    await prisma.taskTool.createMany({ 
+      data: linksBatch,
+      skipDuplicates: true 
+    });
+  }
+
+  logger.info(`Seeded ${TASKS.length} tasks successfully!`);
   // Curated similar mappings
   const ALTERNATIVE_PAIRS: [string, string][] = [
     ["chatgpt", "claude"],
@@ -1911,7 +1938,7 @@ async function main() {
     ["elevenlabs", "murf-ai"],
   ];
 
-  console.log("Linking similar tools...");
+  logger.info("Linking similar tools...");
   for (const [aSlug, bSlug] of ALTERNATIVE_PAIRS) {
     const a = toolBySlug.get(aSlug);
     const b = toolBySlug.get(bSlug);
@@ -1928,7 +1955,7 @@ async function main() {
     }
   }
 
-  console.log("Upserting reviews...");
+  logger.info("Upserting reviews...");
   await prisma.review.deleteMany({}); // reset reviews for clean aggregation
   const reviewDataList: { rating: number; comment: string; toolId: string; userId: string }[] = [];
   let userIndex = 0;
@@ -1952,7 +1979,7 @@ async function main() {
   }
 
   // Aggregate ratings & review count
-  console.log("Updating tool averages...");
+  logger.info("Updating tool averages...");
   const toolsDb = await prisma.tool.findMany({ select: { id: true } });
   for (const tool of toolsDb) {
     const aggregates = await prisma.review.aggregate({
@@ -1971,7 +1998,7 @@ async function main() {
   }
 
   // ---- New Discovery Sections Seeding ----
-  console.log("Seeding AI models...");
+  logger.info("Seeding AI models...");
   await prisma.aIModel.deleteMany({});
   const seedModels = [
     // OpenAI Models
@@ -2030,13 +2057,19 @@ async function main() {
     { name: "Qwen2.5-72B-Instruct", creator: "Alibaba", contextWindow: "128K tokens", parameterSize: "72 Billion", modality: "Text, Code", releaseDate: "September 2024", description: "Highly capable open model with state of the art instruction-following and math capabilities." },
     { name: "Qwen2.5-Coder-32B-Instruct", creator: "Alibaba", contextWindow: "128K tokens", parameterSize: "32 Billion", modality: "Code", releaseDate: "September 2024", description: "Top performing open-weights coding model." }
   ];
-  await prisma.aIModel.createMany({ data: seedModels });
+  
+  const seedModelsWithSlug = seedModels.map(model => ({
+    ...model,
+    slug: model.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+  }));
+  
+  await prisma.aIModel.createMany({ data: seedModelsWithSlug });
 
   // News is no longer static-seeded — the news module gets its data from
   // real RSS ingestion (`npm run ingest`), not mock rows. See
   // src/modules/ingestion/.
 
-  console.log("Seeding Repositories...");
+  logger.info("Seeding Repositories...");
   await prisma.repository.deleteMany({});
   const seedRepos = [
     {
@@ -2113,318 +2146,240 @@ async function main() {
   // schema). Removed rather than fixed with fabricated data — not this
   // module's data to seed.
 
-  console.log("Seeding Robots...");
+logger.info("Seeding Robots...");
   await prisma.robot.deleteMany({});
+  
   const seedRobots = [
     {
-      slug: "tesla-optimus",
-      name: "Tesla Optimus Gen 2",
-      logoUrl: null,
-      thumbnailUrl: null,
-      company: "Tesla",
-      country: "USA",
-      category: "HUMANOID",
-      availability: "IN_DEVELOPMENT",
-      price: "$20,000",
-      releaseDate: "2025-01-01",
-      mainTask: "General purpose labor",
-      autonomyLevel: "HIGHLY_AUTONOMOUS",
-      primaryUseCases: ["Manufacturing", "Logistics", "Household tasks"],
-      websiteUrl: "https://tesla.com/optimus",
-      about: "Tesla's next-generation humanoid robot with improved hands, faster walking speed, and AI-driven autonomy for household and factory tasks.",
-      specs: "Weight: 121 lbs. Height: 5'8\". Actuators: 28. Degrees of freedom: 28. Walking speed: 5 mph. Carrying capacity: 45 lbs.",
-      mediaUrls: [],
-    },
-    {
-      slug: "figure-02",
       name: "Figure 02",
-      logoUrl: null,
-      thumbnailUrl: null,
+      slug: "figure-02",
       company: "Figure AI",
-      country: "USA",
-      category: "HUMANOID",
-      availability: "IN_DEVELOPMENT",
-      price: null,
-      releaseDate: "2024-08-01",
-      mainTask: "Factory logistics & manipulation",
-      autonomyLevel: "HIGHLY_AUTONOMOUS",
-      primaryUseCases: ["Manufacturing", "Logistics", "Warehouse operations"],
-      websiteUrl: "https://figure.ai",
-      about: "A commercial-grade humanoid robot powered by OpenAI speech-to-speech models, designed for factory logistics and complex manipulation tasks.",
-      specs: "Weight: 132 lbs. Height: 5'6\". Payload: 44 lbs. Battery life: 5 hours. Degrees of freedom: 16 (hands).",
+      country: "United States",
+      category: RobotCategory.HUMANOID,
+      availability: RobotAvailability.IN_DEVELOPMENT,
+      releaseDate: "2024",
+      about: "A commercial-grade humanoid robot powered by OpenAI speech-to-speech models, designed for factory logistics and tasks.",
+      mainTask: "Factory Logistics",
+      autonomyLevel: AutonomyLevel.HIGHLY_AUTONOMOUS,
+      primaryUseCases: ["Manufacturing", "Warehouse Operations"],
       mediaUrls: [],
     },
     {
-      slug: "unitree-h1",
       name: "Unitree H1",
-      logoUrl: null,
-      thumbnailUrl: null,
+      slug: "unitree-h1",
       company: "Unitree Robotics",
       country: "China",
-      category: "BIPEDAL",
-      availability: "AVAILABLE",
+      category: RobotCategory.HUMANOID,
+      availability: RobotAvailability.COMMERCIALLY_AVAILABLE,
       price: "$90,000",
-      releaseDate: "2023-08-01",
-      mainTask: "Research & locomotion",
-      autonomyLevel: "SEMI_AUTONOMOUS",
-      primaryUseCases: ["Research", "Locomotion testing", "Demo platforms"],
-      websiteUrl: "https://www.unitree.com/h1",
+      releaseDate: "2023",
       about: "A bipedal robot capable of running, backflips, and walking up stairs, utilizing deep reinforcement learning control loops.",
-      specs: "Weight: 47 kg. Height: 1.8 m. Top speed: 3.3 m/s. Degrees of freedom: 19.",
+      mainTask: "Research & Mobility",
+      autonomyLevel: AutonomyLevel.SEMI_AUTONOMOUS,
+      primaryUseCases: ["Research", "Industrial Inspection"],
       mediaUrls: [],
     },
     {
-      slug: "atlas-gen2",
-      name: "Atlas (Gen 2)",
-      logoUrl: null,
-      thumbnailUrl: null,
-      company: "Boston Dynamics",
-      country: "USA",
-      category: "HUMANOID",
-      availability: "IN_DEVELOPMENT",
-      price: null,
-      releaseDate: "2024-04-01",
-      mainTask: "Industrial manipulation",
-      autonomyLevel: "HIGHLY_AUTONOMOUS",
-      primaryUseCases: ["Manufacturing", "Research", "Hazardous environments"],
-      websiteUrl: "https://bostondynamics.com/atlas",
-      about: "Fully electric humanoid robot with advanced whole-body manipulation, designed for real-world industrial applications.",
-      specs: "Fully electric. Rotating joints exceeding human range of motion. Advanced perception and AI planning.",
-      mediaUrls: [],
-    },
-    {
-      slug: "digit",
-      name: "Digit",
-      logoUrl: null,
-      thumbnailUrl: null,
-      company: "Agility Robotics",
-      country: "USA",
-      category: "BIPEDAL",
-      availability: "AVAILABLE",
-      price: null,
-      releaseDate: "2023-10-01",
-      mainTask: "Warehouse logistics",
-      autonomyLevel: "HIGHLY_AUTONOMOUS",
-      primaryUseCases: ["Warehouse logistics", "Last-mile delivery", "Tote handling"],
-      websiteUrl: "https://agilityrobotics.com/digit",
-      about: "A warehouse-focused bipedal robot designed for logistics, capable of picking, moving, and stacking totes autonomously.",
-      specs: "Weight: 141 lbs. Height: 5'9\". Payload: 35 lbs. Battery: 4+ hours.",
-      mediaUrls: [],
-    },
-    {
-      slug: "spot",
       name: "Spot",
-      logoUrl: null,
-      thumbnailUrl: null,
+      slug: "spot",
       company: "Boston Dynamics",
-      country: "USA",
-      category: "QUADRUPED",
-      availability: "AVAILABLE",
+      country: "United States",
+      category: RobotCategory.MOBILE,
+      availability: RobotAvailability.COMMERCIALLY_AVAILABLE,
       price: "$74,500",
-      releaseDate: "2020-06-01",
-      mainTask: "Industrial inspection",
-      autonomyLevel: "SEMI_AUTONOMOUS",
-      primaryUseCases: ["Inspection", "Data collection", "Security patrol", "Hazardous environments"],
-      websiteUrl: "https://bostondynamics.com/spot",
-      about: "An agile quadruped robot for industrial inspection, data collection, and hazardous environment exploration.",
-      specs: "Weight: 32.7 kg. Speed: 1.6 m/s. Runtime: 90 min. Payload: 14 kg. 360° perception.",
+      releaseDate: "2019",
+      about: "An agile mobile robot that navigates terrain with unprecedented mobility, allowing you to automate routine inspection tasks and data capture safely.",
+      mainTask: "Industrial Inspection",
+      autonomyLevel: AutonomyLevel.SEMI_AUTONOMOUS,
+      primaryUseCases: ["Site Mapping", "Security", "Inspection"],
       mediaUrls: [],
     },
     {
-      slug: "nao-6",
-      name: "NAO 6",
-      logoUrl: null,
-      thumbnailUrl: null,
-      company: "Aldebaran (SoftBank)",
-      country: "France",
-      category: "HUMANOID",
-      availability: "AVAILABLE",
-      price: "$9,000",
-      releaseDate: "2018-07-01",
-      mainTask: "Education & research",
-      autonomyLevel: "SEMI_AUTONOMOUS",
-      primaryUseCases: ["Education", "Research", "RoboCup", "Therapy"],
-      websiteUrl: "https://www.aldebaran.com/en/nao",
-      about: "A programmable humanoid robot for education and research, widely used in universities and RoboCup competitions.",
-      specs: "Height: 58 cm. Weight: 5.4 kg. 25 degrees of freedom. Intel Atom CPU.",
+      name: "Optimus Gen 2",
+      slug: "optimus-gen-2",
+      company: "Tesla",
+      country: "United States",
+      category: RobotCategory.HUMANOID,
+      availability: RobotAvailability.PROTOTYPE,
+      releaseDate: "2025",
+      about: "A general-purpose bipedal humanoid robot being developed by Tesla, intended to perform tasks that are unsafe, repetitive or boring.",
+      mainTask: "General Labor",
+      autonomyLevel: AutonomyLevel.HIGHLY_AUTONOMOUS,
+      primaryUseCases: ["Manufacturing", "Repetitive Labor"],
       mediaUrls: [],
     },
     {
-      slug: "phoenix",
-      name: "Phoenix",
-      logoUrl: null,
-      thumbnailUrl: null,
-      company: "Sanctuary AI",
-      country: "Canada",
-      category: "HUMANOID",
-      availability: "IN_DEVELOPMENT",
-      price: null,
-      releaseDate: "2024-05-01",
-      mainTask: "General-purpose dexterity",
-      autonomyLevel: "HIGHLY_AUTONOMOUS",
-      primaryUseCases: ["Retail", "Manufacturing", "Logistics"],
-      websiteUrl: "https://sanctuary.ai",
-      about: "A general-purpose humanoid robot with human-like dexterity, powered by Sanctuary's Carbon AI system for real-world task completion.",
-      specs: "Height: 170 cm. Weight: 70 kg. Hands: 20 DoF each. Powered by Carbon general-purpose AI.",
-      mediaUrls: [],
-    },
-    {
-      slug: "ameca",
       name: "Ameca",
-      logoUrl: null,
-      thumbnailUrl: null,
+      slug: "ameca",
       company: "Engineered Arts",
-      country: "UK",
-      category: "HUMANOID",
-      availability: "AVAILABLE",
-      price: null,
-      releaseDate: "2022-01-01",
-      mainTask: "Human-robot interaction research",
-      autonomyLevel: "TELEOPERATED",
-      primaryUseCases: ["HRI research", "Entertainment", "Public engagement"],
-      websiteUrl: "https://www.engineeredarts.co.uk/robot/ameca",
-      about: "The world's most advanced human-shaped robot designed for human-robot interaction research and lifelike facial expressions.",
-      specs: "17 facial actuators. Modular limb design. Mesmer-based expression engine. Cloud AI integration.",
+      country: "United Kingdom",
+      category: RobotCategory.HUMANOID,
+      availability: RobotAvailability.COMMERCIALLY_AVAILABLE,
+      price: "N/A",
+      releaseDate: "2021",
+      about: "The world's most advanced human-shaped robot representing the forefront of human-robotics technology, specifically designed as a platform for AI.",
+      mainTask: "Human-Robot Interaction",
+      autonomyLevel: AutonomyLevel.SEMI_AUTONOMOUS,
+      primaryUseCases: ["Entertainment", "Education", "Research"],
       mediaUrls: [],
-    },
-    {
-      slug: "astribot-s1",
-      name: "Astribot S1",
-      logoUrl: null,
-      thumbnailUrl: null,
-      company: "Astribot",
-      country: "China",
-      category: "HUMANOID",
-      availability: "IN_DEVELOPMENT",
-      price: null,
-      releaseDate: "2024-04-01",
-      mainTask: "Household manipulation",
-      autonomyLevel: "HIGHLY_AUTONOMOUS",
-      primaryUseCases: ["Cooking", "Cleaning", "Sorting", "Household chores"],
-      websiteUrl: "https://www.astribot.com",
-      about: "A Chinese humanoid robot demonstrating superhuman-speed manipulation tasks including cooking, cleaning, and sorting at production scale.",
-      specs: "Speed: exceeds human arm speed. Precision: sub-millimeter. AI-driven imitation learning.",
-      mediaUrls: [],
-    },
-    {
-      slug: "unitree-go2",
-      name: "Unitree Go2",
-      logoUrl: null,
-      thumbnailUrl: null,
-      company: "Unitree Robotics",
-      country: "China",
-      category: "QUADRUPED",
-      availability: "AVAILABLE",
-      price: "$1,600",
-      releaseDate: "2023-07-01",
-      mainTask: "Companion & patrol",
-      autonomyLevel: "SEMI_AUTONOMOUS",
-      primaryUseCases: ["Companion", "Patrol", "Outdoor exploration", "Education"],
-      websiteUrl: "https://www.unitree.com/go2",
-      about: "An AI-powered quadruped companion robot with LiDAR, 4D obstacle avoidance, and real-time terrain adaptation.",
-      specs: "Weight: 15 kg. Speed: 2.5 m/s. Battery: 1-2 hours. Built-in LiDAR and 4D obstacle avoidance.",
-      mediaUrls: [],
-    },
-    {
-      slug: "gr-1",
-      name: "GR-1",
-      logoUrl: null,
-      thumbnailUrl: null,
-      company: "Fourier Intelligence",
-      country: "China",
-      category: "HUMANOID",
-      availability: "AVAILABLE",
-      price: null,
-      releaseDate: "2023-07-01",
-      mainTask: "Healthcare rehabilitation",
-      autonomyLevel: "SEMI_AUTONOMOUS",
-      primaryUseCases: ["Healthcare", "Rehabilitation", "Research", "Industrial"],
-      websiteUrl: "https://www.fftai.com/gr-1",
-      about: "A general-purpose humanoid robot with 40 degrees of freedom, designed for healthcare rehabilitation and industrial applications.",
-      specs: "Height: 1.65 m. Weight: 55 kg. 40 degrees of freedom. Walking speed: 5 km/h. Payload: 50 kg.",
-      mediaUrls: [],
-    },
-    {
-      slug: "neo-beta",
-      name: "NEO Beta",
-      logoUrl: null,
-      thumbnailUrl: null,
-      company: "1X Technologies",
-      country: "Norway",
-      category: "HUMANOID",
-      availability: "IN_DEVELOPMENT",
-      price: null,
-      releaseDate: "2024-08-01",
-      mainTask: "Home assistance",
-      autonomyLevel: "HIGHLY_AUTONOMOUS",
-      primaryUseCases: ["Home assistance", "Elder care", "Domestic tasks"],
-      websiteUrl: "https://www.1x.tech/neo",
-      about: "A humanoid designed for home environments with safe, human-like movement and AI-driven learning from demonstration.",
-      specs: "Weight: 30 kg. Height: 1.65 m. Biologically-inspired musculature. Safe human co-habitation design.",
-      mediaUrls: [],
-    },
-    {
-      slug: "stretch",
-      name: "Stretch",
-      logoUrl: null,
-      thumbnailUrl: null,
-      company: "Boston Dynamics",
-      country: "USA",
-      category: "MOBILE_MANIPULATOR",
-      availability: "AVAILABLE",
-      price: null,
-      releaseDate: "2022-03-01",
-      mainTask: "Warehouse case handling",
-      autonomyLevel: "HIGHLY_AUTONOMOUS",
-      primaryUseCases: ["Truck unloading", "Case handling", "Palletizing"],
-      websiteUrl: "https://bostondynamics.com/stretch",
-      about: "A mobile robot with a single arm designed for warehouse box moving, capable of handling 800+ cases per hour.",
-      specs: "Throughput: 800 cases/hour. Arm reach: 2m. Payload: 23 kg. Omnidirectional mobile base.",
-      mediaUrls: [],
-    },
-    {
-      slug: "anymal-d",
-      name: "ANYmal D",
-      logoUrl: null,
-      thumbnailUrl: null,
-      company: "ANYbotics",
-      country: "Switzerland",
-      category: "QUADRUPED",
-      availability: "AVAILABLE",
-      price: null,
-      releaseDate: "2023-01-01",
-      mainTask: "Industrial facility inspection",
-      autonomyLevel: "FULLY_AUTONOMOUS",
-      primaryUseCases: ["Inspection", "Offshore platforms", "Power plants", "Refineries"],
-      websiteUrl: "https://www.anybotics.com/anymal",
-      about: "An autonomous inspection robot for industrial facilities — refineries, power plants, and offshore platforms.",
-      specs: "Weight: 50 kg. IP67 rated. ATEX Zone 1 certified. Runtime: 2+ hours. Thermal + visual sensors.",
-      mediaUrls: [],
-    },
+    }
   ];
-  await prisma.robot.createMany({ data: seedRobots });
 
-  console.log("Seeding Devices...");
-  await prisma.device.deleteMany({});
+  await prisma.robot.createMany({ 
+    data: seedRobots 
+  });
+
   const seedDevices = [
-    {
-      name: "Rabbit r1",
-      category: "AI Pocket Assistant",
-      manufacturer: "Rabbit Inc.",
-      year: "2024",
-      description: "A pocket companion device utilizing a Large Action Model (LAM) designed to execute online app actions on your behalf.",
-    },
-    {
-      name: "Humane AI Pin",
-      category: "Wearable Projector Pin",
-      manufacturer: "Humane",
-      year: "2024",
-      description: "A wearable pin that projects digital interface layouts onto the palm of your hand, featuring voice and gesture inputs.",
-    },
-  ];
-  await prisma.device.createMany({ data: seedDevices });
+  {
+    name: "Rabbit r1",
+    slug: "rabbit-r1",
+    category: "AI Pocket Assistant",
+    manufacturer: "Rabbit Inc.",
+    availability: "Available",
+    price: "199.00",
+    year: "2024",
+    month: "Jan, 2024",
+    description: "A pocket companion device utilizing a Large Action Model (LAM) designed to execute online app actions on your behalf.",
+    imageUrl: "https://m.media-amazon.com/images/I/41d-IfutmxL.jpg", 
+    images: [
+      "https://m.media-amazon.com/images/I/41d-IfutmxL.jpg",
+      "https://techcrunch.com/wp-content/uploads/2024/01/rabbit-r1-hero.jpg?fit=1024%2C576",
+      "https://www.theverge.com/wp-content/uploads/2024/01/Rabbit-R1-Review-2.jpg?fit=1024%2C576"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=example-rabbit-r1",
+    manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqt-drKgbn-v1CvxdzoyKUNNjH6Q_ppxN2qbh6h3meyQ&s=10",
+    mainTask: "AI-powered app automation",
+    formFactor: "Pocket-sized",
+    country: "United States",
+    ram: "4GB",
+    aiFeatures: ["Large Action Model", "Voice Input", "Computer Vision", "Translation"],
+    primaryUseCases: ["App Automation", "Voice Search", "Real-time Translation"],
+    additionalInfo: "No subscription required. Runs on Teenage Engineering hardware.",
+    buyUrl: "https://www.rabbit.tech",
+  },
+  
+  {
+    name: "Ray-Ban Meta Smart Glasses",
+    slug: "ray-ban-meta",
+    category: "Smart Glasses",
+    manufacturer: "Meta",
+    availability: "Available",
+    price: "299.00",
+    year: "2023",
+    month: "Oct, 2023",
+    description: "Stylish smart glasses with integrated Meta AI, allowing you to ask questions about what you are looking at through the built-in camera.",
+    imageUrl: "https://m.media-amazon.com/images/I/51YS2aa2--L._AC_UF1000,1000_QL80_.jpg",
+    images: [
+      "https://m.media-amazon.com/images/I/51YS2aa2--L._AC_UF1000,1000_QL80_.jpg",
+      "https://www.meta.com/smart-glasses/images/meta-glasses-hero.jpg",
+      "https://www.theverge.com/wp-content/uploads/2023/10/meta-ray-ban-smglasses-review-2.jpg?fit=1024%2C576"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=meta-rayban-glasses",
+    manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqfbTP6UVlD7B38a6uRgD7vNt6GYXB780xoQa7veixCw&s=10",
+    mainTask: "Multimodal visual assistance",
+    formFactor: "Eyewear",
+    country: "United States",
+    ram: "2GB",
+    aiFeatures: ["Multimodal AI", "Real-time Translation", "Object Identification", "Audio Streaming"],
+    primaryUseCases: ["Point-of-view Capture", "Audio Listening", "Visual Search"],
+    additionalInfo: "Features a 12MP ultra-wide camera and open-ear audio. Over 8.9M lifetime units shipped.",
+    buyUrl: "https://www.meta.com/smart-glasses/",
+  },
+  {
+    name: "Limitless Pendant",
+    slug: "limitless-pendant",
+    category: "AI Wearable",
+    manufacturer: "Limitless",
+    availability: "Discontinued",
+    price: "99.00",
+    year: "2024",
+    month: "Aug, 2024",
+    description: "A personalized AI wearable that records your meetings and conversations, providing instant summaries and transcriptions.",
+    imageUrl: "https://www.limitless.ai/media/pendant/black/UpdatedPendantAngledOn.webp",
+    images: [
+      "https://www.limitless.ai/media/pendant/black/UpdatedPendantAngledOn.webp",
+      "https://www.limitless.ai/media/pendant/black/UpdatedPendantFront.webp",
+      "https://www.limitless.ai/media/pendant/black/UpdatedPendantSide.webp"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=limitless-pendant-demo",
+    manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvBvCARCbE5sLvWhJXmXFwrVzDFu5tATl84jMVESJfLw&s=10",
+    mainTask: "Meeting transcription & memory",
+    formFactor: "Pendant / Clip",
+    country: "United States",
+    ram: null,
+    aiFeatures: ["Consent Mode", "Voice Isolation", "Auto-Summarization", "Action Item Extraction"],
+    primaryUseCases: ["Meeting Notes", "Personal Memory", "Productivity"],
+    additionalInfo: "100-hour battery life. Hardware sales discontinued following Meta acquisition in late 2025.",
+    buyUrl: "https://www.limitless.ai/new",
+  },
+  {
+    name: "Brilliant Labs Frame",
+    slug: "brilliant-labs-frame",
+    category: "Smart Glasses",
+    manufacturer: "Brilliant Labs",
+    availability: "Available",
+    price: "349.00",
+    year: "2024",
+    month: "Apr, 2024",
+    description: "Open-source, lightweight AI glasses that provide a heads-up display (HUD) powered by OpenAI and Perplexity.",
+    imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRndpQutm_8ZHmbv3QFRuEkxMXknoBuc1sPetPK7HUtS5rzrnI4M-L0PvbE&s=10",
+    images: ["https://brilliant.xyz/images/frame-hero.jpg",
+      "https://techcrunch.com/wp-content/uploads/2024/04/brilliant-labs-frame-review-2.jpg?fit=1024%2C576"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=brilliant-labs-frame",
+    manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSx4o32nl7E6RbBHMcjv-p_Ja_eHu0M77RiEqIW81USiMzQzkGas7ruYBjk&s=10",
+    mainTask: "Heads-up visual search",
+    formFactor: "Eyewear",
+    country: "Singapore",
+    ram: null,
+    aiFeatures: ["Visual Search", "Real-time Translation", "Web Search", "Open Source Hardware"],
+    primaryUseCases: ["Live Translation", "Fact Checking", "Developer Tinkering"],
+    additionalInfo: "Weighs only 39 grams. Fully open-source and hackable via ZephyrOS and Lua API.",
+    buyUrl: "https://brilliant.xyz",
+  },
+  {
+    name: "Plaud Note",
+    slug: "plaud-note",
+    category: "AI Voice Recorder",
+    manufacturer: "Plaud",
+    availability: "Available",
+    price: "159.00",
+    year: "2023",
+    month: "Nov, 2023",
+    description: "A credit-card sized voice recorder that snaps to the back of your phone, utilizing ChatGPT to transcribe and summarize calls and meetings.",
+    imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUWIuVVBPOiJ-PHCrjIa4WP5fK0zsOVjfurP1MIcm6GA&s",
+    images: [
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUWIuVVBPOiJ-PHCrjIa4WP5fK0zsOVjfurP1MIcm6GA&s",
+      "https://www.plaud.ai/images/note-front.jpg",
+      "https://www.plaud.ai/images/note-side.jpg"
+    ],
+    videoUrl: "https://www.youtube.com/watch?v=plaud-note-demo",
+    manufacturerLogoUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkAkzJtf1nr96s5wzF6C5vrxz-VbdDliwbZMtXbg_RyQ&s=10",
+    mainTask: "Call & audio summarization",
+    formFactor: "Magnetic Card",
+    country: "United States",
+    ram: "64GB Storage",
+    aiFeatures: ["ChatGPT Integration", "Call Recording", "Mind Map Generation", "Multi-language Support"],
+    primaryUseCases: ["Phone Call Recording", "Lectures", "Journaling"],
+    additionalInfo: "MagSafe compatible. Includes a physical switch to toggle between ambient and phone call recording.",
+    buyUrl: "https://www.plaud.ai",
+  }
+];
+logger.info("Formatting and seeding Devices...");
+  
+  // 1. Map the string array into the strict Prisma Enum shape
+  const formattedDevices = seedDevices.map((device) => ({
+    ...device,
+    availability: getAvailabilityEnum(device.availability),
+  }));
 
-  console.log("Seeding Leaderboard Tools...");
+  // 2. Insert the correctly formatted data
+  await prisma.device.createMany({ 
+    data: formattedDevices,
+    skipDuplicates: true // Good practice to prevent crashes on re-seeding
+  });
+
+  logger.info("Seeding Leaderboard Tools...");
   await prisma.leaderboardTool.deleteMany({});
   const leaderboardTools = [
     ...TOOLS.map((t, index) => ({
@@ -2446,7 +2401,7 @@ async function main() {
   ];
   await prisma.leaderboardTool.createMany({ data: leaderboardTools });
 
-  console.log("Seeding Leaderboard Models...");
+  logger.info("Seeding Leaderboard Models...");
   await prisma.leaderboardModel.deleteMany({});
   const leaderboardModels = [
     ...seedModels.map((m, index) => ({
@@ -2470,7 +2425,7 @@ async function main() {
   ];
   await prisma.leaderboardModel.createMany({ data: leaderboardModels });
 
-  console.log("Seeding Leaderboard Companies...");
+  logger.info("Seeding Leaderboard Companies...");
   await prisma.leaderboardCompany.deleteMany({});
   const leaderboardCompanies = COMPANIES.map((c, index) => ({
     id: c.slug,
@@ -2489,12 +2444,12 @@ async function main() {
   }));
   await prisma.leaderboardCompany.createMany({ data: leaderboardCompanies });
 
-  console.log(`Seed complete: ${COMPANIES.length} companies, ${allTools.length} tools, ${REVIEWS.length} reviews.`);
+  logger.info(`Seed complete: ${COMPANIES.length} companies, ${allTools.length} tools, ${REVIEWS.length} reviews.`);
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    logger.error(e);
     process.exit(1);
   })
   .finally(async () => {

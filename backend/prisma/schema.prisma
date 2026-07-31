@@ -101,7 +101,7 @@ model User {
   password      String?
   image         String?
   role          String    @default("USER")
-  status        String    @default("ACTIVE")
+  status        String    @default("ACTIVE") // ACTIVE, BLOCKED
   emailVerified DateTime?
 
   createdAt DateTime @default(now())
@@ -111,25 +111,36 @@ model User {
   bookmarks           Bookmark[]
   accounts            Account[]
   sessions            Session[]
+  toolHistory         ToolHistory[]
   collections         Collection[]
   collectionBookmarks CollectionBookmark[]
   taskBookmarks       TaskBookmark[]
-  tasksCreated        Task[]               @relation("TaskCreator")
-  taskLikes           TaskLike[]           @relation("TaskLikeUser")
-  taskSubscriptions   TaskSubscriber[]     @relation("TaskSubscriberUser")
+  linkBookmarks       LinkBookmark[]
+
+  reportsMade       Report[]         @relation("Reporter")
+  reportsAgainst    Report[]         @relation("ReportedUser")
+  tasksCreated      Task[]           @relation("TaskCreator")
+  taskLikes         TaskLike[]       @relation("TaskLikeUser")
+  taskSubscriptions TaskSubscriber[] @relation("TaskSubscriberUser")
+  toolVotes         ToolVote[]
 }
 
 // ---- Module 3: AI Tools ----
 
 model Tool {
-  id          String   @id @default(cuid())
-  slug        String   @unique
+  id          String  @id @default(cuid())
+  slug        String  @unique
   name        String
   logoUrl     String?
   description String
   websiteUrl  String
+
   screenshots String[] @default([])
   features    String[] @default([])
+  pros        String[] @default([])
+  cons        String[] @default([])
+
+  releaseDate DateTime?
 
   pricingModel     PricingModel
   pricingAmount    Decimal?         @db.Decimal(10, 2)
@@ -137,15 +148,27 @@ model Tool {
 
   isOpenSource Boolean @default(false)
   isTrending   Boolean @default(false)
+  verified     Boolean @default(false)
+
+  compatibility Platform[]
+  targetUsers   UserPersona[]
+
+  hasApi     Boolean @default(false)
+  apiDocsUrl String?
+
+  performanceScore Float?
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
 
-  categories ToolCategory[]
-  tags       ToolTag[]
+  categories   ToolCategory[]
+  tags         ToolTag[]
+  integrations ToolIntegration[]
 
   reviews   Review[]
   bookmarks Bookmark[]
+  reports   Report[]
+  history   ToolHistory[]
 
   alternatives  Tool[]     @relation("ToolAlternatives")
   alternativeOf Tool[]     @relation("ToolAlternatives")
@@ -156,6 +179,9 @@ model Tool {
   avgRating   Float @default(0)
   reviewCount Int   @default(0)
 
+  upvoteCount Int        @default(0)
+  votes       ToolVote[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -165,6 +191,9 @@ model Tool {
   @@index([pricingModel])
   @@index([createdAt])
   @@index([avgRating])
+  @@index([releaseDate])
+  @@index([isTrending])
+  @@index([verified])
 }
 
 model Category {
@@ -206,6 +235,39 @@ model ToolTag {
   @@index([tagId])
 }
 
+model Integration {
+  id      String  @id @default(cuid())
+  slug    String  @unique
+  name    String
+  logoUrl String?
+
+  tools ToolIntegration[]
+}
+
+model ToolIntegration {
+  toolId        String
+  integrationId String
+
+  tool        Tool        @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@id([toolId, integrationId])
+  @@index([integrationId])
+}
+
+model ToolVote {
+  userId String
+  toolId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tool Tool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([userId, toolId])
+  @@index([toolId])
+}
+
 model Review {
   id        String   @id @default(cuid())
   rating    Int
@@ -242,6 +304,7 @@ model Bookmark {
 
 model AIModel {
   id               String            @id @default(cuid())
+  slug             String            @unique
   name             String
   creator          String
   contextWindow    String
@@ -256,7 +319,9 @@ model AIModel {
 
   providerId String?
   provider   Company? @relation(fields: [providerId], references: [id])
-
+  websiteUrl    String?
+  capabilities  String[]  @default([])
+  
   @@index([providerId])
 }
 
@@ -313,6 +378,7 @@ model News {
   bookmarks NewsBookmark[]
   votes     NewsVote[]
   comments  NewsComment[]
+  reports   Report[]
 
   @@index([publishedAt])
   @@index([publisherId])
@@ -371,8 +437,6 @@ model Repository {
   defaultBranch   String    @default("main")
   logoUrl         String?
   brandColor      String?
-  readmeHtml      String?
-  readmeFetchedAt DateTime?
   githubCreatedAt DateTime
   syncedAt        DateTime
   createdAt       DateTime  @default(now())
@@ -415,44 +479,99 @@ model Video {
   @@index([views])
 }
 
+enum RobotCategory {
+  HUMANOID
+  MOBILE
+  MANIPULATOR
+  DRONE
+  INDUSTRIAL
+  WAREHOUSE
+  HEALTHCARE
+  HOME
+  AGRICULTURAL
+  DEFENSE
+  SERVICE
+  COMPANION
+  OTHER
+}
+
+enum RobotAvailability {
+  ANNOUNCED
+  COMMERCIALLY_AVAILABLE
+  DISCONTINUED
+  IN_DEVELOPMENT
+  IN_PRODUCTION
+  PAUSED
+  PILOT
+  PRE_ORDER
+  PROTOTYPE
+}
+
+enum AutonomyLevel {
+  TELEOPERATED
+  ASSISTED
+  SEMI_AUTONOMOUS
+  HIGHLY_AUTONOMOUS
+  FULLY_AUTONOMOUS
+}
+
 model Robot {
-  id              String      @id @default(cuid())
-  slug            String      @unique
+  id              String            @id @default(cuid())
+  slug            String            @unique
   name            String
   logoUrl         String?
   thumbnailUrl    String?
   company         String
-  country         String?
-  category        String
-  availability    String      @default("IN_DEVELOPMENT")
+  country         String
+  category        RobotCategory
+  availability    RobotAvailability
   price           String?
   releaseDate     String?
   mainTask        String?
-  autonomyLevel   String?
-  primaryUseCases String[]    @default([])
+  autonomyLevel   AutonomyLevel?
+  primaryUseCases String[]
   websiteUrl      String?
-  about           String
+  about           String?
   specs           String?
-  mediaUrls       String[]    @default([])
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @default(now()) @updatedAt
+  mediaUrls       String[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
   tasks           TaskRobot[]
+}
 
-  @@index([category])
-  @@index([availability])
-  @@index([company])
+enum Availability {
+  Available
+  PreOrder     @map("Pre-order")
+  Announced
+  Discontinued
 }
 
 model Device {
-  id           String       @id @default(cuid())
-  name         String
-  category     String
-  manufacturer String
-  year         String
-  description  String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @default(now()) @updatedAt
-  tasks        TaskDevice[]
+  id                  String       @id @default(cuid())
+  name                String
+  slug                String       @unique
+  manufacturer        String
+  category            String
+  availability        Availability @default(Announced)
+  price               String?
+  year                String
+  month               String?
+  description         String
+  imageUrl            String
+  images              String[]     @default([])
+  videoUrl            String?
+  manufacturerLogoUrl String
+  mainTask            String
+  formFactor          String?
+  country             String?
+  ram                 String?
+  aiFeatures          String[]     @default([])
+  primaryUseCases     String[]     @default([])
+  additionalInfo      String?
+  buyUrl              String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @default(now()) @updatedAt
+  tasks               TaskDevice[]
 }
 
 // ---- Auth Module ----
@@ -542,6 +661,19 @@ model LeaderboardTool {
   pricing     String
   visits      String
   addedDate   String
+}
+
+model ToolHistory {
+  id       String   @id @default(cuid())
+  userId   String
+  toolId   String
+  viewedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tool     Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, toolId])
+  @@index([userId])
+  @@index([toolId])
 }
 
 // ---- Module: Collections ----
@@ -772,5 +904,37 @@ model TaskBookmark {
 
   @@unique([taskId, userId])
   @@index([taskId])
+  @@index([userId])
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  reporterId String
+  reporter   User   @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  reportedUserId String?
+  reportedUser   User?   @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  reportedToolId String?
+  reportedTool   Tool?   @relation(fields: [reportedToolId], references: [id], onDelete: Cascade)
+
+  reportedNewsId String?
+  reportedNews   News?   @relation(fields: [reportedNewsId], references: [id], onDelete: Cascade)
+}
+
+model LinkBookmark {
+  id        String   @id @default(cuid())
+  title     String?
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
 }
