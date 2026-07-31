@@ -9,10 +9,10 @@ export const collectionsIngestPayloadSchema = z.object({
     isCurated: z.boolean().optional().default(false),
     creatorType: z.enum(['EDITORIAL', 'COMMUNITY']).optional().default('EDITORIAL'),
     creatorId: z.string(),
-    categories: z.array(z.string()).optional().default([]),
-    toolIds: z.array(z.string()).optional().default([]),
-    modelIds: z.array(z.string()).optional().default([]),
-    companyIds: z.array(z.string()).optional().default([]),
+    categories: z.array(z.string()).optional(),
+    toolIds: z.array(z.string()).optional(),
+    modelIds: z.array(z.string()).optional(),
+    companyIds: z.array(z.string()).optional(),
   })).min(1),
 });
 
