@@ -123,6 +123,15 @@ model User {
   taskLikes         TaskLike[]       @relation("TaskLikeUser")
   taskSubscriptions TaskSubscriber[] @relation("TaskSubscriberUser")
   toolVotes         ToolVote[]
+  
+  // MCP Directory relations
+  mcpReviews        MCPDirectoryReview[]
+  mcpDiscussions    MCPDirectoryDiscussion[]
+  mcpDiscussionReplies MCPDirectoryDiscussionReply[]
+  mcpUpvotes        MCPDirectoryUpvote[]
+  mcpSavedItems     MCPDirectorySavedMCP[]
+  mcpClaims         MCPDirectoryClaim[]
+  mcpReports        MCPDirectoryReport[]
 }
 
 // ---- Module 3: AI Tools ----
@@ -926,6 +935,25 @@ model Report {
   reportedNews   News?   @relation(fields: [reportedNewsId], references: [id], onDelete: Cascade)
 }
 
+model MCPDirectoryReport {
+  id        String   @id @default(cuid())
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  reporterId String
+  reporter   User   @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  reportedMCPItemId String
+  reportedMCPItem   MCPItem @relation(fields: [reportedMCPItemId], references: [id], onDelete: Cascade)
+
+  reason     String
+  description String?
+
+  @@index([reportedMCPItemId])
+  @@index([reporterId])
+}
+
 model LinkBookmark {
   id        String   @id @default(cuid())
   title     String?
@@ -936,5 +964,368 @@ model LinkBookmark {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+}
+
+// ---- MCP Directory Platform Models ----
+
+enum MCPItemType {
+  SERVER
+  CLIENT
+}
+
+enum MCPPricingType {
+  FREE
+  FREEMIUM
+  PAID
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+  ONE_TIME
+}
+
+enum EditorialGrade {
+  AA
+  A_PLUS
+  A
+  B_PLUS
+  B
+  C
+}
+
+model MCPItem {
+  id                    String            @id @default(cuid())
+  itemType              MCPItemType
+  name                  String
+  slug                  String            @unique
+  logoUrl               String?
+  coverImageUrl          String?
+  shortDescription      String
+  fullDescription       String
+  providerName          String
+  providerUrl           String?
+  license               String?
+  pricingType           MCPPricingType    @default(FREE)
+  startingPrice         Decimal?          @db.Decimal(10, 2)
+  isFeatured            Boolean           @default(false)
+  isVerified            Boolean           @default(false)
+  launchDate            DateTime?
+  lastUpdatedDate       DateTime          @default(now())
+  websiteUrl            String?
+  documentationUrl      String?
+  repositoryUrl         String?
+  qualityScore          Float?            @default(0)
+  easeOfUseScore        Float?            @default(0)
+  globalRank            Int?
+  leaderboardRank       Int?
+  editorialVerdict      String?
+  viewCount             Int               @default(0)
+  monthlyVisits         Int               @default(0)
+  upvoteCount           Int               @default(0)
+  saveCount             Int               @default(0)
+  
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  // Relations
+  categories            MCPItemCategory[]
+  subCategories         MCPItemSubCategory[]
+  tags                  MCPItemTag[]
+  technicalSpecs        TechnicalSpec[]
+  installationGuides    InstallationGuide[]
+  features              MCPFeature[]
+  useCases              MCPUseCase[]
+  pricingPlans          PricingPlan[]
+  reviews               MCPDirectoryReview[]
+  editorialReviews      MCPDirectoryEditorialReview[]
+  discussions           MCPDirectoryDiscussion[]
+  faqs                  MCPDirectoryFAQ[]
+  upvotes               MCPDirectoryUpvote[]
+  savedItems            MCPDirectorySavedMCP[]
+  claims                MCPDirectoryClaim[]
+  reports               MCPDirectoryReport[]
+
+  @@index([itemType])
+  @@index([slug])
+  @@index([pricingType])
+  @@index([isFeatured])
+  @@index([createdAt])
+  @@index([viewCount])
+  @@index([lastUpdatedDate])
+  @@index([qualityScore])
+  @@index([monthlyVisits])
+  @@index([upvoteCount])
+}
+
+model MCPDirectoryCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+  icon        String?
+  color       String?
+
+  mcpItems MCPItemCategory[]
+  subCategories MCPDirectorySubCategory[]
+
+  @@index([slug])
+}
+
+model MCPDirectorySubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+  categoryId  String
+  category    MCPDirectoryCategory @relation(fields: [categoryId], references: [id])
+
+  mcpItems MCPItemSubCategory[]
+
+  @@unique([slug, categoryId])
+  @@index([categoryId])
+}
+
+model MCPDirectoryTag {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+
+  mcpItems MCPItemTag[]
+
+  @@index([slug])
+}
+
+model MCPItemCategory {
+  id        String @id @default(cuid())
+  mcpItemId String
+  categoryId String
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+  category MCPDirectoryCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, categoryId])
+  @@index([categoryId])
+}
+
+model MCPItemSubCategory {
+  id           String @id @default(cuid())
+  mcpItemId    String
+  subCategoryId String
+
+  mcpItem    MCPItem    @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+  subCategory MCPDirectorySubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, subCategoryId])
+  @@index([subCategoryId])
+}
+
+model MCPItemTag {
+  id        String @id @default(cuid())
+  mcpItemId String
+  tagId     String
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+  tag     MCPDirectoryTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, tagId])
+  @@index([tagId])
+}
+
+model TechnicalSpec {
+  id             String   @id @default(cuid())
+  mcpItemId      String
+  supportedPlatforms String[]
+  compatibility  String
+  integrations   String[]
+  localBindingControls String
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
+}
+
+model InstallationGuide {
+  id          String   @id @default(cuid())
+  mcpItemId   String
+  stepNumber  Int
+  title       String
+  codeSnippet String
+  instructions String
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, stepNumber])
+  @@index([mcpItemId])
+}
+
+model MCPFeature {
+  id          String   @id @default(cuid())
+  mcpItemId   String
+  title       String
+  icon        String?
+  description String
+  badge       String?
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
+}
+
+model MCPUseCase {
+  id          String   @id @default(cuid())
+  mcpItemId   String
+  title       String
+  description String
+  applications String[]
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
+}
+
+model PricingPlan {
+  id          String       @id @default(cuid())
+  mcpItemId   String
+  planName    String
+  price       Decimal      @db.Decimal(10, 2)
+  billingCycle BillingCycle @default(MONTHLY)
+  featuresList String[]
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
+}
+
+model MCPDirectoryReview {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, userId])
+  @@index([mcpItemId])
+  @@index([userId])
+}
+
+model MCPDirectoryEditorialReview {
+  id          String         @id @default(cuid())
+  grade       EditorialGrade
+  verdict     String
+  reviewDate  DateTime       @default(now())
+  badge       String?
+  notes       String?
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
+}
+
+model MCPDirectoryDiscussion {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  upvotes   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  replies   MCPDirectoryDiscussionReply[]
+
+  @@index([mcpItemId])
+  @@index([userId])
+}
+
+model MCPDirectoryDiscussionReply {
+  id        String   @id @default(cuid())
+  content   String
+  upvotes   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  discussionId String
+  discussion   MCPDirectoryDiscussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([discussionId])
+  @@index([userId])
+}
+
+model MCPDirectoryFAQ {
+  id          String   @id @default(cuid())
+  question    String
+  answer      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
+}
+
+model MCPDirectoryUpvote {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, userId])
+  @@index([mcpItemId])
+  @@index([userId])
+}
+
+model MCPDirectorySavedMCP {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, userId])
+  @@index([mcpItemId])
+  @@index([userId])
+}
+
+model MCPDirectoryClaim {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  relationship String
+  message     String
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
   @@index([userId])
 }
