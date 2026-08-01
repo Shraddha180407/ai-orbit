@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 export class CompaniesService {
   private prisma: PrismaClient;
@@ -8,7 +8,7 @@ export class CompaniesService {
   }
 
   async listCompanies(typeFilter?: string) {
-    const where: any = {};
+    const where: Prisma.CompanyWhereInput = {};
 
     if (typeFilter) {
       where.type = { has: typeFilter };

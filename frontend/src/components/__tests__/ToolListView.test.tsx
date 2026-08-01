@@ -18,6 +18,21 @@ vi.mock("next/link", () => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
   usePathname: () => "/tools",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+vi.mock("@/hooks/use-user", () => ({
+  useUser: () => ({
+    user: null,
+    isLoading: false,
+    isAuthenticated: false,
+    update: vi.fn(),
+    error: null,
+  }),
+}));
+
+vi.mock("@/lib/actions", () => ({
+  toggleBookmark: vi.fn(),
 }));
 
 const mockTools: ToolCardData[] = [
@@ -80,7 +95,7 @@ describe("ToolListView", () => {
   it("renders column headers", () => {
     render(<ToolListView tools={mockTools} />);
     expect(screen.getByText("TOOL")).toBeInTheDocument();
-    expect(screen.getByText("NAME")).toBeInTheDocument();
+    expect(screen.getByText("TASK")).toBeInTheDocument();
     expect(screen.getByText("PRICING")).toBeInTheDocument();
   });
 
@@ -92,7 +107,7 @@ describe("ToolListView", () => {
 
   it("renders compare buttons", () => {
     render(<ToolListView tools={mockTools} />);
-    const compareButtons = screen.getAllByText("Compare");
+    const compareButtons = screen.getAllByRole("button", { name: /Add .* to compare/i });
     expect(compareButtons.length).toBe(2);
   });
 
@@ -100,8 +115,9 @@ describe("ToolListView", () => {
     const user = userEvent.setup();
     render(<ToolListView tools={mockTools} />);
 
-    const compareButtons = screen.getAllByText("Compare");
+    const compareButtons = screen.getAllByRole("button", { name: /Add .* to compare/i });
     await user.click(compareButtons[0]);
-    expect(screen.getByText("Added")).toBeInTheDocument();
+    expect(screen.getAllByText("Tool A").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("Select another tool…")).toBeInTheDocument();
   });
 });

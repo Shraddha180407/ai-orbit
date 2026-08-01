@@ -670,6 +670,7 @@ describe('AdminService', () => {
 
       expect(prisma.aIModel.create).toHaveBeenCalledWith({
         data: {
+          slug: 'gpt-4',
           name: 'GPT-4',
           creator: 'OpenAI',
           contextWindow: '128k',

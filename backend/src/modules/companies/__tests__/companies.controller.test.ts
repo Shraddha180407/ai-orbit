@@ -31,6 +31,7 @@ function mockContext(params: Record<string, string> = {}) {
     },
     req: {
       param: (key: string) => params[key] || '',
+      query: (_key: string) => undefined,
     },
     env: {},
     get status() { return status; },

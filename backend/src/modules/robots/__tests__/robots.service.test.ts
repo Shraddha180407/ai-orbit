@@ -28,7 +28,13 @@ describe('RobotsService', () => {
         include: {
           tasks: {
             include: {
-              task: true,
+              task: {
+                select: {
+                  id: true,
+                  slug: true,
+                  title: true,
+                },
+              },
             },
           },
         },

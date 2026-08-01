@@ -1,11 +1,24 @@
 import { Context } from 'hono';
 import { getPrisma } from '../../lib/prisma.js';
 import { RobotsService } from './robots.service.js';
+import { Robot } from '@prisma/client';
 
-function flattenTasks(robot: any) {
+type TaskData = {
+  id: string;
+  slug: string;
+  title: string;
+  description?: string | null;
+  category?: { slug: string; name: string } | null;
+};
+
+type FlattenableRobot = Robot & {
+  tasks: Array<{ task: TaskData }>;
+};
+
+function flattenTasks(robot: FlattenableRobot | null | undefined) {
   if (!robot) return robot;
   const { tasks: taskRelations, ...rest } = robot;
-  const tasks = (taskRelations || []).map((tr: any) => ({
+  const tasks = (taskRelations || []).map((tr) => ({
     id: tr.task.id,
     title: tr.task.title,
     slug: tr.task.slug,
@@ -23,8 +36,8 @@ export class RobotsController {
     try {
       const robots = await service.listRobots();
       return c.json(robots.map(flattenTasks));
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: (error as { message: string }).message }, 500);
     } finally {
       await prisma.$disconnect();
     }
@@ -45,8 +58,8 @@ export class RobotsController {
         return c.json({ error: 'Robot not found' }, 404);
       }
       return c.json(flattenTasks(robot));
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    } catch (error: unknown) {
+      return c.json({ error: (error as { message: string }).message }, 500);
     } finally {
       await prisma.$disconnect();
     }

@@ -16,6 +16,8 @@ const MOCK_COMPANY = {
   name: 'Test Company',
   logoUrl: 'https://logo.png',
   description: 'A test company',
+  valuation: null,
+  fundingRaised: null,
   createdAt: new Date('2025-01-01'),
 };
 
@@ -40,15 +42,55 @@ describe('CompaniesService', () => {
       const result = await service.listCompanies();
 
       expect(prisma.company.findMany).toHaveBeenCalledWith({
+        where: {},
         orderBy: { name: 'asc' },
-        include: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          logoUrl: true,
+          description: true,
+          website: true,
+          country: true,
+          city: true,
+          foundedYear: true,
+          type: true,
+          sector: true,
+          verified: true,
+          featured: true,
+          valuation: true,
+          fundingRaised: true,
+          latestFundingRound: true,
+          employeeCount: true,
+          linkedinUrl: true,
+          twitterUrl: true,
+          views: true,
+          upvotes: true,
+          impressions: true,
+          createdAt: true,
+          updatedAt: true,
+          tools: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+              logoUrl: true,
+            },
+          },
+          aiModels: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+            },
+          },
           _count: {
             select: {
               tools: true,
               aiModels: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
       expect(result).toEqual(companies);
     });
@@ -67,8 +109,10 @@ describe('CompaniesService', () => {
       const companyWithTools = {
         ...MOCK_COMPANY,
         tools: [
-          { id: 't-1', slug: 'tool-1', name: 'Tool 1', logoUrl: null, description: 'desc', pricingModel: 'FREE', avgRating: 4.5, _count: { reviews: 3 } },
+          { id: 't-1', slug: 'tool-1', name: 'Tool 1', logoUrl: null, description: 'desc', pricingModel: 'FREE', avgRating: 4.5, websiteUrl: null, _count: { reviews: 3 } },
         ],
+        aiModels: [],
+        _count: { tools: 1, aiModels: 0, collectionCompanies: 0 },
       };
       prisma.company.findUnique.mockResolvedValue(companyWithTools);
 
@@ -86,18 +130,22 @@ describe('CompaniesService', () => {
               description: true,
               pricingModel: true,
               avgRating: true,
+              websiteUrl: true,
               _count: { select: { reviews: true } },
             },
           },
           aiModels: {
             select: {
               id: true,
+              slug: true,
               name: true,
               description: true,
               contextWindow: true,
               parameterSize: true,
               modality: true,
               releaseDate: true,
+              websiteUrl: true,
+              capabilities: true,
             },
           },
           _count: {
