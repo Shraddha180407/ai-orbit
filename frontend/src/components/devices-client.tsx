@@ -349,7 +349,7 @@ export function DevicesClient() {
       
       {/* ── SUBCATEGORY PILLS ── */}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden justify-start lg:justify-center">
           <button
             onClick={() => { setSelectedCategory(ALL_CATEGORIES); setCurrentPage(1); }}
             className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
