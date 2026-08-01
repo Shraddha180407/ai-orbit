@@ -9,8 +9,6 @@
     "ingest": "tsx scripts/ingest.ts",
     "sync-repos": "tsx scripts/sync-repositories.ts",
     "seed": "tsx prisma/seed.ts",
-    "seed-mcp": "tsx prisma/seed-mcp.ts",
-    "migrate-mcp": "tsx scripts/migrate-mcp.ts",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
