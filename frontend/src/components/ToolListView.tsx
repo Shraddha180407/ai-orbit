@@ -1,17 +1,26 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useTransition, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import GitCompare from 'lucide-react/dist/esm/icons/git-compare';
 import Check from 'lucide-react/dist/esm/icons/check';
 import X from 'lucide-react/dist/esm/icons/x';
 import Star from 'lucide-react/dist/esm/icons/star';
+import Bookmark from 'lucide-react/dist/esm/icons/bookmark';
+import ExternalLink from 'lucide-react/dist/esm/icons/external-link';
+import Share2 from 'lucide-react/dist/esm/icons/share-2';
+import BadgeCheck from 'lucide-react/dist/esm/icons/badge-check';
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
+import ArrowUp from 'lucide-react/dist/esm/icons/arrow-up';
+import ArrowDown from 'lucide-react/dist/esm/icons/arrow-down';
 import { PricingBadge } from "@/components/PricingBadge";
 import { CategoryChip } from "@/components/CategoryChip";
 import type { ToolCardData } from "@/lib/types";
+import { useUser } from "@/hooks/use-user";
+import { toggleBookmark } from "@/lib/actions";
 
 const MAX_COMPARE = 2;
 
@@ -28,6 +37,11 @@ type ListTool = ToolCardData & {
   openSource?: boolean;
   isTrending?: boolean;
   trending?: boolean;
+  hasApi?: boolean;
+  isVerified?: boolean;
+  isFeatured?: boolean;
+  compatibility?: string[];
+  websiteUrl?: string | null;
 };
 
 type ToolListViewProps = {
@@ -96,25 +110,116 @@ function BoolPill({
 // Horizontal scroll only kicks in below ~1024px (min-w-[960px] on the inner
 // grid), so on desktop the table fills the available width.
 
-const COL_TEMPLATE =
-  "grid-cols-[40px_minmax(220px,2.4fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(90px,0.8fr)_minmax(110px,1fr)_minmax(110px,0.9fr)_minmax(95px,0.8fr)_minmax(150px,1.2fr)_minmax(110px,0.9fr)]";
+const HOME_COL_TEMPLATE =
+  "grid-cols-[40px_minmax(220px,2.5fr)_minmax(120px,1.2fr)_minmax(150px,1.5fr)_minmax(120px,1.2fr)_minmax(100px,1fr)_minmax(90px,0.8fr)]";
 
-const COL_MIN_WIDTH = "min-w-[960px]";
+const HOME_COL_MIN_WIDTH = "min-w-[850px]";
 
 // Column header -------------------------------------------------------------
 
-const COLUMN_HEADERS = [
+const HOME_COLUMN_HEADERS = [
+  { label: "LOGO", align: "" },
   { label: "TOOL", align: "" },
-  { label: "NAME", align: "" },
-  { label: "TASK", align: "" },
-  { label: "RELEASED", align: "" },
+  { label: "CATEGORY", align: "" },
+  { label: "TAGS", align: "" },
+  { label: "RELEASED BY", align: "" },
   { label: "PRICE", align: "" },
-  { label: "REVIEWS", align: "" },
-  { label: "OPEN-SOURCE", align: "" },
-  { label: "TRENDING", align: "" },
-  { label: "PRICING", align: "" },
-  { label: "COMPARE", align: "text-right" },
+  { label: "BOOKMARK", align: "text-right" },
 ];
+
+const DEFAULT_COL_TEMPLATE =
+  "grid-cols-[40px_minmax(280px,4fr)_minmax(120px,1.2fr)_minmax(120px,1.2fr)_minmax(80px,0.8fr)_minmax(100px,1fr)_minmax(120px,1.2fr)_minmax(100px,1fr)_60px_75px]";
+
+const DEFAULT_COL_MIN_WIDTH = "min-w-[1080px]";
+
+const DEFAULT_COLUMN_HEADERS = [
+  { label: "", align: "" },
+  { label: "TOOL", align: "" },
+  { label: "TASK", align: "" },
+  { label: "PRICING", align: "", sortKey: "price" },
+  { label: "API", align: "" },
+  { label: "OPEN-SOURCE", align: "" },
+  { label: "COMPATIBILITY", align: "" },
+  { label: "RELEASED", align: "", sortKey: "released" },
+  { label: "SHARE", align: "" },
+  { label: "BOOKMARK", align: "text-center" },
+];
+
+// Share Button ---------------------------------------------------------------
+
+function ShareButton({ tool }: { tool: ListTool }) {
+  const [copied, setCopied] = useState(false);
+  const handleShare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `${window.location.origin}/tools/${tool.slug}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleShare}
+      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors ${
+        copied
+          ? "border-[var(--color-signal)] text-[var(--color-signal)]"
+          : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
+      }`}
+      aria-label={`Share ${tool.name}`}
+    >
+      {copied ? <Check size={14} /> : <Share2 size={14} />}
+    </button>
+  );
+}
+
+// Bookmark Button for Home --------------------------------------------------
+
+function HomeBookmarkButton({ tool }: { tool: ListTool }) {
+  const router = useRouter();
+  const { isAuthenticated } = useUser();
+  const [bookmarked, setBookmarked] = useState<boolean>(!!(tool as any).bookmarked);
+  const [isPending, startTransition] = useTransition();
+
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      router.push("/auth/signin");
+      return;
+    }
+
+    const nextBookmarked = !bookmarked;
+    setBookmarked(nextBookmarked);
+
+    startTransition(async () => {
+      try {
+        const result = await toggleBookmark(tool.id, tool.slug);
+        setBookmarked(result.bookmarked);
+      } catch {
+        setBookmarked(bookmarked);
+      }
+    });
+  };
+
+  return (
+    <button
+      type="button"
+      disabled={isPending}
+      onClick={handleBookmark}
+      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors disabled:opacity-60 ${
+        bookmarked
+          ? "border-[var(--color-signal)] text-[var(--color-signal)]"
+          : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
+      }`}
+      aria-label={bookmarked ? `Remove bookmark for ${tool.name}` : `Bookmark ${tool.name}`}
+      aria-pressed={bookmarked}
+    >
+      {bookmarked ? <Check size={14} /> : <Bookmark size={14} />}
+    </button>
+  );
+}
 
 // Row renderer ---------------------------------------------------------------
 
@@ -123,13 +228,15 @@ function ToolRow({
   isSelected,
   isCompareFull,
   onToggleCompare,
-  basePath = "/tools"
+  basePath = "/tools",
+  isHome = false
 }: {
   tool: ListTool;
   isSelected: boolean;
   isCompareFull: boolean;
   onToggleCompare: (tool: ListTool) => void;
   basePath?: string;
+  isHome?: boolean;
 }) {
   const primaryCategory = tool.categories[0]?.category;
   const isOpenSource = isTruthy(tool.isOpenSource, tool.openSource);
@@ -141,10 +248,13 @@ function ToolRow({
     tool.pricingAmount !== undefined &&
     Number(tool.pricingAmount) > 0;
 
+  const template = isHome ? HOME_COL_TEMPLATE : DEFAULT_COL_TEMPLATE;
+  const minWidth = isHome ? HOME_COL_MIN_WIDTH : DEFAULT_COL_MIN_WIDTH;
+
   return (
     <Link
       href={`${basePath}/${tool.slug}`}
-      className={`group relative grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none`}
+      className={`group relative grid ${template} ${minWidth} items-center gap-4 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none`}
     >
       {/* Hover marker — grows from the left edge, mirrors the video rows */}
       <span className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
@@ -167,114 +277,199 @@ function ToolRow({
       </div>
 
       {/* Column 2: Name + Description */}
-      <div className="min-w-0">
-        <h3 className="truncate text-[13px] font-semibold text-white group-hover:text-white">
-          {tool.name}
-        </h3>
-        <p className="mt-0.5 line-clamp-1 text-[11px] text-[#A1A1AA] leading-snug">
+      <div className="min-w-0 flex flex-col justify-center">
+        <div className="flex items-center gap-1.5 min-w-0 w-full">
+          <h3 className="truncate text-[13px] font-semibold text-white group-hover:text-white">
+            {tool.name}
+          </h3>
+          {!isHome && tool.isVerified && (
+            <BadgeCheck size={14} className="shrink-0 text-blue-400" aria-label="Verified" />
+          )}
+          {!isHome && tool.isFeatured && (
+            <Sparkles size={14} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
+          )}
+          {!isHome && (
+            tool.websiteUrl ? (
+              <a
+                href={tool.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-[#71717A] hover:text-white transition-colors shrink-0"
+                aria-label={`Visit ${tool.name} website`}
+              >
+                <ExternalLink size={14} />
+              </a>
+            ) : (
+              <span className="text-[#71717A] opacity-50 shrink-0">
+                <ExternalLink size={14} />
+              </span>
+            )
+          )}
+          {!isHome && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleCompare(tool);
+              }}
+              className={`ml-auto mr-4 transition-colors shrink-0 ${
+                isSelected ? "text-[var(--color-signal)]" : "text-[#71717A] hover:text-white"
+              }`}
+              aria-label={isSelected ? `Remove ${tool.name} from compare` : `Add ${tool.name} to compare`}
+            >
+              <GitCompare size={14} />
+            </button>
+          )}
+        </div>
+        <p className="mt-0.5 truncate text-[11px] text-[#A1A1AA] leading-snug w-full pr-4">
           {tool.description}
         </p>
       </div>
 
-      {/* Column 3: Task */}
-      <div className="min-w-0 truncate">
-        {tool.ttasks && tool.ttasks.length > 0 ? (
-          <CategoryChip label={tool.ttasks[0].task.title} />
-        ) : (
-          <span className="text-[11px] text-[#71717A]">—</span>
-        )}
-      </div>
+      {isHome ? (
+        <>
+          {/* Column 3: Category */}
+          <div className="min-w-0 truncate">
+            {tool.categories?.[0]?.category?.name ? (
+              <CategoryChip label={tool.categories[0].category.name} />
+            ) : (
+              <span className="text-[11px] text-[#71717A]">—</span>
+            )}
+          </div>
 
-      {/* Column 4: Released */}
-      <div className="hidden text-[11px] font-mono text-[#A1A1AA] sm:block">
-        {formatReleased(tool.releaseDate)}
-      </div>
+          {/* Column 4: Tags */}
+          <div className="min-w-0 flex flex-wrap gap-1">
+            {tool.tags && tool.tags.length > 0 ? (
+              <>
+                {tool.tags.slice(0, 2).map((t, i) => (
+                  <span key={i} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+                    {t.tag.name}
+                  </span>
+                ))}
+                {tool.tags.length > 2 && (
+                  <span className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+                    +{tool.tags.length - 2}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-[11px] text-[#71717A]">—</span>
+            )}
+          </div>
 
-      {/* Column 5: Price (compact) */}
-      <div className="hidden text-[12px] font-mono text-white sm:block">
-        {tool.pricingModel === "FREE" ? (
-          <span className="text-emerald-400">Free</span>
-        ) : showAmount ? (
-          <span>
-            ${tool.pricingAmount}
-            <span className="text-[#71717A]">/mo</span>
-          </span>
-        ) : tool.pricingModel === "FREEMIUM" ? (
-          <span className="text-[#A1A1AA]">Freemium</span>
-        ) : (
-          <span className="text-[#71717A]">—</span>
-        )}
-      </div>
+          {/* Column 5: Released By */}
+          <div className="min-w-0 truncate text-[12px] text-[#A1A1AA]">
+            {tool.company?.name ? (
+              <span className="truncate">{tool.company.name}</span>
+            ) : (
+              <span className="text-[#71717A]">—</span>
+            )}
+          </div>
 
-      {/* Column 6: Reviews */}
-      <div className="hidden items-center gap-1 text-[11px] font-mono text-[#A1A1AA] sm:flex">
-        <Star size={11} className="fill-amber-400 text-amber-400" />
-        <span className="text-white">{tool.avgRating?.toFixed(1) ?? "—"}</span>
-        <span className="text-[#71717A]">({reviewCount})</span>
-      </div>
+          {/* Column 6: Price */}
+          <div className="hidden sm:block">
+            <PricingBadge
+              pricingModel={tool.pricingModel}
+              pricingAmount={tool.pricingAmount}
+              billingFrequency={tool.billingFrequency}
+            />
+          </div>
 
-      {/* Column 7: Open-Source */}
-      <div className="hidden sm:block">
-        <BoolPill value={isOpenSource} trueLabel="YES" falseLabel="NO" />
-      </div>
+          {/* Column 7: Bookmark */}
+          <div className="hidden text-right sm:block">
+            <HomeBookmarkButton tool={tool} />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Column 3: Task */}
+          <div className="min-w-0 truncate">
+            {tool.ttasks && tool.ttasks.length > 0 ? (
+              <CategoryChip label={tool.ttasks[0].task.title} />
+            ) : (
+              <span className="text-[11px] text-[#71717A]">—</span>
+            )}
+          </div>
 
-      {/* Column 8: Trending */}
-      <div className="hidden sm:block">
-        <BoolPill
-          value={isTrending}
-          trueLabel="HOT"
-          falseLabel="—"
-          trueColor="text-orange-400 bg-orange-400/10 border-orange-400/20"
-        />
-      </div>
+          {/* Column 4: Pricing */}
+          <div className="hidden sm:block">
+            <PricingBadge
+              pricingModel={tool.pricingModel}
+              pricingAmount={tool.pricingAmount}
+              billingFrequency={tool.billingFrequency}
+            />
+          </div>
 
-      {/* Column 9: Pricing (full badge) */}
-      <div className="hidden sm:block">
-        <PricingBadge
-          pricingModel={tool.pricingModel}
-          pricingAmount={tool.pricingAmount}
-          billingFrequency={tool.billingFrequency}
-        />
-      </div>
+          {/* Column 5: API */}
+          <div className="hidden sm:block">
+            {tool.hasApi !== undefined ? (
+              <BoolPill value={tool.hasApi} trueLabel="YES" falseLabel="NO" />
+            ) : (
+              <span className="text-[11px] text-[#71717A] font-mono">—</span>
+            )}
+          </div>
 
-      {/* Column 10: Compare */}
-      <div className="hidden text-right sm:block">
-        <button
-          type="button"
-          disabled={!isSelected && isCompareFull}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onToggleCompare(tool);
-          }}
-          className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-mono font-semibold transition-colors ${
-            isSelected
-              ? "border-transparent text-black"
-              : !isSelected && isCompareFull
-              ? "cursor-not-allowed border-[#232326]/40 bg-[#131316] text-[#4a4a4d]"
-              : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
-          }`}
-          style={isSelected ? { backgroundColor: "var(--color-signal)" } : undefined}
-          aria-label={isSelected ? `Remove ${tool.name} from compare` : `Add ${tool.name} to compare`}
-          aria-pressed={isSelected}
-        >
-          {isSelected ? <Check size={10} /> : <GitCompare size={10} />}
-          {isSelected ? "Added" : "Compare"}
-        </button>
-      </div>
+          {/* Column 6: Open-Source */}
+          <div className="hidden sm:block">
+            <BoolPill value={isOpenSource} trueLabel="YES" falseLabel="NO" />
+          </div>
+
+          {/* Column 7: Compatibility */}
+          <div className="hidden sm:block min-w-0 truncate">
+            {tool.compatibility && tool.compatibility.length > 0 ? (
+              <div className="flex gap-1">
+                {tool.compatibility.slice(0, 2).map((c, i) => (
+                  <span key={i} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+                    {c}
+                  </span>
+                ))}
+                {tool.compatibility.length > 2 && (
+                  <span className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+                    +{tool.compatibility.length - 2}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className="text-[11px] text-[#71717A] font-mono">—</span>
+            )}
+          </div>
+
+          {/* Column 8: Released */}
+          <div className="hidden text-[11px] font-mono text-[#A1A1AA] sm:block">
+            {formatReleased(tool.releaseDate)}
+          </div>
+
+          {/* Column 9: Share */}
+          <div className="hidden sm:block">
+            <ShareButton tool={tool} />
+          </div>
+
+          {/* Column 10: Bookmark */}
+          <div className="hidden text-center sm:block">
+            <HomeBookmarkButton tool={tool} />
+          </div>
+        </>
+      )}
     </Link>
   );
 }
 
 // Main component ------------------------------------------------------------
 
-export function ToolListView({
+function ToolListViewInner({
   tools,
   loading = false,
   skeletonRows = 4,
 }: ToolListViewProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isHome = pathname === "/";
+  const template = isHome ? HOME_COL_TEMPLATE : DEFAULT_COL_TEMPLATE;
+  const minWidth = isHome ? HOME_COL_MIN_WIDTH : DEFAULT_COL_MIN_WIDTH;
+  const headers = isHome ? HOME_COLUMN_HEADERS : DEFAULT_COLUMN_HEADERS;
   const [compareSet, setCompareSet] = useState<ListTool[]>([]);
 
   let basePath = "/tools";
@@ -307,21 +502,33 @@ export function ToolListView({
           {Array.from({ length: skeletonRows }).map((_, i) => (
             <div
               key={i}
-              className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2.5`}
+              className={`grid ${template} ${minWidth} items-center gap-4 px-4 py-2.5`}
             >
               <div className="h-11 w-11 animate-pulse rounded-lg bg-[#18181C]" />
               <div className="space-y-1.5">
                 <div className="h-3 w-40 animate-pulse rounded bg-[#18181C]" />
                 <div className="h-2 w-64 animate-pulse rounded bg-[#18181C]" />
               </div>
-              <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
-              <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
-              <div className="h-3 w-12 animate-pulse rounded bg-[#18181C]" />
-              <div className="h-3 w-14 animate-pulse rounded bg-[#18181C]" />
-              <div className="h-4 w-12 animate-pulse rounded-full bg-[#18181C]" />
-              <div className="h-4 w-10 animate-pulse rounded-full bg-[#18181C]" />
-              <div className="h-5 w-20 animate-pulse rounded-full bg-[#18181C]" />
-              <div className="ml-auto h-5 w-16 animate-pulse rounded-md bg-[#18181C]" />
+              {isHome ? (
+                <>
+                  <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
+                  <div className="h-4 w-16 animate-pulse rounded-full bg-[#18181C]" />
+                  <div className="h-5 w-20 animate-pulse rounded-full bg-[#18181C]" />
+                  <div className="ml-auto h-5 w-16 animate-pulse rounded-md bg-[#18181C]" />
+                </>
+              ) : (
+                <>
+                  <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
+                  <div className="h-5 w-20 animate-pulse rounded-full bg-[#18181C]" />
+                  <div className="h-4 w-10 animate-pulse rounded-full bg-[#18181C]" />
+                  <div className="h-4 w-12 animate-pulse rounded-full bg-[#18181C]" />
+                  <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
+                  <div className="h-7 w-7 animate-pulse rounded-md bg-[#18181C]" />
+                  <div className="ml-auto h-7 w-7 animate-pulse rounded-md bg-[#18181C]" />
+                </>
+              )}
             </div>
           ))}
         </div>
@@ -351,15 +558,40 @@ export function ToolListView({
         {/* Column header row */}
         <div className="overflow-x-auto">
           <div className="border-b border-[#232326]/60 bg-[#131316]/40">
-            <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2`}>
-              {COLUMN_HEADERS.map((h) => (
-                <span
-                  key={h.label}
-                  className={`text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] ${h.align}`}
-                >
-                  {h.label}
-                </span>
-              ))}
+            <div className={`grid ${template} ${minWidth} items-center gap-4 px-4 py-2`}>
+              {headers.map((h, i) => {
+                const isActiveSort = searchParams.get("sort")?.startsWith(h.sortKey || "");
+                const isDesc = searchParams.get("sort") === `${h.sortKey}-desc`;
+                
+                return (
+                  <span
+                    key={h.label || `header-${i}`}
+                    className={`text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] ${h.align}`}
+                  >
+                    {h.sortKey ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextSort = isDesc ? `${h.sortKey}-asc` : `${h.sortKey}-desc`;
+                          const newParams = new URLSearchParams(searchParams.toString());
+                          newParams.set("sort", nextSort);
+                          router.push(`${pathname}?${newParams.toString()}`);
+                        }}
+                        className="flex items-center gap-1 hover:text-white transition-colors uppercase tracking-wider"
+                      >
+                        {h.label}
+                        {isActiveSort ? (
+                          isDesc ? <ArrowDown size={12} /> : <ArrowUp size={12} />
+                        ) : (
+                          <ArrowDown size={12} className="opacity-30" />
+                        )}
+                      </button>
+                    ) : (
+                      h.label
+                    )}
+                  </span>
+                );
+              })}
             </div>
           </div>
 
@@ -374,6 +606,7 @@ export function ToolListView({
                     isCompareFull={compareSet.length >= MAX_COMPARE}
                     onToggleCompare={toggleCompare}
                     basePath={basePath}
+                    isHome={isHome}
                   />
                 </div>
               );
@@ -443,5 +676,13 @@ export function ToolListView({
         </div>
       )}
     </>
+  );
+}
+
+export function ToolListView(props: ToolListViewProps) {
+  return (
+    <Suspense fallback={<div className="min-h-[400px] w-full rounded-lg border border-[#232326]/60 bg-[#131316]/10 animate-pulse" />}>
+      <ToolListViewInner {...props} />
+    </Suspense>
   );
 }

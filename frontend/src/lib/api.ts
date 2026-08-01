@@ -210,6 +210,13 @@ export async function fetchAllRobots(): Promise<any[]> {
   return res.json();
 }
 
+export async function fetchRobotById(idOrSlug: string): Promise<any | null> {
+  const url = `${API_URL}/api/v1/robots/${idOrSlug}`;
+  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
+  if (!res.ok) return null;
+  return res.json();
+}
+
 export async function fetchAllDevices(): Promise<any[]> {
   const url = `${API_URL}/api/v1/devices`;
   const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);

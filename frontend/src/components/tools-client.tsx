@@ -189,7 +189,7 @@ export function ToolsClient({
                     inline: "center"
                   });
                 }}
-                className={`rounded-full px-2.5 py-0.5 text-[8.5px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"

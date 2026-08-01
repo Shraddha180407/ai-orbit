@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 export class RobotsService {
   private prisma: PrismaClient;
@@ -13,61 +13,62 @@ export class RobotsService {
       include: {
         tasks: {
           include: {
-            task: true
-          }
-        }
-      }
-    });
-  }
-
-  async getRobotByIdOrSlug(identifier: string) {
-    return this.prisma.robot.findFirst({
-      where: {
-        OR: [
-          { id: identifier },
-          { slug: identifier }
-        ]
+            task: {
+              select: {
+                id: true,
+                slug: true,
+                title: true,
+              },
+            },
+          },
+        },
       },
-      include: {
-        tasks: {
-          include: {
-            task: true
-          }
-        }
-      }
     });
   }
 
-  async createRobot(data: Prisma.RobotCreateInput) {
-    return this.prisma.robot.create({
-      data,
+  async getRobotBySlug(slug: string) {
+    return this.prisma.robot.findUnique({
+      where: { slug },
       include: {
         tasks: {
           include: {
-            task: true
-          }
-        }
-      }
+            task: {
+              select: {
+                id: true,
+                slug: true,
+                title: true,
+                description: true,
+                category: {
+                  select: { slug: true, name: true },
+                },
+              },
+            },
+          },
+        },
+      },
     });
   }
 
-  async updateRobot(id: string, data: Prisma.RobotUpdateInput) {
-    return this.prisma.robot.update({
+  async getRobotById(id: string) {
+    return this.prisma.robot.findUnique({
       where: { id },
-      data,
       include: {
         tasks: {
           include: {
-            task: true
-          }
-        }
-      }
-    });
-  }
-
-  async deleteRobot(id: string) {
-    return this.prisma.robot.delete({
-      where: { id },
+            task: {
+              select: {
+                id: true,
+                slug: true,
+                title: true,
+                description: true,
+                category: {
+                  select: { slug: true, name: true },
+                },
+              },
+            },
+          },
+        },
+      },
     });
   }
 }

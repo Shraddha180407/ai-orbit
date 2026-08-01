@@ -15,6 +15,7 @@ import { DeviceDetailClient } from "@/components/detail/DeviceDetailClient";
 import { TaskDetailClient } from "@/components/detail/TaskDetailClient";
 import { RepositoryDetailPage } from "@/components/repository-detail/RepositoryDetailPage";
 import { CompanyDetailClient } from "@/components/company-detail-client";
+import { RobotDetailClient } from "@/components/detail/RobotDetailClient";
 import { SERVER_API_URL } from "@/lib/api";
 
 const VALID_CATEGORIES: Record<string, Set<string>> = {
@@ -74,6 +75,17 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
     }
   }
 
+  if (type === "robots") {
+    const title = slug
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    return {
+      title: `${title} — Robots — The AI Signal`,
+      description: `Details and specifications for ${title}.`,
+    };
+  }
+
   return {};
 }
 
@@ -112,12 +124,21 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   if (type === "repositories") return <RepositoryDetailPage slug={slug} />;
   if (type === "companies") return <CompanyDetailClient />;
 
-  const entityTypeMap: Record<string, "device" | "country" | "fundraise" | "investor" | "robot"> = {
+  if (type === "robots") {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
+        <Header />
+        <RobotDetailClient id={slug} />
+        <Footer />
+      </div>
+    );
+  }
+
+  const entityTypeMap: Record<string, "device" | "country" | "fundraise" | "investor"> = {
     devices: "device",
     countries: "country",
     fundraises: "fundraise",
     investors: "investor",
-    robots: "robot",
   };
 
   if (type === "devices") return <DeviceDetailClient />;
