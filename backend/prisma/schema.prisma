@@ -310,7 +310,16 @@ model Bookmark {
   @@index([toolId])
   @@index([userId])
 }
-
+enum ModelType {
+  TEXT
+  IMAGE
+  VIDEO
+  MULTIMODAL
+  AUDIO
+  CODE
+  THREE_D
+  STRUCTURED_DATA
+}
 model AIModel {
   id               String            @id @default(cuid())
   slug             String            @unique
@@ -325,12 +334,17 @@ model AIModel {
   updatedAt        DateTime          @default(now()) @updatedAt
   collectionModels CollectionModel[]
   tasks            TaskModel[]
-
   providerId String?
   provider   Company? @relation(fields: [providerId], references: [id])
   websiteUrl    String?
   capabilities  String[]  @default([])
-  
+
+  apiAvailable  Boolean     @default(false)
+  documentation Json?
+  promptExamples String[]   @default([])
+  openSource    Boolean     @default(false)
+  primaryTask   String?
+  modelType     ModelType?
   @@index([providerId])
 }
 
