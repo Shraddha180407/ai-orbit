@@ -1,7 +1,7 @@
 import { Context } from 'hono';
 import { getPrisma } from '../../lib/prisma.js';
 import { RobotsService } from './robots.service.js';
-import { Robot } from '@prisma/client';
+import type { Robot } from '@prisma/client';
 
 type TaskData = {
   id: string;

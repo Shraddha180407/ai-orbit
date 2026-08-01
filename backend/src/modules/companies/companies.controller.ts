@@ -1,15 +1,17 @@
 import { Context } from 'hono';
 import { getPrisma } from '../../lib/prisma.js';
 import { CompaniesService } from './companies.service.js';
+import { CompanyType } from '@prisma/client';
 
 export class CompaniesController {
   async listCompanies(c: Context) {
     const prisma = getPrisma(c.env);
     const service = new CompaniesService(prisma);
-    const typeFilter = c.req.query('type') || undefined;
+    const typeFilter = c.req.query('type');
+    const validTypeFilter = typeFilter && typeFilter in CompanyType ? typeFilter as CompanyType : undefined;
 
     try {
-      const companies = await service.listCompanies(typeFilter);
+      const companies = await service.listCompanies(validTypeFilter);
       return c.json(companies);
     } catch (error: unknown) {
       return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
