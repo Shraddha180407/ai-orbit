@@ -124,7 +124,7 @@ function LogoCell({ name, logoUrl, color }: { name: string; logoUrl: string; col
 const PAGE_SIZE = 20;
 
 // Matches ToolListView column template exactly
-const COL_TEMPLATE = "grid-cols-[40px_minmax(200px,2.4fr)_minmax(120px,1.2fr)_minmax(120px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)] sm:grid-cols-[40px_minmax(200px,2.4fr)_minmax(120px,1.2fr)_minmax(120px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)_minmax(110px,0.9fr)]";
+const COL_TEMPLATE = "grid-cols-[40px_minmax(200px,2.4fr)_minmax(120px,1.2fr)_minmax(120px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)] sm:grid-cols-[40px_minmax(200px,2.4fr)_minmax(120px,1.2fr)_minmax(120px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)_80px]";
 const COL_MIN_WIDTH = "min-w-[1050px]";
 
 const COLUMN_HEADERS = [
