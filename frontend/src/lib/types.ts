@@ -137,7 +137,7 @@ export type CollectionDetailData = {
   tools: ToolCardData[]; // reuses Module 3's existing ToolCardData shape
 };
 
-export type CompanyType = 'AI_NATIVE' | 'MODEL_COMPANIES' | 'TOOL_COMPANIES' | 'PROFITABLE' | 'UNICORNS';
+export type CompanyType = 'AI_NATIVE' | 'MODEL_COMPANIES' | 'UNICORNS' | 'AI_MODEL_PROVIDERS' | 'INFRASTRUCTURE' | 'ENTERPRISE' | 'HEALTHCARE' | 'GENERATIVE_AI' | 'MARKETING' | 'DEVELOPER_TOOLS' | 'ROBOTICS' | 'EDUCATION' | 'OPEN_SOURCE' | 'FINANCE';
 
 export type Company = {
   id: string;

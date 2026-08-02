@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 
 import {
   fetchTasks,
@@ -22,7 +23,31 @@ type TasksClientProps = {
 
 const COLUMN_LABELS = ["SUBSCRIBERS", "SAVES", "TOOLS", "MODELS", "ROBOTS", "DEVICES"];
 
+const TASK_CATEGORIES = [
+  { name: "All", slug: "" },
+  { name: "Content Creation", slug: "content-creation" },
+  { name: "Image Creation", slug: "image-creation" },
+  { name: "Video Creation", slug: "video-creation" },
+  { name: "Audio", slug: "audio" },
+  { name: "Coding", slug: "coding" },
+  { name: "Data Analysis", slug: "data-analysis" },
+  { name: "Research", slug: "research" },
+  { name: "Productivity", slug: "productivity" },
+  { name: "Marketing", slug: "marketing" },
+  { name: "Customer Support", slug: "customer-support" },
+  { name: "Translation", slug: "translation" },
+  { name: "Presentation", slug: "presentation" },
+  { name: "Brainstorming", slug: "brainstorming" },
+  { name: "Prompting", slug: "prompting" },
+  { name: "Website Building", slug: "website-building" }
+];
+
 export function TasksClient({ initialData }: TasksClientProps) {
+  const searchParams = useSearchParams();
+  const [activeCategory, setActiveCategory] = useState<string>(() => {
+    return searchParams.get("category") || "";
+  });
+
   const [tasks, setTasks] = useState<Task[]>(initialData?.tasks ?? []);
 const [total, setTotal] = useState(initialData?.total ?? 0);
 const [page, setPage] = useState(initialData?.page ?? 1);
@@ -38,8 +63,9 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
     () => ({
       sort: "newest" as SortOption,
       filter: "all" as FilterOption,
+      category: activeCategory || undefined,
     }),
-    []
+    [activeCategory]
   );
 
   const loadPage = useCallback(
@@ -68,11 +94,19 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
     [queryParams]
   );
 
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
-    if (initialData) return;
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      if (initialData) return;
+    }
+    setTasks([]);
+    setPage(1);
+    setTotalPages(1);
     loadPage(1, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [queryParams.category, queryParams.sort, queryParams.filter]);
 
   const loadMore = useCallback(() => {
     if (isFetching || page >= totalPages) return;
@@ -104,7 +138,36 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
   !authRequired;
 
   return (
-      <main className="w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 py-8 flex-1 selection:bg-neutral-800 selection:text-white">
+      <main className="w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 py-2 flex-1 selection:bg-neutral-800 selection:text-white">
+        {/* Top Sliding Category Row */}
+        <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+          {TASK_CATEGORIES.map((topic) => {
+            const isSelected = activeCategory === topic.slug;
+            return (
+              <button
+                key={topic.name}
+                onClick={(e) => {
+                  setActiveCategory(topic.slug);
+                  const targetPath = topic.slug ? `/tasks?category=${topic.slug}` : `/tasks`;
+                  window.history.pushState(null, "", targetPath);
+                  e.currentTarget.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "center"
+                  });
+                }}
+                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                  isSelected
+                    ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                    : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+                }`}
+              >
+                {topic.name}
+              </button>
+            );
+          })}
+        </div>
+
         {isInitialLoading ? (
           <TaskSkeleton />
         ) : authRequired ? (
