@@ -354,7 +354,30 @@ model AIModel {
   openSource    Boolean     @default(false)
   primaryTask   String?
   modelType     ModelType?
+  subCategories ModelSubCategoryItem[]
   @@index([providerId])
+}
+
+model ModelSubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+
+  items ModelSubCategoryItem[]
+
+  @@index([slug])
+}
+
+model ModelSubCategoryItem {
+  id              String              @id @default(cuid())
+  modelId         String
+  subCategoryId   String
+  model           AIModel             @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  subCategory     ModelSubCategory    @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([modelId, subCategoryId])
+  @@index([subCategoryId])
 }
 
 // ---- News module ----
@@ -628,6 +651,29 @@ model Device {
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @default(now()) @updatedAt
   tasks               TaskDevice[]
+  subCategories       DeviceSubCategoryItem[]
+}
+
+model DeviceSubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+
+  items DeviceSubCategoryItem[]
+
+  @@index([slug])
+}
+
+model DeviceSubCategoryItem {
+  id              String              @id @default(cuid())
+  deviceId        String
+  subCategoryId   String
+  device          Device              @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  subCategory     DeviceSubCategory   @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, subCategoryId])
+  @@index([subCategoryId])
 }
 
 // ---- Auth Module ----
@@ -1102,6 +1148,7 @@ model MCPItem {
   // Relations
   categories            MCPItemCategory[]
   subCategories         MCPItemSubCategory[]
+  mcpSubCategories      MCPSubCategoryItem[]
   tags                  MCPItemTag[]
   technicalSpecs        TechnicalSpec[]
   installationGuides    InstallationGuide[]
@@ -1201,6 +1248,28 @@ model MCPItemTag {
 
   @@unique([mcpItemId, tagId])
   @@index([tagId])
+}
+
+model MCPSubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+
+  items MCPSubCategoryItem[]
+
+  @@index([slug])
+}
+
+model MCPSubCategoryItem {
+  id              String              @id @default(cuid())
+  mcpItemId       String
+  subCategoryId   String
+  mcpItem         MCPItem             @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+  subCategory     MCPSubCategory      @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, subCategoryId])
+  @@index([subCategoryId])
 }
 
 model TechnicalSpec {

@@ -4,6 +4,22 @@ import { ModelsService } from './models.service.js';
 import { modelsListQuerySchema } from './models.schema.js';
 
 export class ModelsController {
+  async listModelSubCategories(c: Context) {
+    const prisma = getPrisma(c.env);
+    const service = new ModelsService(prisma);
+
+    try {
+      const subCategories = await service.listModelSubCategories();
+      return c.json(subCategories);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Unknown error';
+      return c.json({ error: message }, 500);
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+
   async listModels(c: Context) {
     const parsed = modelsListQuerySchema.safeParse(c.req.query());
 

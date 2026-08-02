@@ -899,4 +899,11 @@ export class MCPService {
       },
     });
   }
+
+  async listMCPSubCategories() {
+    return this.prisma.mCPSubCategory.findMany({
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, slug: true, description: true },
+    });
+  }
 }
