@@ -29,6 +29,24 @@ import Trophy   from 'lucide-react/dist/esm/icons/trophy';
 
 const ALL_CATEGORIES = "All Categories";
 
+const DEVICE_SUBCATEGORIES = [
+  "AI PCs",
+  "Smartphones",
+  "Smart Home",
+  "Wearables",
+  "AI Cameras",
+  "Audio",
+  "AR/VR",
+  "Edge AI",
+  "Robotics Hardware",
+  "Medical",
+  "Development Boards",
+  "Smart Sensors",
+  "Automotive AI Devices",
+  "Microphones",
+  "Farming",
+];
+
 const AVAILABILITY_STYLES: Record<string, string> = {
   Available: "bg-[#1a3a2a] text-[#4ade80] border border-[#2a5a3a]",
   "Pre-order": "bg-[#1a2a3a] text-[#60a5fa] border border-[#2a3a5a]",
@@ -107,14 +125,15 @@ function LogoCell({ name, logoUrl, color }: { name: string; logoUrl: string; col
 const PAGE_SIZE = 20;
 
 // Matches ToolListView column template exactly
-const COL_TEMPLATE = "grid-cols-[40px_minmax(200px,2.4fr)_minmax(120px,1.2fr)_minmax(120px,1.3fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(140px,1.5fr)]";
-const COL_MIN_WIDTH = "min-w-[900px]";
+const COL_TEMPLATE = "grid-cols-[40px_minmax(200px,2.4fr)_minmax(120px,1.2fr)_minmax(120px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)] sm:grid-cols-[40px_minmax(200px,2.4fr)_minmax(120px,1.2fr)_minmax(120px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)_80px]";
+const COL_MIN_WIDTH = "min-w-[1050px]";
 
 const COLUMN_HEADERS = [
   { label: "TOOL" },
   { label: "NAME" },
   { label: "COMPANY" },
   { label: "CATEGORY" },
+  { label: "COUNTRY" },
   { label: "AVAIL." },
   { label: "PRICE" },
   { label: "RELEASE DATE" },
@@ -143,7 +162,29 @@ export function DevicesClient() {
   const [priceMax, setPriceMax] = useState(10000);
   const [activePriceFilter, setActivePriceFilter] = useState(false);
 
+  const [bookmarked, setBookmarked] = React.useState<Set<string>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  function toggleBookmark(e: React.MouseEvent, id: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    setBookmarked((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function handleShare(e: React.MouseEvent, device: DeviceData) {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `${window.location.origin}/devices/${device.slug || device.id}`;
+    if (navigator.share) {
+      navigator.share({ title: device.name, url });
+    } else {
+      navigator.clipboard.writeText(url);
+    }
+  }
 
   useEffect(() => {
     fetchAllDevices({ subCategory: selectedSubCategorySlug || undefined })
@@ -215,7 +256,34 @@ export function DevicesClient() {
       const q = nameSearch.toLowerCase();
       list = list.filter((d) => d.name.toLowerCase().includes(q) || d.manufacturer?.toLowerCase().includes(q));
     }
-    if (selectedCategory !== ALL_CATEGORIES) list = list.filter((d) => d.category === selectedCategory);
+    if (selectedCategory !== ALL_CATEGORIES) {
+  list = list.filter((d) => {
+    const cat = (d.category || "").toLowerCase();
+    const sel = selectedCategory.toLowerCase();
+    // exact match first, then keyword match
+    if (cat === sel) return true;
+    // keyword mappings
+    const keywords: Record<string, string[]> = {
+      "ai pcs": ["pc", "laptop", "computer", "chromebook", "desktop", "notebook"],
+      "smartphones": ["smartphone", "phone", "mobile", "iphone", "android", "pixel", "galaxy"],
+      "smart home": ["smart home", "home automation", "thermostat", "smart speaker", "echo", "nest", "alexa", "hub", "smart plug", "smart meter", "smart display"],
+      "wearables": ["wearable", "smartwatch", "watch", "ring", "fitness", "band", "pendant", "glasses", "eyewear", "pin", "clip"],
+      "ai cameras": ["camera", "surveillance", "vision", "facial"],
+      "audio": ["audio", "headphone", "earbud", "speaker", "microphone", "mic", "sound"],
+      "ar/vr": ["ar", "vr", "augmented", "virtual reality", "mixed reality", "headset", "spatial", "xr", "webxr"],
+      "edge ai": ["edge", "iot", "embedded", "edge ai", "accelerator", "fpga", "soc", "microcontroller", "esp", "arduino", "raspberry", "jetson", "npu", "tpu", "gpu"],
+      "robotics hardware": ["robot", "robotics", "actuator", "lego mindstorms", "drone"],
+      "medical": ["medical", "health", "diagnostics", "clinical", "wellness", "prosthesis"],
+      "development boards": ["development board", "raspberry pi", "jetson", "arduino", "odroid", "banana pi", "nodemcu", "esp32", "esp8266", "risc-v", "rockchip", "allwinner"],
+      "smart sensors": ["sensor", "smart sensor", "environmental", "motion", "iot"],
+      "automotive ai devices": ["automotive", "dashcam", "navigation", "driver", "autopilot", "car", "vehicle", "lane"],
+      "microphones": ["microphone", "mic", "voice recorder", "transcription", "recording"],
+      "farming": ["farming", "agriculture", "digital agriculture", "precision farming"],
+    };
+    const keywordList = keywords[sel] || [sel];
+    return keywordList.some((kw) => cat.includes(kw));
+  });
+}
     if (selectedAvailability !== "All") list = list.filter((d) => d.availability === selectedAvailability);
     if (activePriceFilter) {
       list = list.filter((d) => {
@@ -342,11 +410,40 @@ export function DevicesClient() {
       )}
 
       
+      {/* ── SUBCATEGORY PILLS ── */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-3">
+        <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden justify-start lg:justify-center">
+          <button
+            onClick={() => { setSelectedCategory(ALL_CATEGORIES); setCurrentPage(1); }}
+            className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+              selectedCategory === ALL_CATEGORIES
+                ? "bg-[#6E56CF] border-[#6E56CF] text-white"
+                : "bg-transparent border-[#232326] text-[#A1A1AA] hover:border-[#52525B] hover:text-white"
+            }`}
+          >
+            All
+          </button>
+          {DEVICE_SUBCATEGORIES.map((sub) => (
+            <button
+              key={sub}
+              onClick={() => { setSelectedCategory(sub); setCurrentPage(1); }}
+              className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+                selectedCategory === sub
+                  ? "bg-[#6E56CF] border-[#6E56CF] text-white"
+                  : "bg-transparent border-[#232326] text-[#A1A1AA] hover:border-[#52525B] hover:text-white"
+              }`}
+            >
+              {sub}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ── LIST VIEW ── */}
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8">
           {/*  Outer container matches ToolListView exactly */}
           <div className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
-              <div ref={dropdownRef} style={{ minWidth: '900px' }} className="relative bg-[#000000]">
+              <div ref={dropdownRef} style={{ minWidth: '1150px' }} className="relative bg-[#000000]">
 
                 {/* Header row matches ToolListView exactly */}
                 <div className="border-b border-[#232326]/60 bg-[#131316]/40">
@@ -408,6 +505,9 @@ export function DevicesClient() {
                         </div>
                       )}
                     </div>
+
+                    {/* COUNTRY col */}
+                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">COUNTRY</span>
 
                     {/* AVAIL. col — with filter dropdown */}
                     <div className="relative flex items-center gap-2">
@@ -475,7 +575,10 @@ export function DevicesClient() {
                     </button>
 
                     {/* MAIN TASK col */}
-                    <span className="hidden lg:block text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">MAIN TASK</span>
+                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] sm:pr-0 pr-4">MAIN TASK</span>
+
+                    {/* ACTIONS col */}
+                    <span className="hidden sm:block text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">ACTIONS</span>
                   </div>
                 </div>
 
@@ -491,10 +594,12 @@ export function DevicesClient() {
                         </div>
                         <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
                         <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
+                        <div className="h-3 w-14 animate-pulse rounded bg-[#18181C]" />
                         <div className="h-4 w-16 animate-pulse rounded-full bg-[#18181C]" />
                         <div className="h-3 w-12 animate-pulse rounded bg-[#18181C]" />
                         <div className="h-3 w-16 animate-pulse rounded bg-[#18181C]" />
                         <div className="h-4 w-20 animate-pulse rounded-md bg-[#18181C]" />
+                        <div className="h-4 w-12 animate-pulse rounded-md bg-[#18181C]" />
                       </div>
                     ))}
                   </div>
@@ -566,7 +671,12 @@ export function DevicesClient() {
                           {device.category || "—"}
                         </div>
 
-                        {/* Col 5: Availability */}
+                        {/* Col 5: Country */}
+                        <div className="text-[12px] font-mono text-[#A1A1AA]">
+                          {device.country || "—"}
+                        </div>
+
+                        {/* Col 6: Availability */}
 <div>
   {device.availability ? (
     <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
@@ -588,13 +698,36 @@ export function DevicesClient() {
                         </div>
 
                         {/* Col 8: Main Task */}
-<div className="hidden lg:block">
+<div className="sm:pr-0 pr-4">
   {device.mainTask ? (
     <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors whitespace-nowrap">
-  {device.mainTask}
-</span>
+      {device.mainTask}
+    </span>
   ) : <span className="text-[12px] font-mono text-[#71717A]">—</span>}
 </div>
+
+                        {/* Col 9: Actions */}
+                        <div className="hidden sm:flex items-center gap-2" onClick={(e) => e.preventDefault()}>
+                          <button
+                            onClick={(e) => toggleBookmark(e, device.id)}
+                            className={`p-1.5 rounded-md transition-colors ${bookmarked.has(device.id) ? "text-[#6E56CF]" : "text-[#52525B] hover:text-white"}`}
+                            title="Bookmark"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill={bookmarked.has(device.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={(e) => handleShare(e, device)}
+                            className="p-1.5 rounded-md text-[#52525B] hover:text-white transition-colors"
+                            title="Share"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                            </svg>
+                          </button>
+                        </div>
                       </Link>
                     ))}
                   </div>

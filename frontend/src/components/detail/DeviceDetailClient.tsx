@@ -245,8 +245,14 @@ export function DeviceDetailClient() {
               </span>
             </div>
 
-            {/* Name */}
-            <h1 className="text-2xl font-black text-white tracking-tight">{device.name}</h1>
+            {/* Name + Actions */}
+            <div className="flex items-start justify-between gap-2">
+              <h1 className="text-2xl font-black text-white tracking-tight">{device.name}</h1>
+              <div className="flex items-center gap-1.5 shrink-0 mt-1">
+                <BookmarkButton slug={device.slug || device.id} name={device.name} />
+                <ShareButton slug={device.slug || device.id} name={device.name} />
+              </div>
+            </div>
 
             {/* By company */}
             {device.manufacturer && (
@@ -417,6 +423,52 @@ onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'white'; }
       </main>
       <Footer />
     </div>
+  );
+}
+
+function BookmarkButton({ slug, name }: { slug: string; name: string }) {
+  const [saved, setSaved] = React.useState(false);
+  return (
+    <button
+      onClick={() => setSaved((v) => !v)}
+      title="Bookmark"
+      className={`p-2 rounded-lg border transition-colors ${saved ? "border-[#6E56CF] text-[#6E56CF] bg-[#6E56CF]/10" : "border-[#232326] text-[#52525B] hover:text-white hover:border-[#52525B]"}`}
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+      </svg>
+    </button>
+  );
+}
+
+function ShareButton({ slug, name }: { slug: string; name: string }) {
+  const [copied, setCopied] = React.useState(false);
+  function share() {
+    const url = `${window.location.origin}/devices/${slug}`;
+    if (navigator.share) {
+      navigator.share({ title: name, url });
+    } else {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  }
+  return (
+    <button
+      onClick={share}
+      title={copied ? "Link copied!" : "Share"}
+      className="p-2 rounded-lg border border-[#232326] text-[#52525B] hover:text-white hover:border-[#52525B] transition-colors relative"
+    >
+      {copied ? (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      ) : (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+      )}
+    </button>
   );
 }
 
