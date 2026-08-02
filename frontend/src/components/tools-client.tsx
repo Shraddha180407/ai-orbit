@@ -185,7 +185,7 @@ export function ToolsClient({
     <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
       <div className="mx-auto w-full max-w-[1600px] space-y-3">
         {/* Top Sliding Category Row */}
-        <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+        <div className="mb-2 flex items-center justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
