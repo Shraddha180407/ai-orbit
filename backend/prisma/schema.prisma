@@ -465,10 +465,34 @@ model Repository {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  subCategories   RepositorySubCategoryItem[]
+
   @@index([stars])
   @@index([language])
   @@index([topics], type: Gin)
   @@index([syncedAt])
+}
+
+model RepositorySubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+
+  items RepositorySubCategoryItem[]
+
+  @@index([slug])
+}
+
+model RepositorySubCategoryItem {
+  id              String               @id @default(cuid())
+  repositoryId    String
+  subCategoryId   String
+  repository      Repository           @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  subCategory     RepositorySubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, subCategoryId])
+  @@index([subCategoryId])
 }
 
 // Synced from live production DB via `prisma db pull` on 2026-07-12 — this

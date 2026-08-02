@@ -33,6 +33,13 @@ const LIST_SELECT = {
   brandColor: true,
   githubCreatedAt: true,
   syncedAt: true,
+  subCategories: {
+    select: {
+      subCategory: {
+        select: { id: true, name: true, slug: true },
+      },
+    },
+  },
 } as const;
 
 const DETAIL_SELECT = {
@@ -55,6 +62,7 @@ export class RepositoriesService {
     topic?: string;
     q?: string;
     owner?: string;
+    subCategory?: string;
   }) {
     const limit = Math.min(
       Number.isFinite(params.limit) ? Math.max(1, params.limit!) : DEFAULT_LIMIT,
@@ -69,6 +77,7 @@ export class RepositoriesService {
       topic: params.topic,
       q: params.q,
       owner: params.owner,
+      subCategory: params.subCategory,
     });
 
     const orderBy = this.buildOrderBy(sort);
@@ -114,6 +123,7 @@ export class RepositoriesService {
 
     const itemsWithCompany = pageItems.map(item => ({
       ...item,
+      subCategories: item.subCategories.map(sc => sc.subCategory),
       companySlug: companyMap.get(item.owner.toLowerCase()) || null
     }));
 
@@ -229,6 +239,7 @@ export class RepositoriesService {
     topic?: string;
     q?: string;
     owner?: string;
+    subCategory?: string;
   }): Prisma.RepositoryWhereInput {
     const conditions: Prisma.RepositoryWhereInput[] = [];
 
@@ -259,6 +270,16 @@ export class RepositoriesService {
           { description: { contains: term, mode: 'insensitive' } },
           { topics: { has: term } },
         ],
+      });
+    }
+
+    if (filters.subCategory) {
+      conditions.push({
+        subCategories: {
+          some: {
+            subCategory: { slug: filters.subCategory },
+          },
+        },
       });
     }
 
@@ -331,5 +352,12 @@ export class RepositoriesService {
 
     // 4. Sort by repositoryCount desc
     return ownersMap.sort((a, b) => b.repositoryCount - a.repositoryCount);
+  }
+
+  async listRepositorySubCategories() {
+    return this.prisma.repositorySubCategory.findMany({
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, slug: true, description: true },
+    });
   }
 }
