@@ -18,7 +18,7 @@ export class ModelsService {
   }
 
   async listModels(query: ModelsListQuery) {
-    const { page, limit, sort, search, provider, modality, creator } = query;
+    const { page, limit, sort, search, provider, modality, creator, modelType, openSource, primaryTask } = query;
 
     const and: Prisma.AIModelWhereInput[] = [];
 
@@ -44,8 +44,20 @@ export class ModelsService {
       and.push({ creator: { equals: creator, mode: 'insensitive' } });
     }
 
-    const where: Prisma.AIModelWhereInput = and.length > 0 ? { AND: and } : {};
-
+    const where: Prisma.AIModelWhereInput = {
+      AND: [
+        search ? { OR: [
+          { name: { contains: search, mode: "insensitive" } },
+          { creator: { contains: search, mode: "insensitive" } },
+        ]} : {},
+        provider ? { provider: { slug: provider } } : {},
+        modality ? { modality: { contains: modality, mode: "insensitive" } } : {},
+        creator ? { creator: { equals: creator, mode: "insensitive" } } : {},
+        modelType ? { modelType } : {},
+        openSource !== undefined ? { openSource } : {},
+        primaryTask ? { primaryTask: { equals: primaryTask, mode: "insensitive" } } : {},
+      ],
+    };
     let orderBy: Prisma.AIModelOrderByWithRelationInput = { createdAt: 'desc' };
     switch (sort) {
       case 'oldest':
@@ -163,4 +175,37 @@ export class ModelsService {
 
     return { ...model, relatedModels };
   }
+
+  async getFilterOptions() {
+  const [providers, primaryTasks] = await Promise.all([
+    this.prisma.company.findMany({
+      where: { aiModels: { some: {} } },   // ← fixed
+      select: { slug: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    this.prisma.aIModel.findMany({
+      where: { primaryTask: { not: null } },
+      select: { primaryTask: true },
+      distinct: ["primaryTask"],
+    }),
+  ]);
+
+  return {
+    providers,
+    primaryTasks: primaryTasks.map((m) => m.primaryTask).filter(Boolean),
+    modelTypes: ["TEXT", "IMAGE", "VIDEO", "MULTIMODAL", "AUDIO", "CODE", "THREE_D", "STRUCTURED_DATA"],
+  };
+}
+
+  async compareModels(ids: string[]) {
+      if (ids.length === 0) return [];
+      if (ids.length > 5) throw new Error("Cannot compare more than 5 models at once");
+
+      return this.prisma.aIModel.findMany({
+        where: { id: { in: ids } },
+        include: {
+          provider: { select: { id: true, slug: true, name: true, logoUrl: true } },
+        },
+      });
+    }
 }
