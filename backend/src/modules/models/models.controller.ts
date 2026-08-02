@@ -26,6 +26,7 @@ export class ModelsController {
       return c.json({ error: "Invalid query parameters", details: parsed.error.flatten() }, 400);
     }
 
+  async listModelSubCategories(c: Context) {
     const prisma = getPrisma(c.env);
     const service = new ModelsService(prisma);
 
@@ -34,10 +35,17 @@ export class ModelsController {
       return c.json({ items: models });
     } catch (error: any) {
       return c.json({ error: error.message }, error.message.includes("Cannot compare") ? 422 : 500);
+      const subCategories = await service.listModelSubCategories();
+      return c.json(subCategories);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Unknown error';
+      return c.json({ error: message }, 500);
     } finally {
       await prisma.$disconnect();
     }
   }
+
   async listModels(c: Context) {
     const parsed = modelsListQuerySchema.safeParse(c.req.query());
 

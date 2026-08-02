@@ -100,6 +100,14 @@ export type CollectionFilterParams = {
   sort?: string;
   cursor?: string;
   category?: string[];
+  subCategory?: string;
+};
+
+export type CollectionSubCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
 };
 
 export type CollectionsApiResponse = {
@@ -137,7 +145,7 @@ export type CollectionDetailData = {
   tools: ToolCardData[]; // reuses Module 3's existing ToolCardData shape
 };
 
-export type CompanyType = 'AI_NATIVE' | 'MODEL_COMPANIES' | 'TOOL_COMPANIES' | 'PROFITABLE' | 'UNICORNS';
+export type CompanyType = 'AI_NATIVE' | 'MODEL_COMPANIES' | 'UNICORNS' | 'AI_MODEL_PROVIDERS' | 'INFRASTRUCTURE' | 'ENTERPRISE' | 'HEALTHCARE' | 'GENERATIVE_AI' | 'MARKETING' | 'DEVELOPER_TOOLS' | 'ROBOTICS' | 'EDUCATION' | 'OPEN_SOURCE' | 'FINANCE';
 
 export type Company = {
   id: string;
@@ -244,6 +252,8 @@ export type Repository = {
   readmeHtml?: string;
   readmeFetchedAt?: string;
   defaultBranch?: string;
+  companySlug?: string | null;
+  subCategories?: { id: string; name: string; slug: string }[];
 };
 
 export type RepositoryListResponse = {
@@ -257,6 +267,34 @@ export type RepositoryDetailResponse = Repository & {
   readmeHtml?: string;
   readmeFetchedAt?: string;
   defaultBranch?: string;
+};
+
+export type RepositorySubCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+};
+
+export type ModelSubCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+};
+
+export type MCPSubCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+};
+
+export type DeviceSubCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
 };
 
 export type Video = {

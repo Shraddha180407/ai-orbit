@@ -24,7 +24,7 @@ export default function NewsPage() {
       <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
       <Suspense fallback={
         <div className="flex-1 flex items-center justify-center">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white " />
         </div>
       }>
         <NewsPageClient />

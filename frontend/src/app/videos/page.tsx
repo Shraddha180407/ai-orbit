@@ -21,7 +21,7 @@ export default async function VideosPage() {
     <div className="min-h-screen flex flex-col bg-[#000000] text-white">
       <Header />
       <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-      <main className="flex-1 w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 pb-24 pt-6">
+      <main className="flex-1 w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 pb-24 pt-2">
         <VideosPageClient
           initialVideos={videos}
           initialTotal={total}

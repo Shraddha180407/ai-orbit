@@ -208,4 +208,10 @@ export class ModelsService {
         },
       });
     }
+  async listModelSubCategories() {
+    return this.prisma.modelSubCategory.findMany({
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, slug: true, description: true },
+    });
+  }
 }

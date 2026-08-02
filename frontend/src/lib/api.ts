@@ -139,7 +139,8 @@ export async function fetchAllNews(): Promise<any[]> {
   return res.json();
 }
 
-import { Repository, RepositoryListResponse, RepositoryDetailResponse, RepositoryOwnerListItem } from "./types";
+import { Repository, RepositoryListResponse, RepositoryDetailResponse, RepositoryOwnerListItem, RepositorySubCategory } from "./types";
+import type { ModelSubCategory } from "./types";
 
 export interface FetchRepositoriesOptions {
   limit?: number;
@@ -149,10 +150,11 @@ export interface FetchRepositoriesOptions {
   topic?: string;
   q?: string;
   owner?: string;
+  subCategory?: string;
 }
 
 export async function fetchRepositories(options: FetchRepositoriesOptions = {}): Promise<RepositoryListResponse> {
-  const { limit, cursor, sort, language, topic, q, owner } = options;
+  const { limit, cursor, sort, language, topic, q, owner, subCategory } = options;
 
   const url = new URL(`${API_URL}/api/v1/repositories`);
   if (limit) url.searchParams.set("limit", limit.toString());
@@ -162,6 +164,7 @@ export async function fetchRepositories(options: FetchRepositoriesOptions = {}):
   if (topic) url.searchParams.set("topic", topic);
   if (q) url.searchParams.set("q", q);
   if (owner) url.searchParams.set("owner", owner);
+  if (subCategory) url.searchParams.set("subCategory", subCategory);
 
   const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) {
@@ -193,6 +196,34 @@ export async function fetchAllRepos(): Promise<Repository[]> {
     console.error("Failed to fetch repositories:", e);
     return [];
   }
+}
+
+export async function fetchRepositorySubCategories(): Promise<RepositorySubCategory[]> {
+  const url = `${API_URL}/api/v1/repositories/subcategories`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function fetchModelSubCategories(): Promise<ModelSubCategory[]> {
+  const url = `${API_URL}/api/v1/models/subcategories`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function fetchMCPSubCategories(): Promise<import("./types").MCPSubCategory[]> {
+  const url = `${API_URL}/api/v1/mcp/subcategories`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function fetchDeviceSubCategories(): Promise<import("./types").DeviceSubCategory[]> {
+  const url = `${API_URL}/api/v1/devices/subcategories`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
 }
 
 

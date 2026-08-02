@@ -20,6 +20,7 @@ export const repositorySchema = z.object({
   brandColor: z.string().optional().nullable(),
   githubCreatedAt: z.coerce.date(),
   syncedAt: z.coerce.date(),
+  subcategorySlugs: z.array(z.string()).optional(),
 });
 
 export const repositoriesIngestPayloadSchema = z.object({

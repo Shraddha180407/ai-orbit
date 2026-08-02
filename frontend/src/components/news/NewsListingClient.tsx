@@ -23,6 +23,24 @@ interface NewsListingResponse {
   pagination?: { page: number; perPage: number; total: number; hasMore: boolean };
 }
 
+const NEWS_CATEGORIES = [
+  { name: "All", slug: "" },
+  { name: "AI Industry", slug: "ai-industry" },
+  { name: "Product Launches", slug: "product-launches" },
+  { name: "Innovations", slug: "innovations" },
+  { name: "Company Updates", slug: "company-updates" },
+  { name: "Open Source", slug: "open-source" },
+  { name: "Regulations", slug: "regulations" },
+  { name: "Interviews", slug: "interviews" },
+  { name: "Market Trends", slug: "market-trends" },
+  { name: "Breakthroughs", slug: "breakthroughs" },
+  { name: "Security", slug: "security" },
+  { name: "Agents", slug: "agents" },
+  { name: "LLMs", slug: "llms" },
+  { name: "Developer Ecosystem", slug: "developer-ecosystem" },
+  { name: "Consumer", slug: "consumer" }
+];
+
 interface NewsListingClientProps {
   category?: string;
   initialTopic?: string;
@@ -33,6 +51,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   const isAdmin = user?.role === 'ADMIN';
 
   const [sort] = useState<SortState>({ key: "date", dir: "desc" });
+  const [activeCategory, setActiveCategory] = useState<string>(category || "");
 
   // Admin Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -162,7 +181,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   };
 
   let list = articles.slice();
-  if (category) list = list.filter((a) => a.category === category || a.filters.includes(category));
+  if (activeCategory) list = list.filter((a) => a.category === activeCategory || a.filters?.includes(activeCategory));
   list = sortArticles(list, sort, sources);
 
   if (isLoadingInitial) {
@@ -182,7 +201,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   }
 
   return (
-    <main className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 flex flex-col">
+    <main className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 pt-0 pb-4 flex-1 flex flex-col selection:bg-neutral-800 selection:text-white ">
       {isAdmin && (
         <div className="flex justify-end mb-4">
           <Button className="bg-white text-black hover:bg-neutral-200 h-8 text-xs font-bold px-3 rounded-lg shrink-0" onClick={openAdd}>
@@ -190,6 +209,36 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
           </Button>
         </div>
       )}
+
+      {/* Top Sliding Category Row */}
+      <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+        {NEWS_CATEGORIES.map((topic) => {
+          const isSelected = activeCategory === topic.slug;
+          return (
+            <button
+              key={topic.name}
+              onClick={(e) => {
+                setActiveCategory(topic.slug);
+                if (mode === "paginated") loadFull();
+                const targetPath = topic.slug ? `/news?category=${topic.slug}` : `/news`;
+                window.history.pushState(null, "", targetPath);
+                e.currentTarget.scrollIntoView({
+                  behavior: "smooth",
+                  block: "nearest",
+                  inline: "center"
+                });
+              }}
+              className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                isSelected
+                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+              }`}
+            >
+              {topic.name}
+            </button>
+          );
+        })}
+      </div>
 
       {/* News Table List matching Video Table UI */}
       <div className="space-y-4">

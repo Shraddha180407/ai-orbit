@@ -14,11 +14,20 @@ import { Button } from "@/components/ui/shadcn-button";
 import Image from "next/image";
 
 const COMPANY_TYPES: { label: string; value: CompanyType }[] = [
+  { label: "AI Model Providers", value: "AI_MODEL_PROVIDERS" },
+  { label: "Infrastructure", value: "INFRASTRUCTURE" },
+  { label: "Enterprise", value: "ENTERPRISE" },
+  { label: "Healthcare", value: "HEALTHCARE" },
+  { label: "Generative AI", value: "GENERATIVE_AI" },
+  { label: "Marketing", value: "MARKETING" },
+  { label: "Developer Tools", value: "DEVELOPER_TOOLS" },
+  { label: "Robotics", value: "ROBOTICS" },
+  { label: "Education", value: "EDUCATION" },
+  { label: "Open Source", value: "OPEN_SOURCE" },
+  { label: "Finance", value: "FINANCE" },
   { label: "AI Native", value: "AI_NATIVE" },
   { label: "Model Companies", value: "MODEL_COMPANIES" },
-  { label: "Tool Companies", value: "TOOL_COMPANIES" },
-  { label: "Profitable", value: "PROFITABLE" },
-  { label: "Unicorns", value: "UNICORNS" },
+  { label: "Unicorns", value: "UNICORNS" }
 ];
 
 type SortField = 'name' | 'valuation' | 'employeeCount' | 'country' | 'sector';

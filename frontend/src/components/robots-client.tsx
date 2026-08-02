@@ -142,11 +142,24 @@ export function RobotsClient() {
     getRobots();
   }, []);
 
-  // Derive unique categories from the loaded data
-  const categories = useMemo(() => {
-    const cats = new Set(robots.map((r) => r.category));
-    return ["All", ...Array.from(cats).sort()];
-  }, [robots]);
+  const ROBOT_CATEGORIES = [
+    "All",
+    "Humanoid Robots",
+    "Industrial",
+    "Service",
+    "Healthcare",
+    "Educational",
+    "Autonomous Mobile Robots",
+    "Drones",
+    "Companion",
+    "Agricultural",
+    "Research",
+    "Multi-Agent",
+    "Task-Specific",
+    "Autonomous Navigation",
+    "Reinforcement Learning",
+    "Surveillance"
+  ];
 
   const filtered = useMemo(() => {
     let list = robots;
@@ -199,9 +212,9 @@ export function RobotsClient() {
         <header className="text-center flex flex-col items-center">
 
 
-          {/* Category filter chips — dynamically generated from data */}
+          {/* Category filter chips */}
           <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-            {categories.map((cat) => (
+            {ROBOT_CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 type="button"
