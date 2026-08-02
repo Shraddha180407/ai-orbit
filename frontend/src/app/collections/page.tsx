@@ -5,7 +5,7 @@ import { GlobalHero } from "@/components/GlobalHero";
 import { Footer } from "@/components/Footer";
 import CollectionsPageClient from "./CollectionsPageClient";
 import type { CollectionsApiResponse } from "@/lib/types";
-import { mockCollections } from "@/lib/mockCollections";
+import { SERVER_API_URL } from "@/lib/api";
 
 export const runtime = "edge";
 
@@ -14,11 +14,9 @@ export const metadata: Metadata = {
   description: "Explore curated lists and stack configurations by domain experts.",
 };
 
-const API_BASE_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
-
 async function getInitialCollections(): Promise<CollectionsApiResponse> {
   try {
-    const res = await fetch(`${API_BASE_URL}/collections?sort=recently_updated`, {
+    const res = await fetch(`${SERVER_API_URL}/api/v1/collections?sort=recently_updated`, {
       cache: "no-store", 
     });
 
@@ -52,7 +50,7 @@ export default async function CollectionsPage() {
         </main>
       }>
         <CollectionsPageClient 
-          initialItems={mockCollections} 
+          initialItems={initialData.items} 
           initialNextCursor={initialData.nextCursor} 
         />
       </Suspense>

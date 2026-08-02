@@ -68,6 +68,7 @@ export interface ModelsQuery {
   provider?: string;
   modality?: string;
   creator?: string;
+  subCategory?: string;
   sort?: ModelsSortOption;
   page?: number;
   limit?: number;
@@ -79,6 +80,7 @@ export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListR
   if (params.provider) url.searchParams.set("provider", params.provider);
   if (params.modality) url.searchParams.set("modality", params.modality);
   if (params.creator) url.searchParams.set("creator", params.creator);
+  if (params.subCategory) url.searchParams.set("subCategory", params.subCategory);
   if (params.sort) url.searchParams.set("sort", params.sort);
   if (params.page) url.searchParams.set("page", String(params.page));
   if (params.limit) url.searchParams.set("limit", String(params.limit));
@@ -213,7 +215,7 @@ export async function fetchModelSubCategories(): Promise<ModelSubCategory[]> {
 }
 
 export async function fetchMCPSubCategories(): Promise<import("./types").MCPSubCategory[]> {
-  const url = `${API_URL}/api/v1/mcp/subcategories`;
+  const url = `${API_URL}/api/v1/mcps/subcategories`;
   const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
   if (!res.ok) return [];
   return res.json();
@@ -226,6 +228,34 @@ export async function fetchDeviceSubCategories(): Promise<import("./types").Devi
   return res.json();
 }
 
+export interface FetchMCPOptions {
+  subCategory?: string;
+  category?: string;
+  search?: string;
+  sortBy?: string;
+  page?: number;
+  limit?: number;
+}
+
+export async function fetchMCPItems(options: FetchMCPOptions = {}): Promise<{ items: any[]; total: number; page: number; totalPages: number }> {
+  const url = new URL(`${API_URL}/api/v1/mcps`);
+  if (options.subCategory) url.searchParams.set("subCategory", options.subCategory);
+  if (options.category) url.searchParams.set("category", options.category);
+  if (options.search) url.searchParams.set("search", options.search);
+  if (options.sortBy) url.searchParams.set("sortBy", options.sortBy);
+  if (options.page) url.searchParams.set("page", String(options.page));
+  if (options.limit) url.searchParams.set("limit", String(options.limit));
+
+  const empty = { items: [], total: 0, page: options.page ?? 1, totalPages: 1 };
+  try {
+    const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
+    if (!res.ok) return empty;
+    const data = await res.json();
+    return data.data || empty;
+  } catch {
+    return empty;
+  }
+}
 
 export async function fetchAllVideos(): Promise<any[]> {
   const url = `${API_URL}/api/v1/videos`;
@@ -248,9 +278,10 @@ export async function fetchRobotById(idOrSlug: string): Promise<any | null> {
   return res.json();
 }
 
-export async function fetchAllDevices(): Promise<any[]> {
-  const url = `${API_URL}/api/v1/devices`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
+export async function fetchAllDevices(options: { subCategory?: string } = {}): Promise<any[]> {
+  const url = new URL(`${API_URL}/api/v1/devices`);
+  if (options.subCategory) url.searchParams.set("subCategory", options.subCategory);
+  const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) return [];
   return res.json();
 }

@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { CollectionListItem, CollectionSubCategory } from "@/lib/types";
 import { fetchCollectionSubCategories } from "@/lib/collections";
+import { API_URL } from "@/lib/api";
 
 // Import modular components
 import { CollectionToolbar } from "@/components/collections/CollectionToolbar";
@@ -119,8 +120,7 @@ export default function CollectionsPageClient({ initialItems }: Props) {
       setIsLoading(false);
     } else {
       setIsLoading(true);
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
-      fetch(`${API_BASE_URL}/collections?sort=recently_updated`)
+      fetch(`${API_URL}/api/v1/collections?sort=recently_updated`)
         .then(res => res.json())
         .then(data => {
           if (data && Array.isArray(data.items)) {

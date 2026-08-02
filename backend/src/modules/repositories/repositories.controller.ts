@@ -39,7 +39,7 @@ export class RepositoriesController {
       logger.error('Error listing repositories:', error);
       return c.json({ error: 'Failed to fetch repositories' }, 500);
     } finally {
-      await prisma.$disconnect();
+      try { await prisma.$disconnect(); } catch { /* ignore disconnect errors */ }
     }
   }
 
@@ -58,7 +58,7 @@ export class RepositoriesController {
       logger.error('Error fetching repository:', error);
       return c.json({ error: 'Failed to fetch repository' }, 500);
     } finally {
-      await prisma.$disconnect();
+      try { await prisma.$disconnect(); } catch { /* ignore disconnect errors */ }
     }
   }
 
@@ -73,7 +73,7 @@ export class RepositoriesController {
       logger.error('Error listing repository owners:', error);
       return c.json({ error: 'Failed to fetch repository owners' }, 500);
     } finally {
-      await prisma.$disconnect();
+      try { await prisma.$disconnect(); } catch { /* ignore disconnect errors */ }
     }
   }
 
@@ -88,7 +88,7 @@ export class RepositoriesController {
       logger.error('Error listing repository subcategories:', error);
       return c.json({ error: 'Failed to fetch repository subcategories' }, 500);
     } finally {
-      await prisma.$disconnect();
+      try { await prisma.$disconnect(); } catch { /* ignore disconnect errors */ }
     }
   }
 }

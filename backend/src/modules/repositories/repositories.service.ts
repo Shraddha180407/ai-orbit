@@ -355,6 +355,39 @@ export class RepositoriesService {
   }
 
   async listRepositorySubCategories() {
+    const rows = await this.prisma.repositorySubCategory.findMany({
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, slug: true, description: true },
+    });
+
+    if (rows.length > 0) return rows;
+
+    const DEFAULT_SUBCATEGORIES = [
+      { name: 'LLMs', slug: 'llms', description: 'Open-source repositories for language models and conversational AI' },
+      { name: 'Generative AI', slug: 'generative-ai', description: 'Projects related to text, image, audio, and video generation' },
+      { name: 'AI Frameworks', slug: 'ai-frameworks', description: 'Machine learning frameworks, SDKs, APIs, and development libraries' },
+      { name: 'NLP', slug: 'nlp', description: 'Repositories for text analysis, translation, summarization, and language processing' },
+      { name: 'Frameworks', slug: 'frameworks', description: 'Libraries and frameworks for AI development' },
+      { name: 'Robotics', slug: 'robotics', description: 'AI repositories for robotics, autonomous systems, and industrial automation' },
+      { name: 'RAG Systems', slug: 'rag-systems', description: 'Retrieval-Augmented Generation frameworks and examples' },
+      { name: 'Deployment', slug: 'deployment', description: 'Tools for model training, deployment, monitoring, and CI/CD for AI' },
+      { name: 'Data Science', slug: 'data-science', description: 'Repositories for data preprocessing, visualization, analytics, and machine learning' },
+      { name: 'Prompt Engineering', slug: 'prompt-engineering', description: 'Prompt templates, prompt libraries, and optimization repositories' },
+      { name: 'Search Engines', slug: 'search-engines', description: 'AI search engines and retrieval systems' },
+      { name: 'Knowledge Graphs', slug: 'knowledge-graphs', description: 'Knowledge graph and semantic search repositories' },
+      { name: 'AI Agents', slug: 'ai-agents', description: 'Open-source autonomous agents, multi-agent systems, and agent frameworks' },
+      { name: 'Cloud', slug: 'cloud', description: 'Cloud-native AI deployment and infrastructure' },
+      { name: 'Computer Vision', slug: 'computer-vision', description: 'Repositories for image recognition, object detection, segmentation, and visual AI' },
+    ];
+
+    for (const sub of DEFAULT_SUBCATEGORIES) {
+      await this.prisma.repositorySubCategory.upsert({
+        where: { slug: sub.slug },
+        update: { name: sub.name, description: sub.description },
+        create: { name: sub.name, slug: sub.slug, description: sub.description },
+      });
+    }
+
     return this.prisma.repositorySubCategory.findMany({
       orderBy: { name: 'asc' },
       select: { id: true, name: true, slug: true, description: true },

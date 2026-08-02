@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
-import { Device } from "@/lib/types";
-import { fetchAllDevices } from "@/lib/api";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Device, DeviceSubCategory } from "@/lib/types";
+import { fetchAllDevices, fetchDeviceSubCategories } from "@/lib/api";
 import { DEVICES_DATA, DeviceData, getMainTaskColor } from "@/data/devices";
 import Flame    from 'lucide-react/dist/esm/icons/flame';
 import Wrench      from 'lucide-react/dist/esm/icons/wrench';
@@ -121,10 +122,15 @@ const COLUMN_HEADERS = [
 ];
 
 export function DevicesClient() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [devices, setDevices] = useState<DeviceData[]>(DEVICES_DATA);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  const [subCategories, setSubCategories] = useState<DeviceSubCategory[]>([]);
+  const selectedSubCategorySlug = searchParams.get("subCategory") || null;
 
   const [nameSearch, setNameSearch] = useState("");
   const [nameInput, setNameInput] = useState("");
@@ -140,11 +146,34 @@ export function DevicesClient() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchAllDevices()
+    fetchAllDevices({ subCategory: selectedSubCategorySlug || undefined })
       .then((data) => setDevices(mergeWithDummy(data || [])))
       .catch(() => setDevices(DEVICES_DATA))
       .finally(() => setIsLoading(false));
+  }, [selectedSubCategorySlug]);
+
+  // Fetch subcategories once on mount
+  useEffect(() => {
+    async function loadSubCategories() {
+      try {
+        const data = await fetchDeviceSubCategories();
+        setSubCategories(data || []);
+      } catch (e) {
+        console.error("Failed to fetch device subcategories:", e);
+      }
+    }
+    loadSubCategories();
   }, []);
+
+  const handleSelectSubCategory = (slug: string | null) => {
+    const params = new URLSearchParams(window.location.search);
+    if (slug) {
+      params.set("subCategory", slug);
+    } else {
+      params.delete("subCategory");
+    }
+    router.push(`/devices?${params.toString()}`);
+  };
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -277,6 +306,40 @@ export function DevicesClient() {
   return (
     <div className="w-full flex-1 flex flex-col">
 
+      {/* Active Subcategory Filter Chip */}
+      {selectedSubCategorySlug && (
+        <div className="px-4 sm:px-6 lg:px-8 pt-4">
+          <div className="flex items-center gap-2 mb-2 bg-white/[0.02] border border-white/[0.08] px-3.5 py-2 rounded-lg w-fit shadow-md animate-fade-in">
+            <span className="text-xs text-white/50">Category:</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white/[0.08] text-white">
+              {subCategories.find(s => s.slug === selectedSubCategorySlug)?.name || selectedSubCategorySlug}
+            </span>
+            <button
+              onClick={() => handleSelectSubCategory(null)}
+              className="text-xs text-red-400 hover:text-red-300 transition-colors ml-2 cursor-pointer font-medium"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Subcategory Filter Chips */}
+      {subCategories.length > 0 && !selectedSubCategorySlug && (
+        <div className="px-4 sm:px-6 lg:px-8 pt-4">
+          <div className="flex flex-wrap gap-2 mb-2">
+            {subCategories.map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => handleSelectSubCategory(sub.slug)}
+                className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white transition-all cursor-pointer"
+              >
+                {sub.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       
       {/* ── LIST VIEW ── */}
