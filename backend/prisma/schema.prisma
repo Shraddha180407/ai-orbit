@@ -747,6 +747,7 @@ model Collection {
   updatedAt DateTime @updatedAt
 
   categories       CollectionCategory[]
+  subCategories    CollectionSubCategoryItem[]
   tools            CollectionTool[]
   relatedModels    CollectionModel[]
   relatedCompanies CollectionCompany[]
@@ -815,6 +816,28 @@ model CollectionBookmark {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, collectionId])
+}
+
+model CollectionSubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+
+  items CollectionSubCategoryItem[]
+
+  @@index([slug])
+}
+
+model CollectionSubCategoryItem {
+  id              String                  @id @default(cuid())
+  collectionId    String
+  subCategoryId   String
+  collection      Collection              @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  subCategory     CollectionSubCategory   @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, subCategoryId])
+  @@index([subCategoryId])
 }
 
 // ---- Module: Tasks ----

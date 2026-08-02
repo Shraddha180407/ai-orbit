@@ -100,6 +100,14 @@ export type CollectionFilterParams = {
   sort?: string;
   cursor?: string;
   category?: string[];
+  subCategory?: string;
+};
+
+export type CollectionSubCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
 };
 
 export type CollectionsApiResponse = {

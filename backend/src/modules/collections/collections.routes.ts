@@ -14,6 +14,7 @@ app.get('/', async (c) => {
   const search = c.req.query('search') || ''
   const categoryStr = c.req.query('category')
   const creatorType = c.req.query('creatorType')
+  const subCategorySlug = c.req.query('subCategory')
   const hasRelatedModels = c.req.query('hasRelatedModels') === 'true'
   const hasRelatedCompanies = c.req.query('hasRelatedCompanies') === 'true'
   const featured = c.req.query('featured') === 'true'
@@ -36,6 +37,10 @@ app.get('/', async (c) => {
     if (categoryStr) {
       const categories = c.req.queries('category') || [categoryStr]
       where.categories = { some: { categoryName: { in: categories } } }
+    }
+
+    if (subCategorySlug) {
+      where.subCategories = { some: { subCategory: { slug: subCategorySlug } } }
     }
 
     if (creatorType && (creatorType === 'EDITORIAL' || creatorType === 'COMMUNITY')) {
@@ -107,7 +112,22 @@ app.get('/', async (c) => {
   }
 })
 
-// b) GET /collections/:slug
+// b) GET /collections/subcategories
+app.get('/subcategories', async (c) => {
+  const prisma = getPrisma(c.env)
+
+  try {
+    const subCategories = await prisma.collectionSubCategory.findMany({
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, slug: true, description: true },
+    })
+    return c.json(subCategories)
+  } catch (error: unknown) {
+    return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500)
+  }
+})
+
+// c) GET /collections/:slug
 app.get('/:slug', optionalJwtMiddleware, async (c) => {
   const prisma = getPrisma(c.env)
   const slug = c.req.param('slug')
