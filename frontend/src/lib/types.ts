@@ -100,6 +100,14 @@ export type CollectionFilterParams = {
   sort?: string;
   cursor?: string;
   category?: string[];
+  subCategory?: string;
+};
+
+export type CollectionSubCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
 };
 
 export type CollectionsApiResponse = {
@@ -244,6 +252,8 @@ export type Repository = {
   readmeHtml?: string;
   readmeFetchedAt?: string;
   defaultBranch?: string;
+  companySlug?: string | null;
+  subCategories?: { id: string; name: string; slug: string }[];
 };
 
 export type RepositoryListResponse = {
@@ -257,6 +267,13 @@ export type RepositoryDetailResponse = Repository & {
   readmeHtml?: string;
   readmeFetchedAt?: string;
   defaultBranch?: string;
+};
+
+export type RepositorySubCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
 };
 
 export type Video = {

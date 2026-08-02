@@ -1,4 +1,4 @@
-import type { CollectionsApiResponse, CollectionFilterParams } from "@/lib/types";
+import type { CollectionsApiResponse, CollectionFilterParams, CollectionSubCategory } from "@/lib/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
@@ -10,6 +10,7 @@ export async function fetchCollections(
 
   if (params.search) query.set("search", params.search);
   if (params.creatorType) query.set("creatorType", params.creatorType);
+  if (params.subCategory) query.set("subCategory", params.subCategory);
   if (params.hasRelatedModels) query.set("hasRelatedModels", "true");
   if (params.hasRelatedCompanies) query.set("hasRelatedCompanies", "true");
   if (params.featured) query.set("featured", "true");
@@ -67,4 +68,13 @@ export async function toggleBookmark(
   }
 
   return data.bookmarked as boolean;
+}
+
+export async function fetchCollectionSubCategories(): Promise<CollectionSubCategory[]> {
+  const res = await fetch(`${API_BASE}/collections/subcategories`, {
+    headers: { Accept: "application/json" },
+    next: { revalidate: 300 },
+  } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
 }

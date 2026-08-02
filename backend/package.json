@@ -10,6 +10,8 @@
     "sync-repos": "tsx scripts/sync-repositories.ts",
     "seed": "tsx prisma/seed.ts",
     "seed-mcp": "tsx prisma/seed-mcp.ts",
+    "seed-repo-subcategories": "tsx prisma/seed-repository-subcategories.ts",
+    "seed-collection-subcategories": "tsx prisma/seed-collection-subcategories.ts",
     "migrate-mcp": "tsx scripts/migrate-mcp.ts",
     "lint": "eslint .",
     "test": "vitest run",

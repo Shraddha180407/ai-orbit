@@ -474,10 +474,34 @@ model Repository {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  subCategories   RepositorySubCategoryItem[]
+
   @@index([stars])
   @@index([language])
   @@index([topics], type: Gin)
   @@index([syncedAt])
+}
+
+model RepositorySubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+
+  items RepositorySubCategoryItem[]
+
+  @@index([slug])
+}
+
+model RepositorySubCategoryItem {
+  id              String               @id @default(cuid())
+  repositoryId    String
+  subCategoryId   String
+  repository      Repository           @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  subCategory     RepositorySubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, subCategoryId])
+  @@index([subCategoryId])
 }
 
 // Synced from live production DB via `prisma db pull` on 2026-07-12 — this
@@ -732,6 +756,7 @@ model Collection {
   updatedAt DateTime @updatedAt
 
   categories       CollectionCategory[]
+  subCategories    CollectionSubCategoryItem[]
   tools            CollectionTool[]
   relatedModels    CollectionModel[]
   relatedCompanies CollectionCompany[]
@@ -800,6 +825,28 @@ model CollectionBookmark {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, collectionId])
+}
+
+model CollectionSubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+
+  items CollectionSubCategoryItem[]
+
+  @@index([slug])
+}
+
+model CollectionSubCategoryItem {
+  id              String                  @id @default(cuid())
+  collectionId    String
+  subCategoryId   String
+  collection      Collection              @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  subCategory     CollectionSubCategory   @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, subCategoryId])
+  @@index([subCategoryId])
 }
 
 // ---- Module: Tasks ----
