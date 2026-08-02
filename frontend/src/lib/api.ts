@@ -140,6 +140,7 @@ export async function fetchAllNews(): Promise<any[]> {
 }
 
 import { Repository, RepositoryListResponse, RepositoryDetailResponse, RepositoryOwnerListItem, RepositorySubCategory } from "./types";
+import type { ModelSubCategory } from "./types";
 
 export interface FetchRepositoriesOptions {
   limit?: number;
@@ -199,6 +200,13 @@ export async function fetchAllRepos(): Promise<Repository[]> {
 
 export async function fetchRepositorySubCategories(): Promise<RepositorySubCategory[]> {
   const url = `${API_URL}/api/v1/repositories/subcategories`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function fetchModelSubCategories(): Promise<ModelSubCategory[]> {
+  const url = `${API_URL}/api/v1/models/subcategories`;
   const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
   if (!res.ok) return [];
   return res.json();

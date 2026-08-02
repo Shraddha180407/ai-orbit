@@ -345,7 +345,30 @@ model AIModel {
   openSource    Boolean     @default(false)
   primaryTask   String?
   modelType     ModelType?
+  subCategories ModelSubCategoryItem[]
   @@index([providerId])
+}
+
+model ModelSubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+
+  items ModelSubCategoryItem[]
+
+  @@index([slug])
+}
+
+model ModelSubCategoryItem {
+  id              String              @id @default(cuid())
+  modelId         String
+  subCategoryId   String
+  model           AIModel             @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  subCategory     ModelSubCategory    @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([modelId, subCategoryId])
+  @@index([subCategoryId])
 }
 
 // ---- News module ----

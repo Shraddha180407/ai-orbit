@@ -276,6 +276,13 @@ export type RepositorySubCategory = {
   description?: string | null;
 };
 
+export type ModelSubCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+};
+
 export type Video = {
   id: string;
   url: string;

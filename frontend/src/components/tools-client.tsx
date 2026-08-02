@@ -37,13 +37,20 @@ const CATEGORY_MAP = {
   creativity: [
     { name: "All", slug: "" },
     { name: "Image Generation", slug: "image-generation" },
-    { name: "Video", slug: "video" },
-    { name: "Audio", slug: "audio" },
-    { name: "Marketing", slug: "marketing" },
-    { name: "Design", slug: "design" },
-    { name: "Productivity", slug: "productivity" },
-    { name: "Chatbots", slug: "chatbots" },
-    { name: "Customer Support", slug: "customer-support" }
+    { name: "Writing", slug: "writing" },
+    { name: "Software Development", slug: "software-development" },
+    { name: "Video Creation", slug: "video-creation" },
+    { name: "Music", slug: "music" },
+    { name: "Graphic Design", slug: "graphic-design" },
+    { name: "Digital Art", slug: "digital-art" },
+    { name: "Brainstorming", slug: "brainstorming" },
+    { name: "3D Creation", slug: "3d-creation" },
+    { name: "Presentation Design", slug: "presentation-design" },
+    { name: "Storytelling", slug: "storytelling" },
+    { name: "Content Creation", slug: "content-creation" },
+    { name: "Branding", slug: "branding" },
+    { name: "Motion Graphics", slug: "motion-graphics" },
+    { name: "Game Creation", slug: "game-creation" }
   ]
 } as const;
 
