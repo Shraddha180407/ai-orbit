@@ -58,7 +58,7 @@ const DIRECTORY_CARDS = [
   { name: "Creativity", href: "/creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
 
-export function GlobalHero() {
+export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string } = {}) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const q = searchParams.get("q") || "";
@@ -125,7 +125,7 @@ export function GlobalHero() {
           </h1>
 
           <form
-            action="/tools"
+            action={searchAction}
             method="GET"
             ref={searchContainerRef}
             className="relative w-full max-w-[520px] mx-auto mb-4 sm:mb-5 group"

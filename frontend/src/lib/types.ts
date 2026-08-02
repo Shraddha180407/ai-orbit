@@ -366,3 +366,53 @@ export type Device = {
   images?: string[];
   videoUrl?: string | null;
 };
+
+// ---------------------------------------------------------------------------
+// MCP Directory Page Types
+// ---------------------------------------------------------------------------
+export type MCPItemType = "SERVER" | "CLIENT";
+export type MCPPricingType = "FREE" | "FREEMIUM" | "PAID";
+
+export type MCPItem = {
+  id: string;
+  itemType: MCPItemType;
+  name: string;
+  slug: string;
+  logoUrl?: string;
+  coverImageUrl?: string;
+  shortDescription: string;
+  fullDescription: string;
+  providerName: string;
+  providerUrl?: string;
+  license?: string;
+  pricingType: MCPPricingType;
+  startingPrice?: number;
+  isFeatured: boolean;
+  isVerified: boolean;
+  launchDate?: string;
+  lastUpdatedDate: string;
+  websiteUrl?: string;
+  documentationUrl?: string;
+  repositoryUrl?: string;
+  qualityScore?: number;
+  easeOfUseScore?: number;
+  globalRank?: number;
+  leaderboardRank?: number;
+  editorialVerdict?: string;
+  viewCount: number;
+  monthlyVisits: number;
+  upvoteCount: number;
+  saveCount: number;
+  createdAt: string;
+  updatedAt: string;
+  categories?: { name: string; slug: string }[];
+  subCategories?: { name: string; slug: string }[];
+  tags?: { name: string; slug: string }[];
+};
+
+export type MCPListResponse = {
+  items: MCPItem[];
+  total: number;
+  page: number;
+  totalPages: number;
+};

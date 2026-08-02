@@ -235,6 +235,7 @@ export interface FetchMCPOptions {
   sortBy?: string;
   page?: number;
   limit?: number;
+  type?: string;
 }
 
 export async function fetchMCPItems(options: FetchMCPOptions = {}): Promise<{ items: any[]; total: number; page: number; totalPages: number }> {
@@ -243,6 +244,7 @@ export async function fetchMCPItems(options: FetchMCPOptions = {}): Promise<{ it
   if (options.category) url.searchParams.set("category", options.category);
   if (options.search) url.searchParams.set("search", options.search);
   if (options.sortBy) url.searchParams.set("sortBy", options.sortBy);
+  if (options.type) url.searchParams.set("type", options.type);
   if (options.page) url.searchParams.set("page", String(options.page));
   if (options.limit) url.searchParams.set("limit", String(options.limit));
 
@@ -389,4 +391,42 @@ export async function fetchRepositoryOwners(): Promise<RepositoryOwnerListItem[]
   const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) return [];
   return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// MCP API Fetch Helpers
+// ---------------------------------------------------------------------------
+import type { MCPListResponse } from "./types";
+
+export interface MCPQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export async function fetchMCPItems(params: MCPQuery = {}): Promise<MCPListResponse> {
+  const url = new URL(`${API_URL}/api/v1/mcps`);
+  if (params.page) url.searchParams.set("page", String(params.page));
+  if (params.limit) url.searchParams.set("limit", String(params.limit));
+  if (params.search) url.searchParams.set("search", params.search);
+
+  const empty: MCPListResponse = {
+    items: [],
+    total: 0,
+    page: params.page ?? 1,
+    totalPages: 1,
+  };
+
+  try {
+    const res = await fetch(url.toString());
+    if (!res.ok) return empty;
+    const responseJson = await res.json();
+    if (responseJson && responseJson.success && responseJson.data) {
+      return responseJson.data;
+    }
+    return empty;
+  } catch (err) {
+    console.error("Failed to fetch MCP items:", err);
+    return empty;
+  }
 }
