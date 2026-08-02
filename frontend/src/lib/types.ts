@@ -283,6 +283,20 @@ export type ModelSubCategory = {
   description?: string | null;
 };
 
+export type MCPSubCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+};
+
+export type DeviceSubCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+};
+
 export type Video = {
   id: string;
   url: string;

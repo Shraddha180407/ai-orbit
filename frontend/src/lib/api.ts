@@ -212,6 +212,20 @@ export async function fetchModelSubCategories(): Promise<ModelSubCategory[]> {
   return res.json();
 }
 
+export async function fetchMCPSubCategories(): Promise<import("./types").MCPSubCategory[]> {
+  const url = `${API_URL}/api/v1/mcp/subcategories`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function fetchDeviceSubCategories(): Promise<import("./types").DeviceSubCategory[]> {
+  const url = `${API_URL}/api/v1/devices/subcategories`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
+}
+
 
 export async function fetchAllVideos(): Promise<any[]> {
   const url = `${API_URL}/api/v1/videos`;

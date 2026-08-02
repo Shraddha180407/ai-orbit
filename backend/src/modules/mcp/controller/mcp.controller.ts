@@ -244,6 +244,12 @@ export class MCPController {
       data: report,
     });
   });
+
+  listMCPSubCategories = asyncHandler(async (c: Context) => {
+    const service = c.get('mcpService');
+    const subCategories = await service.listMCPSubCategories();
+    return c.json(subCategories);
+  });
 }
 
 // Create router
@@ -252,6 +258,7 @@ export const createMCPRouter = () => {
   const router = new Hono<{ Variables: Variables }>();
 
   // Public routes
+  router.get('/subcategories', controller.listMCPSubCategories);
   router.get('/', controller.listMCPItems);
   router.get('/:slug', controller.getMCPItemBySlug);
   router.get('/:slug/alternatives', controller.getMCPItemAlternatives);
