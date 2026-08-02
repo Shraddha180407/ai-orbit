@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Plus from 'lucide-react/dist/esm/icons/plus';
 import Pencil from 'lucide-react/dist/esm/icons/pencil';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
-import { AIModel } from "@/lib/types";
-import { API_URL, fetchModels } from "@/lib/api";
+import { AIModel, ModelSubCategory } from "@/lib/types";
+import { API_URL, fetchModels, fetchModelSubCategories } from "@/lib/api";
 import { ModelListView } from "@/components/ModelListView";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
@@ -16,12 +17,17 @@ import { toast } from "sonner";
 export function ModelsClient() {
   const { user } = useUser();
   const isAdmin = user?.role === "ADMIN";
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [models, setModels] = useState<AIModel[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+  const [subCategories, setSubCategories] = useState<ModelSubCategory[]>([]);
+  const selectedSubCategorySlug = searchParams.get("subCategory") || null;
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -39,13 +45,36 @@ export function ModelsClient() {
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  // Fetch subcategories once on mount
+  useEffect(() => {
+    async function loadSubCategories() {
+      try {
+        const data = await fetchModelSubCategories();
+        setSubCategories(data || []);
+      } catch (e) {
+        console.error("Failed to fetch model subcategories:", e);
+      }
+    }
+    loadSubCategories();
+  }, []);
+
+  const handleSelectSubCategory = (slug: string | null) => {
+    const params = new URLSearchParams(window.location.search);
+    if (slug) {
+      params.set("subCategory", slug);
+    } else {
+      params.delete("subCategory");
+    }
+    router.push(`/models?${params.toString()}`);
+  };
+
   // Fetch page
   useEffect(() => {
     async function load() {
       if (page === 1) setIsLoading(true);
       else setIsFetchingMore(true);
       try {
-        const data = await fetchModels({ page });
+        const data = await fetchModels({ page, subCategory: selectedSubCategorySlug || undefined });
         if (page === 1) setModels(data.items);
         else setModels((prev) => [...prev, ...data.items]);
         setTotalPages(data.pagination.totalPages || 1);
@@ -58,7 +87,7 @@ export function ModelsClient() {
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, selectedSubCategorySlug]);
 
   // Infinite scroll
   useEffect(() => {
@@ -166,6 +195,37 @@ export function ModelsClient() {
             >
               <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Model
             </Button>
+          )}
+
+          {/* Active Subcategory Filter Chip */}
+          {selectedSubCategorySlug && (
+            <div className="flex items-center gap-2 mb-2 bg-white/[0.02] border border-white/[0.08] px-3.5 py-2 rounded-lg w-fit shadow-md animate-fade-in">
+              <span className="text-xs text-white/50">Category:</span>
+              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white/[0.08] text-white">
+                {subCategories.find(s => s.slug === selectedSubCategorySlug)?.name || selectedSubCategorySlug}
+              </span>
+              <button
+                onClick={() => handleSelectSubCategory(null)}
+                className="text-xs text-red-400 hover:text-red-300 transition-colors ml-2 cursor-pointer font-medium"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
+          {/* Subcategory Filter Chips */}
+          {subCategories.length > 0 && !selectedSubCategorySlug && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {subCategories.map((sub) => (
+                <button
+                  key={sub.id}
+                  onClick={() => handleSelectSubCategory(sub.slug)}
+                  className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white transition-all cursor-pointer"
+                >
+                  {sub.name}
+                </button>
+              ))}
+            </div>
           )}
 
           <ModelListView models={models} loading={isLoading && page === 1} />
