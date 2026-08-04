@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Device, DeviceSubCategory } from "@/lib/types";
-import { fetchAllDevices, fetchDeviceSubCategories } from "@/lib/api";
+import { fetchAllDevices } from "@/lib/api";
 import { DEVICES_DATA, DeviceData, getMainTaskColor } from "@/data/devices";
 import Flame    from 'lucide-react/dist/esm/icons/flame';
 import Wrench      from 'lucide-react/dist/esm/icons/wrench';
@@ -148,8 +148,6 @@ export function DevicesClient() {
   const [currentPage, setCurrentPage] = useState(1);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-  const [subCategories, setSubCategories] = useState<DeviceSubCategory[]>([]);
-  const selectedSubCategorySlug = searchParams.get("subCategory") || null;
 
   const [nameSearch, setNameSearch] = useState("");
   const [nameInput, setNameInput] = useState("");
@@ -187,34 +185,13 @@ export function DevicesClient() {
   }
 
   useEffect(() => {
-    fetchAllDevices({ subCategory: selectedSubCategorySlug || undefined })
+    fetchAllDevices({})
       .then((data) => setDevices(mergeWithDummy(data || [])))
       .catch(() => setDevices(DEVICES_DATA))
       .finally(() => setIsLoading(false));
-  }, [selectedSubCategorySlug]);
-
-  // Fetch subcategories once on mount
-  useEffect(() => {
-    async function loadSubCategories() {
-      try {
-        const data = await fetchDeviceSubCategories();
-        setSubCategories(data || []);
-      } catch (e) {
-        console.error("Failed to fetch device subcategories:", e);
-      }
-    }
-    loadSubCategories();
   }, []);
 
-  const handleSelectSubCategory = (slug: string | null) => {
-    const params = new URLSearchParams(window.location.search);
-    if (slug) {
-      params.set("subCategory", slug);
-    } else {
-      params.delete("subCategory");
-    }
-    router.push(`/devices?${params.toString()}`);
-  };
+
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -258,30 +235,38 @@ export function DevicesClient() {
     }
     if (selectedCategory !== ALL_CATEGORIES) {
   list = list.filter((d) => {
-    const cat = (d.category || "").toLowerCase();
     const sel = selectedCategory.toLowerCase();
-    // exact match first, then keyword match
-    if (cat === sel) return true;
-    // keyword mappings
+    // Build a searchable text blob from multiple fields
+    const searchable = [
+      d.category || "",
+      d.name || "",
+      d.description || "",
+      d.mainTask || "",
+      d.formFactor || "",
+      ...(d.aiFeatures || []),
+      ...(d.primaryUseCases || []),
+    ].join(" ").toLowerCase();
+
     const keywords: Record<string, string[]> = {
-      "ai pcs": ["pc", "laptop", "computer", "chromebook", "desktop", "notebook"],
-      "smartphones": ["smartphone", "phone", "mobile", "iphone", "android", "pixel", "galaxy"],
-      "smart home": ["smart home", "home automation", "thermostat", "smart speaker", "echo", "nest", "alexa", "hub", "smart plug", "smart meter", "smart display"],
-      "wearables": ["wearable", "smartwatch", "watch", "ring", "fitness", "band", "pendant", "glasses", "eyewear", "pin", "clip"],
-      "ai cameras": ["camera", "surveillance", "vision", "facial"],
-      "audio": ["audio", "headphone", "earbud", "speaker", "microphone", "mic", "sound"],
-      "ar/vr": ["ar", "vr", "augmented", "virtual reality", "mixed reality", "headset", "spatial", "xr", "webxr"],
-      "edge ai": ["edge", "iot", "embedded", "edge ai", "accelerator", "fpga", "soc", "microcontroller", "esp", "arduino", "raspberry", "jetson", "npu", "tpu", "gpu"],
-      "robotics hardware": ["robot", "robotics", "actuator", "lego mindstorms", "drone"],
-      "medical": ["medical", "health", "diagnostics", "clinical", "wellness", "prosthesis"],
+      "ai pcs": ["pc", "laptop", "computer", "chromebook", "desktop", "notebook", "ai pc"],
+      "smartphones": ["smartphone", "phone", "mobile", "iphone", "android", "pixel", "galaxy", "lumia", "blackberry", "xperia", "pinephone"],
+      "smart home": ["smart home", "home automation", "thermostat", "smart speaker", "echo", "nest", "alexa", "hub", "smart plug", "smart meter", "smart display", "homepod", "smartthings"],
+      "wearables": ["wearable", "smartwatch", "watch", "ring", "fitness", "band", "pendant", "glasses", "eyewear", "pin", "clip", "smart glasses"],
+      "ai cameras": ["camera", "surveillance", "vision", "facial", "ai camera"],
+      "audio": ["audio", "headphone", "earbud", "speaker", "microphone", "mic", "sound", "voice recorder"],
+      "ar/vr": ["ar", "vr", "augmented", "virtual reality", "mixed reality", "headset", "spatial", "xr", "webxr", "reality labs"],
+      "edge ai": ["edge ai", "edge ai hardware", "iot", "embedded", "accelerator", "fpga", "soc", "microcontroller", "neural processing unit", "npu", "tpu", "gpu", "tensor processing"],
+      "robotics hardware": ["robot", "robotics", "actuator", "lego mindstorms", "drone", "robotic"],
+      "medical": ["medical", "health", "diagnostics", "clinical", "wellness", "prosthesis", "medtronic", "abbott"],
       "development boards": ["development board", "raspberry pi", "jetson", "arduino", "odroid", "banana pi", "nodemcu", "esp32", "esp8266", "risc-v", "rockchip", "allwinner"],
-      "smart sensors": ["sensor", "smart sensor", "environmental", "motion", "iot"],
-      "automotive ai devices": ["automotive", "dashcam", "navigation", "driver", "autopilot", "car", "vehicle", "lane"],
-      "microphones": ["microphone", "mic", "voice recorder", "transcription", "recording"],
+      "smart sensors": ["sensor", "smart sensor", "environmental", "motion sensor"],
+      "automotive ai devices": ["automotive", "dashcam", "navigation", "autopilot", "self-driving", "lane centering", "tesla autopilot", "nvidia drive"],
+      "microphones": ["microphone", "mic", "voice recorder", "transcription", "recording", "plaud"],
       "farming": ["farming", "agriculture", "digital agriculture", "precision farming"],
     };
+
     const keywordList = keywords[sel] || [sel];
-    return keywordList.some((kw) => cat.includes(kw));
+    return keywordList.some((kw) => searchable.includes(kw));
   });
 }
     if (selectedAvailability !== "All") list = list.filter((d) => d.availability === selectedAvailability);
@@ -373,43 +358,6 @@ export function DevicesClient() {
 
   return (
     <div className="w-full flex-1 flex flex-col">
-
-      {/* Active Subcategory Filter Chip */}
-      {selectedSubCategorySlug && (
-        <div className="px-4 sm:px-6 lg:px-8 pt-4">
-          <div className="flex items-center gap-2 mb-2 bg-white/[0.02] border border-white/[0.08] px-3.5 py-2 rounded-lg w-fit shadow-md animate-fade-in">
-            <span className="text-xs text-white/50">Category:</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white/[0.08] text-white">
-              {subCategories.find(s => s.slug === selectedSubCategorySlug)?.name || selectedSubCategorySlug}
-            </span>
-            <button
-              onClick={() => handleSelectSubCategory(null)}
-              className="text-xs text-red-400 hover:text-red-300 transition-colors ml-2 cursor-pointer font-medium"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Subcategory Filter Chips */}
-      {subCategories.length > 0 && !selectedSubCategorySlug && (
-        <div className="px-4 sm:px-6 lg:px-8 pt-4">
-          <div className="flex flex-wrap gap-2 mb-2">
-            {subCategories.map((sub) => (
-              <button
-                key={sub.id}
-                onClick={() => handleSelectSubCategory(sub.slug)}
-                className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white transition-all cursor-pointer"
-              >
-                {sub.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      
       {/* ── SUBCATEGORY PILLS ── */}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-3">
         <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden justify-start lg:justify-center">
