@@ -18,7 +18,7 @@ export class ModelsService {
   }
 
   async listModels(query: ModelsListQuery) {
-    const { page, limit, sort, search, provider, modality, creator } = query;
+    const { page, limit, sort, search, provider, modality, creator, subCategory } = query;
 
     const and: Prisma.AIModelWhereInput[] = [];
 
@@ -42,6 +42,16 @@ export class ModelsService {
 
     if (creator) {
       and.push({ creator: { equals: creator, mode: 'insensitive' } });
+    }
+
+    if (subCategory) {
+      and.push({
+        subCategories: {
+          some: {
+            subCategory: { slug: subCategory },
+          },
+        },
+      });
     }
 
     const where: Prisma.AIModelWhereInput = and.length > 0 ? { AND: and } : {};
@@ -69,6 +79,13 @@ export class ModelsService {
         take: limit,
         include: {
           provider: { select: providerSelect },
+          subCategories: {
+            select: {
+              subCategory: {
+                select: { id: true, name: true, slug: true },
+              },
+            },
+          },
         },
       }),
       this.prisma.aIModel.count({ where }),
@@ -88,8 +105,13 @@ export class ModelsService {
       }),
     ]);
 
+    const itemsWithSubCategories = items.map(item => ({
+      ...item,
+      subCategories: item.subCategories.map(sc => sc.subCategory),
+    }));
+
     return {
-      items,
+      items: itemsWithSubCategories,
       pagination: {
         page,
         limit,

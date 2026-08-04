@@ -13,6 +13,7 @@ export const modelsListQuerySchema = z.object({
   provider: z.string().trim().optional(),   // matches Company.slug
   modality: z.string().trim().optional(),    // substring match, e.g. "Text"
   creator: z.string().trim().optional(),     // fallback for models without providerId
+  subCategory: z.string().trim().optional(), // matches ModelSubCategory.slug
 });
 
 export type ModelsListQuery = z.infer<typeof modelsListQuerySchema>;
