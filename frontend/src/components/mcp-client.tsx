@@ -133,7 +133,7 @@ export function MCPClient() {
       params.delete("subCategory");
     }
     
-    router.replace(`/tools/mcp?${params.toString()}`);
+    router.replace(`/mcp?${params.toString()}`);
   };
 
   // Fetch subcategories once on mount with React Query
@@ -168,7 +168,7 @@ export function MCPClient() {
           <Breadcrumb
             items={[
               { label: "Home", href: "/" },
-              { label: "MCP", href: "/tools/mcp" },
+              { label: "MCP", href: "/mcp" },
               { label: activeType === "SERVER" ? "MCP Servers" : "MCP Clients" }
             ]}
           />

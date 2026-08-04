@@ -239,14 +239,14 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
   if (item.useCases && item.useCases.length > 0) {
     alsoUsedForItems = item.useCases.map((u) => ({
       name: u.title,
-      href: `/tools/mcp?q=${encodeURIComponent(u.title)}`,
+      href: `/mcp?q=${encodeURIComponent(u.title)}`,
     }));
   } else if (item.tags && item.tags.length > 0) {
     alsoUsedForItems = item.tags.map((t: any) => {
       const name = t.name || t.tag?.name || "";
       return {
         name,
-        href: `/tools/mcp?q=${encodeURIComponent(name)}`,
+        href: `/mcp?q=${encodeURIComponent(name)}`,
       };
     });
   } else if (item.categories && item.categories.length > 0) {
@@ -255,7 +255,7 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
       const slug = c.slug || c.category?.slug || "";
       return {
         name,
-        href: `/tools/mcp?category=${slug}`,
+        href: `/mcp?category=${slug}`,
       };
     });
   } else if (item.subCategories && item.subCategories.length > 0) {
@@ -263,7 +263,7 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
       const name = s.name || s.subCategory?.name || "";
       return {
         name,
-        href: `/tools/mcp?q=${encodeURIComponent(name)}`,
+        href: `/mcp?q=${encodeURIComponent(name)}`,
       };
     });
   }
@@ -284,7 +284,7 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
         const name = t.name || t.tag?.name || "";
         return {
           name,
-          href: `/tools/mcp?q=${encodeURIComponent(name)}`,
+          href: `/mcp?q=${encodeURIComponent(name)}`,
         };
       });
     } else if (item.categories && item.categories.length > 0) {
@@ -293,7 +293,7 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
         const slug = c.slug || c.category?.slug || "";
         return {
           name,
-          href: `/tools/mcp?category=${slug}`,
+          href: `/mcp?category=${slug}`,
         };
       });
     } else if (item.subCategories && item.subCategories.length > 0) {
@@ -301,7 +301,7 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
         const name = s.name || s.subCategory?.name || "";
         return {
           name,
-          href: `/tools/mcp?q=${encodeURIComponent(name)}`,
+          href: `/mcp?q=${encodeURIComponent(name)}`,
         };
       });
     }
@@ -312,7 +312,7 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
         const slug = c.slug || c.category?.slug || "";
         return {
           name,
-          href: `/tools/mcp?category=${slug}`,
+          href: `/mcp?category=${slug}`,
         };
       });
     } else if (item.subCategories && item.subCategories.length > 0) {
@@ -320,7 +320,7 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
         const name = s.name || s.subCategory?.name || "";
         return {
           name,
-          href: `/tools/mcp?q=${encodeURIComponent(name)}`,
+          href: `/mcp?q=${encodeURIComponent(name)}`,
         };
       });
     }
@@ -330,7 +330,7 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
         const name = s.name || s.subCategory?.name || "";
         return {
           name,
-          href: `/tools/mcp?q=${encodeURIComponent(name)}`,
+          href: `/mcp?q=${encodeURIComponent(name)}`,
         };
       });
     }
@@ -352,8 +352,8 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
         <Breadcrumb
           items={[
             { label: "Home", href: "/" },
-            { label: "MCP", href: "/tools/mcp" },
-            { label: item.itemType === "SERVER" ? "MCP Servers" : "MCP Clients", href: `/tools/mcp?type=${item.itemType.toLowerCase()}` },
+            { label: "MCP", href: "/mcp" },
+            { label: item.itemType === "SERVER" ? "MCP Servers" : "MCP Clients", href: `/mcp?type=${item.itemType.toLowerCase()}` },
             { label: item.name },
           ]}
         />
