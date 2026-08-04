@@ -6,6 +6,7 @@ const controller = new RepositoriesController();
 
 router.get('/', (c) => controller.listRepositories(c));
 router.get('/owners', (c) => controller.listRepositoryOwners(c));
+router.get('/subcategories', (c) => controller.listRepositorySubCategories(c));
 router.get('/:slug', (c) => controller.getRepositoryBySlug(c));
 
 export { router as repositoriesRouter };

@@ -6,18 +6,18 @@ import { modelsCompareQuerySchema } from './models.schema.js';
 
 export class ModelsController {
   async getFilterOptions(c: Context) {
-  const prisma = getPrisma(c.env);
-  const service = new ModelsService(prisma);
+    const prisma = getPrisma(c.env);
+    const service = new ModelsService(prisma);
 
-  try {
-    const options = await service.getFilterOptions();
-    return c.json(options);
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  } finally {
-    await prisma.$disconnect();
+    try {
+      const options = await service.getFilterOptions();
+      return c.json(options);
+    } catch (error: any) {
+      return c.json({ error: error.message }, 500);
+    } finally {
+      await prisma.$disconnect();
+    }
   }
-}
 
   async compareModels(c: Context) {
     const parsed = modelsCompareQuerySchema.safeParse(c.req.query());
@@ -34,6 +34,21 @@ export class ModelsController {
       return c.json({ items: models });
     } catch (error: any) {
       return c.json({ error: error.message }, error.message.includes("Cannot compare") ? 422 : 500);
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+
+  async listModelSubCategories(c: Context) {
+    const prisma = getPrisma(c.env);
+    const service = new ModelsService(prisma);
+
+    try {
+      const subCategories = await service.listModelSubCategories();
+      return c.json(subCategories);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return c.json({ error: message }, 500);
     } finally {
       await prisma.$disconnect();
     }

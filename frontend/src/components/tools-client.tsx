@@ -21,29 +21,48 @@ const CATEGORY_MAP = {
     { name: "Marketing", slug: "marketing" },
     { name: "Productivity", slug: "productivity" },
     { name: "Business", slug: "business" },
-    { name: "Education", slug: "education" }
+    { name: "Education", slug: "education" },
+    { name: "Agents", slug: "agents" },
+    { name: "Presentations", slug: "presentations" },
+    { name: "3D Generation", slug: "3d-generation" },
+    { name: "No-Code AI Builders", slug: "no-code" },
+    { name: "Workflow Automation", slug: "workflow-automation" }
   ],
   personal: [
     { name: "All", slug: "" },
-    { name: "Productivity", slug: "productivity" },
-    { name: "Chatbots", slug: "chatbots" },
-    { name: "Writing", slug: "writing" },
-    { name: "Audio", slug: "audio" },
-    { name: "Customer Support", slug: "customer-support" },
-    { name: "Video", slug: "video" },
-    { name: "Image Generation", slug: "image-generation" },
-    { name: "Marketing", slug: "marketing" }
+    { name: "Relationships", slug: "relationships" },
+    { name: "Education", slug: "education" },
+    { name: "Learning", slug: "learning" },
+    { name: "Health & Wellness", slug: "health-wellness" },
+    { name: "Personal Development", slug: "personal-development" },
+    { name: "Travel", slug: "travel" },
+    { name: "Finance & Wealth", slug: "finance-wealth" },
+    { name: "Entertainment", slug: "entertainment" },
+    { name: "Food & Nutrition", slug: "food-nutrition" },
+    { name: "Shopping", slug: "shopping" },
+    { name: "Fashion & Style", slug: "fashion-style" },
+    { name: "Mindfulness", slug: "mindfulness" },
+    { name: "Life Coaching", slug: "life-coaching" },
+    { name: "Home Decor", slug: "home-decor" },
+    { name: "Insurance Advisor", slug: "insurance-advisor" }
   ],
   creativity: [
     { name: "All", slug: "" },
     { name: "Image Generation", slug: "image-generation" },
-    { name: "Video", slug: "video" },
-    { name: "Audio", slug: "audio" },
-    { name: "Marketing", slug: "marketing" },
-    { name: "Design", slug: "design" },
-    { name: "Productivity", slug: "productivity" },
-    { name: "Chatbots", slug: "chatbots" },
-    { name: "Customer Support", slug: "customer-support" }
+    { name: "Writing", slug: "writing" },
+    { name: "Software Development", slug: "software-development" },
+    { name: "Video Creation", slug: "video-creation" },
+    { name: "Music", slug: "music" },
+    { name: "Graphic Design", slug: "graphic-design" },
+    { name: "Digital Art", slug: "digital-art" },
+    { name: "Brainstorming", slug: "brainstorming" },
+    { name: "3D Creation", slug: "3d-creation" },
+    { name: "Presentation Design", slug: "presentation-design" },
+    { name: "Storytelling", slug: "storytelling" },
+    { name: "Content Creation", slug: "content-creation" },
+    { name: "Branding", slug: "branding" },
+    { name: "Motion Graphics", slug: "motion-graphics" },
+    { name: "Game Creation", slug: "game-creation" }
   ]
 } as const;
 
@@ -173,7 +192,7 @@ export function ToolsClient({
     <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
       <div className="mx-auto w-full max-w-[1600px] space-y-3">
         {/* Top Sliding Category Row */}
-        <div className="mb-2 flex items-center justify-start md:justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+        <div className="mb-2 flex items-center justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (

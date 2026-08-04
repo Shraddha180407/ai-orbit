@@ -3,9 +3,18 @@ import { z } from "zod";
 const CompanyType = z.enum([
   "AI_NATIVE",
   "MODEL_COMPANIES",
-  "TOOL_COMPANIES",
-  "PROFITABLE",
-  "UNICORNS"
+  "UNICORNS",
+  "AI_MODEL_PROVIDERS",
+  "INFRASTRUCTURE",
+  "ENTERPRISE",
+  "HEALTHCARE",
+  "GENERATIVE_AI",
+  "MARKETING",
+  "DEVELOPER_TOOLS",
+  "ROBOTICS",
+  "EDUCATION",
+  "OPEN_SOURCE",
+  "FINANCE"
 ]);
 
 export const companySchema = z.object({

@@ -31,6 +31,7 @@ export class RepositoriesController {
         topic: c.req.query('topic') || undefined,
         q: c.req.query('q') || undefined,
         owner: c.req.query('owner') || undefined,
+        subCategory: c.req.query('subCategory') || undefined,
       });
 
       return c.json(result);
@@ -38,7 +39,7 @@ export class RepositoriesController {
       logger.error('Error listing repositories:', error);
       return c.json({ error: 'Failed to fetch repositories' }, 500);
     } finally {
-      await prisma.$disconnect();
+      try { await prisma.$disconnect(); } catch { /* ignore disconnect errors */ }
     }
   }
 
@@ -57,7 +58,7 @@ export class RepositoriesController {
       logger.error('Error fetching repository:', error);
       return c.json({ error: 'Failed to fetch repository' }, 500);
     } finally {
-      await prisma.$disconnect();
+      try { await prisma.$disconnect(); } catch { /* ignore disconnect errors */ }
     }
   }
 
@@ -72,7 +73,22 @@ export class RepositoriesController {
       logger.error('Error listing repository owners:', error);
       return c.json({ error: 'Failed to fetch repository owners' }, 500);
     } finally {
-      await prisma.$disconnect();
+      try { await prisma.$disconnect(); } catch { /* ignore disconnect errors */ }
+    }
+  }
+
+  async listRepositorySubCategories(c: Context) {
+    const prisma = getPrisma(c.env);
+    const service = new RepositoriesService(prisma);
+
+    try {
+      const subCategories = await service.listRepositorySubCategories();
+      return c.json(subCategories);
+    } catch (error: unknown) {
+      logger.error('Error listing repository subcategories:', error);
+      return c.json({ error: 'Failed to fetch repository subcategories' }, 500);
+    } finally {
+      try { await prisma.$disconnect(); } catch { /* ignore disconnect errors */ }
     }
   }
 }
