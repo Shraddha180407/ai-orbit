@@ -408,6 +408,27 @@ export type MCPItem = {
   categories?: { name: string; slug: string }[];
   subCategories?: { name: string; slug: string }[];
   tags?: { name: string; slug: string }[];
+  releases?: MCPRelease[];
+  useCases?: MCPUseCase[];
+  recommendations?: MCPItem[];
+  similarItems?: MCPItem[];
+};
+
+export type MCPUseCase = {
+  id: string;
+  mcpItemId: string;
+  title: string;
+  description: string;
+  applications: string[];
+};
+
+export type MCPRelease = {
+  id: string;
+  versionName: string;
+  releaseDate?: string;
+  summary?: string;
+  description?: string;
+  improvements?: string[];
 };
 
 export type MCPListResponse = {

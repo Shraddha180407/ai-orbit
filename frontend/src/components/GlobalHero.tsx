@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Search from 'lucide-react/dist/esm/icons/search';
 import Wrench from 'lucide-react/dist/esm/icons/wrench';
@@ -61,11 +61,25 @@ const DIRECTORY_CARDS = [
 export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string } = {}) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const router = useRouter();
   const q = searchParams.get("q") || "";
 
   const [searchOpen, setSearchOpen] = useState(false);
   const searchContainerRef = useRef<HTMLFormElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const query = searchInputRef.current?.value || "";
+    const params = new URLSearchParams(searchParams.toString());
+    if (query.trim()) {
+      params.set("q", query);
+    } else {
+      params.delete("q");
+    }
+    setSearchOpen(false);
+    router.push(`${searchAction}?${params.toString()}`);
+  };
 
   // Close the search dropdown on outside click or Escape.
   useEffect(() => {
@@ -127,6 +141,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
           <form
             action={searchAction}
             method="GET"
+            onSubmit={handleSubmit}
             ref={searchContainerRef}
             className="relative w-full max-w-[520px] mx-auto mb-4 sm:mb-5 group"
           >

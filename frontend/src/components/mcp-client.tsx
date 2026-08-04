@@ -9,6 +9,13 @@ import { useQuery } from "@tanstack/react-query";
 // Lucide icons
 import ArrowUp from 'lucide-react/dist/esm/icons/arrow-up';
 import Eye from 'lucide-react/dist/esm/icons/eye';
+import Bookmark from 'lucide-react/dist/esm/icons/bookmark';
+import Globe from 'lucide-react/dist/esm/icons/globe';
+import FileText from 'lucide-react/dist/esm/icons/file-text';
+import Github from 'lucide-react/dist/esm/icons/github';
+import Share2 from 'lucide-react/dist/esm/icons/share-2';
+import Check from 'lucide-react/dist/esm/icons/check';
+import BadgeCheck from 'lucide-react/dist/esm/icons/badge-check';
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 
 import { fetchMCPSubCategories, fetchMCPItems } from "@/lib/api";
@@ -37,10 +44,47 @@ const CATEGORIES = [
   { name: "MCP Clients", slug: "mcp-clients" },
 ] as const;
 
-// 8-column layout matching upstream premium layout
-const COL_TEMPLATE = "grid-cols-[44px_minmax(180px,2.5fr)_minmax(100px,1fr)_minmax(110px,1.1fr)_minmax(120px,1.2fr)_minmax(90px,0.9fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)]";
-const COL_MIN_WIDTH = "min-w-[900px]";
-const COLUMN_HEADERS = ["", "NAME & DESCRIPTION", "TYPE", "CATEGORIES", "PROVIDER", "PRICING", "UPVOTES", "VIEWS"];
+// 5-column layout template
+const COL_TEMPLATE = "grid-cols-[40px_minmax(240px,3.2fr)_minmax(180px,2.4fr)_minmax(180px,2.4fr)_minmax(120px,1.2fr)]";
+const COL_MIN_WIDTH = "min-w-[960px]";
+const COLUMN_HEADERS = ["", "MCP ITEM", "TYPE & CLASSIFICATION", "METADATA", "ACTIONS"];
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function formatReleased(value?: string | null | Date): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return "—";
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+// Custom Share Button copying link to clipboard
+function ShareButton({ slug, name }: { slug: string; name: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleShare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `${window.location.origin}/tools/mcp/${slug}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleShare}
+      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors ${
+        copied
+          ? "border-[var(--color-signal,#6E56CF)] text-[var(--color-signal,#6E56CF)]"
+          : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
+      }`}
+      title="Share Link"
+      aria-label={`Share ${name}`}
+    >
+      {copied ? <Check size={14} /> : <Share2 size={14} />}
+    </button>
+  );
+}
 
 export function MCPClient() {
   const searchParams = useSearchParams();
@@ -73,7 +117,7 @@ export function MCPClient() {
   }, [activeType, activeCategory, activeSubCategory, q]);
 
   // Helper to update URL search parameters without losing other queries (like search)
-  const updateUrl = (type: "SERVER" | "CLIENT", category: string, subCategory: string) => {
+  const updateUrl = (type: "SERVER" | "CLIENT", category: string, subCategory: string = "") => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("type", type.toLowerCase());
     
@@ -239,12 +283,20 @@ export function MCPClient() {
                       <div className="h-3 w-40 animate-pulse rounded bg-[#18181C]" />
                       <div className="h-2.5 w-64 animate-pulse rounded bg-[#18181C]" />
                     </div>
-                    <div className="h-4 w-12 animate-pulse rounded-full bg-[#18181C]" />
-                    <div className="h-5 w-20 animate-pulse rounded-full bg-[#18181C]" />
-                    <div className="h-3.5 w-24 animate-pulse rounded bg-[#18181C]" />
-                    <div className="h-5 w-20 animate-pulse rounded-full bg-[#18181C]" />
-                    <div className="h-3 w-10 animate-pulse rounded bg-[#18181C]" />
-                    <div className="h-3 w-10 animate-pulse rounded bg-[#18181C]" />
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-14 animate-pulse rounded bg-[#18181C]" />
+                      <div className="h-4.5 w-20 animate-pulse rounded-full bg-[#18181C]" />
+                      <div className="h-4.5 w-16 animate-pulse rounded-full bg-[#18181C]" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="h-3 w-28 animate-pulse rounded bg-[#18181C]" />
+                      <div className="h-2 w-20 animate-pulse rounded bg-[#18181C]" />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-7 w-7 animate-pulse rounded bg-[#18181C]" />
+                      <div className="h-7 w-7 animate-pulse rounded bg-[#18181C]" />
+                      <div className="h-7 w-7 animate-pulse rounded bg-[#18181C]" />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -255,14 +307,15 @@ export function MCPClient() {
               description="An error occurred while communicating with the backend API. Please try again later."
             />
           ) : items.length === 0 ? (
-            <EmptyState
-              title={q ? "No matching MCP items found" : "No MCP Items Found"}
-              description={
-                q
-                  ? `We couldn't find any MCP servers or clients matching "${q}". Try checking your spelling or using a different query.`
-                  : "No Model Context Protocol (MCP) items are available right now."
-              }
-            />
+            <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-[#232326] bg-[#131316]/40 py-16 text-center">
+              <SearchX size={28} className="text-[#71717A]" aria-hidden="true" />
+              <div>
+                <p className="text-sm font-medium text-white">No items match your filters</p>
+                <p className="mt-1 text-xs text-[#A1A1AA]">
+                  Try a different search query or clear your selected filters to see results.
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10">
               <div className="flex flex-col">
@@ -312,25 +365,26 @@ export function MCPClient() {
                           )}
                         </div>
 
-                        {/* Column 2: Name & Description */}
+                        {/* Column 2: Left Section (Name, shortDescription, providerName) */}
                         <div className="min-w-0 flex flex-col justify-center">
                           <div className="flex items-center gap-2">
-                            <span className="truncate text-[13px] font-semibold text-white">
+                            <span className="truncate text-[13px] font-semibold text-white group-hover:text-[#6E56CF] transition-colors group-hover:underline">
                               {item.name}
                             </span>
                             {item.isVerified && (
-                              <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-1.5 py-0.2 text-[8px] font-medium text-emerald-400 border border-emerald-500/20">
-                                Verified
-                              </span>
+                              <BadgeCheck size={14} className="shrink-0 text-blue-400" aria-label="Verified" />
                             )}
                           </div>
                           <p className="mt-0.5 line-clamp-1 text-[11.5px] text-[#A1A1AA] leading-relaxed">
                             {item.shortDescription}
                           </p>
+                          <span className="text-[11px] text-[#71717A] mt-0.5">
+                            by {item.providerName}
+                          </span>
                         </div>
 
-                        {/* Column 3: Type */}
-                        <div className="text-[12px] text-[#A1A1AA] font-medium">
+                        {/* Column 3: Middle Section (Type pill, primaryCategory, PricingBadge) */}
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold border ${
                             item.itemType === "SERVER"
                               ? "bg-[#6E56CF]/10 text-[#6E56CF] border-[#6E56CF]/30"
@@ -338,37 +392,78 @@ export function MCPClient() {
                           }`}>
                             {item.itemType}
                           </span>
-                        </div>
-
-                        {/* Column 4: Categories */}
-                        <div className="min-w-0 truncate">
                           {primaryCategory ? (
                             <CategoryChip label={primaryCategory} />
                           ) : (
                             <span className="text-[#71717A] text-[11px]">—</span>
                           )}
-                        </div>
-
-                        {/* Column 5: Provider */}
-                        <div className="min-w-0 text-[11.5px] text-[#A1A1AA] truncate">
-                          <span>{item.providerName}</span>
-                        </div>
-
-                        {/* Column 6: Pricing */}
-                        <div className="flex items-center">
                           <PricingBadge pricingModel={item.pricingType} />
                         </div>
 
-                        {/* Column 7: Upvotes */}
-                        <div className="flex items-center gap-1 text-[11px] font-mono text-[#A1A1AA]">
-                          <ArrowUp size={11} className="text-[#A1A1AA]" />
-                          <span>{item.upvoteCount}</span>
+                        {/* Column 4: Right Section (Upvotes, Views, Saves, Launch, Updated) */}
+                        <div className="flex flex-col gap-1 text-[11px] font-mono text-[#A1A1AA] py-1">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1.5">
+                              <ArrowUp size={11} className="text-[#A1A1AA]" />
+                              <span>{item.upvoteCount}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Eye size={11} className="text-[#A1A1AA]" />
+                              <span>{item.viewCount}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Bookmark size={11} className="text-[#A1A1AA]" />
+                              <span>{item.saveCount}</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-0.5 text-[10px] text-[#71717A] mt-0.5">
+                            <span>Launch: {formatReleased(item.launchDate)}</span>
+                            <span>Updated: {formatReleased(item.lastUpdatedDate)}</span>
+                          </div>
                         </div>
 
-                        {/* Column 8: Views */}
-                        <div className="flex items-center gap-1 text-[11px] font-mono text-[#A1A1AA]">
-                          <Eye size={11} className="text-[#A1A1AA]" />
-                          <span>{item.viewCount}</span>
+                        {/* Column 5: Actions (Website, Docs, Repo, Share) */}
+                        <div className="flex items-center gap-1.5 z-20">
+                          {item.websiteUrl && (
+                            <a
+                              href={item.websiteUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center justify-center rounded-md border border-[#232326]/60 bg-[#18181C] p-1.5 text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors"
+                              title="Visit Website"
+                              aria-label="Visit Website"
+                            >
+                              <Globe size={14} />
+                            </a>
+                          )}
+                          {item.documentationUrl && (
+                            <a
+                              href={item.documentationUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center justify-center rounded-md border border-[#232326]/60 bg-[#18181C] p-1.5 text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors"
+                              title="View Documentation"
+                              aria-label="View Documentation"
+                            >
+                              <FileText size={14} />
+                            </a>
+                          )}
+                          {item.repositoryUrl && (
+                            <a
+                              href={item.repositoryUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center justify-center rounded-md border border-[#232326]/60 bg-[#18181C] p-1.5 text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors"
+                              title="View Code Repository"
+                              aria-label="View Code Repository"
+                            >
+                              <Github size={14} />
+                            </a>
+                          )}
+                          <ShareButton slug={item.slug} name={item.name} />
                         </div>
                       </Link>
                     );

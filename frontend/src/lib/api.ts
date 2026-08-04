@@ -402,6 +402,8 @@ export interface MCPQuery {
   page?: number;
   limit?: number;
   search?: string;
+  category?: string;
+  type?: "SERVER" | "CLIENT";
 }
 
 export async function fetchMCPItems(params: MCPQuery = {}): Promise<MCPListResponse> {
@@ -409,6 +411,8 @@ export async function fetchMCPItems(params: MCPQuery = {}): Promise<MCPListRespo
   if (params.page) url.searchParams.set("page", String(params.page));
   if (params.limit) url.searchParams.set("limit", String(params.limit));
   if (params.search) url.searchParams.set("search", params.search);
+  if (params.category) url.searchParams.set("category", params.category);
+  if (params.type) url.searchParams.set("type", params.type);
 
   const empty: MCPListResponse = {
     items: [],
@@ -428,5 +432,20 @@ export async function fetchMCPItems(params: MCPQuery = {}): Promise<MCPListRespo
   } catch (err) {
     console.error("Failed to fetch MCP items:", err);
     return empty;
+  }
+}
+
+export async function fetchMCPItemBySlug(slug: string): Promise<MCPItem | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/v1/mcps/${encodeURIComponent(slug)}`);
+    if (!res.ok) return null;
+    const responseJson = await res.json();
+    if (responseJson && responseJson.success && responseJson.data) {
+      return responseJson.data;
+    }
+    return null;
+  } catch (err) {
+    console.error(`Failed to fetch MCP item ${slug}:`, err);
+    return null;
   }
 }
