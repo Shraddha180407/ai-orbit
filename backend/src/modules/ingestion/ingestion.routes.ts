@@ -8,6 +8,8 @@ import { toolsIngestPayloadSchema } from "./tools.ingest.schema.js";
 import { ToolsIngestService } from "./tools.ingest.service.js";
 import { devicesIngestPayloadSchema } from "./devices.ingest.schema.js";
 import { DevicesIngestService } from "./devices.ingest.service.js";
+import { collectionsIngestPayloadSchema } from "./collections.ingest.schema.js";
+import { CollectionsIngestService } from "./collections.ingest.service.js";
 import { newsIngestPayloadSchema } from "./news.ingest.schema.js";
 import { NewsIngestService } from "./news.ingest.service.js";
 import { videosIngestPayloadSchema } from "./videos.ingest.schema.js";
@@ -39,7 +41,7 @@ router.post("/run", zValidator("query", ingestionRunQuerySchema), IngestionContr
 router.post("/tools", requireIngestionToken, async (c) => {
   try {
     const body = await c.req.json();
-    
+
     const parsed = toolsIngestPayloadSchema.safeParse(body);
     if (!parsed.success) {
       return c.json({
@@ -50,7 +52,7 @@ router.post("/tools", requireIngestionToken, async (c) => {
 
     const prisma = getPrisma(c.env);
     const summary = await ToolsIngestService.ingestTools(prisma, parsed.data);
-    
+
     return c.json(summary, 200);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "An unexpected error occurred during tools ingestion";
@@ -65,7 +67,7 @@ router.post("/tools", requireIngestionToken, async (c) => {
 router.post("/devices", requireIngestionToken, async (c) => {
   try {
     const body = await c.req.json();
-    
+
     const parsed = devicesIngestPayloadSchema.safeParse(body);
     if (!parsed.success) {
       return c.json({
@@ -76,7 +78,7 @@ router.post("/devices", requireIngestionToken, async (c) => {
 
     const prisma = getPrisma(c.env);
     const summary = await DevicesIngestService.ingestDevices(prisma, parsed.data);
-    
+
     return c.json(summary, 200);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "An unexpected error occurred during devices ingestion";
@@ -88,10 +90,27 @@ router.post("/devices", requireIngestionToken, async (c) => {
   }
 });
 
+router.post("/collections", requireIngestionToken, async (c) => {
+  try {
+    const body = await c.req.json();
+    const parsed = collectionsIngestPayloadSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ error: "VALIDATION_FAILED", issues: parsed.error.issues }, 422);
+    }
+    const prisma = getPrisma(c.env);
+    const summary = await CollectionsIngestService.ingestCollections(prisma, parsed.data);
+    return c.json(summary, 200);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "An unexpected error occurred during collections ingestion";
+    logger.error("Collections ingestion error:", err);
+    return c.json({ error: "INTERNAL_SERVER_ERROR", message }, 500);
+  }
+});
+
 router.post("/news", requireIngestionToken, async (c) => {
   try {
     const body = await c.req.json();
-    
+
     const parsed = newsIngestPayloadSchema.safeParse(body);
     if (!parsed.success) {
       return c.json({
@@ -102,7 +121,7 @@ router.post("/news", requireIngestionToken, async (c) => {
 
     const prisma = getPrisma(c.env);
     const summary = await NewsIngestService.ingestNews(prisma, parsed.data);
-    
+
     return c.json(summary, 200);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "An unexpected error occurred during news ingestion";
@@ -117,7 +136,7 @@ router.post("/news", requireIngestionToken, async (c) => {
 router.post("/videos", requireIngestionToken, async (c) => {
   try {
     const body = await c.req.json();
-    
+
     const parsed = videosIngestPayloadSchema.safeParse(body);
     if (!parsed.success) {
       return c.json({
@@ -128,7 +147,7 @@ router.post("/videos", requireIngestionToken, async (c) => {
 
     const prisma = getPrisma(c.env);
     const summary = await VideosIngestService.ingestVideos(prisma, parsed.data);
-    
+
     return c.json(summary, 200);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "An unexpected error occurred during videos ingestion";
@@ -139,6 +158,7 @@ router.post("/videos", requireIngestionToken, async (c) => {
     }, 500);
   }
 });
+
 router.post("/models", requireIngestionToken, async (c) => {
   try {
     const body = await c.req.json();
@@ -153,7 +173,7 @@ router.post("/models", requireIngestionToken, async (c) => {
 
     const prisma = getPrisma(c.env);
     const summary = await ModelsIngestService.ingestModels(prisma, parsed.data);
-    
+
     return c.json(summary, 200);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "An unexpected error occurred during models ingestion";
@@ -168,7 +188,7 @@ router.post("/models", requireIngestionToken, async (c) => {
 router.post("/robots", requireIngestionToken, async (c) => {
   try {
     const body = await c.req.json();
-    
+
     const parsed = robotsIngestPayloadSchema.safeParse(body);
     if (!parsed.success) {
       return c.json({
@@ -179,7 +199,7 @@ router.post("/robots", requireIngestionToken, async (c) => {
 
     const prisma = getPrisma(c.env);
     const summary = await RobotsIngestService.ingestRobots(prisma, parsed.data);
-    
+
     return c.json(summary, 200);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "An unexpected error occurred during robots ingestion";
@@ -194,7 +214,7 @@ router.post("/robots", requireIngestionToken, async (c) => {
 router.post("/repositories", requireIngestionToken, async (c) => {
   try {
     const body = await c.req.json();
-    
+
     const parsed = repositoriesIngestPayloadSchema.safeParse(body);
     if (!parsed.success) {
       return c.json({
@@ -205,7 +225,7 @@ router.post("/repositories", requireIngestionToken, async (c) => {
 
     const prisma = getPrisma(c.env);
     const summary = await RepositoriesIngestService.ingestRepositories(prisma, parsed.data);
-    
+
     return c.json(summary, 200);
   } catch (err: unknown) {
     return c.json({
