@@ -6,53 +6,53 @@ import { modelsCompareQuerySchema } from './models.schema.js';
 
 export class ModelsController {
   async getFilterOptions(c: Context) {
-    const prisma = getPrisma(c.env);
-    const service = new ModelsService(prisma);
+  const prisma = getPrisma(c.env);
+  const service = new ModelsService(prisma);
 
-    try {
-      const options = await service.getFilterOptions();
-      return c.json(options);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
-    } finally {
-      await prisma.$disconnect();
-    }
+  try {
+    const options = await service.getFilterOptions();
+    return c.json(options);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  } finally {
+    await prisma.$disconnect();
   }
+}
 
   async compareModels(c: Context) {
-    const parsed = modelsCompareQuerySchema.safeParse(c.req.query());
+  const parsed = modelsCompareQuerySchema.safeParse(c.req.query());
 
-    if (!parsed.success) {
-      return c.json({ error: "Invalid query parameters", details: parsed.error.flatten() }, 400);
-    }
-
-    const prisma = getPrisma(c.env);
-    const service = new ModelsService(prisma);
-
-    try {
-      const models = await service.compareModels(parsed.data.ids);
-      return c.json({ items: models });
-    } catch (error: any) {
-      return c.json({ error: error.message }, error.message.includes("Cannot compare") ? 422 : 500);
-    } finally {
-      await prisma.$disconnect();
-    }
+  if (!parsed.success) {
+    return c.json({ error: "Invalid query parameters", details: parsed.error.flatten() }, 400);
   }
 
-  async listModelSubCategories(c: Context) {
-    const prisma = getPrisma(c.env);
-    const service = new ModelsService(prisma);
+  const prisma = getPrisma(c.env);
+  const service = new ModelsService(prisma);
 
-    try {
-      const subCategories = await service.listModelSubCategories();
-      return c.json(subCategories);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      return c.json({ error: message }, 500);
-    } finally {
-      await prisma.$disconnect();
-    }
+  try {
+    const models = await service.compareModels(parsed.data.ids);
+    return c.json({ items: models });
+  } catch (error: any) {
+    return c.json({ error: error.message }, error.message.includes("Cannot compare") ? 422 : 500);
+  } finally {
+    await prisma.$disconnect();
   }
+}
+
+async listModelSubCategories(c: Context) {
+  const prisma = getPrisma(c.env);
+  const service = new ModelsService(prisma);
+
+  try {
+    const subCategories = await service.listModelSubCategories();
+    return c.json(subCategories);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return c.json({ error: message }, 500);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
   async listModels(c: Context) {
     const parsed = modelsListQuerySchema.safeParse(c.req.query());
 

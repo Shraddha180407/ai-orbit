@@ -221,7 +221,6 @@ async getFilterOptions() {
 async compareModels(ids: string[]) {
   if (ids.length === 0) return [];
   if (ids.length > 5) throw new Error("Cannot compare more than 5 models at once");
-
   return this.prisma.aIModel.findMany({
     where: { id: { in: ids } },
     include: {
