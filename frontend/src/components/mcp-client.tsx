@@ -338,11 +338,18 @@ export function MCPClient() {
                   {items.map((item) => {
                     const primaryCategory = item.categories?.[0]?.name;
                     return (
-                      <Link
+                      <div
                         key={item.id}
-                        href={`/p/mcp/${item.slug}`}
                         role="listitem"
-                        className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none relative`}
+                        tabIndex={0}
+                        onClick={() => router.push(`/p/mcp/${item.slug}`)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            router.push(`/p/mcp/${item.slug}`);
+                          }
+                        }}
+                        className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none relative cursor-pointer`}
                       >
                         {/* Hover accent line on the left side of the row */}
                         <span className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[#6E56CF] transition-all duration-200 group-hover:h-[70%]" />
@@ -465,7 +472,7 @@ export function MCPClient() {
                           )}
                           <ShareButton slug={item.slug} name={item.name} />
                         </div>
-                      </Link>
+                      </div>
                     );
                   })}
                 </div>
