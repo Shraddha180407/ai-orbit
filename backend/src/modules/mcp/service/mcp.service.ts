@@ -1,5 +1,5 @@
-import { PrismaClient, MCPItemType, MCPPricingType, BillingCycle, EditorialGrade } from '@prisma/client';
-import type { MCPItemWithRelations, MCPDirectoryReview, MCPDirectoryDiscussion, ReviewResponseDTO, DiscussionResponseDTO } from '../types/index.js';
+import { PrismaClient, Prisma, MCPItemType, MCPPricingType, BillingCycle, EditorialGrade } from '@prisma/client';
+import type { MCPItemWithRelations, ReviewResponseDTO, DiscussionResponseDTO } from '../types/index.js';
 import { MCPError } from '../middleware/error.js';
 
 export class MCPService {
@@ -9,31 +9,167 @@ export class MCPService {
     this.prisma = prisma;
   }
 
-  private transformMCPItem(item: any): MCPItemWithRelations {
+  private transformMCPItem(item: {
+    id: string;
+    itemType: MCPItemType;
+    name: string;
+    slug: string;
+    shortDescription: string;
+    fullDescription: string;
+    providerName: string;
+    pricingType: MCPPricingType;
+    isFeatured: boolean;
+    isVerified: boolean;
+    viewCount: number;
+    monthlyVisits: number;
+    upvoteCount: number;
+    saveCount: number;
+    createdAt: Date;
+    updatedAt: Date;
+    lastUpdatedDate: Date;
+    categories?: Array<{
+      category: {
+        id: string;
+        name: string;
+        slug: string;
+        description?: string | null;
+        icon?: string | null;
+        color?: string | null;
+      };
+    }>;
+    subCategories?: Array<{
+      subCategory: {
+        id: string;
+        name: string;
+        slug: string;
+        description?: string | null;
+        categoryId: string;
+      };
+    }>;
+    tags?: Array<{
+      tag: {
+        id: string;
+        slug: string;
+        name: string;
+      };
+    }>;
+    features?: Array<{
+      id: string;
+      title: string;
+      icon?: string | null;
+      description: string;
+      badge?: string | null;
+    }>;
+    pricingPlans?: Array<{
+      id: string;
+      planName: string;
+      price: unknown;
+      billingCycle: BillingCycle;
+      featuresList: string[];
+    }>;
+    reviews?: Array<{
+      id: string;
+      rating: number;
+      comment?: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+      mcpItemId: string;
+      userId: string;
+      user: {
+        id: string;
+        name?: string | null;
+        email: string;
+      };
+    }>;
+    editorialReviews?: Array<{
+      id: string;
+      grade: EditorialGrade;
+      verdict: string;
+      reviewDate: Date;
+      badge?: string | null;
+      notes?: string | null;
+    }>;
+    discussions?: Array<{
+      id: string;
+      title: string;
+      content: string;
+      upvotes: number;
+      createdAt: Date;
+      updatedAt: Date;
+      mcpItemId: string;
+      userId: string;
+      user: {
+        id: string;
+        name?: string | null;
+        email: string;
+      };
+      replies?: Array<{
+        id: string;
+        content: string;
+        upvotes: number;
+        createdAt: Date;
+        updatedAt: Date;
+        discussionId: string;
+        userId: string;
+        user: {
+          id: string;
+          name?: string | null;
+          email: string;
+        };
+      }>;
+    }>;
+    faqs?: Array<{
+      id: string;
+      question: string;
+      answer: string;
+    }>;
+    logoUrl?: string | null;
+    coverImageUrl?: string | null;
+    providerUrl?: string | null;
+    license?: string | null;
+    websiteUrl?: string | null;
+    documentationUrl?: string | null;
+    repositoryUrl?: string | null;
+    startingPrice?: unknown;
+    launchDate?: Date | null;
+  }): MCPItemWithRelations {
+    const {
+      categories: _rawCategories,
+      subCategories: _rawSubCategories,
+      tags: _rawTags,
+      features: _rawFeatures,
+      pricingPlans: _rawPricingPlans,
+      reviews: _rawReviews,
+      editorialReviews: _rawEditorialReviews,
+      discussions: _rawDiscussions,
+      faqs: _rawFaqs,
+      ...baseFields
+    } = item;
+
     return {
-      ...item,
-      categories: item.categories?.map((c: any) => ({
+      ...baseFields,
+      categories: _rawCategories?.map((c) => ({
         ...c.category,
         description: c.category.description || undefined,
         icon: c.category.icon || undefined,
         color: c.category.color || undefined,
       })),
-      subCategories: item.subCategories?.map((s: any) => ({
+      subCategories: _rawSubCategories?.map((s) => ({
         ...s.subCategory,
         description: s.subCategory.description || undefined,
       })),
-      tags: item.tags?.map((t: any) => t.tag),
-      features: item.features?.map((f: any) => ({
+      tags: _rawTags?.map((t) => t.tag),
+      features: _rawFeatures?.map((f) => ({
         ...f,
         icon: f.icon || undefined,
         badge: f.badge || undefined,
       })),
-      pricingPlans: item.pricingPlans?.map((p: any) => ({
+      pricingPlans: _rawPricingPlans?.map((p) => ({
         ...p,
         price: Number(p.price),
         billingCycle: p.billingCycle as BillingCycle,
       })),
-      reviews: item.reviews?.map((r: any) => ({
+      reviews: _rawReviews?.map((r) => ({
         ...r,
         comment: r.comment || undefined,
         user: {
@@ -48,19 +184,19 @@ export class MCPService {
       websiteUrl: item.websiteUrl || undefined,
       documentationUrl: item.documentationUrl || undefined,
       repositoryUrl: item.repositoryUrl || undefined,
-      editorialReviews: item.editorialReviews?.map((er: any) => ({
+      editorialReviews: _rawEditorialReviews?.map((er) => ({
         ...er,
         badge: er.badge || undefined,
         notes: er.notes || undefined,
         grade: er.grade as EditorialGrade,
       })),
-      discussions: item.discussions?.map((d: any) => ({
+      discussions: _rawDiscussions?.map((d) => ({
         ...d,
         user: {
           ...d.user,
           name: d.user.name || undefined,
         },
-        replies: d.replies?.map((r: any) => ({
+        replies: d.replies?.map((r) => ({
           ...r,
           user: {
             ...r.user,
@@ -68,7 +204,7 @@ export class MCPService {
           },
         })),
       })),
-      faqs: item.faqs,
+      faqs: _rawFaqs,
       startingPrice: item.startingPrice ? Number(item.startingPrice) : undefined,
       launchDate: item.launchDate || undefined,
     };
@@ -103,7 +239,7 @@ export class MCPService {
     const skip = (page - 1) * limit;
 
     // Build where clause
-    const where: any = {};
+    const where: Prisma.MCPItemWhereInput = {};
 
     if (type) {
       where.itemType = type;
@@ -143,7 +279,7 @@ export class MCPService {
     }
 
     // Build orderBy clause based on sortBy parameter
-    let orderBy: any[] = [];
+    let orderBy: Prisma.MCPItemOrderByWithRelationInput[] = [];
     
     switch (sortBy) {
       case 'trending':
@@ -346,7 +482,7 @@ export class MCPService {
       return this.transformMCPItem(item);
     }
 
-    return item;
+    return null;
   }
 
   async getMCPItemAlternatives(slug: string): Promise<MCPItemWithRelations[]> {
@@ -371,8 +507,8 @@ export class MCPService {
     }
 
     // Get items from same categories and tags
-    const categoryIds = item.categories?.map((c: any) => c.category.id) || [];
-    const tagIds = item.tags?.map((t: any) => t.tag.id) || [];
+    const categoryIds = item.categories?.map((c) => c.category.id) || [];
+    const tagIds = item.tags?.map((t) => t.tag.id) || [];
 
     const alternatives = await this.prisma.mCPItem.findMany({
       where: {
@@ -433,12 +569,12 @@ export class MCPService {
         icon: c.category.icon || undefined,
         color: c.category.color || undefined,
       })),
-      subCategories: item.subCategories?.map((s: any) => ({
+      subCategories: item.subCategories?.map((s) => ({
         ...s.subCategory,
         description: s.subCategory.description || undefined,
       })),
       tags: item.tags?.map(t => t.tag),
-      features: item.features?.map((f: any) => ({
+      features: item.features?.map((f) => ({
         ...f,
         icon: f.icon || undefined,
         badge: f.badge || undefined,

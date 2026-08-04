@@ -1,25 +1,27 @@
 import { Context } from 'hono';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
+import { Prisma } from '@prisma/client';
 
 export interface APIError {
   success: false;
   error: string;
   code?: string;
-  details?: any;
+  details?: unknown;
 }
 
 export class MCPError extends Error {
   constructor(
     message: string,
     public code: string = 'INTERNAL_ERROR',
-    public statusCode: number = 500,
-    public details?: any
+    public statusCode: ContentfulStatusCode = 500,
+    public details?: unknown
   ) {
     super(message);
     this.name = 'MCPError';
   }
 }
 
-export const createErrorResponse = (error: string, code?: string, details?: any): APIError => ({
+export const createErrorResponse = (error: string, code?: string, details?: unknown): APIError => ({
   success: false,
   error,
   code,
@@ -32,20 +34,20 @@ export const errorHandler = (error: Error, c: Context) => {
   if (error instanceof MCPError) {
     return c.json(
       createErrorResponse(error.message, error.code, error.details),
-      error.statusCode as any
+      error.statusCode
     );
   }
 
   // Handle Prisma errors
-  if (error.name === 'PrismaClientKnownRequestError') {
-    if ((error as any).code === 'P2002') {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === 'P2002') {
       // Unique constraint violation
       return c.json(
         createErrorResponse('Resource already exists', 'DUPLICATE_ENTRY'),
         409
       );
     }
-    if ((error as any).code === 'P2025') {
+    if (error.code === 'P2025') {
       // Record not found
       return c.json(
         createErrorResponse('Resource not found', 'NOT_FOUND'),

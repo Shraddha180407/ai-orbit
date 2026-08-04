@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MCPItemType, MCPPricingType, BillingCycle } from '@prisma/client';
+import { MCPItemType, MCPPricingType } from '@prisma/client';
 
 export const MCPItemQuerySchema = z.object({
   type: z.nativeEnum(MCPItemType).optional(),

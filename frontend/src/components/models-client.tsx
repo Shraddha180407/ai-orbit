@@ -197,30 +197,28 @@ export function ModelsClient() {
             </Button>
           )}
 
-          {/* Active Subcategory Filter Chip */}
-          {selectedSubCategorySlug && (
-            <div className="flex items-center gap-2 mb-2 bg-white/[0.02] border border-white/[0.08] px-3.5 py-2 rounded-lg w-fit shadow-md animate-fade-in">
-              <span className="text-xs text-white/50">Category:</span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white/[0.08] text-white">
-                {subCategories.find(s => s.slug === selectedSubCategorySlug)?.name || selectedSubCategorySlug}
-              </span>
+          {/* Subcategory Filter Chips */}
+          {subCategories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-6">
               <button
                 onClick={() => handleSelectSubCategory(null)}
-                className="text-xs text-red-400 hover:text-red-300 transition-colors ml-2 cursor-pointer font-medium"
+                className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                  !selectedSubCategorySlug
+                    ? "border-[#6E56CF] bg-[#6E56CF] text-white"
+                    : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                }`}
               >
-                Clear
+                All
               </button>
-            </div>
-          )}
-
-          {/* Subcategory Filter Chips */}
-          {subCategories.length > 0 && !selectedSubCategorySlug && (
-            <div className="flex flex-wrap gap-2 mb-2">
               {subCategories.map((sub) => (
                 <button
                   key={sub.id}
                   onClick={() => handleSelectSubCategory(sub.slug)}
-                  className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white transition-all cursor-pointer"
+                  className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                    selectedSubCategorySlug === sub.slug
+                      ? "border-[#6E56CF] bg-[#6E56CF] text-white"
+                      : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                  }`}
                 >
                   {sub.name}
                 </button>

@@ -3,9 +3,6 @@ import { MCPService } from '../service/mcp.service.js';
 import { 
   MCPItemQuerySchema, 
   MCPItemSlugSchema, 
-  UpvoteSchema, 
-  SaveSchema, 
-  ViewSchema, 
   ReviewParamSchema, 
   ReviewBodySchema, 
   DiscussionParamSchema, 
