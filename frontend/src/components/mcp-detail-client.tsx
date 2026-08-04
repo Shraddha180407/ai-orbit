@@ -107,7 +107,7 @@ function CopyLinkButton({ slug, name, className }: { slug: string; name: string;
   const [copied, setCopied] = useState(false);
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
-    const url = `${window.location.origin}/tools/mcp/${slug}`;
+    const url = `${window.location.origin}/p/mcp/${slug}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -140,7 +140,7 @@ function RecommendationCard({ item }: RecommendationCardProps) {
 
   return (
     <Link
-      href={`/tools/mcp/${item.slug}`}
+      href={`/p/mcp/${item.slug}`}
       className="group flex flex-col gap-4 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-4 hover:border-white/[0.15] hover:bg-[#18181C]/40 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
     >
       <div className="flex items-start justify-between gap-3">

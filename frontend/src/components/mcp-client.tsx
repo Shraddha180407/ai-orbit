@@ -64,7 +64,7 @@ function ShareButton({ slug, name }: { slug: string; name: string }) {
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const url = `${window.location.origin}/tools/mcp/${slug}`;
+    const url = `${window.location.origin}/p/mcp/${slug}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -340,7 +340,7 @@ export function MCPClient() {
                     return (
                       <Link
                         key={item.id}
-                        href={`/tools/mcp/${item.slug}`}
+                        href={`/p/mcp/${item.slug}`}
                         role="listitem"
                         className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none relative`}
                       >
