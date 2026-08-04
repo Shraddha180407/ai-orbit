@@ -228,36 +228,7 @@ export async function fetchDeviceSubCategories(): Promise<import("./types").Devi
   return res.json();
 }
 
-export interface FetchMCPOptions {
-  subCategory?: string;
-  category?: string;
-  search?: string;
-  sortBy?: string;
-  page?: number;
-  limit?: number;
-  type?: string;
-}
-
-export async function fetchMCPItems(options: FetchMCPOptions = {}): Promise<{ items: any[]; total: number; page: number; totalPages: number }> {
-  const url = new URL(`${API_URL}/api/v1/mcps`);
-  if (options.subCategory) url.searchParams.set("subCategory", options.subCategory);
-  if (options.category) url.searchParams.set("category", options.category);
-  if (options.search) url.searchParams.set("search", options.search);
-  if (options.sortBy) url.searchParams.set("sortBy", options.sortBy);
-  if (options.type) url.searchParams.set("type", options.type);
-  if (options.page) url.searchParams.set("page", String(options.page));
-  if (options.limit) url.searchParams.set("limit", String(options.limit));
-
-  const empty = { items: [], total: 0, page: options.page ?? 1, totalPages: 1 };
-  try {
-    const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
-    if (!res.ok) return empty;
-    const data = await res.json();
-    return data.data || empty;
-  } catch {
-    return empty;
-  }
-}
+// MCP Items fetch helpers are defined below at the end of the file.
 
 export async function fetchAllVideos(): Promise<any[]> {
   const url = `${API_URL}/api/v1/videos`;
@@ -403,7 +374,9 @@ export interface MCPQuery {
   limit?: number;
   search?: string;
   category?: string;
+  subCategory?: string;
   type?: "SERVER" | "CLIENT";
+  sortBy?: string;
 }
 
 export async function fetchMCPItems(params: MCPQuery = {}): Promise<MCPListResponse> {
@@ -412,7 +385,9 @@ export async function fetchMCPItems(params: MCPQuery = {}): Promise<MCPListRespo
   if (params.limit) url.searchParams.set("limit", String(params.limit));
   if (params.search) url.searchParams.set("search", params.search);
   if (params.category) url.searchParams.set("category", params.category);
+  if (params.subCategory) url.searchParams.set("subCategory", params.subCategory);
   if (params.type) url.searchParams.set("type", params.type);
+  if (params.sortBy) url.searchParams.set("sortBy", params.sortBy);
 
   const empty: MCPListResponse = {
     items: [],
@@ -422,7 +397,7 @@ export async function fetchMCPItems(params: MCPQuery = {}): Promise<MCPListRespo
   };
 
   try {
-    const res = await fetch(url.toString());
+    const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
     if (!res.ok) return empty;
     const responseJson = await res.json();
     if (responseJson && responseJson.success && responseJson.data) {
