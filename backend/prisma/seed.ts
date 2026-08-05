@@ -2060,8 +2060,11 @@ async function main() {
   
   const seedModelsWithSlug = seedModels.map(model => ({
     ...model,
-    slug: model.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
-  }));
+  slug: model.name
+  .toLowerCase()
+  .replace(/\+/g, '-plus')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/(^-|-$)+/g, '')  }));
   
   await prisma.aIModel.createMany({ data: seedModelsWithSlug });
 

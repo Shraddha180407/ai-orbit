@@ -5,6 +5,8 @@ import { getPrisma } from '../../lib/prisma.js';
 const router = new Hono();
 const controller = new ModelsController();
 
+router.get('/filters', (c) => controller.getFilterOptions(c));
+router.get('/compare', (c) => controller.compareModels(c));
 router.get('/subcategories', async (c) => {
   const prisma = getPrisma(c.env);
 
@@ -21,5 +23,4 @@ router.get('/subcategories', async (c) => {
 
 router.get('/', (c) => controller.listModels(c));
 router.get('/:id', (c) => controller.getModel(c));
-
 export { router as modelsRouter };

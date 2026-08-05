@@ -18,7 +18,7 @@ export class ModelsService {
   }
 
   async listModels(query: ModelsListQuery) {
-    const { page, limit, sort, search, provider, modality, creator, subCategory } = query;
+  const { page, limit, sort, search, provider, modality, creator, modelType, openSource, primaryTask, subCategory } = query;
 
     const and: Prisma.AIModelWhereInput[] = [];
 
@@ -44,19 +44,30 @@ export class ModelsService {
       and.push({ creator: { equals: creator, mode: 'insensitive' } });
     }
 
-    if (subCategory) {
-      and.push({
-        subCategories: {
-          some: {
-            subCategory: { slug: subCategory },
-          },
-        },
-      });
-    }
+    if (modelType) {
+  and.push({ modelType });
+}
 
-    const where: Prisma.AIModelWhereInput = and.length > 0 ? { AND: and } : {};
+if (openSource !== undefined) {
+  and.push({ openSource });
+}
 
-    let orderBy: Prisma.AIModelOrderByWithRelationInput = { createdAt: 'desc' };
+if (primaryTask) {
+  and.push({ primaryTask: { equals: primaryTask, mode: 'insensitive' } });
+}
+
+if (subCategory) {
+  and.push({
+    subCategories: {
+      some: {
+        subCategory: { slug: subCategory },
+      },
+    },
+  });
+}
+
+const where: Prisma.AIModelWhereInput = and.length > 0 ? { AND: and } : {};
+   let orderBy: Prisma.AIModelOrderByWithRelationInput = { createdAt: 'desc' };
     switch (sort) {
       case 'oldest':
         orderBy = { createdAt: 'asc' };
@@ -186,10 +197,42 @@ export class ModelsService {
     return { ...model, relatedModels };
   }
 
-  async listModelSubCategories() {
-    return this.prisma.modelSubCategory.findMany({
-      orderBy: { name: 'asc' },
-      select: { id: true, name: true, slug: true, description: true },
-    });
-  }
+async getFilterOptions() {
+  const [providers, primaryTasks] = await Promise.all([
+    this.prisma.company.findMany({
+      where: { aiModels: { some: {} } },
+      select: { slug: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    this.prisma.aIModel.findMany({
+      where: { primaryTask: { not: null } },
+      select: { primaryTask: true },
+      distinct: ["primaryTask"],
+    }),
+  ]);
+
+  return {
+    providers,
+    primaryTasks: primaryTasks.map((m) => m.primaryTask).filter(Boolean),
+    modelTypes: ["TEXT", "IMAGE", "VIDEO", "MULTIMODAL", "AUDIO", "CODE", "THREE_D", "STRUCTURED_DATA"],
+  };
+}
+
+async compareModels(ids: string[]) {
+  if (ids.length === 0) return [];
+  if (ids.length > 5) throw new Error("Cannot compare more than 5 models at once");
+  return this.prisma.aIModel.findMany({
+    where: { id: { in: ids } },
+    include: {
+      provider: { select: { id: true, slug: true, name: true, logoUrl: true } },
+    },
+  });
+}
+
+async listModelSubCategories() {
+  return this.prisma.modelSubCategory.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true, slug: true, description: true },
+  });
+} 
 }
