@@ -16,7 +16,8 @@ import { TaskDetailClient } from "@/components/detail/TaskDetailClient";
 import { RepositoryDetailPage } from "@/components/repository-detail/RepositoryDetailPage";
 import { CompanyDetailClient } from "@/components/company-detail-client";
 import { RobotDetailClient } from "@/components/detail/RobotDetailClient";
-import { SERVER_API_URL } from "@/lib/api";
+import { MCPDetailClient } from "@/components/mcp-detail-client";
+import { SERVER_API_URL, fetchMCPItemBySlug } from "@/lib/api";
 
 const VALID_CATEGORIES: Record<string, Set<string>> = {
   tools: new Set(["writing", "image-generation", "video", "audio", "chatbots", "coding", "marketing", "productivity", "business", "education", "mcp"]),
@@ -85,6 +86,19 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
       description: `Details and specifications for ${title}.`,
     };
   }
+  
+  if (type === "mcp") {
+    try {
+      const item = await fetchMCPItemBySlug(slug);
+      if (!item) return { title: "MCP Item Not Found | AI Orbit" };
+      return {
+        title: `${item.name} — Model Context Protocol (MCP) | AI Orbit`,
+        description: item.shortDescription,
+      };
+    } catch {
+      return { title: "MCP Directory | AI Orbit" };
+    }
+  }
 
   return {};
 }
@@ -117,6 +131,17 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   }
 
   if (type === "tools" || type === "personal" || type === "creativity") return <ToolDetailClient />;
+  if (type === "mcp") {
+    const item = await fetchMCPItemBySlug(slug);
+    if (!item) return notFound();
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <MCPDetailClient item={item} />
+        <Footer />
+      </div>
+    );
+  }
   if (type === "collections") return <CollectionDetailClient />;
   if (type === "videos") return <VideoDetailsClient />;
   if (type === "news") return <ArticlePageClient />;

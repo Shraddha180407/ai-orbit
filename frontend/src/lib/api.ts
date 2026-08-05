@@ -228,34 +228,7 @@ export async function fetchDeviceSubCategories(): Promise<import("./types").Devi
   return res.json();
 }
 
-export interface FetchMCPOptions {
-  subCategory?: string;
-  category?: string;
-  search?: string;
-  sortBy?: string;
-  page?: number;
-  limit?: number;
-}
-
-export async function fetchMCPItems(options: FetchMCPOptions = {}): Promise<{ items: any[]; total: number; page: number; totalPages: number }> {
-  const url = new URL(`${API_URL}/api/v1/mcps`);
-  if (options.subCategory) url.searchParams.set("subCategory", options.subCategory);
-  if (options.category) url.searchParams.set("category", options.category);
-  if (options.search) url.searchParams.set("search", options.search);
-  if (options.sortBy) url.searchParams.set("sortBy", options.sortBy);
-  if (options.page) url.searchParams.set("page", String(options.page));
-  if (options.limit) url.searchParams.set("limit", String(options.limit));
-
-  const empty = { items: [], total: 0, page: options.page ?? 1, totalPages: 1 };
-  try {
-    const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
-    if (!res.ok) return empty;
-    const data = await res.json();
-    return data.data || empty;
-  } catch {
-    return empty;
-  }
-}
+// MCP Items fetch helpers are defined below at the end of the file.
 
 export async function fetchAllVideos(): Promise<any[]> {
   const url = `${API_URL}/api/v1/videos`;
@@ -389,4 +362,65 @@ export async function fetchRepositoryOwners(): Promise<RepositoryOwnerListItem[]
   const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) return [];
   return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// MCP API Fetch Helpers
+// ---------------------------------------------------------------------------
+import type { MCPListResponse } from "./types";
+
+export interface MCPQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  subCategory?: string;
+  type?: "SERVER" | "CLIENT";
+  sortBy?: string;
+}
+
+export async function fetchMCPItems(params: MCPQuery = {}): Promise<MCPListResponse> {
+  const url = new URL(`${API_URL}/api/v1/mcps`);
+  if (params.page) url.searchParams.set("page", String(params.page));
+  if (params.limit) url.searchParams.set("limit", String(params.limit));
+  if (params.search) url.searchParams.set("search", params.search);
+  if (params.category) url.searchParams.set("category", params.category);
+  if (params.subCategory) url.searchParams.set("subCategory", params.subCategory);
+  if (params.type) url.searchParams.set("type", params.type);
+  if (params.sortBy) url.searchParams.set("sortBy", params.sortBy);
+
+  const empty: MCPListResponse = {
+    items: [],
+    total: 0,
+    page: params.page ?? 1,
+    totalPages: 1,
+  };
+
+  try {
+    const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
+    if (!res.ok) return empty;
+    const responseJson = await res.json();
+    if (responseJson && responseJson.success && responseJson.data) {
+      return responseJson.data;
+    }
+    return empty;
+  } catch (err) {
+    console.error("Failed to fetch MCP items:", err);
+    return empty;
+  }
+}
+
+export async function fetchMCPItemBySlug(slug: string): Promise<MCPItem | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/v1/mcps/${encodeURIComponent(slug)}`);
+    if (!res.ok) return null;
+    const responseJson = await res.json();
+    if (responseJson && responseJson.success && responseJson.data) {
+      return responseJson.data;
+    }
+    return null;
+  } catch (err) {
+    console.error(`Failed to fetch MCP item ${slug}:`, err);
+    return null;
+  }
 }

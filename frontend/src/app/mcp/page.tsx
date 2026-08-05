@@ -6,16 +6,31 @@ import { Footer } from "@/components/Footer";
 import { MCPClient } from "@/components/mcp-client";
 
 export const metadata: Metadata = {
-  title: "MCP Servers Directory",
+  title: "Model Context Protocol (MCP) Directory — AiOrbit",
   description:
-    "Browse Model Context Protocol (MCP) servers for AI integrations, tools, and extensions.",
+    "Explore the Model Context Protocol (MCP) directory. Discover servers, clients, and integrations to extend your AI tools' capabilities.",
+  openGraph: {
+    title: "Model Context Protocol (MCP) Directory — AiOrbit",
+    description:
+      "Explore the Model Context Protocol (MCP) directory. Discover servers, clients, and integrations.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Model Context Protocol (MCP) Directory — AiOrbit",
+    description:
+      "Explore the Model Context Protocol (MCP) directory. Discover servers, clients, and integrations.",
+  },  
+  alternates: {
+    canonical: "/mcp",
+  },
 };
 
 export default function MCPPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white">
       <Header />
-      <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+      <Suspense fallback={<div className="h-[300px]" />}><GlobalHero searchAction="/mcp" /></Suspense>
       <Suspense
         fallback={
           <div className="w-full px-4 sm:px-6 lg:px-8 pt-6 pb-2 flex-1">

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Search from 'lucide-react/dist/esm/icons/search';
 import Wrench from 'lucide-react/dist/esm/icons/wrench';
@@ -52,20 +52,34 @@ const DIRECTORY_CARDS = [
   { name: "Devices", href: "/devices", description: "Hardware built for and powered by AI.", icon: Smartphone, color: "#F472B6" },
   { name: "Models", href: "/models", description: "Compare context windows, pricing, and benchmarks across AI models.", icon: Cpu, color: "#A78BFA" },
   { name: "Repositories", href: "/repositories", description: "Trending open-source AI repositories on GitHub.", icon: GitBranch, color: "#22D3EE" },
-  { name: "MCP", href: "/tools/mcp", description: "Model Context Protocol servers and integrations.", icon: Plug, color: "#818CF8" },
+  { name: "MCP", href: "/mcp", description: "Model Context Protocol servers and integrations.", icon: Plug, color: "#818CF8" },
   { name: "Collections", href: "/collections", description: "Curated bundles of tools grouped by use case.", icon: FolderHeart, color: "#34D399" },
   { name: "Personal", href: "/personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
   { name: "Creativity", href: "/creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
 
-export function GlobalHero() {
+export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string } = {}) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const router = useRouter();
   const q = searchParams.get("q") || "";
 
   const [searchOpen, setSearchOpen] = useState(false);
   const searchContainerRef = useRef<HTMLFormElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const query = searchInputRef.current?.value || "";
+    const params = new URLSearchParams(searchParams.toString());
+    if (query.trim()) {
+      params.set("q", query);
+    } else {
+      params.delete("q");
+    }
+    setSearchOpen(false);
+    router.push(`${searchAction}?${params.toString()}`);
+  };
 
   // Close the search dropdown on outside click or Escape.
   useEffect(() => {
@@ -125,8 +139,9 @@ export function GlobalHero() {
           </h1>
 
           <form
-            action="/tools"
+            action={searchAction}
             method="GET"
+            onSubmit={handleSubmit}
             ref={searchContainerRef}
             className="relative w-full max-w-[520px] mx-auto mb-4 sm:mb-5 group"
           >
