@@ -136,12 +136,16 @@ export function ToolsClient({
       try {
         const query = new URLSearchParams();
         if (params.q) query.set("q", params.q);
-        if (params.category) query.set("category", params.category);
+        // Do not add category to query string if we are using the path parameter
         if (params.pricing) query.set("pricing", params.pricing);
         if (params.sort) query.set("sort", params.sort);
         query.set("page", page.toString());
 
-        const toolsRes = await fetch(`${API_URL}/api/v1/tools?${query.toString()}`);
+        const endpoint = params.category 
+          ? `${API_URL}/api/v1/tools/category/${params.category}` 
+          : `${API_URL}/api/v1/tools`;
+
+        const toolsRes = await fetch(`${endpoint}?${query.toString()}`);
 
         if (toolsRes.ok) {
           const toolsData = await toolsRes.json();

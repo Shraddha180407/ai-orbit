@@ -143,6 +143,24 @@ model User {
   mcpReports        MCPDirectoryReport[]
 }
 
+enum ToolCategoryEnum {
+  WRITING
+  IMAGE_GENERATION
+  VIDEO_GENERATION
+  AUDIO
+  CHATBOTS
+  CODING
+  MARKETING
+  PRODUCTIVITY
+  BUSINESS
+  EDUCATION
+  AGENTS
+  PRESENTATIONS
+  THREE_D_GENERATION
+  NO_CODE_AI_BUILDERS
+  WORKFLOW_AUTOMATION
+}
+
 // ---- Module 3: AI Tools ----
 
 model Tool {
@@ -179,7 +197,8 @@ model Tool {
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
 
-  categories   ToolCategory[]
+  categories     ToolCategory[]
+  toolCategories ToolCategoryEnum[] @default([])
   tags         ToolTag[]
   integrations ToolIntegration[]
 

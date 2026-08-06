@@ -4,6 +4,23 @@ const PricingModel = z.enum(["FREE", "FREEMIUM", "PAID", "FREE_TRIAL"]);
 const BillingFrequency = z.enum(["MONTHLY", "YEARLY", "ONE_TIME", "NA"]).default("NA");
 const Platform = z.enum(["WEB", "WINDOWS", "MACOS", "LINUX", "IOS", "ANDROID", "CHROME_EXTENSION"]);
 const UserPersona = z.enum(["DEVELOPERS", "DESIGNERS", "STUDENTS", "MARKETERS", "WRITERS", "RESEARCHERS", "EDUCATORS", "SALES", "ENTERPRISE", "CONTENT_CREATORS"]);
+const ToolCategoryEnum = z.enum([
+  "WRITING",
+  "IMAGE_GENERATION",
+  "VIDEO_GENERATION",
+  "AUDIO",
+  "CHATBOTS",
+  "CODING",
+  "MARKETING",
+  "PRODUCTIVITY",
+  "BUSINESS",
+  "EDUCATION",
+  "AGENTS",
+  "PRESENTATIONS",
+  "THREE_D_GENERATION",
+  "NO_CODE_AI_BUILDERS",
+  "WORKFLOW_AUTOMATION"
+]);
 
 export const toolSchema = z.object({
   slug: z.string(),
@@ -44,6 +61,7 @@ export const toolSchema = z.object({
     slug: z.string(),
     name: z.string()
   })).default([]),
+  toolCategories: z.array(ToolCategoryEnum).default([]),
 
   tags: z.array(z.object({
     slug: z.string(),
