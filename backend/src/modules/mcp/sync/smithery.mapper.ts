@@ -3,6 +3,7 @@
 // ============================================================
 
 import type { MCPItemType, MCPPricingType } from '@prisma/client';
+import type { MCPItemIngestInput } from '../../ingestion/mcp.ingest.schema.js';
 import type {
   SmitheryServerSummary,
   SmitheryServerDetail,
@@ -193,6 +194,78 @@ export function mapSmitheryServer(
       installationSteps,
     },
   };
+}
+
+export function mapSmitheryServerToMCPItemIngestInput(
+  summary: SmitheryServerSummary,
+  detail: SmitheryServerDetail | null,
+): MCPItemIngestInput {
+  const mapped = mapSmitheryServer(summary, detail);
+
+  const categories = mapped.relations.categorySlug
+    ? [
+        {
+          slug: mapped.relations.categorySlug,
+          name: titleFromSlug(mapped.relations.categorySlug),
+          description: undefined,
+        },
+      ]
+    : [];
+
+  const subCategories = mapped.relations.subCategorySlug
+    ? [
+        {
+          slug: mapped.relations.subCategorySlug,
+          name: titleFromSlug(mapped.relations.subCategorySlug),
+          description: undefined,
+          categorySlug: mapped.relations.categorySlug ?? mapped.relations.subCategorySlug,
+        },
+      ]
+    : [];
+
+  const tags = mapped.relations.tagSlugs.map((tagSlug) => ({
+    slug: tagSlug,
+    name: titleFromSlug(tagSlug),
+  }));
+
+  return {
+    itemType: mapped.item.itemType,
+    name: mapped.item.name,
+    slug: mapped.item.slug,
+    logoUrl: mapped.item.logoUrl,
+    shortDescription: mapped.item.shortDescription,
+    fullDescription: mapped.item.fullDescription,
+    providerName: mapped.item.providerName,
+    providerUrl: mapped.item.providerUrl,
+    license: mapped.item.license,
+    pricingType: mapped.item.pricingType,
+    isFeatured: false,
+    isVerified: mapped.item.isVerified,
+    websiteUrl: mapped.item.websiteUrl,
+    documentationUrl: mapped.item.documentationUrl,
+    repositoryUrl: mapped.item.repositoryUrl,
+    qualityScore: mapped.item.qualityScore,
+    viewCount: 0,
+    monthlyVisits: 0,
+    upvoteCount: 0,
+    saveCount: 0,
+    categories,
+    subCategories,
+    tags,
+    technicalSpecs: mapped.relations.technicalSpec ? [mapped.relations.technicalSpec] : [],
+    installationGuides: mapped.relations.installationSteps,
+    features: mapped.relations.features,
+    useCases: [],
+    pricingPlans: [],
+    faqs: [],
+  };
+}
+
+function titleFromSlug(slug: string): string {
+  return slug
+    .split(/[-_]/g)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }
 
 // ----------------------------------------------------------
