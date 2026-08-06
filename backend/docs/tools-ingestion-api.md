@@ -41,8 +41,8 @@ The API expects a top-level JSON object containing a `tools` array.
 | `isOpenSource` | `boolean` | No | Indicates if the tool is open source. Default is `false`. |
 | `isTrending` | `boolean` | No | Indicates if the tool is currently trending. Default is `false`. |
 | `verified` | `boolean` | No | Indicates if the tool is verified. Default is `false`. |
-| `compatibility` | `string[]` | No | Supported platforms. E.g. `"WEB"`, `"WINDOWS"`, `"MACOS"`, `"IOS"`, `"ANDROID"`, `"CHROME_EXTENSION"`, `"LINUX"`. Default is `[]`. |
-| `targetUsers` | `string[]` | No | Target personas. E.g. `"DEVELOPERS"`, `"DESIGNERS"`, `"STUDENTS"`, `"MARKETERS"`. Default is `[]`. |
+| `compatibility` | `string[]` | No | Supported platforms. Must be from: `"WEB"`, `"WINDOWS"`, `"MACOS"`, `"LINUX"`, `"IOS"`, `"ANDROID"`, `"CHROME_EXTENSION"`. Default is `[]`. |
+| `targetUsers` | `string[]` | No | Target personas. Must be from: `"DEVELOPERS"`, `"DESIGNERS"`, `"STUDENTS"`, `"MARKETERS"`, `"WRITERS"`, `"RESEARCHERS"`, `"EDUCATORS"`, `"SALES"`, `"ENTERPRISE"`, `"CONTENT_CREATORS"`. Default is `[]`. |
 | `hasApi` | `boolean` | No | Indicates if the tool provides an API. Default is `false`. |
 | `apiDocsUrl` | `string` (URL) | No | URL to the API documentation. |
 | `performanceScore` | `number` | No | A numerical performance score. |

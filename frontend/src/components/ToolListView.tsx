@@ -82,9 +82,8 @@ function BoolPill({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-mono font-semibold ${
-        value ? trueColor : falseColor
-      }`}
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-mono font-semibold ${value ? trueColor : falseColor
+        }`}
     >
       {value ? trueLabel : falseLabel}
     </span>
@@ -161,11 +160,10 @@ function ShareButton({ tool }: { tool: ListTool }) {
     <button
       type="button"
       onClick={handleShare}
-      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors ${
-        copied
+      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors ${copied
           ? "border-[var(--color-signal)] text-[var(--color-signal)]"
           : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
-      }`}
+        }`}
       aria-label={`Share ${tool.name}`}
     >
       {copied ? <Check size={14} /> : <Share2 size={14} />}
@@ -208,11 +206,10 @@ function HomeBookmarkButton({ tool }: { tool: ListTool }) {
       type="button"
       disabled={isPending}
       onClick={handleBookmark}
-      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors disabled:opacity-60 ${
-        bookmarked
+      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors disabled:opacity-60 ${bookmarked
           ? "border-[var(--color-signal)] text-[var(--color-signal)]"
           : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
-      }`}
+        }`}
       aria-label={bookmarked ? `Remove bookmark for ${tool.name}` : `Bookmark ${tool.name}`}
       aria-pressed={bookmarked}
     >
@@ -314,9 +311,8 @@ function ToolRow({
                 e.stopPropagation();
                 onToggleCompare(tool);
               }}
-              className={`ml-auto mr-4 transition-colors shrink-0 ${
-                isSelected ? "text-[var(--color-signal)]" : "text-[#71717A] hover:text-white"
-              }`}
+              className={`ml-auto mr-4 transition-colors shrink-0 ${isSelected ? "text-[var(--color-signal)]" : "text-[#71717A] hover:text-white"
+                }`}
               aria-label={isSelected ? `Remove ${tool.name} from compare` : `Add ${tool.name} to compare`}
             >
               <GitCompare size={14} />
@@ -562,7 +558,7 @@ function ToolListViewInner({
               {headers.map((h, i) => {
                 const isActiveSort = searchParams.get("sort")?.startsWith(h.sortKey || "");
                 const isDesc = searchParams.get("sort") === `${h.sortKey}-desc`;
-                
+
                 return (
                   <span
                     key={h.label || `header-${i}`}
@@ -625,9 +621,8 @@ function ToolListViewInner({
                 return (
                   <div
                     key={i}
-                    className={`flex flex-1 items-center gap-2 rounded-lg border px-2.5 py-1.5 min-w-0 ${
-                      tool ? "border-[#232326]/70 bg-[#18181C]" : "border-dashed border-[#232326]/50"
-                    }`}
+                    className={`flex flex-1 items-center gap-2 rounded-lg border px-2.5 py-1.5 min-w-0 ${tool ? "border-[#232326]/70 bg-[#18181C]" : "border-dashed border-[#232326]/50"
+                      }`}
                   >
                     {tool ? (
                       <>
@@ -653,11 +648,10 @@ function ToolListViewInner({
               type="button"
               onClick={goToCompare}
               disabled={compareSet.length !== MAX_COMPARE}
-              className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[12px] font-semibold transition-colors ${
-                compareSet.length === MAX_COMPARE
+              className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[12px] font-semibold transition-colors ${compareSet.length === MAX_COMPARE
                   ? "text-black"
                   : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
-              }`}
+                }`}
               style={compareSet.length === MAX_COMPARE ? { backgroundColor: "var(--color-signal)" } : undefined}
             >
               <GitCompare size={13} />
