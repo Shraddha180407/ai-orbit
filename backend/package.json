@@ -17,6 +17,7 @@
     "backfill-repo-subcategories": "tsx scripts/backfill-repository-subcategories.ts",
     "backfill-model-subcategories": "tsx scripts/backfill-model-subcategories.ts",
     "backfill-mcp-subcategories": "tsx scripts/backfill-mcp-subcategories.ts",
+    "sync-smithery": "tsx scripts/sync-smithery.ts",
     "migrate-mcp": "tsx scripts/migrate-mcp.ts",
     "lint": "eslint .",
     "test": "vitest run",
