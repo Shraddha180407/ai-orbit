@@ -214,9 +214,17 @@ export async function fetchModelSubCategories(): Promise<ModelSubCategory[]> {
   return res.json();
 }
 
-export async function fetchMCPSubCategories(): Promise<import("./types").MCPSubCategory[]> {
-  const url = `${API_URL}/api/v1/mcps/subcategories`;
+export async function fetchMCPCategories(): Promise<import("./types").MCPCategory[]> {
+  const url = `${API_URL}/api/v1/mcps/categories`;
   const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function fetchMCPSubCategories(categorySlug?: string): Promise<import("./types").MCPSubCategory[]> {
+  const url = new URL(`${API_URL}/api/v1/mcps/subcategories`);
+  if (categorySlug) url.searchParams.set("category", categorySlug);
+  const res = await fetch(url.toString(), { next: { revalidate: 300 } } as RequestInit);
   if (!res.ok) return [];
   return res.json();
 }
@@ -367,7 +375,7 @@ export async function fetchRepositoryOwners(): Promise<RepositoryOwnerListItem[]
 // ---------------------------------------------------------------------------
 // MCP API Fetch Helpers
 // ---------------------------------------------------------------------------
-import type { MCPListResponse } from "./types";
+import type { MCPListResponse, MCPItem } from "./types";
 
 export interface MCPQuery {
   page?: number;

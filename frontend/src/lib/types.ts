@@ -283,11 +283,21 @@ export type ModelSubCategory = {
   description?: string | null;
 };
 
+export type MCPCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  icon?: string | null;
+  color?: string | null;
+};
+
 export type MCPSubCategory = {
   id: string;
   name: string;
   slug: string;
   description?: string | null;
+  categoryId: string;
 };
 
 export type DeviceSubCategory = {

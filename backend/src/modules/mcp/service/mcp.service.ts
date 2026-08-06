@@ -1036,10 +1036,24 @@ export class MCPService {
     });
   }
 
-  async listMCPSubCategories() {
-    return this.prisma.mCPSubCategory.findMany({
+  async listMCPCategories() {
+    return this.prisma.mCPDirectoryCategory.findMany({
       orderBy: { name: 'asc' },
-      select: { id: true, name: true, slug: true, description: true },
+      select: { id: true, name: true, slug: true, description: true, icon: true, color: true },
+    });
+  }
+
+  async listMCPSubCategories(categorySlug?: string) {
+    const where: Prisma.MCPDirectorySubCategoryWhereInput = {};
+
+    if (categorySlug) {
+      where.category = { slug: categorySlug };
+    }
+
+    return this.prisma.mCPDirectorySubCategory.findMany({
+      where,
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, slug: true, description: true, categoryId: true },
     });
   }
 }

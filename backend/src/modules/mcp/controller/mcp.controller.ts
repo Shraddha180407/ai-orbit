@@ -242,9 +242,16 @@ export class MCPController {
     });
   });
 
+  listMCPCategories = asyncHandler(async (c: Context) => {
+    const service = c.get('mcpService');
+    const categories = await service.listMCPCategories();
+    return c.json(categories);
+  });
+
   listMCPSubCategories = asyncHandler(async (c: Context) => {
     const service = c.get('mcpService');
-    const subCategories = await service.listMCPSubCategories();
+    const categorySlug = c.req.query('category');
+    const subCategories = await service.listMCPSubCategories(categorySlug);
     return c.json(subCategories);
   });
 }
@@ -255,6 +262,7 @@ export const createMCPRouter = () => {
   const router = new Hono<{ Variables: Variables }>();
 
   // Public routes
+  router.get('/categories', controller.listMCPCategories);
   router.get('/subcategories', controller.listMCPSubCategories);
   router.get('/', controller.listMCPItems);
   router.get('/:slug', controller.getMCPItemBySlug);

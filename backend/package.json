@@ -16,6 +16,7 @@
     "seed-device-subcategories": "tsx prisma/seed-device-subcategories.ts",
     "backfill-repo-subcategories": "tsx scripts/backfill-repository-subcategories.ts",
     "backfill-model-subcategories": "tsx scripts/backfill-model-subcategories.ts",
+    "backfill-mcp-subcategories": "tsx scripts/backfill-mcp-subcategories.ts",
     "migrate-mcp": "tsx scripts/migrate-mcp.ts",
     "lint": "eslint .",
     "test": "vitest run",

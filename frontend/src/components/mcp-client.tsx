@@ -18,31 +18,12 @@ import Check from 'lucide-react/dist/esm/icons/check';
 import BadgeCheck from 'lucide-react/dist/esm/icons/badge-check';
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 
-import { fetchMCPSubCategories, fetchMCPItems } from "@/lib/api";
+import { fetchMCPCategories, fetchMCPSubCategories, fetchMCPItems } from "@/lib/api";
 import { EmptyState } from "@/components/EmptyState";
 import { CategoryChip } from "@/components/CategoryChip";
 import { PricingBadge } from "@/components/PricingBadge";
 import { Breadcrumb } from "@/components/news/Breadcrumb";
-import type { MCPSubCategory } from "@/lib/types";
-
-const CATEGORIES = [
-  { name: "All", slug: "" },
-  { name: "MCP Servers", slug: "mcp-servers" },
-  { name: "Developer Tools", slug: "developer-tools" },
-  { name: "Databases", slug: "databases" },
-  { name: "File Systems", slug: "file-systems" },
-  { name: "Productivity", slug: "productivity" },
-  { name: "APIs", slug: "apis" },
-  { name: "Cloud", slug: "cloud" },
-  { name: "ML Platforms", slug: "ml-platforms" },
-  { name: "Browser", slug: "browser" },
-  { name: "Version Control", slug: "version-control" },
-  { name: "Automation", slug: "automation" },
-  { name: "Smart Devices", slug: "smart-devices" },
-  { name: "Data Analytics", slug: "data-analytics" },
-  { name: "Community", slug: "community" },
-  { name: "MCP Clients", slug: "mcp-clients" },
-] as const;
+import type { MCPCategory, MCPSubCategory } from "@/lib/types";
 
 // 5-column layout template
 const COL_TEMPLATE = "grid-cols-[40px_minmax(240px,3.2fr)_minmax(180px,2.4fr)_minmax(180px,2.4fr)_minmax(120px,1.2fr)]";
@@ -136,10 +117,17 @@ export function MCPClient() {
     router.replace(`/mcp?${params.toString()}`);
   };
 
-  // Fetch subcategories once on mount with React Query
+  // Fetch categories from API
+  const { data: categoriesData } = useQuery({
+    queryKey: ["mcpCategories"],
+    queryFn: fetchMCPCategories,
+  });
+  const categories = categoriesData || [];
+
+  // Fetch subcategories based on active category
   const { data: subCategoriesData } = useQuery({
-    queryKey: ["mcpSubCategories"],
-    queryFn: fetchMCPSubCategories,
+    queryKey: ["mcpSubCategories", activeCategory],
+    queryFn: () => fetchMCPSubCategories(activeCategory || undefined),
   });
   const subCategories = subCategoriesData || [];
 
@@ -208,11 +196,11 @@ export function MCPClient() {
 
         {/* Top Sliding Category Row */}
         <div className="mb-2 flex items-center justify-start md:justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
-          {CATEGORIES.map((topic) => {
+          {[{ name: "All", slug: "" }, ...categories].map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
               <button
-                key={topic.name}
+                key={topic.slug || "all"}
                 onClick={(e) => {
                   setActiveCategory(topic.slug);
                   updateUrl(activeType, topic.slug, activeSubCategory);
