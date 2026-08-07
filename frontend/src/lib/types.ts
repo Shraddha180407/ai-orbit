@@ -55,18 +55,29 @@ export type ToolDetailData = {
   websiteUrl: string;
   screenshots: string[];
   features: string[];
+  pros: string[];
+  cons: string[];
+  releaseDate: string | null;
   pricingModel: PricingModel;
   pricingAmount: string | null;
   billingFrequency: BillingFrequency;
   avgRating: number | null;
   reviewCount: number;
+  upvoteCount: number;
+  isOpenSource: boolean;
+  isTrending: boolean;
+  verified: boolean;
+  compatibility: string[];
+  targetUsers: string[];
+  hasApi: boolean;
+  apiDocsUrl: string | null;
+  performanceScore: number | null;
   createdAt: string;
   company: { slug: string; name: string; logoUrl: string | null } | null;
   categories: { category: { slug: string; name: string } }[];
   tags: { tag: { slug: string; name: string } }[];
+  integrations: { integration: { slug: string; name: string; logoUrl: string | null } }[];
   _count: { reviews: number; bookmarks: number };
-  isOpenSource: boolean;
-  isTrending: boolean;
 };
 
 export type SimilarToolData = {

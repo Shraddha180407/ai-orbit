@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { MCPItemType, MCPPricingType } from '@prisma/client';
+import type { MCPItemType, MCPPricingType } from '@prisma/client';
 
 export const MCPItemQuerySchema = z.object({
-  type: z.nativeEnum(MCPItemType).optional(),
+  type: z.enum(['SERVER', 'CLIENT']).optional(),
   category: z.string().optional(),
   subCategory: z.string().optional(),
-  pricingType: z.nativeEnum(MCPPricingType).optional(),
+  pricingType: z.enum(['FREE', 'FREEMIUM', 'PAID']).optional(),
   search: z.string().optional(),
   sortBy: z.enum(['trending', 'top-rated', 'most-upvoted', 'recently-updated']).optional(),
   page: z.string().default('1'),
