@@ -4,7 +4,8 @@
 
 import { PrismaClient, type Prisma } from '@prisma/client';
 import { SmitheryClient } from './smithery.client.js';
-import { mapSmitheryServer } from './smithery.mapper.js';
+import { mapSmitheryServer, mapSmitheryServerToMCPItemIngestInput } from './smithery.mapper.js';
+import { MCPIngestService } from '../../ingestion/mcp.ingest.service.js';
 import type { SmitheryServerSummary, SmitheryServerDetail, SyncConfig } from './types.js';
 
 const DEFAULT_SYNC_CONFIG: SyncConfig = {
@@ -232,15 +233,18 @@ export class SmitherySyncService {
             batchResult.skipped++;
             continue;
           }
+
+          const ingestItem = mapSmitheryServerToMCPItemIngestInput(summary, detail);
           if (!this.config.dryRun) {
-            await this.updateItem(slug, mapped, categoryMap, subCategoryMap, tagMap, existing.id);
+            await MCPIngestService.ingestMCPItems(this.prisma, { items: [ingestItem] });
           }
           batchResult.updated++;
         } else {
+          const ingestItem = mapSmitheryServerToMCPItemIngestInput(summary, detail);
           if (!this.config.dryRun) {
-            const createdId = await this.createItem(mapped, categoryMap, subCategoryMap, tagMap);
+            const ingestResult = await MCPIngestService.ingestMCPItems(this.prisma, { items: [ingestItem] });
             existingBySlug.set(slug, {
-              id: createdId,
+              id: slug,
               name: mapped.item.name,
               shortDescription: mapped.item.shortDescription,
               logoUrl: mapped.item.logoUrl,
