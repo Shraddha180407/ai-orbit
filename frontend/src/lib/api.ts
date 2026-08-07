@@ -215,18 +215,28 @@ export async function fetchModelSubCategories(): Promise<ModelSubCategory[]> {
 }
 
 export async function fetchMCPCategories(): Promise<import("./types").MCPCategory[]> {
-  const url = `${API_URL}/api/v1/mcps/categories`;
-  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const url = `${API_URL}/api/v1/mcps/categories`;
+    const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err: any) {
+    console.warn("Failed to fetch MCP categories:", err?.message || err);
+    return [];
+  }
 }
 
 export async function fetchMCPSubCategories(categorySlug?: string): Promise<import("./types").MCPSubCategory[]> {
-  const url = new URL(`${API_URL}/api/v1/mcps/subcategories`);
-  if (categorySlug) url.searchParams.set("category", categorySlug);
-  const res = await fetch(url.toString(), { next: { revalidate: 300 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const url = new URL(`${API_URL}/api/v1/mcps/subcategories`);
+    if (categorySlug) url.searchParams.set("category", categorySlug);
+    const res = await fetch(url.toString(), { next: { revalidate: 300 } } as RequestInit);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err: any) {
+    console.warn("Failed to fetch MCP subcategories:", err?.message || err);
+    return [];
+  }
 }
 
 export async function fetchDeviceSubCategories(): Promise<import("./types").DeviceSubCategory[]> {
@@ -412,23 +422,39 @@ export async function fetchMCPItems(params: MCPQuery = {}): Promise<MCPListRespo
       return responseJson.data;
     }
     return empty;
-  } catch (err) {
-    console.error("Failed to fetch MCP items:", err);
+  } catch (err: any) {
+    console.warn("Failed to fetch MCP items:", err?.message || err);
     return empty;
   }
 }
 
 export async function fetchMCPItemBySlug(slug: string): Promise<MCPItem | null> {
   try {
-    const res = await fetch(`${API_URL}/api/v1/mcps/${encodeURIComponent(slug)}`);
+    const res = await fetch(`${SERVER_API_URL}/api/v1/mcps/${encodeURIComponent(slug)}`);
     if (!res.ok) return null;
     const responseJson = await res.json();
     if (responseJson && responseJson.success && responseJson.data) {
       return responseJson.data;
     }
     return null;
-  } catch (err) {
-    console.error(`Failed to fetch MCP item ${slug}:`, err);
+  } catch (err: any) {
+    console.warn(`Failed to fetch MCP item ${slug}:`, err?.message || err);
     return null;
   }
 }
+
+export async function fetchMCPItemAlternatives(slug: string): Promise<MCPItem[]> {
+  try {
+    const res = await fetch(`${SERVER_API_URL}/api/v1/mcps/${encodeURIComponent(slug)}/alternatives`);
+    if (!res.ok) return [];
+    const responseJson = await res.json();
+    if (responseJson && responseJson.success && responseJson.data) {
+      return responseJson.data;
+    }
+    return [];
+  } catch (err: any) {
+    console.warn(`Failed to fetch alternatives for ${slug}:`, err?.message || err);
+    return [];
+  }
+}
+

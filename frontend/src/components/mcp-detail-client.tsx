@@ -8,25 +8,28 @@ import Link from "next/link";
 import ArrowUp from 'lucide-react/dist/esm/icons/arrow-up';
 import Eye from 'lucide-react/dist/esm/icons/eye';
 import Bookmark from 'lucide-react/dist/esm/icons/bookmark';
-import Globe from 'lucide-react/dist/esm/icons/globe';
-import FileText from 'lucide-react/dist/esm/icons/file-text';
-import Github from 'lucide-react/dist/esm/icons/github';
 import Share2 from 'lucide-react/dist/esm/icons/share-2';
 import Check from 'lucide-react/dist/esm/icons/check';
 import BadgeCheck from 'lucide-react/dist/esm/icons/badge-check';
-import MapPin from 'lucide-react/dist/esm/icons/map-pin';
 import Building2 from 'lucide-react/dist/esm/icons/building-2';
 import ExternalLink from 'lucide-react/dist/esm/icons/external-link';
+
 import MoreHorizontal from 'lucide-react/dist/esm/icons/more-horizontal';
 import Zap from 'lucide-react/dist/esm/icons/zap';
 import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert';
+import { useQuery } from "@tanstack/react-query";
+import Copy from 'lucide-react/dist/esm/icons/copy';
+
 
 import type { MCPItem } from "@/lib/types";
-import { API_URL } from "@/lib/api";
+import { API_URL, fetchMCPItemAlternatives } from "@/lib/api";
 import { PricingBadge } from "@/components/PricingBadge";
 import { CategoryChip } from "@/components/CategoryChip";
 import { Breadcrumb } from "@/components/news/Breadcrumb";
 import { RatingStars } from "@/components/RatingStars";
+import { ExpandableContent } from "@/components/ui/ExpandableContent";
+
+
 
 interface MCPDetailClientProps {
   item: MCPItem;
@@ -130,7 +133,84 @@ function CopyLinkButton({ slug, name, className }: { slug: string; name: string;
   );
 }
 
+// Reusable Copy Code Button for Code blocks
+function CopyCodeButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className={`absolute right-3 top-3 inline-flex items-center gap-1 rounded-md border border-[#232326] bg-[#131316] px-2.5 py-1 text-[10px] font-semibold transition-all opacity-0 group-hover/code:opacity-100 focus-visible:opacity-100 ${
+        copied ? "border-[var(--color-signal,#6E56CF)] text-[var(--color-signal,#6E56CF)]" : "border-[#232326]/60 text-[#A1A1AA] hover:text-white"
+      }`}
+    >
+      {copied ? <Check size={10} /> : <Copy size={10} />}
+      <span>{copied ? "Copied" : "Copy"}</span>
+    </button>
+  );
+}
+
+function formatFeatureTitle(title: string): string {
+  let name = title;
+  const prefixes = [
+    "niche_",
+    "mcp_",
+    "tool_",
+    "smithery_",
+  ];
+  for (const prefix of prefixes) {
+    if (name.toLowerCase().startsWith(prefix)) {
+      name = name.slice(prefix.length);
+      break;
+    }
+  }
+  // Replace underscores and hyphens with spaces
+  name = name.replace(/[_-]/g, " ");
+  // Title Case
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function getFeaturePreview(description: string): string {
+  // Strip markdown emphasis
+  const cleanText = description
+    .replace(/[*_`~]/g, "")
+    // Remove markdown links into plain text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    // Remove markdown headings
+    .replace(/^#+\s+/gm, "")
+    // Remove bullet markers
+    .replace(/^[-*+]\s+/gm, "")
+    // Remove HTML tags
+    .replace(/<[^>]*>/g, "")
+    // Collapse repeated whitespace & multiple newlines into spaces
+    .replace(/\s+/g, " ");
+
+  // Find the first sentence ending with punctuation
+  const sentenceEnd = cleanText.search(/[.!?](?:\s|$)/);
+  let preview = sentenceEnd !== -1 ? cleanText.slice(0, sentenceEnd + 1) : cleanText;
+
+  // Limit size to ~150 characters without cutting words
+  if (preview.length > 150) {
+    const truncated = preview.slice(0, 150);
+    const lastSpace = truncated.lastIndexOf(" ");
+    preview = lastSpace > 50 ? truncated.slice(0, lastSpace) + "..." : truncated + "...";
+  }
+  return preview.trim();
+}
+
 // Reusable Recommendation Card for "If You Liked This" Section
+
+
 interface RecommendationCardProps {
   item: MCPItem;
 }
@@ -203,10 +283,11 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
     "Overview",
     "Releases",
     "Pricing",
-    "Pros & Cons",
-    "Prompts",
-    "Reviews",
-    "Q&A",
+    // Hide for now until backend support exists:
+    // "Pros & Cons",
+    // "Prompts",
+    // "Reviews",
+    // "Q&A",
   ];
 
   // States for dropdown menu and scroll tab navigation
@@ -339,8 +420,14 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
   // Filter out any empty names
   relatedTopicsItems = relatedTopicsItems.filter((x) => x.name && x.name.trim() !== "");
 
-  // Read recommendations from payload (empty/undefined dynamically from backend API)
-  const recommendations = item.recommendations || item.similarItems || [];
+  // Fetch recommendations (alternatives) from backend
+  const { data: alternativesData } = useQuery({
+    queryKey: ["mcpAlternatives", item.slug],
+    queryFn: () => fetchMCPItemAlternatives(item.slug),
+    enabled: !!item.slug,
+  });
+  const recommendations = alternativesData || [];
+
 
   return (
     <main className="mx-auto w-full max-w-[1280px] px-4 py-6 md:px-6 md:py-10 relative overflow-hidden">
@@ -388,9 +475,11 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
                   {item.name}
                 </h1>
-                <span className="inline-flex items-center rounded-md bg-[#18181C] border border-[#232326] px-2 py-0.5 text-[10px] font-mono font-semibold text-neutral-400">
-                  v1.0.0
-                </span>
+                {item.releases && item.releases.length > 0 && (
+                  <span className="inline-flex items-center rounded-md bg-[#18181C] border border-[#232326] px-2 py-0.5 text-[10px] font-mono font-semibold text-neutral-400">
+                    {item.releases[0].versionName}
+                  </span>
+                )}
                 {item.isVerified && (
                   <BadgeCheck size={18} className="text-blue-400 shrink-0" aria-label="Verified Provider" />
                 )}
@@ -401,11 +490,6 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
                 <div className="flex items-center gap-1">
                   <Building2 size={12} className="text-neutral-500" />
                   <span>{item.providerName}</span>
-                </div>
-                <span className="text-[#3a3a3d]" aria-hidden="true">•</span>
-                <div className="flex items-center gap-1">
-                  <MapPin size={12} className="text-neutral-500" />
-                  <span>United States</span>
                 </div>
                 <span className="text-[#3a3a3d]" aria-hidden="true">•</span>
                 <div className="flex items-center gap-1.5">
@@ -425,10 +509,14 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
                 </div>
                 <span className="text-[#3a3a3d]" aria-hidden="true">•</span>
                 <div className="flex items-center gap-1">
-                  <RatingStars rating={item.qualityScore ?? 4.5} reviewCount={3} />
+                  <RatingStars
+                    rating={item.qualityScore ?? 4.5}
+                    reviewCount={item.reviews && item.reviews.length > 0 ? item.reviews.length : undefined}
+                  />
                 </div>
                 <span className="text-[#3a3a3d]" aria-hidden="true">•</span>
                 <span className="text-[#71717A]">{formattedLanguageString}</span>
+
               </div>
             </div>
           </div>
@@ -465,23 +553,17 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
                   <div className="absolute right-0 mt-2 w-48 rounded-lg border border-[#232326] bg-[#131316] p-1.5 shadow-xl z-50">
                     <button
                       type="button"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        alert("Report functionality is currently UI-only. Backend claim/report system is not active.");
-                      }}
-                      className="flex w-full items-center px-3 py-2 text-xs font-semibold text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-md transition-colors text-left focus-visible:outline-none focus-visible:bg-neutral-800"
+                      disabled
+                      className="flex w-full items-center px-3 py-2 text-xs font-semibold text-neutral-600 cursor-not-allowed rounded-md text-left"
                     >
-                      Report MCP Item
+                      Report MCP (Coming Soon)
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        alert("Claim provider functionality is UI-only. Backend claims system is not active.");
-                      }}
-                      className="flex w-full items-center px-3 py-2 text-xs font-semibold text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-md transition-colors text-left focus-visible:outline-none focus-visible:bg-neutral-800"
+                      disabled
+                      className="flex w-full items-center px-3 py-2 text-xs font-semibold text-neutral-600 cursor-not-allowed rounded-md text-left"
                     >
-                      Claim Provider Page
+                      Claim Provider (Coming Soon)
                     </button>
                   </div>
                 </>
@@ -602,9 +684,12 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
           {/* Overview Section */}
           <section id="overview-section" className="scroll-mt-28 space-y-3 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6">
             <h3 className="text-base font-bold text-white">Overview</h3>
-            <div className="text-[13px] text-[#A1A1AA] leading-relaxed whitespace-pre-line max-w-[850px]">
-              {item.fullDescription}
-            </div>
+            <ExpandableContent maxHeight={450}>
+              <div className="text-[13px] text-[#A1A1AA] leading-relaxed whitespace-pre-line max-w-[850px]">
+                {item.fullDescription}
+              </div>
+            </ExpandableContent>
+
           </section>
 
           {/* Supported Features & Interfaces */}
@@ -634,23 +719,85 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
             <section className="space-y-4 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6">
               <h3 className="text-base font-bold text-white">Key Features</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {item.features.map((feat) => (
-                  <div key={feat.id} className="flex gap-3 rounded-lg border border-[#232326]/60 bg-[#131316]/20 p-4">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#18181C] text-[#6E56CF]">
-                      <Zap size={16} />
+                {item.features.map((feat) => {
+                  const readableTitle = formatFeatureTitle(feat.title);
+                  const previewText = feat.description ? getFeaturePreview(feat.description) : "";
+                  
+                  // Collapse is only necessary if the description is actually longer/different from the plain text sentence preview.
+                  const cleanedFullDescription = feat.description 
+                    ? feat.description.replace(/[*_`~]/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim()
+                    : "";
+                  const isExpandable = feat.description && previewText !== cleanedFullDescription;
+
+                  return (
+                    <div 
+                      key={feat.id} 
+                      className={`flex gap-3 rounded-lg border border-[#232326]/60 bg-[#131316]/20 p-4 ${
+                        isExpandable ? "min-h-[160px] h-full" : ""
+                      }`}
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#18181C] text-[#6E56CF]">
+                        <Zap size={16} />
+                      </div>
+                      <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                          <h4 className="text-sm font-semibold text-white mb-1">{readableTitle}</h4>
+                          {feat.description && (
+                            isExpandable ? (
+                              <ExpandableContent
+                                collapsedContent={
+                                  <p className="text-xs text-[#A1A1AA] leading-relaxed">{previewText}</p>
+                                }
+                                readMoreLabel="Read More"
+                                readLessLabel="Read Less"
+                              >
+                                <p className="text-xs text-[#A1A1AA] leading-relaxed whitespace-pre-line">{feat.description}</p>
+                              </ExpandableContent>
+                            ) : (
+                              <p className="text-xs text-[#A1A1AA] leading-relaxed">{feat.description}</p>
+                            )
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-white">{feat.title}</h4>
-                      {feat.description && (
-                        <p className="mt-1 text-xs text-[#A1A1AA] leading-relaxed">{feat.description}</p>
-                      )}
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+
+          {/* Installation Guide Section */}
+          {item.installationGuides && item.installationGuides.length > 0 && (
+            <section className="space-y-4 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6">
+              <h3 className="text-base font-bold text-white">Installation Guide</h3>
+              <div className="space-y-6">
+                {item.installationGuides.map((step) => (
+                  <div key={step.id} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#6E56CF]/10 text-xs font-bold text-[#6E56CF] border border-[#6E56CF]/30">
+                        {step.stepNumber}
+                      </span>
+                      <h4 className="text-sm font-semibold text-white">{step.title}</h4>
                     </div>
+                    {step.instructions && (
+                      <p className="text-xs text-[#A1A1AA] leading-relaxed pl-7">{step.instructions}</p>
+                    )}
+                    {step.codeSnippet && (
+                      <div className="relative pl-7 group/code">
+                        <pre className="overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#18181C] p-3 text-xs font-mono text-[#E4E4E7]">
+                          <code>{step.codeSnippet}</code>
+                        </pre>
+                        <CopyCodeButton code={step.codeSnippet} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </section>
           )}
         </div>
+
 
         {/* Right Sidebar (Author & Pricing Cards) */}
         <div className="space-y-6">
@@ -683,20 +830,6 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
                   </a>
                 )}
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <button
-                type="button"
-                className="w-full rounded-lg bg-[#18181C] border border-[#232326] py-2 text-xs font-semibold text-white hover:bg-neutral-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              >
-                Follow
-              </button>
-              <button
-                type="button"
-                className="w-full rounded-lg bg-[#18181C] border border-[#232326] py-2 text-xs font-semibold text-white hover:bg-neutral-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              >
-                Message
-              </button>
             </div>
           </div>
 
@@ -738,19 +871,7 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
         {/* Releases Heading */}
         <h3 className="text-xl font-extrabold tracking-tight text-white mb-6">Releases</h3>
 
-        {/* Notify Card */}
-        <div className="rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="space-y-1">
-            <h4 className="text-sm font-semibold text-white">Get notified when a new version is released</h4>
-            <p className="text-xs text-[#A1A1AA]">Be the first to know about updates, feature rollouts, and improvements.</p>
-          </div>
-          <button
-            type="button"
-            className="rounded-lg bg-[#18181C] border border-[#232326] px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800 transition-colors shrink-0 self-start sm:self-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-          >
-            Notify Me
-          </button>
-        </div>
+
 
         {/* Dynamic Releases Timeline Content */}
         {hasReleases ? (
@@ -815,24 +936,6 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
                 </div>
               )}
 
-              {/* Reaction Buttons with accessibilities */}
-              <div className="flex items-center gap-2 pt-4 border-t border-[#232326]/40 mt-4">
-                <span className="text-xs text-neutral-500">Was this version helpful?</span>
-                <button
-                  type="button"
-                  aria-label="Mark version as helpful"
-                  className="inline-flex items-center justify-center rounded-lg border border-[#232326]/60 bg-[#18181C] px-3 py-1.5 text-xs text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                >
-                  <span aria-hidden="true">👍</span>
-                </button>
-                <button
-                  type="button"
-                  aria-label="Mark version as unhelpful"
-                  className="inline-flex items-center justify-center rounded-lg border border-[#232326]/60 bg-[#18181C] px-3 py-1.5 text-xs text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                >
-                  <span aria-hidden="true">👎</span>
-                </button>
-              </div>
             </div>
           </div>
         ) : (

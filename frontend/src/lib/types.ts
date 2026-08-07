@@ -383,6 +383,24 @@ export type Device = {
 export type MCPItemType = "SERVER" | "CLIENT";
 export type MCPPricingType = "FREE" | "FREEMIUM" | "PAID";
 
+export type InstallationGuide = {
+  id: string;
+  mcpItemId: string;
+  stepNumber: number;
+  title: string;
+  codeSnippet: string;
+  instructions: string;
+};
+
+export type TechnicalSpec = {
+  id: string;
+  mcpItemId: string;
+  supportedPlatforms: string[];
+  compatibility: string;
+  integrations: string[];
+  localBindingControls: string;
+};
+
 export type MCPItem = {
   id: string;
   itemType: MCPItemType;
@@ -422,6 +440,8 @@ export type MCPItem = {
   useCases?: MCPUseCase[];
   recommendations?: MCPItem[];
   similarItems?: MCPItem[];
+  installationGuides?: InstallationGuide[];
+  technicalSpecs?: TechnicalSpec[];
 };
 
 export type MCPUseCase = {
@@ -447,3 +467,4 @@ export type MCPListResponse = {
   page: number;
   totalPages: number;
 };
+
