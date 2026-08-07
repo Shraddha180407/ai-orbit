@@ -26,8 +26,7 @@ authRoutes.get('/google', (c) => {
   const clientId = (c.env as Record<string, string | undefined>)?.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
   if (!clientId) return c.json({ error: 'Google OAuth not configured' }, 500);
   
-  const requestUrl = new URL(c.req.url);
-  const backendUrl = requestUrl.origin;
+  const backendUrl = (c.env as Record<string, string | undefined>)?.BACKEND_URL || process.env.BACKEND_URL || 'https://api.aiorbit.club';
   const redirectUri = `${backendUrl}/api/auth/google/callback`;
   const scope = 'email profile';
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
@@ -47,8 +46,7 @@ authRoutes.get('/google/callback', async (c) => {
   const clientId = (c.env as Record<string, string | undefined>)?.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
   const clientSecret = (c.env as Record<string, string | undefined>)?.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
   
-  const requestUrl = new URL(c.req.url);
-  const backendUrl = requestUrl.origin;
+  const backendUrl = (c.env as Record<string, string | undefined>)?.BACKEND_URL || process.env.BACKEND_URL || 'https://api.aiorbit.club';
   const redirectUri = `${backendUrl}/api/auth/google/callback`;
 
   try {
@@ -118,8 +116,7 @@ authRoutes.get('/github', (c) => {
   const clientId = (c.env as Record<string, string | undefined>)?.GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID;
   if (!clientId) return c.json({ error: 'Github OAuth not configured' }, 500);
   
-  const requestUrl = new URL(c.req.url);
-  const backendUrl = requestUrl.origin;
+  const backendUrl = (c.env as Record<string, string | undefined>)?.BACKEND_URL || process.env.BACKEND_URL || 'https://api.aiorbit.club';
   const redirectUri = `${backendUrl}/api/auth/github/callback`;
   const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email`;
   
@@ -137,8 +134,7 @@ authRoutes.get('/github/callback', async (c) => {
   const clientId = (c.env as Record<string, string | undefined>)?.GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID;
   const clientSecret = (c.env as Record<string, string | undefined>)?.GITHUB_CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET;
   
-  const requestUrl = new URL(c.req.url);
-  const backendUrl = requestUrl.origin;
+  const backendUrl = (c.env as Record<string, string | undefined>)?.BACKEND_URL || process.env.BACKEND_URL || 'https://api.aiorbit.club';
   const redirectUri = `${backendUrl}/api/auth/github/callback`;
 
   try {
