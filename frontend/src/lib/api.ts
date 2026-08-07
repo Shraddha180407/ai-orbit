@@ -211,11 +211,20 @@ export async function fetchFeaturedTools(): Promise<RealSearchSuggestion[]> {
  * same-account Cloudflare-to-Cloudflare hop — so they're left untouched.
  */
 function resolveServerApiUrl(): string {
-  const raw = process.env.NEWS_SERVER_API_URL;
+  // If explicitly overridden for server-to-server fetches (e.g. in prod to bypass Cloudflare proxy)
+  const raw = process.env.NEWS_SERVER_API_URL || process.env.SERVER_API_URL;
   if (raw && raw !== "undefined") {
     const withScheme = /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
     return withScheme.replace(/\/$/, "");
   }
+  
+  // Use the standard public API URL if available
+  const publicUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (publicUrl && publicUrl !== "undefined") {
+    return publicUrl.replace(/\/$/, "");
+  }
+  
+  // Hardcoded fallback that bypasses the proxy (legacy)
   return "https://ai-orbit.palamrendra-pm.workers.dev";
 }
 
