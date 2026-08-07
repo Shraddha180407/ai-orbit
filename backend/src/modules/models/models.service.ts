@@ -221,12 +221,26 @@ async getFilterOptions() {
 async compareModels(ids: string[]) {
   if (ids.length === 0) return [];
   if (ids.length > 5) throw new Error("Cannot compare more than 5 models at once");
-  return this.prisma.aIModel.findMany({
+  // return this.prisma.aIModel.findMany({
+  //   where: { id: { in: ids } },
+  //   include: {
+  //     provider: { select: { id: true, slug: true, name: true, logoUrl: true } },
+  //   },
+  // });
+  const models = await this.prisma.aIModel.findMany({
     where: { id: { in: ids } },
     include: {
       provider: { select: { id: true, slug: true, name: true, logoUrl: true } },
     },
   });
+
+  const foundIds = new Set(models.map((m) => m.id));
+  const missingIds = ids.filter((id) => !foundIds.has(id));
+
+  if (missingIds.length > 0) {
+    throw new Error(`Model(s) not found: ${missingIds.join(", ")}`);
+  }
+  return models;
 }
 
 async listModelSubCategories() {

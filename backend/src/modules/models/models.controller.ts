@@ -33,8 +33,11 @@ export class ModelsController {
     const models = await service.compareModels(parsed.data.ids);
     return c.json({ items: models });
   } catch (error: any) {
-    return c.json({ error: error.message }, error.message.includes("Cannot compare") ? 422 : 500);
-  } finally {
+  const status = error.message.includes("Cannot compare") ? 422
+    : error.message.includes("not found") ? 404
+    : 500;
+  return c.json({ error: error.message }, status);
+  }finally {
     await prisma.$disconnect();
   }
 }
