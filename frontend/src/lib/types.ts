@@ -401,6 +401,13 @@ export type TechnicalSpec = {
   localBindingControls: string;
 };
 
+export type MCPFeature = {
+  id: string;
+  mcpItemId: string;
+  title: string;
+  description: string;
+};
+
 export type MCPItem = {
   id: string;
   itemType: MCPItemType;
@@ -442,6 +449,7 @@ export type MCPItem = {
   similarItems?: MCPItem[];
   installationGuides?: InstallationGuide[];
   technicalSpecs?: TechnicalSpec[];
+  features?: MCPFeature[];
 };
 
 export type MCPUseCase = {

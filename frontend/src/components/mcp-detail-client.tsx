@@ -15,7 +15,6 @@ import Building2 from 'lucide-react/dist/esm/icons/building-2';
 import ExternalLink from 'lucide-react/dist/esm/icons/external-link';
 
 import MoreHorizontal from 'lucide-react/dist/esm/icons/more-horizontal';
-import Zap from 'lucide-react/dist/esm/icons/zap';
 import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert';
 import { useQuery } from "@tanstack/react-query";
 import Copy from 'lucide-react/dist/esm/icons/copy';
@@ -28,6 +27,7 @@ import { CategoryChip } from "@/components/CategoryChip";
 import { Breadcrumb } from "@/components/news/Breadcrumb";
 import { RatingStars } from "@/components/RatingStars";
 import { ExpandableContent } from "@/components/ui/ExpandableContent";
+import KeyFeatureCard from "@/components/ui/KeyFeatureCard";
 
 
 
@@ -155,59 +155,6 @@ function CopyCodeButton({ code }: { code: string }) {
     </button>
   );
 }
-
-function formatFeatureTitle(title: string): string {
-  let name = title;
-  const prefixes = [
-    "niche_",
-    "mcp_",
-    "tool_",
-    "smithery_",
-  ];
-  for (const prefix of prefixes) {
-    if (name.toLowerCase().startsWith(prefix)) {
-      name = name.slice(prefix.length);
-      break;
-    }
-  }
-  // Replace underscores and hyphens with spaces
-  name = name.replace(/[_-]/g, " ");
-  // Title Case
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-function getFeaturePreview(description: string): string {
-  // Strip markdown emphasis
-  const cleanText = description
-    .replace(/[*_`~]/g, "")
-    // Remove markdown links into plain text
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    // Remove markdown headings
-    .replace(/^#+\s+/gm, "")
-    // Remove bullet markers
-    .replace(/^[-*+]\s+/gm, "")
-    // Remove HTML tags
-    .replace(/<[^>]*>/g, "")
-    // Collapse repeated whitespace & multiple newlines into spaces
-    .replace(/\s+/g, " ");
-
-  // Find the first sentence ending with punctuation
-  const sentenceEnd = cleanText.search(/[.!?](?:\s|$)/);
-  let preview = sentenceEnd !== -1 ? cleanText.slice(0, sentenceEnd + 1) : cleanText;
-
-  // Limit size to ~150 characters without cutting words
-  if (preview.length > 150) {
-    const truncated = preview.slice(0, 150);
-    const lastSpace = truncated.lastIndexOf(" ");
-    preview = lastSpace > 50 ? truncated.slice(0, lastSpace) + "..." : truncated + "...";
-  }
-  return preview.trim();
-}
-
 // Reusable Recommendation Card for "If You Liked This" Section
 
 
@@ -719,49 +666,9 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
             <section className="space-y-4 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6">
               <h3 className="text-base font-bold text-white">Key Features</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {item.features.map((feat) => {
-                  const readableTitle = formatFeatureTitle(feat.title);
-                  const previewText = feat.description ? getFeaturePreview(feat.description) : "";
-                  
-                  // Collapse is only necessary if the description is actually longer/different from the plain text sentence preview.
-                  const cleanedFullDescription = feat.description 
-                    ? feat.description.replace(/[*_`~]/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim()
-                    : "";
-                  const isExpandable = feat.description && previewText !== cleanedFullDescription;
-
-                  return (
-                    <div 
-                      key={feat.id} 
-                      className={`flex gap-3 rounded-lg border border-[#232326]/60 bg-[#131316]/20 p-4 ${
-                        isExpandable ? "min-h-[160px] h-full" : ""
-                      }`}
-                    >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#18181C] text-[#6E56CF]">
-                        <Zap size={16} />
-                      </div>
-                      <div className="flex-1 flex flex-col justify-between">
-                        <div>
-                          <h4 className="text-sm font-semibold text-white mb-1">{readableTitle}</h4>
-                          {feat.description && (
-                            isExpandable ? (
-                              <ExpandableContent
-                                collapsedContent={
-                                  <p className="text-xs text-[#A1A1AA] leading-relaxed">{previewText}</p>
-                                }
-                                readMoreLabel="Read More"
-                                readLessLabel="Read Less"
-                              >
-                                <p className="text-xs text-[#A1A1AA] leading-relaxed whitespace-pre-line">{feat.description}</p>
-                              </ExpandableContent>
-                            ) : (
-                              <p className="text-xs text-[#A1A1AA] leading-relaxed">{feat.description}</p>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {item.features.map((feat) => (
+                  <KeyFeatureCard key={feat.id} feature={feat} />
+                ))}
               </div>
             </section>
           )}
