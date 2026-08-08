@@ -337,9 +337,9 @@ export async function fetchFeaturedTools(): Promise<RealSearchSuggestion[]> {
  * same-account Cloudflare-to-Cloudflare hop — so they're left untouched.
  */
 function resolveServerApiUrl(): string {
-  const raw = process.env.NEWS_SERVER_API_URL;
+  const raw = process.env.NEWS_SERVER_API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (raw && raw !== "undefined") {
-    const withScheme = /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
+    const withScheme = /^https?:\/\//.test(raw) ? raw : (raw.includes("localhost") || raw.includes("127.0.0.1") ? `http://${raw}` : `https://${raw}`);
     return withScheme.replace(/\/$/, "");
   }
   return "https://ai-orbit.palamrendra-pm.workers.dev";

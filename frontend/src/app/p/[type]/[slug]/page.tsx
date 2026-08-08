@@ -17,7 +17,7 @@ import { RepositoryDetailPage } from "@/components/repository-detail/RepositoryD
 import { CompanyDetailClient } from "@/components/company-detail-client";
 import { RobotDetailClient } from "@/components/detail/RobotDetailClient";
 import { MCPDetailClient } from "@/components/mcp-detail-client";
-import { SERVER_API_URL, fetchMCPItemBySlug } from "@/lib/api";
+import { SERVER_API_URL, fetchMCPItemBySlug, fetchMCPItemAlternatives } from "@/lib/api";
 
 const VALID_CATEGORIES: Record<string, Set<string>> = {
   tools: new Set(["writing", "image-generation", "video", "audio", "chatbots", "coding", "marketing", "productivity", "business", "education", "mcp"]),
@@ -134,10 +134,19 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   if (type === "mcp") {
     const item = await fetchMCPItemBySlug(slug);
     if (!item) return notFound();
+
+    // Fetch alternatives safely so failed fetch doesn't block critical page load
+    let initialAlternatives: any[] = [];
+    try {
+      initialAlternatives = await fetchMCPItemAlternatives(slug);
+    } catch (err) {
+      console.warn("Failed to prefetch alternatives for MCP detail page on server:", err);
+    }
+
     return (
       <div className="min-h-screen flex flex-col bg-[#000000] text-white">
         <Header />
-        <MCPDetailClient item={item} />
+        <MCPDetailClient item={item} initialAlternatives={initialAlternatives} />
         <Footer />
       </div>
     );

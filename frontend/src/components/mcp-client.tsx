@@ -253,7 +253,7 @@ export function MCPClient() {
         {/* Filters and Separation Divider Grouped to avoid space-y parent conflicts */}
         <div className="block">
           {/* Top Sliding Category Row */}
-          <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full pl-8 sm:pl-9">
+          <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full pl-0">
             {[{ name: "All", slug: "" }, ...categories]
               .filter((topic) => {
                 if (topic.name === "MCP Servers" || topic.name === "MCP Clients") return false;
@@ -288,7 +288,7 @@ export function MCPClient() {
 
           {/* Subcategory Row Container with Collapse Transition */}
           <div 
-            className={`transition-all duration-300 ease-in-out overflow-hidden w-full flex flex-col gap-3 pl-16 sm:pl-18 ${
+            className={`transition-all duration-300 ease-in-out overflow-hidden w-full flex flex-col gap-3 pl-0 ${
               activeSubCategory || subCategories.length > 0 
                 ? "max-h-[120px] opacity-100 mb-2" 
                 : "max-h-0 opacity-0 pointer-events-none mb-0"

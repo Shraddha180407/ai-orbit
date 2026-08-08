@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -33,6 +33,7 @@ import KeyFeatureCard from "@/components/ui/KeyFeatureCard";
 
 interface MCPDetailClientProps {
   item: MCPItem;
+  initialAlternatives?: MCPItem[];
 }
 
 // Reusable Save Button (Bookmark) for MCP items with focus states
@@ -224,29 +225,16 @@ function RecommendationCard({ item }: RecommendationCardProps) {
   );
 }
 
-export function MCPDetailClient({ item }: MCPDetailClientProps) {
-  // Navigation tabs list
-  const TABS = [
-    "Overview",
-    "Releases",
-    "Pricing",
-    // Hide for now until backend support exists:
-    // "Pros & Cons",
-    // "Prompts",
-    // "Reviews",
-    // "Q&A",
-  ];
-
+export function MCPDetailClient({ item, initialAlternatives }: MCPDetailClientProps) {
   // States for dropdown menu and scroll tab navigation
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("Overview");
+  const [isDebug, setIsDebug] = useState(false);
 
-  // State for selected release index
-  const [selectedReleaseIdx, setSelectedReleaseIdx] = useState(0);
-
-  const releases = item.releases || [];
-  const hasReleases = releases.length > 0;
-  const selectedRelease = releases[selectedReleaseIdx];
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("debug=1")) {
+      setIsDebug(true);
+    }
+  }, []);
 
   // Derive dynamic inputs/outputs classification based on item type
   const inputs = item.itemType === "SERVER" ? ["API", "Text", "Context"] : ["API", "UI Interface", "Agent"];
@@ -372,8 +360,125 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
     queryKey: ["mcpAlternatives", item.slug],
     queryFn: () => fetchMCPItemAlternatives(item.slug),
     enabled: !!item.slug,
+    initialData: initialAlternatives,
   });
   const recommendations = alternativesData || [];
+
+  const [visibleCount, setVisibleCount] = useState(recommendations.length);
+  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [debugData, setDebugData] = useState<{
+    boundaryId: string;
+    boundaryBottom: number;
+    recsTop: number;
+    maxH: number;
+    cardHeights: number[];
+  } | null>(null);
+
+  const visibleWrapperRef = useRef<HTMLDivElement>(null);
+  const offscreenWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Sync visibleCount with recommendations length initially
+  useEffect(() => {
+    setVisibleCount(recommendations.length);
+  }, [recommendations.length, item.slug]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || recommendations.length === 0) return;
+
+    const handleMeasure = () => {
+      const visibleWrapper = visibleWrapperRef.current;
+      const offscreenWrapper = offscreenWrapperRef.current;
+      if (!visibleWrapper || !offscreenWrapper) return;
+
+      const width = visibleWrapper.getBoundingClientRect().width;
+      if (width > 0) {
+        setSidebarWidth(width);
+      }
+
+      // Precedence search for the last rendered content section
+      const candidateIds = [
+        "related-topics-section",
+        "also-used-for-section",
+        "installation-guide-section",
+        "key-features-section",
+        "supported-features-section",
+        "overview-section"
+      ];
+      let boundaryEl: HTMLElement | null = null;
+      for (const id of candidateIds) {
+        const el = document.getElementById(id);
+        if (el) {
+          boundaryEl = el;
+          break;
+        }
+      }
+
+      if (!boundaryEl) return;
+
+      const boundaryBottom = boundaryEl.getBoundingClientRect().bottom;
+
+      // Find cards container inside visibleWrapper for exact cards top measurement
+      const cardsContainer = visibleWrapper.querySelector(".flex.flex-col.gap-4");
+      const recommendationsTop = cardsContainer
+        ? cardsContainer.getBoundingClientRect().top
+        : visibleWrapper.getBoundingClientRect().top;
+
+      // Collapsed mobile single-column layout check
+      const isMobile = recommendationsTop >= boundaryBottom - 20;
+
+      if (isMobile) {
+        setVisibleCount(recommendations.length);
+        return;
+      }
+
+      const maxAllowedHeight = boundaryBottom - recommendationsTop;
+
+      const cardNodes = offscreenWrapper.children;
+      let count = 0;
+      let accumulatedHeight = 0;
+      const heights: number[] = [];
+
+      for (let i = 0; i < cardNodes.length; i++) {
+        const cardHeight = cardNodes[i].getBoundingClientRect().height;
+        heights.push(cardHeight);
+        const gap = i > 0 ? 16 : 0; // flex-col gap-4 is 16px vertical gap
+        accumulatedHeight += cardHeight + gap;
+
+        if (accumulatedHeight <= maxAllowedHeight) {
+          count++;
+        } else {
+          break;
+        }
+      }
+
+      setDebugData({
+        boundaryId: boundaryEl.id,
+        boundaryBottom,
+        recsTop: recommendationsTop,
+        maxH: maxAllowedHeight,
+        cardHeights: heights
+      });
+
+      setVisibleCount(count);
+    };
+
+    handleMeasure();
+
+    window.addEventListener("resize", handleMeasure);
+
+    const resizeObserver = new ResizeObserver(() => {
+      handleMeasure();
+    });
+
+    const leftColumnEl = document.getElementById("left-content-column");
+    if (leftColumnEl) resizeObserver.observe(leftColumnEl);
+    if (visibleWrapperRef.current) resizeObserver.observe(visibleWrapperRef.current);
+
+    return () => {
+      window.removeEventListener("resize", handleMeasure);
+      resizeObserver.disconnect();
+    };
+  }, [recommendations.length, item.slug, sidebarWidth]);
 
 
   return (
@@ -565,68 +670,13 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
             ))}
           </div>
         </div>
-
-        {/* 8. Tab Navigation UI */}
-        <div className="border-b border-[#232326]/60 mt-4">
-          <div className="flex items-center gap-6 overflow-x-auto scrollbar-none py-1 animate-fade-in">
-            {TABS.map((tab) => {
-              const active = activeTab === tab;
-              const isEnabled = ["Overview", "Releases", "Pricing"].includes(tab);
-
-              if (!isEnabled) {
-                return (
-                  <button
-                    key={tab}
-                    type="button"
-                    disabled
-                    className="border-b-2 border-transparent py-3 text-sm font-semibold whitespace-nowrap text-neutral-600 cursor-not-allowed select-none opacity-40 focus:outline-none"
-                    title={`${tab} is not implemented`}
-                  >
-                    {tab}
-                  </button>
-                );
-              }
-
-              return (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => {
-                    setActiveTab(tab);
-                    const idMap: Record<string, string> = {
-                      "Overview": "overview-section",
-                      "Releases": "releases-section",
-                      "Pricing": "pricing-section"
-                    };
-                    const id = idMap[tab];
-                    if (id) {
-                      const el = document.getElementById(id);
-                      if (el) {
-                        el.scrollIntoView({ behavior: "smooth", block: "start" });
-                      }
-                    }
-                  }}
-                  className={`border-b-2 py-3 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
-                    active
-                      ? "border-[#6E56CF] text-white"
-                      : "border-transparent text-neutral-400 hover:text-white"
-                  }`}
-                  aria-selected={active}
-                  role="tab"
-                >
-                  {tab}
-                </button>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
       {/* Main Two-Column Layout (Phase 2) */}
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 lg:gap-12 relative z-10">
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_320px] items-start gap-8 lg:gap-12 relative z-10">
         
         {/* Left Column (Overview & Features) */}
-        <div className="space-y-8 min-w-0">
+        <div id="left-content-column" className="space-y-8 min-w-0">
           
           {/* Overview Section */}
           <section id="overview-section" className="scroll-mt-28 space-y-3 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6">
@@ -640,7 +690,7 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
           </section>
 
           {/* Supported Features & Interfaces */}
-          <section className="space-y-4 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6">
+          <section id="supported-features-section" className="space-y-4 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6">
             <h3 className="text-base font-bold text-white">Supported Features & Interfaces</h3>
             <div className="flex flex-wrap gap-2">
               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${
@@ -663,7 +713,7 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
 
           {/* Key Features List */}
           {item.features && item.features.length > 0 && (
-            <section className="space-y-4 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6">
+            <section id="key-features-section" className="space-y-4 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6">
               <h3 className="text-base font-bold text-white">Key Features</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {item.features.map((feat) => (
@@ -676,7 +726,7 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
 
           {/* Installation Guide Section */}
           {item.installationGuides && item.installationGuides.length > 0 && (
-            <section className="space-y-4 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6">
+            <section id="installation-guide-section" className="space-y-4 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6">
               <h3 className="text-base font-bold text-white">Installation Guide</h3>
               <div className="space-y-6">
                 {item.installationGuides.map((step) => (
@@ -702,6 +752,127 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
                 ))}
               </div>
             </section>
+          )}
+
+          {/* Bottom Action Bar (Phase 4) */}
+          <div className="rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 space-y-4 max-w-[850px] relative z-10">
+            <h3 className="text-xs font-mono font-semibold tracking-wider text-[#71717A] uppercase">Actions</h3>
+
+            {/* Primary CTA: Use Tool */}
+            {item.websiteUrl ? (
+              <a
+                href={item.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full justify-center items-center gap-1.5 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-black shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4BF] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              >
+                <span>Use Tool</span>
+                <ExternalLink size={16} />
+              </a>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="inline-flex w-full justify-center items-center gap-1.5 rounded-lg bg-neutral-900 border border-neutral-800 px-4 py-3 text-sm font-semibold text-neutral-500 cursor-not-allowed"
+              >
+                <span>Use Tool</span>
+                <ExternalLink size={16} />
+              </button>
+            )}
+
+            {/* Secondary CTAs: Save & Copy Link */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <SaveButton
+                slug={item.slug}
+                initialCount={item.saveCount}
+                initialSaved={false}
+                className="w-full justify-center py-2.5 sm:py-3"
+              />
+              <CopyLinkButton
+                slug={item.slug}
+                name={item.name}
+                className="w-full justify-center py-2.5 sm:py-3"
+              />
+            </div>
+          </div>
+
+          {/* Also Used For Section (Phase 5) */}
+          {alsoUsedForItems.length > 0 && (
+            <div id="also-used-for-section" className="rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 space-y-4 max-w-[850px] relative z-10">
+              <h3 className="text-xs font-mono font-semibold tracking-wider text-[#71717A] uppercase">Also Used For</h3>
+              <div className="flex flex-wrap gap-2">
+                {alsoUsedForItems.map((chip, idx) => {
+                  const content = (
+                    <span className="rounded-full bg-[#131316]/50 border border-[#232326]/60 hover:border-white/[0.15] px-4 py-1.5 text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer">
+                      {chip.name}
+                    </span>
+                  );
+
+                  if (chip.href) {
+                    return (
+                      <Link
+                        key={idx}
+                        href={chip.href}
+                        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] rounded-full focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                      >
+                        {content}
+                      </Link>
+                    );
+                  }
+
+                  // Else click handler with TODO
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => console.log("TODO: Implement navigation route for use cases")}
+                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] rounded-full focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    >
+                      {content}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Related Topics Section (Phase 7) */}
+          {relatedTopicsItems.length > 0 && (
+            <div id="related-topics-section" className="rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 space-y-4 max-w-[850px] relative z-10">
+              <h3 className="text-xs font-mono font-semibold tracking-wider text-[#71717A] uppercase">Related Topics</h3>
+              <div className="flex flex-wrap gap-2">
+                {relatedTopicsItems.map((chip, idx) => {
+                  const content = (
+                    <span className="rounded-full bg-[#131316]/50 border border-[#232326]/60 hover:border-white/[0.15] px-4 py-1.5 text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer">
+                      {chip.name}
+                    </span>
+                  );
+
+                  if (chip.href) {
+                    return (
+                      <Link
+                        key={idx}
+                        href={chip.href}
+                        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] rounded-full focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                      >
+                        {content}
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => console.log("TODO: Implement navigation route for subcategories")}
+                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] rounded-full focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    >
+                      {content}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
 
@@ -770,224 +941,61 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Releases Section (Phase 3) */}
-      <div id="releases-section" className="scroll-mt-28 mt-12 relative z-10 border-t border-[#232326]/60 pt-8 max-w-[850px]">
-        {/* Releases Heading */}
-        <h3 className="text-xl font-extrabold tracking-tight text-white mb-6">Releases</h3>
-
-
-
-        {/* Dynamic Releases Timeline Content */}
-        {hasReleases ? (
-          <div className="space-y-6">
-            {/* Version Selector Chips */}
-            <div className="flex flex-wrap gap-2">
-              {releases.map((rel, idx) => {
-                const active = idx === selectedReleaseIdx;
-                return (
-                  <button
-                    key={rel.id}
-                    type="button"
-                    onClick={() => setSelectedReleaseIdx(idx)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
-                      active
-                        ? "bg-white text-black border-white shadow-lg shadow-white/5"
-                        : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                    }`}
-                  >
-                    {rel.versionName}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Selected Release Card */}
-            <div className="rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#232326]/40 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg font-bold text-white">{selectedRelease.versionName}</span>
-                  {selectedReleaseIdx === 0 && (
-                    <span className="inline-flex items-center rounded bg-[#6E56CF]/10 border border-[#6E56CF]/30 px-2 py-0.2 text-[9px] font-bold text-[#6E56CF]">
-                      Latest
-                    </span>
-                  )}
-                </div>
-                {selectedRelease.releaseDate && (
-                  <span className="text-xs text-[#71717A] font-mono">
-                    Released on {new Date(selectedRelease.releaseDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                  </span>
-                )}
+          {/* Recommended MCPs / "If You Liked This" Section */}
+          {recommendations.length > 0 && (
+            <div
+              ref={visibleWrapperRef}
+              id="recommendations-visible-wrapper"
+              className={`space-y-4 ${visibleCount === 0 ? "h-0 overflow-hidden opacity-0 pointer-events-none" : ""}`}
+            >
+              <h3 className="text-xs font-mono font-semibold tracking-wider text-neutral-500 uppercase">
+                If You Liked This...
+              </h3>
+              <div className="flex flex-col gap-4">
+                {recommendations.slice(0, visibleCount).map((rec) => (
+                  <RecommendationCard key={rec.id} item={rec} />
+                ))}
               </div>
-
-              {selectedRelease.summary && (
-                <p className="text-sm font-semibold text-neutral-200">{selectedRelease.summary}</p>
-              )}
-
-              {selectedRelease.description && (
-                <div className="text-xs text-[#A1A1AA] leading-relaxed whitespace-pre-line">
-                  {selectedRelease.description}
-                </div>
-              )}
-
-              {selectedRelease.improvements && selectedRelease.improvements.length > 0 && (
-                <div className="space-y-2">
-                  <h5 className="text-xs font-semibold text-neutral-300">Improvements & Fixes</h5>
-                  <ul className="list-disc pl-5 text-xs text-[#A1A1AA] space-y-1">
-                    {selectedRelease.improvements.map((imp, i) => (
-                      <li key={i}>{imp}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
             </div>
-          </div>
-        ) : (
-          /* Clean Empty State Card when no releases exist */
-          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[#232326] bg-[#131316]/40 py-12 text-center">
-            <ShieldAlert size={24} className="text-[#71717A]" aria-hidden="true" />
-            <div>
-              <p className="text-sm font-medium text-white">No releases posted yet</p>
-              <p className="mt-1 text-xs text-[#A1A1AA]">
-                There are no version logs or release notes available for this item.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Bottom Action Bar (Phase 4) */}
-      <div className="mt-8 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 space-y-4 max-w-[850px] relative z-10">
-        <h3 className="text-xs font-mono font-semibold tracking-wider text-[#71717A] uppercase">Actions</h3>
-
-        {/* Primary CTA: Use Tool */}
-        {item.websiteUrl ? (
-          <a
-            href={item.websiteUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-full justify-center items-center gap-1.5 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-black shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4BF] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-          >
-            <span>Use Tool</span>
-            <ExternalLink size={16} />
-          </a>
-        ) : (
-          <button
-            type="button"
-            disabled
-            className="inline-flex w-full justify-center items-center gap-1.5 rounded-lg bg-neutral-900 border border-neutral-800 px-4 py-3 text-sm font-semibold text-neutral-500 cursor-not-allowed"
-          >
-            <span>Use Tool</span>
-            <ExternalLink size={16} />
-          </button>
-        )}
-
-        {/* Secondary CTAs: Save & Copy Link */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <SaveButton
-            slug={item.slug}
-            initialCount={item.saveCount}
-            initialSaved={false}
-            className="w-full justify-center py-2.5 sm:py-3"
-          />
-          <CopyLinkButton
-            slug={item.slug}
-            name={item.name}
-            className="w-full justify-center py-2.5 sm:py-3"
-          />
+          )}
         </div>
       </div>
 
-      {/* Also Used For Section (Phase 5) */}
-      {alsoUsedForItems.length > 0 && (
-        <div className="mt-8 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 space-y-4 max-w-[850px] relative z-10">
-          <h3 className="text-xs font-mono font-semibold tracking-wider text-[#71717A] uppercase">Also Used For</h3>
-          <div className="flex flex-wrap gap-2">
-            {alsoUsedForItems.map((chip, idx) => {
-              const content = (
-                <span className="rounded-full bg-[#131316]/50 border border-[#232326]/60 hover:border-white/[0.15] px-4 py-1.5 text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer">
-                  {chip.name}
-                </span>
-              );
-
-              if (chip.href) {
-                return (
-                  <Link
-                    key={idx}
-                    href={chip.href}
-                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] rounded-full focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                  >
-                    {content}
-                  </Link>
-                );
-              }
-
-              // Else click handler with TODO
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => console.log("TODO: Implement navigation route for use cases")}
-                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] rounded-full focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                >
-                  {content}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Recommended MCPs / "If You Liked This" Section (Phase 6) */}
+      {/* Offscreen measurement container for recommendations sidebar layout */}
       {recommendations.length > 0 && (
-        <div className="mt-12 relative z-10 border-t border-[#232326]/60 pt-8 max-w-[850px] space-y-6">
-          <h3 className="text-xl font-extrabold tracking-tight text-white font-sans">If You Liked This...</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {recommendations.map((rec) => (
-              <RecommendationCard key={rec.id} item={rec} />
-            ))}
-          </div>
+        <div
+          ref={offscreenWrapperRef}
+          className="absolute pointer-events-none opacity-0 invisible flex flex-col gap-4"
+          style={{
+            left: "-9999px",
+            top: "-9999px",
+            width: `${sidebarWidth}px`,
+          }}
+        >
+          {recommendations.map((rec) => (
+            <RecommendationCard key={rec.id} item={rec} />
+          ))}
         </div>
       )}
-
-      {/* Related Topics Section (Phase 7) */}
-      {relatedTopicsItems.length > 0 && (
-        <div className="mt-8 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 space-y-4 max-w-[850px] relative z-10">
-          <h3 className="text-xs font-mono font-semibold tracking-wider text-[#71717A] uppercase">Related Topics</h3>
-          <div className="flex flex-wrap gap-2">
-            {relatedTopicsItems.map((chip, idx) => {
-              const content = (
-                <span className="rounded-full bg-[#131316]/50 border border-[#232326]/60 hover:border-white/[0.15] px-4 py-1.5 text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer">
-                  {chip.name}
-                </span>
-              );
-
-              if (chip.href) {
-                return (
-                  <Link
-                    key={idx}
-                    href={chip.href}
-                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] rounded-full focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                  >
-                    {content}
-                  </Link>
-                );
-              }
-
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => console.log("TODO: Implement navigation route for subcategories")}
-                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] rounded-full focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                >
-                  {content}
-                </button>
-              );
-            })}
+      {/* Dynamic Layout Diagnostic Block */}
+      {isDebug && debugData && (
+        <div 
+          id="layout-diagnostic-panel"
+          className="fixed bottom-4 left-4 z-50 rounded-lg border border-[#232326] bg-[#131316]/95 p-4 text-[10px] font-mono text-neutral-400 space-y-1 shadow-2xl backdrop-blur max-w-xs pointer-events-none"
+        >
+          <div className="font-bold text-white border-b border-[#232326] pb-1 mb-1">Layout Diagnostics</div>
+          <div>Visible Count: <span className="text-emerald-400 font-bold">{visibleCount}</span> / {recommendations.length}</div>
+          <div>Sidebar Width: {sidebarWidth}px</div>
+          <div>Boundary ID: <span className="text-[#6E56CF] font-semibold">{debugData.boundaryId}</span></div>
+          <div>Boundary Bottom: {debugData.boundaryBottom.toFixed(1)}px</div>
+          <div>Recs Top: {debugData.recsTop.toFixed(1)}px</div>
+          <div>Max Allowed H: {debugData.maxH.toFixed(1)}px</div>
+          <div className="flex flex-wrap gap-1 mt-1 pt-1 border-t border-[#232326]/40">
+            <span className="text-neutral-500 mr-1">Card Heights:</span>
+            {debugData.cardHeights.map((h, idx) => (
+              <span key={idx} className="text-amber-400 font-semibold">{h.toFixed(1)}px</span>
+            ))}
           </div>
         </div>
       )}
