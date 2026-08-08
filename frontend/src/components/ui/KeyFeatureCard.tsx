@@ -101,7 +101,7 @@ export default function KeyFeatureCard({ feature }: { feature: MCPFeature }) {
               style={{ maxHeight }}
             >
               <p ref={textRef} className="text-xs text-[#A1A1AA] leading-relaxed whitespace-pre-line">
-                {isExpandable && !isExpanded ? previewText : feature.description}
+                {feature.description}
               </p>
             </div>
           )}

@@ -250,90 +250,93 @@ export function MCPClient() {
           </div>
         </div>
 
-        {/* Top Sliding Category Row */}
-        <div className="mb-4 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full pl-8 sm:pl-9">
-          {[{ name: "All", slug: "" }, ...categories]
-            .filter((topic) => {
-              if (topic.name === "MCP Servers" || topic.name === "MCP Clients") return false;
-              return true;
-            })
-            .map((topic) => {
-              const isSelected = activeCategory === topic.slug;
-              return (
-                <button
-                  key={topic.slug || "all"}
-                  onClick={(e) => {
-                    setActiveCategory(topic.slug);
-                    setActiveSubCategory("");
-                    updateUrl(activeType, topic.slug, "");
-                    e.currentTarget.scrollIntoView({
-                      behavior: "smooth",
-                      block: "nearest",
-                      inline: "center"
-                    });
-                  }}
-                  className={`rounded-full px-3.5 py-1.5 text-[11px] font-bold whitespace-nowrap transition-active border ${
-                    isSelected
-                      ? "bg-white text-black border-white shadow-md"
-                      : "text-neutral-400 hover:text-white bg-[#131316] border-white/[0.06] hover:bg-[#1A1A1F] hover:border-white/[0.12]"
-                  }`}
-                >
-                  {topic.name}
-                </button>
-              );
-            })}
-        </div>
-
-        {/* Subcategory Row Container with Collapse Transition */}
-        <div 
-          className={`transition-all duration-300 ease-in-out overflow-hidden w-full flex flex-col gap-3 pl-16 sm:pl-18 ${
-            activeSubCategory || subCategories.length > 0 
-              ? "max-h-[120px] opacity-100 mb-5" 
-              : "max-h-0 opacity-0 pointer-events-none"
-          }`}
-        >
-          {activeSubCategory ? (
-            <div className="flex items-center gap-2 bg-[#6E56CF]/8 border border-[#6E56CF]/35 px-3 py-1 rounded-full shadow-md text-white animate-slide-up-fade text-[10px] transition-active w-fit">
-              <span className="text-xs text-white/50">Subcategory:</span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white/[0.08] text-white">
-                {subCategories.find(s => s.slug === activeSubCategory)?.name || activeSubCategory}
-              </span>
-              <button
-                onClick={() => {
-                  setActiveSubCategory("");
-                  updateUrl(activeType, activeCategory, "");
-                }}
-                className="text-xs text-[#E5484D] hover:text-[#FF6369] transition-colors ml-2 cursor-pointer font-medium"
-              >
-                Clear
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {subCategories
-                .filter((sub) => sub.name !== "MCP Servers" && sub.name !== "MCP Clients")
-                .map((sub, index) => (
+        {/* Filters and Separation Divider Grouped to avoid space-y parent conflicts */}
+        <div className="block">
+          {/* Top Sliding Category Row */}
+          <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full pl-8 sm:pl-9">
+            {[{ name: "All", slug: "" }, ...categories]
+              .filter((topic) => {
+                if (topic.name === "MCP Servers" || topic.name === "MCP Clients") return false;
+                return true;
+              })
+              .map((topic) => {
+                const isSelected = activeCategory === topic.slug;
+                return (
                   <button
-                    key={sub.id}
-                    onClick={() => {
-                      setActiveSubCategory(sub.slug);
-                      updateUrl(activeType, activeCategory, sub.slug);
+                    key={topic.slug || "all"}
+                    onClick={(e) => {
+                      setActiveCategory(topic.slug);
+                      setActiveSubCategory("");
+                      updateUrl(activeType, topic.slug, "");
+                      e.currentTarget.scrollIntoView({
+                        behavior: "smooth",
+                        block: "nearest",
+                        inline: "center"
+                      });
                     }}
-                    className="animate-slide-up-fade text-[10px] font-semibold px-3 py-1.5 rounded-full border border-white/[0.06] bg-[#131316]/60 text-neutral-400 hover:bg-[#1A1A1F] hover:border-white/[0.12] hover:text-white hover:-translate-y-[1px] hover:shadow-lg transition-active cursor-pointer"
-                    style={{ animationDelay: `${index * 35}ms` }}
+                    className={`rounded-full px-3.5 py-1.5 text-[11px] font-bold whitespace-nowrap transition-active border ${
+                      isSelected
+                        ? "bg-white text-black border-white shadow-md"
+                        : "text-neutral-400 hover:text-white bg-[#131316] border-white/[0.06] hover:bg-[#1A1A1F] hover:border-white/[0.12]"
+                    }`}
                   >
-                    {sub.name}
+                    {topic.name}
                   </button>
-                ))}
-            </div>
-          )}
-        </div>
+                );
+              })}
+          </div>
 
-        {/* Separation Divider */}
-        <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/[0.08] to-transparent my-5 shrink-0" />
+          {/* Subcategory Row Container with Collapse Transition */}
+          <div 
+            className={`transition-all duration-300 ease-in-out overflow-hidden w-full flex flex-col gap-3 pl-16 sm:pl-18 ${
+              activeSubCategory || subCategories.length > 0 
+                ? "max-h-[120px] opacity-100 mb-2" 
+                : "max-h-0 opacity-0 pointer-events-none mb-0"
+            }`}
+          >
+            {activeSubCategory ? (
+              <div className="flex items-center gap-2 bg-[#6E56CF]/8 border border-[#6E56CF]/35 px-3 py-1 rounded-full shadow-md text-white animate-slide-up-fade text-[10px] transition-active w-fit">
+                <span className="text-xs text-white/50">Subcategory:</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white/[0.08] text-white">
+                  {subCategories.find(s => s.slug === activeSubCategory)?.name || activeSubCategory}
+                </span>
+                <button
+                  onClick={() => {
+                    setActiveSubCategory("");
+                    updateUrl(activeType, activeCategory, "");
+                  }}
+                  className="text-xs text-[#E5484D] hover:text-[#FF6369] transition-colors ml-2 cursor-pointer font-medium"
+                >
+                  Clear
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {subCategories
+                  .filter((sub) => sub.name !== "MCP Servers" && sub.name !== "MCP Clients")
+                  .map((sub, index) => (
+                    <button
+                      key={sub.id}
+                      onClick={() => {
+                        setActiveSubCategory(sub.slug);
+                        updateUrl(activeType, activeCategory, sub.slug);
+                      }}
+                      className="animate-slide-up-fade text-[10px] font-semibold px-3 py-1.5 rounded-full border border-white/[0.06] bg-[#131316]/60 text-neutral-400 hover:bg-[#1A1A1F] hover:border-white/[0.12] hover:text-white hover:-translate-y-[1px] hover:shadow-lg transition-active cursor-pointer"
+                      style={{ animationDelay: `${index * 35}ms` }}
+                    >
+                      {sub.name}
+                    </button>
+                  ))}
+              </div>
+            )}
+          </div>
+
+          {/* Separation Divider */}
+          <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/[0.08] to-transparent mt-3 mb-3 shrink-0" />
+        </div>
 
         {/* Dynamic content rendering based on loading/error/data states */}
-        <div className="pt-2">
+        <div className="pt-0">
           {isLoading && items.length === 0 ? (
             <div className="overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10">
               <div className="flex flex-col divide-y divide-[#232326]/60">
