@@ -10,6 +10,12 @@ vi.mock("@/lib/tasks-api", () => ({
   },
 }));
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/tasks",
+}));
+
 import { fetchTasks, AuthRequiredError } from "@/lib/tasks-api";
 
 const mockTask = {

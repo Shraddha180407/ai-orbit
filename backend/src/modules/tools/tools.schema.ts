@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { PricingModel } from '@prisma/client';
+import type { PricingModel } from '@prisma/client';
 
 export const GetToolsQuerySchema = z.object({
   q: z.string().optional().default(''),
   category: z.string().optional(),
-  pricing: z.nativeEnum(PricingModel).optional(),
+  pricing: z.enum(['FREE', 'FREEMIUM', 'PAID', 'FREE_TRIAL']).optional(),
   sort: z.enum(['newest', 'oldest', 'name-asc', 'name-desc', 'rating']).optional().default('newest'),
   page: z.string().optional().default('1'),
 });

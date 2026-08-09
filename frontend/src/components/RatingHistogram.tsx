@@ -1,5 +1,6 @@
-import Star from 'lucide-react/dist/esm/icons/star';
-import { cn } from "@/lib/utils";
+"use client";
+
+import { Star } from 'lucide-react';
 import type { ReviewData } from "@/lib/types";
 
 type RatingHistogramProps = {
@@ -9,7 +10,6 @@ type RatingHistogramProps = {
 };
 
 export function RatingHistogram({ reviews, avgRating, reviewCount }: RatingHistogramProps) {
-  // Star levels from 5 down to 1
   const stars = [5, 4, 3, 2, 1];
   
   // Calculate distribution
@@ -22,59 +22,54 @@ export function RatingHistogram({ reviews, avgRating, reviewCount }: RatingHisto
   const totalReviews = reviews.length;
 
   return (
-    <div className="rounded-xl border border-border bg-surface/30 p-5 backdrop-blur-md shadow-lg">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-        {/* Visual average rating card */}
-        <div className="md:col-span-4 text-center p-4 border-b border-border md:border-b-0 md:border-r border-border/80 flex flex-col items-center justify-center">
-          <div className="text-5xl font-extrabold text-foreground mb-1">
-            {avgRating !== null ? avgRating.toFixed(1) : "0.0"}
-          </div>
-          <div className="flex items-center gap-0.5 mb-2">
-            {[1, 2, 3, 4, 5].map((val) => (
-              <Star
-                key={val}
-                size={16}
-                className={cn(
-                  avgRating !== null && val <= Math.round(avgRating)
-                    ? "fill-pricing-trial text-pricing-trial"
-                    : "text-border"
-                )}
-                aria-hidden="true"
-              />
-            ))}
-          </div>
-          <div className="text-xs text-foreground-muted">
-            Based on {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
-          </div>
+    <div className="rounded-xl border border-[#232326] bg-[#0d0d10]/60 p-5 space-y-5">
+      {/* Visual score display (Stacked vertically to prevent narrow layout overlap) */}
+      <div className="flex flex-col items-start justify-center">
+        <span className="text-5xl font-black text-white leading-none">
+          {avgRating !== null ? avgRating.toFixed(1) : "0.0"}
+        </span>
+        <div className="flex items-center gap-0.5 mt-2">
+          {[1, 2, 3, 4, 5].map((val) => (
+            <Star
+              key={val}
+              size={14}
+              className={
+                avgRating !== null && val <= Math.round(avgRating)
+                  ? "fill-amber-400 text-amber-400"
+                  : "text-neutral-600 fill-[#131316]"
+              }
+              aria-hidden="true"
+            />
+          ))}
         </div>
+        <span className="text-[10px] text-neutral-400 font-semibold mt-1.5">
+          Based on {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
+        </span>
+      </div>
 
-        {/* Histogram distribution */}
-        <div className="md:col-span-8 space-y-2">
-          {stars.map((starNum) => {
-            const count = counts[starNum as 5 | 4 | 3 | 2 | 1];
-            const pct = totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0;
-            
-            return (
-              <div key={starNum} className="flex items-center gap-3 text-xs">
-                <span className="w-12 text-foreground-muted font-medium hover:text-foreground transition-colors flex items-center gap-0.5 select-none shrink-0">
-                  {starNum} <Star size={10} className="fill-foreground-faint text-foreground-faint shrink-0" />
-                </span>
-                <div className="h-2 flex-1 rounded-full bg-border overflow-hidden">
-                  <div
-                    style={{ width: `${pct}%` }}
-                    className={cn(
-                      "h-full rounded-full transition-all duration-500",
-                      starNum >= 4 ? "bg-pricing-trial" : starNum === 3 ? "bg-pricing-freemium" : "bg-danger"
-                    )}
-                  ></div>
-                </div>
-                <span className="w-8 text-right text-foreground-faint font-semibold tracking-wide shrink-0">
-                  {pct}%
-                </span>
+      {/* Histogram distribution list */}
+      <div className="space-y-2.5 pt-1">
+        {stars.map((starNum) => {
+          const count = counts[starNum as 5 | 4 | 3 | 2 | 1];
+          const pct = totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0;
+          
+          return (
+            <div key={starNum} className="flex items-center gap-3 text-[10px] font-semibold">
+              <span className="w-8 text-neutral-400 flex items-center gap-0.5 select-none shrink-0">
+                {starNum} <Star size={9} className="fill-neutral-500 text-neutral-500 shrink-0" />
+              </span>
+              <div className="h-1.5 flex-1 rounded-full bg-[#131316] overflow-hidden">
+                <div
+                  style={{ width: `${pct}%` }}
+                  className="h-full rounded-full transition-all duration-500 bg-accent"
+                ></div>
               </div>
-            );
-          })}
-        </div>
+              <span className="w-8 text-right text-neutral-400 shrink-0">
+                {pct}%
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
