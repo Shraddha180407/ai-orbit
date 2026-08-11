@@ -353,7 +353,7 @@ export function MCPDetailClient({ item }: MCPDetailClientProps) {
           items={[
             { label: "Home", href: "/" },
             { label: "MCP", href: "/mcp" },
-            { label: item.itemType === "SERVER" ? "MCP Servers" : "MCP Clients", href: `/mcp?type=${item.itemType.toLowerCase()}` },
+            { label: "MCP Servers", href: "/mcp" },
             { label: item.name },
           ]}
         />

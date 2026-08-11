@@ -72,22 +72,17 @@ export function MCPClient() {
   const router = useRouter();
 
   const q = searchParams.get("q") ?? "";
-  const initialType = (searchParams.get("type")?.toUpperCase() === "CLIENT" ? "CLIENT" : "SERVER") as "SERVER" | "CLIENT";
   const initialCategory = searchParams.get("category") ?? "";
   const initialSubCategory = searchParams.get("subCategory") ?? "";
 
-  // State variables for tab switch and category selection
-  const [activeType, setActiveType] = useState<"SERVER" | "CLIENT">(initialType);
   const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
   const [activeSubCategory, setActiveSubCategory] = useState<string>(initialSubCategory);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Synchronize state when URL query parameters change (e.g. browser back/forward buttons)
   useEffect(() => {
-    const typeParam = searchParams.get("type")?.toUpperCase() === "CLIENT" ? "CLIENT" : "SERVER";
     const categoryParam = searchParams.get("category") ?? "";
     const subCategoryParam = searchParams.get("subCategory") ?? "";
-    setActiveType(typeParam);
     setActiveCategory(categoryParam);
     setActiveSubCategory(subCategoryParam);
   }, [searchParams]);
@@ -95,12 +90,11 @@ export function MCPClient() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeType, activeCategory, activeSubCategory, q]);
+  }, [activeCategory, activeSubCategory, q]);
 
   // Helper to update URL search parameters without losing other queries (like search)
-  const updateUrl = (type: "SERVER" | "CLIENT", category: string, subCategory: string = "") => {
+  const updateUrl = (category: string, subCategory: string = "") => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("type", type.toLowerCase());
     
     if (category) {
       params.set("category", category);
@@ -133,7 +127,7 @@ export function MCPClient() {
 
   // React Query fetch pattern
   const { data, isLoading, error } = useQuery({
-    queryKey: ["mcpItems", { q, category: activeCategory, subCategory: activeSubCategory, type: activeType, page: currentPage }],
+    queryKey: ["mcpItems", { q, category: activeCategory, subCategory: activeSubCategory, page: currentPage }],
     queryFn: () =>
       fetchMCPItems({
         page: currentPage,
@@ -141,7 +135,7 @@ export function MCPClient() {
         search: q || undefined,
         category: activeCategory || undefined,
         subCategory: activeSubCategory || undefined,
-        type: activeType,
+        type: "SERVER",
       }),
   });
 
@@ -157,45 +151,13 @@ export function MCPClient() {
             items={[
               { label: "Home", href: "/" },
               { label: "MCP", href: "/mcp" },
-              { label: activeType === "SERVER" ? "MCP Servers" : "MCP Clients" }
+              { label: "MCP Servers" }
             ]}
           />
         </div>
 
-        {/* Segmented Switch (SERVER / CLIENT) */}
-        <div className="flex justify-start">
-          <div className="flex items-center gap-1 rounded-xl bg-[#131316]/50 border border-[#232326]/60 p-1">
-            <button
-              onClick={() => {
-                setActiveType("SERVER");
-                updateUrl("SERVER", activeCategory, activeSubCategory);
-              }}
-              className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-all duration-200 border ${
-                activeType === "SERVER"
-                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
-                  : "text-neutral-400 hover:text-white border-transparent bg-transparent"
-              }`}
-            >
-              MCP Servers
-            </button>
-            <button
-              onClick={() => {
-                setActiveType("CLIENT");
-                updateUrl("CLIENT", activeCategory, activeSubCategory);
-              }}
-              className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-all duration-200 border ${
-                activeType === "CLIENT"
-                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
-                  : "text-neutral-400 hover:text-white border-transparent bg-transparent"
-              }`}
-            >
-              MCP Clients
-            </button>
-          </div>
-        </div>
-
-        {/* Top Sliding Category Row */}
-        <div className="mb-2 flex items-center justify-start md:justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+        {/* Top Sliding Category + Subcategory Row */}
+        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
           {[{ name: "All", slug: "" }, ...categories].map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
@@ -203,7 +165,7 @@ export function MCPClient() {
                 key={topic.slug || "all"}
                 onClick={(e) => {
                   setActiveCategory(topic.slug);
-                  updateUrl(activeType, topic.slug, activeSubCategory);
+                  updateUrl(topic.slug, activeSubCategory);
                   e.currentTarget.scrollIntoView({
                     behavior: "smooth",
                     block: "nearest",
@@ -220,6 +182,18 @@ export function MCPClient() {
               </button>
             );
           })}
+          {subCategories.length > 0 && !activeSubCategory && subCategories.map((sub) => (
+            <button
+              key={sub.id}
+              onClick={() => {
+                setActiveSubCategory(sub.slug);
+                updateUrl(activeCategory, sub.slug);
+              }}
+              className="whitespace-nowrap text-[11px] font-semibold px-3 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white transition-all cursor-pointer"
+            >
+              {sub.name}
+            </button>
+          ))}
         </div>
 
         {/* Active Subcategory Filter Chip */}
@@ -232,7 +206,7 @@ export function MCPClient() {
             <button
               onClick={() => {
                 setActiveSubCategory("");
-                updateUrl(activeType, activeCategory, "");
+                updateUrl(activeCategory, "");
               }}
               className="text-xs text-red-400 hover:text-red-300 transition-colors ml-2 cursor-pointer font-medium"
             >
@@ -241,23 +215,7 @@ export function MCPClient() {
           </div>
         )}
 
-        {/* Subcategory Filter Chips */}
-        {subCategories.length > 0 && !activeSubCategory && (
-          <div className="flex flex-wrap gap-2 mb-2">
-            {subCategories.map((sub) => (
-              <button
-                key={sub.id}
-                onClick={() => {
-                  setActiveSubCategory(sub.slug);
-                  updateUrl(activeType, activeCategory, sub.slug);
-                }}
-                className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white transition-all cursor-pointer"
-              >
-                {sub.name}
-              </button>
-            ))}
-          </div>
-        )}
+
 
         {/* Dynamic content rendering based on loading/error/data states */}
         <div className="pt-2">
