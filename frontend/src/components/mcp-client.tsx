@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 
 // Lucide icons
 import ArrowUp from 'lucide-react/dist/esm/icons/arrow-up';
@@ -77,7 +76,6 @@ export function MCPClient() {
 
   const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
   const [activeSubCategory, setActiveSubCategory] = useState<string>(initialSubCategory);
-  const [currentPage, setCurrentPage] = useState(1);
 
   // Synchronize state when URL query parameters change (e.g. browser back/forward buttons)
   useEffect(() => {
@@ -87,10 +85,6 @@ export function MCPClient() {
     setActiveSubCategory(subCategoryParam);
   }, [searchParams]);
 
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeCategory, activeSubCategory, q]);
 
   // Helper to update URL search parameters without losing other queries (like search)
   const updateUrl = (category: string, subCategory: string = "") => {
@@ -125,25 +119,99 @@ export function MCPClient() {
   });
   const subCategories = subCategoriesData || [];
 
-  // React Query fetch pattern
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["mcpItems", { q, category: activeCategory, subCategory: activeSubCategory, page: currentPage }],
-    queryFn: () =>
-      fetchMCPItems({
-        page: currentPage,
+  // React Query fetch pattern with useInfiniteQuery
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+  } = useInfiniteQuery({
+    queryKey: [
+      "mcpItems",
+      {
+        q,
+        category: activeCategory,
+        subCategory: activeSubCategory,
+        type: "SERVER",
+      },
+    ],
+    queryFn: async ({ pageParam }) => {
+      return fetchMCPItems({
+        page: pageParam as number,
         limit: 20,
         search: q || undefined,
         category: activeCategory || undefined,
         subCategory: activeSubCategory || undefined,
         type: "SERVER",
-      }),
+      });
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined;
+    },
   });
 
-  const items = data?.items || [];
-  const totalPages = data?.totalPages || 1;
+  const items = React.useMemo(() => {
+    return data?.pages.flatMap((page) => page.items || []) || [];
+  }, [data]);
+
+  const sentinelRef = React.useRef<HTMLDivElement>(null);
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    if (isLoading || isFetchingNextPage || !hasNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentSentinel = sentinelRef.current;
+    if (currentSentinel) {
+      observer.observe(currentSentinel);
+    }
+
+    return () => {
+      if (currentSentinel) {
+        observer.unobserve(currentSentinel);
+      }
+    };
+  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   return (
     <div id="mcp" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
+      <style>{`
+        @keyframes slideUpFade {
+          from {
+            opacity: 0;
+            transform: translateY(8px) scale(0.985);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        .animate-slide-up-fade {
+          animation: slideUpFade 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          opacity: 0;
+        }
+        .transition-active {
+          transition: background-color 180ms ease-out, border-color 180ms ease-out, color 180ms ease-out, box-shadow 180ms ease-out, transform 150ms ease-out;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-slide-up-fade {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+        }
+      `}</style>
       <div className="mx-auto w-full max-w-[1600px] space-y-4 animate-fade-in">
         {/* Breadcrumb Navigation */}
         <div className="flex justify-start">
@@ -214,12 +282,9 @@ export function MCPClient() {
             </button>
           </div>
         )}
-
-
-
         {/* Dynamic content rendering based on loading/error/data states */}
-        <div className="pt-2">
-          {isLoading ? (
+        <div className="pt-0">
+          {isLoading && items.length === 0 ? (
             <div className="overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10">
               <div className="flex flex-col divide-y divide-[#232326]/60">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -298,7 +363,7 @@ export function MCPClient() {
                         className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none relative cursor-pointer`}
                       >
                         {/* Hover accent line on the left side of the row */}
-                        <span className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[#6E56CF] transition-all duration-200 group-hover:h-[70%]" />
+                        <span className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
 
                         {/* Column 1: Logo */}
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
@@ -321,7 +386,7 @@ export function MCPClient() {
                         {/* Column 2: Left Section (Name, shortDescription, providerName) */}
                         <div className="min-w-0 flex flex-col justify-center">
                           <div className="flex items-center gap-2">
-                            <span className="truncate text-[13px] font-semibold text-white group-hover:text-[#6E56CF] transition-colors group-hover:underline">
+                            <span className="truncate text-[13px] font-semibold text-white group-hover:text-white transition-colors">
                               {item.name}
                             </span>
                             {item.isVerified && (
@@ -427,49 +492,10 @@ export function MCPClient() {
           )}
         </div>
 
-        {/* Pagination Controls */}
-        {!isLoading && !error && totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 px-4 py-4 border-t border-[#232326]/60">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 text-xs rounded-lg border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              ← Prev
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
-              .reduce<(number | string)[]>((acc, p, i, arr) => {
-                if (i > 0 && (p as number) - (arr[i - 1] as number) > 1) acc.push("...");
-                acc.push(p);
-                return acc;
-              }, [])
-              .map((p, i) =>
-                p === "..." ? (
-                  <span key={`ellip-${i}`} className="text-[#52525B] text-xs px-1 select-none">
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={p}
-                    onClick={() => setCurrentPage(p as number)}
-                    className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                      currentPage === p
-                        ? "border-[#6E56CF] bg-[#6E56CF] text-white"
-                        : "border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF]"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                )
-              )}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 text-xs rounded-lg border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              Next →
-            </button>
+        {/* Sentinel for infinite scroll */}
+        {items.length > 0 && hasNextPage && (
+          <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
           </div>
         )}
       </div>

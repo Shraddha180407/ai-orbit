@@ -558,7 +558,7 @@ export class MCPService {
         { upvoteCount: 'desc' },
         { qualityScore: 'desc' },
       ],
-      take: 5,
+      take: 10,
     });
 
     return alternatives.map(item => ({

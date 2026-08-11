@@ -55,18 +55,29 @@ export type ToolDetailData = {
   websiteUrl: string;
   screenshots: string[];
   features: string[];
+  pros: string[];
+  cons: string[];
+  releaseDate: string | null;
   pricingModel: PricingModel;
   pricingAmount: string | null;
   billingFrequency: BillingFrequency;
   avgRating: number | null;
   reviewCount: number;
+  upvoteCount: number;
+  isOpenSource: boolean;
+  isTrending: boolean;
+  verified: boolean;
+  compatibility: string[];
+  targetUsers: string[];
+  hasApi: boolean;
+  apiDocsUrl: string | null;
+  performanceScore: number | null;
   createdAt: string;
   company: { slug: string; name: string; logoUrl: string | null } | null;
   categories: { category: { slug: string; name: string } }[];
   tags: { tag: { slug: string; name: string } }[];
+  integrations: { integration: { slug: string; name: string; logoUrl: string | null } }[];
   _count: { reviews: number; bookmarks: number };
-  isOpenSource: boolean;
-  isTrending: boolean;
 };
 
 export type SimilarToolData = {
@@ -383,6 +394,31 @@ export type Device = {
 export type MCPItemType = "SERVER" | "CLIENT";
 export type MCPPricingType = "FREE" | "FREEMIUM" | "PAID";
 
+export type InstallationGuide = {
+  id: string;
+  mcpItemId: string;
+  stepNumber: number;
+  title: string;
+  codeSnippet: string;
+  instructions: string;
+};
+
+export type TechnicalSpec = {
+  id: string;
+  mcpItemId: string;
+  supportedPlatforms: string[];
+  compatibility: string;
+  integrations: string[];
+  localBindingControls: string;
+};
+
+export type MCPFeature = {
+  id: string;
+  mcpItemId: string;
+  title: string;
+  description: string;
+};
+
 export type MCPItem = {
   id: string;
   itemType: MCPItemType;
@@ -422,6 +458,9 @@ export type MCPItem = {
   useCases?: MCPUseCase[];
   recommendations?: MCPItem[];
   similarItems?: MCPItem[];
+  installationGuides?: InstallationGuide[];
+  technicalSpecs?: TechnicalSpec[];
+  features?: MCPFeature[];
 };
 
 export type MCPUseCase = {
@@ -447,3 +486,4 @@ export type MCPListResponse = {
   page: number;
   totalPages: number;
 };
+

@@ -7,14 +7,16 @@ type ProsConsVerdictProps = {
   description: string;
   features: string[];
   categories: { category: { slug: string; name: string } }[];
+  pros?: string[];
+  cons?: string[];
 };
 
-export function ProsConsVerdict({ name, categories }: ProsConsVerdictProps) {
+export function ProsConsVerdict({ name, categories, pros: dbPros, cons: dbCons }: ProsConsVerdictProps) {
   const categorySlug = categories[0]?.category.slug ?? "";
   
-  // Default values based on category slug
-  let pros = ["Boosts daily productivity and output", "Intuitive user interface and smooth onboarding", "Highly responsive support and active community"];
-  let cons = ["Requires internet connection for full functionality", "Higher pricing plans can be steep for individuals", "Advanced customization has a small learning curve"];
+  // Use DB pros/cons if available, otherwise fall back to category defaults
+  let pros = (dbPros && dbPros.length > 0) ? dbPros : ["Boosts daily productivity and output", "Intuitive user interface and smooth onboarding", "Highly responsive support and active community"];
+  let cons = (dbCons && dbCons.length > 0) ? dbCons : ["Requires internet connection for full functionality", "Higher pricing plans can be steep for individuals", "Advanced customization has a small learning curve"];
   let verdict = `An excellent option in its category. ${name} offers a reliable set of features that can save your team hours of manual work every week.`;
 
   if (categorySlug.includes("coding")) {

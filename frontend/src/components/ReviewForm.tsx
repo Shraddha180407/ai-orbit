@@ -40,8 +40,8 @@ export function ReviewForm({ toolId, toolSlug }: { toolId: string; toolSlug: str
                 className={cn(
                   "transition-colors",
                   (hoverRating || rating) >= value
-                    ? "fill-pricing-trial text-pricing-trial"
-                    : "text-border"
+                    ? "fill-amber-400 text-amber-400"
+                    : "text-neutral-600 fill-[#131316]"
                 )}
               />
             </button>
