@@ -2,6 +2,25 @@ import { z } from "zod";
 
 const PricingModel = z.enum(["FREE", "FREEMIUM", "PAID", "FREE_TRIAL"]);
 const BillingFrequency = z.enum(["MONTHLY", "YEARLY", "ONE_TIME", "NA"]).default("NA");
+const Platform = z.enum(["WEB", "WINDOWS", "MACOS", "LINUX", "IOS", "ANDROID", "CHROME_EXTENSION"]);
+const UserPersona = z.enum(["DEVELOPERS", "DESIGNERS", "STUDENTS", "MARKETERS", "WRITERS", "RESEARCHERS", "EDUCATORS", "SALES", "ENTERPRISE", "CONTENT_CREATORS"]);
+const ToolCategoryEnum = z.enum([
+  "WRITING",
+  "IMAGE_GENERATION",
+  "VIDEO_GENERATION",
+  "AUDIO",
+  "CHATBOTS",
+  "CODING",
+  "MARKETING",
+  "PRODUCTIVITY",
+  "BUSINESS",
+  "EDUCATION",
+  "AGENTS",
+  "PRESENTATIONS",
+  "THREE_D_GENERATION",
+  "NO_CODE_AI_BUILDERS",
+  "WORKFLOW_AUTOMATION"
+]);
 
 export const toolSchema = z.object({
   slug: z.string(),
@@ -11,13 +30,26 @@ export const toolSchema = z.object({
   logoUrl: z.string().url().optional().nullable(),
   screenshots: z.array(z.string().url()).default([]),
   features: z.array(z.string()).default([]),
-  
+  pros: z.array(z.string()).default([]),
+  cons: z.array(z.string()).default([]),
+
+  releaseDate: z.coerce.date().optional().nullable(),
+
   pricingModel: PricingModel,
   pricingAmount: z.number().optional().nullable(),
   billingFrequency: BillingFrequency,
 
   isOpenSource: z.boolean().default(false),
   isTrending: z.boolean().default(false),
+  verified: z.boolean().default(false),
+
+  compatibility: z.array(Platform).default([]),
+  targetUsers: z.array(UserPersona).default([]),
+
+  hasApi: z.boolean().default(false),
+  apiDocsUrl: z.string().url().optional().nullable(),
+
+  performanceScore: z.number().optional().nullable(),
 
   company: z.object({
     slug: z.string(),
@@ -29,10 +61,22 @@ export const toolSchema = z.object({
     slug: z.string(),
     name: z.string()
   })).default([]),
+  toolCategories: z.array(ToolCategoryEnum).default([]),
 
   tags: z.array(z.object({
     slug: z.string(),
     name: z.string()
+  })).default([]),
+
+  integrations: z.array(z.object({
+    slug: z.string(),
+    name: z.string(),
+    logoUrl: z.string().url().optional().nullable()
+  })).default([]),
+
+  tasks: z.array(z.object({
+    slug: z.string(),
+    name: z.string().optional()
   })).default([])
 });
 

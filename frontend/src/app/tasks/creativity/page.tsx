@@ -10,16 +10,39 @@ import { API_URL } from "@/lib/api";
 
 const CATEGORY_TOPICS = [
   "Image Generation",
-  "Video",
-  "Audio",
-  "Marketing",
-  "Design",
-  "Productivity",
-  "Chatbots",
-  "Customer Support"
+  "Writing",
+  "Software Development",
+  "Video Creation",
+  "Music",
+  "Graphic Design",
+  "Digital Art",
+  "Brainstorming",
+  "3D Creation",
+  "Presentation Design",
+  "Storytelling",
+  "Content Creation",
+  "Branding",
+  "Motion Graphics",
+  "Game Creation"
 ];
 
-const ALLOWED_CATEGORIES = ["Image Generation", "Video", "Audio", "Marketing", "Design", "Productivity", "Chatbots", "Customer Support"];
+const ALLOWED_CATEGORIES = [
+  "Image Generation",
+  "Writing",
+  "Software Development",
+  "Video Creation",
+  "Music",
+  "Graphic Design",
+  "Digital Art",
+  "Brainstorming",
+  "3D Creation",
+  "Presentation Design",
+  "Storytelling",
+  "Content Creation",
+  "Branding",
+  "Motion Graphics",
+  "Game Creation"
+];
 
 export default function CreativityTasksPage() {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(CATEGORY_TOPICS[0]);

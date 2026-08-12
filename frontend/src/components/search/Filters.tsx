@@ -46,7 +46,7 @@ function CheckboxGroup({ title, options, selected, onChange, counts, collapseAft
             </span>
             {counts && (
               <span className="tabular-nums text-xs text-search-text-tertiary">
-                {(counts[option] ?? 0).toLocaleString()}
+                {(counts[option] ?? 0).toLocaleString("en-US")}
               </span>
             )}
           </label>

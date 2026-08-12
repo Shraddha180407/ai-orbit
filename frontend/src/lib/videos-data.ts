@@ -3,7 +3,7 @@ import type { Video } from "./video-types";
 export type { Video };
 export { BLUR_DATA_URL, formatDuration, formatViews, formatRelativeDate } from "./video-types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://api.aiorbit.club";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://ai-orbit.palamrendra-pm.workers.dev";
 /**
  * All data comes from the backend Worker (/api/videos) over HTTP.
  * `cache: "no-store"` because this is a fast-moving feed — Next's default

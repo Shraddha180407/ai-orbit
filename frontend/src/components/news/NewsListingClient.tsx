@@ -1,20 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
-import X from "lucide-react/dist/esm/icons/x";
 import { Plus } from "lucide-react";
-import { NewsSearchBar } from "@/components/ui/NewsSearchBar";
-import { FilterChips } from "./FilterChips";
-import { TopicChip } from "./TopicChip";
 import { NewsList } from "./NewsList";
 import { LoadingSkeleton } from "./LoadingSkeleton";
 import { ErrorState } from "./ErrorState";
 import { API_URL } from "@/lib/api";
 import { getClientId } from "@/lib/clientId";
-import { applySearch, sortArticles } from "@/lib/news/news";
-import type { NewsArticle, NewsCategory, NewsFilterChip, NewsSource, SortState } from "@/types/news";
+import { sortArticles } from "@/lib/news/news";
+import type { NewsArticle, NewsSource, SortState } from "@/types/news";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
@@ -26,35 +20,38 @@ const PAGE_SIZE = 25;
 interface NewsListingResponse {
   articles: NewsArticle[];
   sources: Record<string, NewsSource>;
-  categories: NewsCategory[];
-  filterChips: NewsFilterChip[];
   pagination?: { page: number; perPage: number; total: number; hasMore: boolean };
 }
+
+const NEWS_CATEGORIES = [
+  { name: "All", slug: "" },
+  { name: "AI Industry", slug: "ai-industry" },
+  { name: "Product Launches", slug: "product-launches" },
+  { name: "Innovations", slug: "innovations" },
+  { name: "Company Updates", slug: "company-updates" },
+  { name: "Open Source", slug: "open-source" },
+  { name: "Regulations", slug: "regulations" },
+  { name: "Interviews", slug: "interviews" },
+  { name: "Market Trends", slug: "market-trends" },
+  { name: "Breakthroughs", slug: "breakthroughs" },
+  { name: "Security", slug: "security" },
+  { name: "Agents", slug: "agents" },
+  { name: "LLMs", slug: "llms" },
+  { name: "Developer Ecosystem", slug: "developer-ecosystem" },
+  { name: "Consumer", slug: "consumer" }
+];
 
 interface NewsListingClientProps {
   category?: string;
   initialTopic?: string;
 }
 
-/**
- * Same page shape as ToolsClient.tsx: a "Back to Home" link, an
- * `<h1>`+count header, a search bar, a filter-chip row, then the listing
- * table — same classes/spacing throughout (`mx-auto max-w-[1070px] px-6
- * py-10`, `text-2xl font-semibold text-foreground` h1, etc.) so /news reads
- * as the same product as /tools, not a separate visual system.
- *
- * Data fetching itself (pagination/full-list upgrade, filter/sort state) is
- * unchanged from before — only the presentation was rewritten.
- */
 export function NewsListingClient({ category, initialTopic }: NewsListingClientProps) {
   const { user } = useUser();
   const isAdmin = user?.role === 'ADMIN';
 
-  const [filter, setFilter] = useState("all");
-  const [query, setQuery] = useState("");
-  const [selectedTopics, setSelectedTopics] = useState<string[]>(initialTopic ? [initialTopic] : []);
-  const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [sort] = useState<SortState>({ key: "date", dir: "desc" });
+  const [activeCategory, setActiveCategory] = useState<string>(category || "");
 
   // Admin Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -64,8 +61,6 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [sources, setSources] = useState<Record<string, NewsSource>>({});
-  const [categories, setCategories] = useState<NewsCategory[]>([]);
-  const [filterChips, setFilterChips] = useState<NewsFilterChip[]>([]);
 
   const [mode, setMode] = useState<"paginated" | "full">("paginated");
   const [nextPage, setNextPage] = useState(1);
@@ -75,8 +70,6 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [initialError, setInitialError] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState(false);
-
-  const isDefaultView = !category && filter === "all" && !query.trim() && selectedTopics.length === 0 && selectedSources.length === 0;
 
   const loadFull = useCallback(async () => {
     setInitialError(false);
@@ -88,8 +81,6 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       const json: NewsListingResponse = await res.json();
       setArticles(json.articles);
       setSources(json.sources);
-      setCategories(json.categories);
-      setFilterChips(json.filterChips);
       setMode("full");
       setHasMore(false);
     } catch {
@@ -113,8 +104,6 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       const json: NewsListingResponse = await res.json();
       setArticles((prev) => (append ? [...prev, ...json.articles] : json.articles));
       setSources(json.sources);
-      setCategories(json.categories);
-      setFilterChips(json.filterChips);
       setServerTotal(json.pagination?.total ?? json.articles.length);
       setHasMore(json.pagination?.hasMore ?? false);
       setNextPage(page + 1);
@@ -130,13 +119,8 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   useEffect(() => {
     if (category || initialTopic) loadFull();
     else loadPage(1, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once on mount; category/initialTopic only ever come from the URL at first render
-  }, []);
-
-  useEffect(() => {
-    if (!isDefaultView && mode === "paginated" && !isLoadingInitial) loadFull();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDefaultView, mode, isLoadingInitial]);
+  }, []);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -152,9 +136,6 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     observer.observe(el);
     return () => observer.disconnect();
   }, [mode, hasMore, isLoadingMore, nextPage, loadPage]);
-
-  const toggleTopic = (v: string) => setSelectedTopics((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
-  const toggleSource = (v: string) => setSelectedSources((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
 
   // Admin handlers
   const handleSave = async () => {
@@ -200,24 +181,12 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   };
 
   let list = articles.slice();
-  if (category) list = list.filter((a) => a.category === category || a.filters.includes(category));
-  if (filter === "trending") list = list.filter((a) => a.hours <= 48);
-  else if (filter !== "all") list = list.filter((a) => a.topics.includes(filter));
-  list = applySearch(list, query, sources);
-  if (selectedTopics.length) list = list.filter((a) => selectedTopics.some((t) => a.topics.includes(t)));
-  if (selectedSources.length) list = list.filter((a) => selectedSources.includes(a.source));
+  if (activeCategory) list = list.filter((a) => a.category === activeCategory || a.filters?.includes(activeCategory));
   list = sortArticles(list, sort, sources);
-
-  const emptyKind: "search" | "empty" = query || selectedTopics.length || selectedSources.length ? "search" : "empty";
-  const total = mode === "paginated" ? serverTotal : list.length;
-
-  const cat = category ? categories.find((c) => c.key === category) : null;
-  const catLabel = category ? cat?.label ?? category : null;
 
   if (isLoadingInitial) {
     return (
-      <main className="mx-auto max-w-[1070px] px-6 py-10">
-        <div className="h-24 animate-pulse rounded-lg bg-[#18181C] mb-8" />
+      <main className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 flex flex-col">
         <LoadingSkeleton />
       </main>
     );
@@ -225,83 +194,68 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
   if (initialError) {
     return (
-      <main className="mx-auto max-w-[1070px] px-6 py-10">
+      <main className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 flex flex-col">
         <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-[1070px] px-6 py-10">
-      <Link href="/" className="mb-6 inline-flex items-center gap-1.5 text-sm text-foreground-muted hover:text-white transition-colors">
-        <ArrowLeft size={16} />
-        Back to Home
-      </Link>
-
-      <header className="mb-8 flex flex-col gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">{category ? catLabel ?? category : "AI News"}</h1>
-          <p className="mt-1 text-sm text-foreground-muted">
-            {total} {category ? `${catLabel ?? category} ` : ""}stor{total === 1 ? "y" : "ies"} across the AI ecosystem
-          </p>
-        </div>
-        {isAdmin && (
-          <Button className="self-start bg-white text-black hover:bg-neutral-200" onClick={openAdd}>
-            <Plus className="h-4 w-4 mr-2" /> Add News
+    <main className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 pt-0 pb-4 flex-1 flex flex-col selection:bg-neutral-800 selection:text-white ">
+      {isAdmin && (
+        <div className="flex justify-end mb-4">
+          <Button className="bg-white text-black hover:bg-neutral-200 h-8 text-xs font-bold px-3 rounded-lg shrink-0" onClick={openAdd}>
+            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add News
           </Button>
-        )}
-        <NewsSearchBar value={query} onChange={setQuery} />
-      </header>
-
-      <div className="space-y-5 mb-8">
-        <div className="space-y-2">
-          <span className="block text-[10px] font-mono tracking-widest text-foreground-faint uppercase">Filters</span>
-          <FilterChips items={filterChips} value={filter} onChange={setFilter} />
         </div>
+      )}
 
-        {(selectedTopics.length > 0 || selectedSources.length > 0) && (
-          <div className="flex items-center gap-2 flex-wrap pt-2">
-            {selectedTopics.map((t) => (
-              <TopicChip key={"t" + t} active onClick={() => toggleTopic(t)}>
-                {t}
-                <X size={12} className="ml-1.5" />
-              </TopicChip>
-            ))}
-            {selectedSources.map((s) => (
-              <TopicChip key={"s" + s} active onClick={() => toggleSource(s)}>
-                {sources[s]?.name}
-                <X size={12} className="ml-1.5" />
-              </TopicChip>
-            ))}
+      {/* Top Sliding Category Row */}
+      <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+        {NEWS_CATEGORIES.map((topic) => {
+          const isSelected = activeCategory === topic.slug;
+          return (
             <button
-              onClick={() => {
-                setSelectedTopics([]);
-                setSelectedSources([]);
+              key={topic.name}
+              onClick={(e) => {
+                setActiveCategory(topic.slug);
+                if (mode === "paginated") loadFull();
+                const targetPath = topic.slug ? `/news?category=${topic.slug}` : `/news`;
+                window.history.pushState(null, "", targetPath);
+                e.currentTarget.scrollIntoView({
+                  behavior: "smooth",
+                  block: "nearest",
+                  inline: "center"
+                });
               }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground-muted hover:bg-surface-raised hover:text-foreground transition-all active:scale-95"
+              className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                isSelected
+                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+              }`}
             >
-              <X size={12} aria-hidden="true" />
-              Clear all filters
+              {topic.name}
             </button>
-          </div>
-        )}
+          );
+        })}
       </div>
 
-      <div className="space-y-6">
-        <NewsList articles={list} sources={sources} emptyKind={emptyKind} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
+      {/* News Table List matching Video Table UI */}
+      <div className="space-y-4">
+        <NewsList articles={list} sources={sources} emptyKind="empty" isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
 
         {mode === "paginated" && list.length > 0 && (
-          <div ref={sentinelRef} className="flex items-center justify-center py-8">
+          <div ref={sentinelRef} className="flex items-center justify-center py-6">
             {isLoadingMore && <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />}
             {!isLoadingMore && loadMoreError && (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-foreground-faint">Couldn&apos;t load more stories.</span>
+                <span className="text-sm text-[#71717A]">Couldn&apos;t load more stories.</span>
                 <button onClick={() => loadPage(nextPage, true)} className="text-sm font-semibold text-white hover:underline">
                   Retry
                 </button>
               </div>
             )}
-            {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-foreground-faint">You&apos;re all caught up</span>}
+            {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-[#71717A]">You&apos;re all caught up</span>}
           </div>
         )}
       </div>

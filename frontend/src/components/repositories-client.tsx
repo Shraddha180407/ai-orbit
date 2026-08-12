@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Repository } from "@/lib/types";
-import { fetchRepositories } from "@/lib/api";
-import { RepositoryHero } from "@/components/ui/RepositoryHero";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { Repository, RepositoryOwnerListItem, RepositorySubCategory } from "@/lib/types";
+import { fetchRepositories, fetchRepositoryOwners, fetchRepositorySubCategories } from "@/lib/api";
+
 import { RepositoryTable } from "@/components/ui/RepositoryTable";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 import { RepositoryRow } from "@/components/ui/RepositoryRow";
@@ -21,92 +22,107 @@ export function RepositoriesClient() {
   const initialQuery = searchParams.get("q") || "";
   const router = useRouter();
   
-  const [repos, setRepos] = useState<Repository[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [sortField, setSortField] = useState<"stars" | "forks" | "size" | "updated" | null>("stars");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedLicense, setSelectedLicense] = useState<string | null>(null);
   const [isLicenseDropdownOpen, setIsLicenseDropdownOpen] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
   const [repoSearchQuery, setRepoSearchQuery] = useState(initialQuery);
   const [activeRepoSearch, setActiveRepoSearch] = useState(initialQuery);
   const [isRepoFilterOpen, setIsRepoFilterOpen] = useState(false);
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [owners, setOwners] = useState<RepositoryOwnerListItem[]>([]);
+  const [subCategories, setSubCategories] = useState<RepositorySubCategory[]>([]);
+
+  const selectedTopic = searchParams.get("topic") || null;
+  const selectedOwnerSlug = searchParams.get("owner") || null;
+  const selectedSubCategorySlug = searchParams.get("subCategory") || null;
+
+  // Derive selectedCompany from URL query parameter
+  const selectedCompany = React.useMemo(() => {
+    if (!selectedOwnerSlug || owners.length === 0) return null;
+    return owners.find((o) => o.owner === selectedOwnerSlug)?.displayName || null;
+  }, [selectedOwnerSlug, owners]);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Helper to fetch the initial/reset list based on current filters/sorting from page 1
-  const fetchInitialRepos = async (
-    searchQuery: string,
-    field: typeof sortField,
-    order: typeof sortOrder,
-    topicFilter: string | null = selectedTopic
-  ) => {
-    setIsLoading(true);
-    try {
-      const backendSort = getBackendSortValue(field, order);
-      const data = await fetchRepositories({
-        q: searchQuery || undefined,
-        sort: backendSort,
-        topic: topicFilter || undefined,
-        limit: 15
-      });
-      setRepos(data.items || []);
-      setNextCursor(data.nextCursor);
-      setHasMore(data.hasMore);
-      setTotal(data.total);
-    } catch (e) {
-      console.error("Failed to fetch repositories:", e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Initial fetch and query param sync
+  // Fetch all repository owners once on mount and precompute searchText
   useEffect(() => {
-    const initialTopic = searchParams.get("topic") || null;
-    setSelectedTopic(initialTopic);
-    fetchInitialRepos(activeRepoSearch, sortField, sortOrder, initialTopic);
-  }, [searchParams]);
+    async function loadOwners() {
+      try {
+        const data = await fetchRepositoryOwners();
+        const enriched = (data || []).map((o) => ({
+          ...o,
+          searchText: `${o.displayName} ${o.owner} ${o.companySlug || ""}`.toLowerCase(),
+        }));
+        setOwners(enriched);
+      } catch (e) {
+        console.error("Failed to fetch repository owners:", e);
+      }
+    }
+    loadOwners();
+  }, []);
+
+  // Fetch subcategories once on mount
+  useEffect(() => {
+    async function loadSubCategories() {
+      try {
+        const data = await fetchRepositorySubCategories();
+        setSubCategories(data || []);
+      } catch (e) {
+        console.error("Failed to fetch repository subcategories:", e);
+      }
+    }
+    loadSubCategories();
+  }, []);
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: [
+      "repositories",
+      {
+        q: activeRepoSearch,
+        sort: sortField,
+        order: sortOrder,
+        topic: selectedTopic,
+        owner: selectedOwnerSlug,
+        subCategory: selectedSubCategorySlug,
+      },
+    ],
+    queryFn: async ({ pageParam }) => {
+      const backendSort = getBackendSortValue(sortField, sortOrder);
+      return fetchRepositories({
+        q: activeRepoSearch || undefined,
+        sort: backendSort,
+        topic: selectedTopic || undefined,
+        owner: selectedOwnerSlug || undefined,
+        subCategory: selectedSubCategorySlug || undefined,
+        cursor: pageParam || null,
+        limit: 15,
+      });
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor || null,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const repos = React.useMemo(() => {
+    return data?.pages.flatMap((page) => page.items || []) || [];
+  }, [data]);
+
+  const total = data?.pages[0]?.total ?? 0;
 
   // IntersectionObserver for server-side infinite scroll
   useEffect(() => {
-    if (isLoading || isFetchingMore || !hasMore || !nextCursor) return;
+    if (isLoading || isFetchingNextPage || !hasNextPage) return;
 
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
-        async function fetchMore() {
-          if (isFetchingMore) return;
-          setIsFetchingMore(true);
-          try {
-            const backendSort = getBackendSortValue(sortField, sortOrder);
-            const data = await fetchRepositories({
-              limit: 15,
-              cursor: nextCursor,
-              q: activeRepoSearch || undefined,
-              sort: backendSort,
-              topic: selectedTopic || undefined
-            });
-            setRepos((prev) => {
-              const existingIds = new Set(prev.map(r => r.id));
-              const newItems = (data.items || []).filter(r => !existingIds.has(r.id));
-              return [...prev, ...newItems];
-            });
-            setNextCursor(data.nextCursor);
-            setHasMore(data.hasMore);
-            setTotal(data.total);
-          } catch (e) {
-            console.error("Failed to fetch more repositories:", e);
-          } finally {
-            setIsFetchingMore(false);
-          }
-        }
-        fetchMore();
+        fetchNextPage();
       }
     }, { threshold: 0.1 });
 
@@ -120,7 +136,7 @@ export function RepositoriesClient() {
         observer.unobserve(currentSentinel);
       }
     };
-  }, [isLoading, isFetchingMore, hasMore, nextCursor, activeRepoSearch, sortField, sortOrder, selectedTopic]);
+  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   function handleSort(field: "stars" | "forks" | "size" | "updated") {
     let newOrder: "asc" | "desc" = "desc";
@@ -130,12 +146,6 @@ export function RepositoriesClient() {
 
     setSortField(field);
     setSortOrder(newOrder);
-
-    // If there is a backend equivalent, trigger a refetch from page 1
-    const backendSort = getBackendSortValue(field, newOrder);
-    if (backendSort) {
-      fetchInitialRepos(activeRepoSearch, field, newOrder, selectedTopic);
-    }
   }
 
   // Generate dynamic license counts from the loaded datasets
@@ -150,16 +160,22 @@ export function RepositoriesClient() {
     return counts;
   }, [repos]);
 
-  // Generate dynamic company counts from the loaded datasets
+  // Generate dynamic company counts from the loaded datasets (populates complete list)
   const companyCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
-    repos.forEach((repo) => {
-      if (repo.owner) {
-        counts[repo.owner] = (counts[repo.owner] || 0) + 1;
-      }
+    owners.forEach((o) => {
+      counts[o.displayName] = o.repositoryCount;
     });
     return counts;
-  }, [repos]);
+  }, [owners]);
+
+  const companySearchKeys = React.useMemo(() => {
+    const keys: Record<string, string> = {};
+    owners.forEach((o) => {
+      keys[o.displayName] = o.searchText || "";
+    });
+    return keys;
+  }, [owners]);
 
   // Filter repositories by name (unsupported filters stay client-side)
   const nameFilteredRepos = React.useMemo(() => {
@@ -168,17 +184,11 @@ export function RepositoriesClient() {
     return repos.filter((repo) => repo.name.toLowerCase().includes(query));
   }, [repos, activeRepoSearch]);
 
-  // Filter repositories by company
-  const companyFilteredRepos = React.useMemo(() => {
-    if (!selectedCompany) return nameFilteredRepos;
-    return nameFilteredRepos.filter((repo) => repo.owner === selectedCompany);
-  }, [nameFilteredRepos, selectedCompany]);
-
-  // Filter repositories by license
+  // Filter repositories by license (company filtering is now handled server-side)
   const filteredRepos = React.useMemo(() => {
-    if (!selectedLicense) return companyFilteredRepos;
-    return companyFilteredRepos.filter((repo) => repo.license === selectedLicense);
-  }, [companyFilteredRepos, selectedLicense]);
+    if (!selectedLicense) return nameFilteredRepos;
+    return nameFilteredRepos.filter((repo) => repo.license === selectedLicense);
+  }, [nameFilteredRepos, selectedLicense]);
 
   // Sort filtered repositories
   const sortedRepos = React.useMemo(() => {
@@ -209,14 +219,12 @@ export function RepositoriesClient() {
   function handleApplyRepoSearch() {
     setActiveRepoSearch(repoSearchQuery);
     setIsRepoFilterOpen(false);
-    fetchInitialRepos(repoSearchQuery, sortField, sortOrder, selectedTopic);
   }
 
   function handleResetRepoSearch() {
     setRepoSearchQuery("");
     setActiveRepoSearch("");
     setIsRepoFilterOpen(false);
-    fetchInitialRepos("", sortField, sortOrder, selectedTopic);
   }
 
   function handleClearTopic() {
@@ -225,11 +233,37 @@ export function RepositoriesClient() {
     router.push(`/repositories?${params.toString()}`);
   }
 
+  const handleSelectSubCategory = (slug: string | null) => {
+    const params = new URLSearchParams(window.location.search);
+    if (slug) {
+      params.set("subCategory", slug);
+    } else {
+      params.delete("subCategory");
+    }
+    router.push(`/repositories?${params.toString()}`);
+  };
+
+  const handleSelectCompany = (displayName: string | null) => {
+    const ownerSlug = displayName ? owners.find(o => o.displayName === displayName)?.owner || null : null;
+    const params = new URLSearchParams(window.location.search);
+    if (ownerSlug) {
+      params.set("owner", ownerSlug);
+    } else {
+      params.delete("owner");
+    }
+    router.push(`/repositories?${params.toString()}`);
+  };
+
+  function handleResetFilters() {
+    setSelectedLicense(null);
+    setRepoSearchQuery("");
+    setActiveRepoSearch("");
+    router.push("/repositories");
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <main className="mx-auto max-w-[1440px] px-8 py-12 flex-1 w-full">
-        <RepositoryHero />
-
         {/* Active Topic Filter Chip */}
         {selectedTopic && (
           <div className="flex items-center gap-2 mb-6 bg-white/[0.02] border border-white/[0.08] px-3.5 py-2 rounded-lg w-fit shadow-md animate-fade-in">
@@ -246,6 +280,35 @@ export function RepositoriesClient() {
           </div>
         )}
 
+        {/* Subcategory Filter Chips */}
+        {subCategories.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            <button
+              onClick={() => handleSelectSubCategory(null)}
+              className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                !selectedSubCategorySlug
+                  ? "border-[#6E56CF] bg-[#6E56CF] text-white"
+                  : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+              }`}
+            >
+              All
+            </button>
+            {subCategories.map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => handleSelectSubCategory(sub.slug)}
+                className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                  selectedSubCategorySlug === sub.slug
+                    ? "border-[#6E56CF] bg-[#6E56CF] text-white"
+                    : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                }`}
+              >
+                {sub.name}
+              </button>
+            ))}
+          </div>
+        )}
+
         {isLoading ? (
           <RepositoryTable
             sortField={sortField}
@@ -255,8 +318,9 @@ export function RepositoriesClient() {
             onSelectLicense={setSelectedLicense}
             licenseCounts={licenseCounts}
             selectedCompany={selectedCompany}
-            onSelectCompany={setSelectedCompany}
+            onSelectCompany={handleSelectCompany}
             companyCounts={companyCounts}
+            companySearchKeys={companySearchKeys}
             totalCount={total}
             isLicenseDropdownOpen={isLicenseDropdownOpen}
             onToggleLicenseDropdown={() => setIsLicenseDropdownOpen(prev => !prev)}
@@ -276,12 +340,12 @@ export function RepositoriesClient() {
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="grid grid-cols-[30px_minmax(0,2.5fr)_minmax(0,1.8fr)_minmax(0,1.5fr)_60px] md:grid-cols-[30px_minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] lg:grid-cols-[30px_minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] xl:grid-cols-[30px_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] w-full animate-pulse border-b border-white/[0.06] last:border-b-0"
+                className="grid grid-cols-[minmax(0,2.5fr)_minmax(0,1.8fr)_minmax(0,1.5fr)_60px] md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] lg:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] w-full animate-pulse border-b border-white/[0.06] last:border-b-0"
               >
-                {/* Col 1 */}
-                <div className="h-3 w-4 rounded bg-white/[0.04] mx-auto" />
                 {/* Col 2 */}
-                <div className="h-3 w-1/3 rounded bg-white/[0.04]" />
+                <div className="pl-5">
+                  <div className="h-3 w-1/3 rounded bg-white/[0.04]" />
+                </div>
                 {/* Col 3 */}
                 <div className="h-3 w-1/2 rounded bg-white/[0.04] hidden md:block" />
                 {/* Col 4 */}
@@ -299,10 +363,6 @@ export function RepositoriesClient() {
               </div>
             ))}
           </RepositoryTable>
-        ) : repos.length === 0 ? (
-          <div className="text-center py-20 border border-[#232326] bg-[#131316] rounded-xl">
-            <p className="text-[#A1A1AA] text-sm">No repositories found.</p>
-          </div>
         ) : (
           <RepositoryTable
             sortField={sortField}
@@ -312,8 +372,9 @@ export function RepositoriesClient() {
             onSelectLicense={setSelectedLicense}
             licenseCounts={licenseCounts}
             selectedCompany={selectedCompany}
-            onSelectCompany={setSelectedCompany}
+            onSelectCompany={handleSelectCompany}
             companyCounts={companyCounts}
+            companySearchKeys={companySearchKeys}
             totalCount={total}
             isLicenseDropdownOpen={isLicenseDropdownOpen}
             onToggleLicenseDropdown={() => setIsLicenseDropdownOpen(prev => !prev)}
@@ -330,12 +391,25 @@ export function RepositoriesClient() {
             onToggleRepoFilter={() => setIsRepoFilterOpen(prev => !prev)}
             onCloseRepoFilter={() => setIsRepoFilterOpen(false)}
           >
-            {sortedRepos.map((repo: Repository, index: number) => (
-              <RepositoryRow key={repo.id} repo={repo} rank={index + 1} />
-            ))}
+            {sortedRepos.length === 0 ? (
+              <div className="text-center py-16 px-4 bg-[#131316]/20 rounded-b-xl w-full flex flex-col items-center">
+                <p className="text-[#A1A1AA] text-sm font-medium mb-1">No repositories found.</p>
+                <p className="text-white/40 text-xs mb-5">Try adjusting or clearing your filters.</p>
+                <button
+                  onClick={handleResetFilters}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-white/[0.08] hover:bg-white/[0.12] active:bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.12] rounded-lg transition-colors cursor-pointer focus:outline-none"
+                >
+                  Reset Filters
+                </button>
+              </div>
+            ) : (
+              sortedRepos.map((repo: Repository) => (
+                <RepositoryRow key={repo.id} repo={repo} />
+              ))
+            )}
 
             {/* Sentinel for infinite scroll */}
-            {hasMore && (
+            {hasNextPage && sortedRepos.length > 0 && (
               <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
               </div>

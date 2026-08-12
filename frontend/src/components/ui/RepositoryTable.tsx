@@ -31,6 +31,8 @@ interface RepositoryTableProps {
   isRepoFilterOpen: boolean;
   onToggleRepoFilter: () => void;
   onCloseRepoFilter: () => void;
+  companySearchAliases?: Record<string, string[]>;
+  companySearchKeys?: Record<string, string>;
 }
 
 export function RepositoryTable({
@@ -59,6 +61,8 @@ export function RepositoryTable({
   isRepoFilterOpen,
   onToggleRepoFilter,
   onCloseRepoFilter,
+  companySearchAliases,
+  companySearchKeys,
 }: RepositoryTableProps) {
   return (
     <div 
@@ -67,14 +71,10 @@ export function RepositoryTable({
     >
       {/* Sticky Table Header */}
       <div className="sticky top-navbar z-30 bg-[#000000] border-b border-[#232326]/60 px-[9px] py-[12px] h-[48.8px] select-none hidden sm:flex items-center rounded-t-xl">
-        <div className="grid grid-cols-[30px_minmax(0,2.5fr)_minmax(0,1.8fr)_minmax(0,1.5fr)_60px] md:grid-cols-[30px_minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] lg:grid-cols-[30px_minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] xl:grid-cols-[30px_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_60px] gap-[10px] items-center text-[10px] font-semibold tracking-[0.4px] text-[#71717A] w-full">
-          {/* Rank Column Header */}
-          <div className="uppercase text-center">
-            #
-          </div>
+        <div className="grid grid-cols-[minmax(0,2.5fr)_minmax(0,1.8fr)_minmax(0,1.5fr)_60px] md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] lg:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_60px] gap-[10px] items-center text-[10px] font-semibold tracking-[0.4px] text-[#71717A] w-full">
 
           {/* Repository Column Header with Popover */}
-          <div className="relative text-left">
+          <div className="relative text-left pl-5">
             <button
               onClick={onToggleRepoFilter}
               aria-haspopup="dialog"
@@ -127,6 +127,8 @@ export function RepositoryTable({
               searchPlaceholder="Search companies..."
               allLabel="All companies"
               id="company-filter-dropdown"
+              searchAliases={companySearchAliases}
+              searchKeys={companySearchKeys}
             />
           </div>
 

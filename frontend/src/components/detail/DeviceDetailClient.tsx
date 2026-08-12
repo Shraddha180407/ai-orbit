@@ -16,6 +16,11 @@ const AVAILABILITY_STYLES: Record<string, string> = {
   Discontinued: "bg-[#3a1a1a] text-[#f87171] border border-[#5a2a2a]",
 };
 
+const ROW_ACCENT_COLORS = [
+  "#6E56CF", "#E85D4A", "#0082FB", "#34A853",
+  "#FF9900", "#E91E8C", "#00BCD4", "#FF6B35",
+];
+
 function getFaviconUrl(manufacturer: string, slug: string): string {
   const mfr = (manufacturer || "").toLowerCase().replace(/\s+/g, "");
   const domain = slug.toLowerCase().replace(/[^a-z0-9-]/g, "").split("-")[0];
@@ -51,6 +56,8 @@ function mergeDevice(api: Device | null, slug: string): DeviceData | null {
     primaryUseCases: api.primaryUseCases || dummy?.primaryUseCases || [],
     additionalInfo: api.additionalInfo || dummy?.additionalInfo || null,
     buyUrl: api.buyUrl || dummy?.buyUrl || null,
+    images: api.images || dummy?.images || [],
+    videoUrl: api.videoUrl || dummy?.videoUrl || null,
   } as DeviceData;
 }
 
@@ -220,12 +227,14 @@ export function DeviceDetailClient() {
 
         {/* Top Section */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-6 mb-8 items-start">
-          {/* Left: Image */}
-          <DeviceImage
-  name={device.name}
-  imageUrl={device.imageUrl}
-  color={device.mainTaskColor}
-/>
+          {/* Left: Gallery */}
+          <DeviceGallery
+            name={device.name}
+            imageUrl={device.imageUrl}
+            images={device.images}
+            videoUrl={device.videoUrl}
+            color={device.mainTaskColor}
+          />
           {/* Right: Info Card */}
           <div className="rounded-xl border border-[#232326] bg-[#0D0D0F] p-4 md:p-6 flex flex-col gap-3">
 
@@ -236,8 +245,14 @@ export function DeviceDetailClient() {
               </span>
             </div>
 
-            {/* Name */}
-            <h1 className="text-2xl font-black text-white tracking-tight">{device.name}</h1>
+            {/* Name + Actions */}
+            <div className="flex items-start justify-between gap-2">
+              <h1 className="text-2xl font-black text-white tracking-tight">{device.name}</h1>
+              <div className="flex items-center gap-1.5 shrink-0 mt-1">
+                <BookmarkButton slug={device.slug || device.id} name={device.name} />
+                <ShareButton slug={device.slug || device.id} name={device.name} />
+              </div>
+            </div>
 
             {/* By company */}
             {device.manufacturer && (
@@ -293,7 +308,7 @@ export function DeviceDetailClient() {
                 className="mt-2 inline-flex items-center gap-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors w-fit"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                Buy now
+                Learn More
               </a>
             )}
           </div>
@@ -305,19 +320,19 @@ export function DeviceDetailClient() {
             <h2 className="text-xs font-bold text-[#A1A1AA] uppercase tracking-widest">Specifications</h2>
           </div>
           <div className="divide-y divide-[#232326]">
-            {device.formFactor && <SpecRowDivider label="Form factor" value={device.formFactor} />}
-            {device.ram && <SpecRowDivider label="RAM" value={device.ram} />}
-            {device.country && <SpecRowDivider label="Made in" value={device.country} />}
-            <SpecRowDivider label="Release date" value={device.month || device.year || "—"} />
+  {device.formFactor && <SpecRowDivider label="Form factor" value={device.formFactor} />}
+  {device.ram && <SpecRowDivider label="RAM" value={device.ram} />}
+  {device.country && <SpecRowDivider label="Made in" value={device.country} />}
+  <SpecRowDivider label="Release date" value={device.month || device.year || "—"} />
             {device.aiFeatures && device.aiFeatures.length > 0 && (
               <div className="flex items-start gap-4 px-6 py-4">
                 <span className="text-sm text-[#52525B] w-36 shrink-0">AI features</span>
                 <div className="flex flex-wrap gap-2">
                   {device.aiFeatures.map((f) => (
-                    <span key={f} className="text-xs bg-[#18181C] border border-[#232326] text-[#A1A1AA] px-3 py-1 rounded-full">
-                      {f}
-                    </span>
-                  ))}
+  <span key={f} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
+    {f}
+  </span>
+))}
                 </div>
               </div>
             )}
@@ -326,10 +341,10 @@ export function DeviceDetailClient() {
                 <span className="text-sm text-[#52525B] w-36 shrink-0">Primary use cases</span>
                 <div className="flex flex-wrap gap-2">
                   {device.primaryUseCases.map((u) => (
-                    <span key={u} className="text-xs bg-[#18181C] border border-[#232326] text-[#A1A1AA] px-3 py-1 rounded-full">
-                      {u}
-                    </span>
-                  ))}
+  <span key={u} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
+    {u}
+  </span>
+))}
                 </div>
               </div>
             )}
@@ -356,23 +371,22 @@ export function DeviceDetailClient() {
               <h2 className="text-xs font-bold text-[#A1A1AA] uppercase tracking-widest">Similar Devices</h2>
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {similar.map((d) => (
-                <Link
-                  key={d.id}
-                  href={`/devices/${d.slug || d.id}`}
-                  className="rounded-xl border border-[#232326] bg-[#0D0D0F] transition-all group overflow-hidden"
-                  style={{}}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = `${d.mainTaskColor || '#6E56CF'}60`; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}
-                >
+              {similar.map((d, idx) => (
+  <Link
+    key={d.id}
+    href={`/devices/${d.slug || d.id}`}
+    className="rounded-xl border border-[#232326] bg-[#0D0D0F] transition-all group overflow-hidden"
+    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = `${ROW_ACCENT_COLORS[idx % ROW_ACCENT_COLORS.length]}60`; }}
+    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}
+  >
                   {/* Image with overlays */}
                   <div className="relative h-52 bg-[#18181C] flex items-center justify-center overflow-hidden">
                     <SimilarDeviceImage name={d.name} imageUrl={d.imageUrl} color={d.mainTaskColor} />
                     {/* Name overlay bottom left */}
                     <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
                       <p className="text-xs font-bold text-white truncate group-hover:text-white transition-colors"
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = d.mainTaskColor || '#6E56CF'; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'white'; }}>
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = ROW_ACCENT_COLORS[idx % ROW_ACCENT_COLORS.length]; }}
+onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'white'; }}>
                         {d.name}
                       </p>
                       <p className="text-[10px] text-[#A1A1AA]">{d.category} · {d.manufacturer}</p>
@@ -412,6 +426,52 @@ export function DeviceDetailClient() {
   );
 }
 
+function BookmarkButton({ slug, name }: { slug: string; name: string }) {
+  const [saved, setSaved] = React.useState(false);
+  return (
+    <button
+      onClick={() => setSaved((v) => !v)}
+      title="Bookmark"
+      className={`p-2 rounded-lg border transition-colors ${saved ? "border-[#6E56CF] text-[#6E56CF] bg-[#6E56CF]/10" : "border-[#232326] text-[#52525B] hover:text-white hover:border-[#52525B]"}`}
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+      </svg>
+    </button>
+  );
+}
+
+function ShareButton({ slug, name }: { slug: string; name: string }) {
+  const [copied, setCopied] = React.useState(false);
+  function share() {
+    const url = `${window.location.origin}/devices/${slug}`;
+    if (navigator.share) {
+      navigator.share({ title: name, url });
+    } else {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  }
+  return (
+    <button
+      onClick={share}
+      title={copied ? "Link copied!" : "Share"}
+      className="p-2 rounded-lg border border-[#232326] text-[#52525B] hover:text-white hover:border-[#52525B] transition-colors relative"
+    >
+      {copied ? (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      ) : (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+      )}
+    </button>
+  );
+}
+
 function SpecRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start gap-4">
@@ -430,14 +490,33 @@ function SpecRowDivider({ label, value }: { label: string; value: string }) {
   );
 }
 
-function DeviceImage({ name, imageUrl, color }: { name: string; imageUrl: string; color: string }) {
-  const [failed, setFailed] = React.useState(false);
+function DeviceGallery({
+  name, imageUrl, images, videoUrl, color,
+}: {
+  name: string;
+  imageUrl: string;
+  images?: string[];
+  videoUrl?: string | null;
+  color: string;
+}) {
+  // Build full media list: video first (if any), then all images
+  const allImages = images && images.length > 0 ? images : imageUrl ? [imageUrl] : [];
+  const hasVideo = !!videoUrl;
 
-  if (!imageUrl || failed) {
+  // media items: { type: 'video'|'image', src: string }
+  const mediaItems = [
+    ...(hasVideo ? [{ type: 'video' as const, src: videoUrl! }] : []),
+    ...allImages.map((src) => ({ type: 'image' as const, src })),
+  ];
+
+  const [activeIdx, setActiveIdx] = React.useState(hasVideo ? 0 : 0);
+  const [imgFailed, setImgFailed] = React.useState<Record<number, boolean>>({});
+
+  if (mediaItems.length === 0) {
     return (
       <div
-        className="rounded-xl border border-[#232326] self-start w-full h-[380px] flex items-center justify-center"
-        style={{ background: `${color}18` }}
+        className="rounded-xl border border-[#232326] self-start w-full flex items-center justify-center"
+        style={{ background: `${color}18`, minHeight: 320 }}
       >
         <span className="text-[120px] font-black uppercase leading-none" style={{ color }}>
           {name.charAt(0)}
@@ -446,14 +525,91 @@ function DeviceImage({ name, imageUrl, color }: { name: string; imageUrl: string
     );
   }
 
+  const active = mediaItems[activeIdx];
+  const showThumbs = mediaItems.length > 1;
+
+  function getYoutubeEmbedUrl(url: string): string {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+    return match ? `https://www.youtube.com/embed/${match[1]}` : url;
+  }
+
+  function prev() { setActiveIdx((i) => (i === 0 ? mediaItems.length - 1 : i - 1)); }
+  function next() { setActiveIdx((i) => (i === mediaItems.length - 1 ? 0 : i + 1)); }
+
   return (
-    <div className="rounded-xl border border-[#232326] bg-white overflow-hidden self-start">
-      <img
-        src={imageUrl}
-        alt={name}
-        className="w-full object-contain p-6 max-h-[380px]"
-        onError={() => setFailed(true)}
-      />
+    <div className="self-start w-full">
+      {/* Main display */}
+      <div className="relative rounded-xl border border-[#232326] bg-[#0D0D0F] overflow-hidden">
+        {active.type === 'video' ? (
+          <iframe
+            src={getYoutubeEmbedUrl(active.src)}
+            className="w-full aspect-video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : imgFailed[activeIdx] ? (
+          <div className="w-full flex items-center justify-center py-20" style={{ background: `${color}18` }}>
+            <span className="text-[80px] font-black uppercase" style={{ color }}>{name.charAt(0)}</span>
+          </div>
+        ) : (
+          <img
+            src={active.src}
+            alt={`${name} image ${activeIdx + 1}`}
+            className="w-full object-contain"
+            style={{ maxHeight: 420, background: '#fff' }}
+            onError={() => setImgFailed((prev) => ({ ...prev, [activeIdx]: true }))}
+          />
+        )}
+
+        {/* Prev/Next arrows — only if more than 1 media */}
+        {mediaItems.length > 1 && (
+          <>
+            <button
+              onClick={prev}
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <button
+              onClick={next}
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Thumbnail strip */}
+      {showThumbs && (
+        <div className="flex gap-2 mt-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-[#232326] [&::-webkit-scrollbar-thumb]:rounded-full">
+          {mediaItems.map((item, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveIdx(idx)}
+              className={`relative shrink-0 w-16 h-14 rounded-lg overflow-hidden border-2 transition-all ${
+                activeIdx === idx ? 'border-[#6E56CF]' : 'border-[#232326] hover:border-[#52525B]'
+              }`}
+            >
+              {item.type === 'video' ? (
+                <div className="w-full h-full bg-[#18181C] flex flex-col items-center justify-center gap-0.5">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="white" className="opacity-80"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <span className="text-[8px] text-white/60 font-mono">Video</span>
+                </div>
+              ) : (
+                <img
+                  src={item.src}
+                  alt={`thumb ${idx}`}
+                  className="w-full h-full object-cover bg-white"
+                />
+              )}
+              {activeIdx === idx && (
+                <div className="absolute inset-0 bg-[#6E56CF]/10 pointer-events-none" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -473,10 +629,10 @@ function SimilarDeviceImage({ name, imageUrl, color }: { name: string; imageUrl:
 
   return (
     <img
-      src={imageUrl}
-      alt={name}
-      className="w-full h-full object-cover"
-      onError={() => setFailed(true)}
-    />
+  src={imageUrl}
+  alt={name}
+  className="w-full h-full object-cover object-center scale-105 group-hover:scale-110 transition-transform duration-500"
+  onError={() => setFailed(true)}
+/>
   );
 }

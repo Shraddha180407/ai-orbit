@@ -14,7 +14,7 @@ function resolveApiUrl(): string {
   if (url && url.startsWith("http") && url !== "undefined") {
     return url.replace(/\/$/, "");
   }
-  return "https://api.aiorbit.club";
+  return "https://ai-orbit.palamrendra-pm.workers.dev";
 }
 
 /** Used by the client components (CommentBox, PublisherIcon, SaveButton, VoteButtons) — unchanged. */
@@ -61,10 +61,76 @@ export async function fetchCompanyDetails(slug: string): Promise<any> {
   return res.json();
 }
 
-export async function fetchAllModels(): Promise<any[]> {
-  const url = `${API_URL}/api/v1/models`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return [];
+import type { AIModel, ModelsListResponse, ModelsSortOption } from "./types";
+
+export interface ModelsQuery {
+  search?: string;
+  provider?: string;
+  modality?: string;
+  creator?: string;
+  subCategory?: string;
+  sort?: ModelsSortOption;
+  page?: number;
+  limit?: number;
+}
+
+export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListResponse> {
+  const url = new URL(`${API_URL}/api/v1/models`);
+  if (params.search) url.searchParams.set("search", params.search);
+  if (params.provider) url.searchParams.set("provider", params.provider);
+  if (params.modality) url.searchParams.set("modality", params.modality);
+  if (params.creator) url.searchParams.set("creator", params.creator);
+  if (params.subCategory) url.searchParams.set("subCategory", params.subCategory);
+  if (params.sort) url.searchParams.set("sort", params.sort);
+  if (params.page) url.searchParams.set("page", String(params.page));
+  if (params.limit) url.searchParams.set("limit", String(params.limit));
+
+  const empty: ModelsListResponse = {
+    items: [],
+    pagination: {
+      page: params.page ?? 1,
+      limit: params.limit ?? 20,
+      total: 0,
+      totalPages: 1,
+      hasMore: false,
+    },
+    filters: { providers: [], modalities: [] },
+  };
+
+  const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
+  if (!res.ok) return empty;
+
+  const data = await res.json();
+  // Tolerate legacy array responses during rollout.
+  if (Array.isArray(data)) {
+    return {
+      items: data as AIModel[],
+      pagination: {
+        page: 1,
+        limit: data.length,
+        total: data.length,
+        totalPages: 1,
+        hasMore: false,
+      },
+      filters: { providers: [], modalities: [] },
+    };
+  }
+  return data as ModelsListResponse;
+}
+
+/** @deprecated Prefer fetchModels — kept for callers that only need the first page's items. */
+export async function fetchAllModels(): Promise<AIModel[]> {
+  const data = await fetchModels({ page: 1, limit: 100 });
+  return data.items;
+}
+
+export async function fetchModelById(id: string): Promise<import("./types").ModelDetail | null> {
+  const url = `${API_URL}/api/v1/models/${encodeURIComponent(id)}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    throw new Error(`Failed to load model (${res.status})`);
+  }
   return res.json();
 }
 
@@ -75,7 +141,8 @@ export async function fetchAllNews(): Promise<any[]> {
   return res.json();
 }
 
-import { Repository, RepositoryListResponse, RepositoryDetailResponse } from "./types";
+import { Repository, RepositoryListResponse, RepositoryDetailResponse, RepositoryOwnerListItem, RepositorySubCategory } from "./types";
+import type { ModelSubCategory } from "./types";
 
 export interface FetchRepositoriesOptions {
   limit?: number;
@@ -84,10 +151,12 @@ export interface FetchRepositoriesOptions {
   language?: string;
   topic?: string;
   q?: string;
+  owner?: string;
+  subCategory?: string;
 }
 
 export async function fetchRepositories(options: FetchRepositoriesOptions = {}): Promise<RepositoryListResponse> {
-  const { limit, cursor, sort, language, topic, q } = options;
+  const { limit, cursor, sort, language, topic, q, owner, subCategory } = options;
 
   const url = new URL(`${API_URL}/api/v1/repositories`);
   if (limit) url.searchParams.set("limit", limit.toString());
@@ -96,6 +165,8 @@ export async function fetchRepositories(options: FetchRepositoriesOptions = {}):
   if (language) url.searchParams.set("language", language);
   if (topic) url.searchParams.set("topic", topic);
   if (q) url.searchParams.set("q", q);
+  if (owner) url.searchParams.set("owner", owner);
+  if (subCategory) url.searchParams.set("subCategory", subCategory);
 
   const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) {
@@ -129,6 +200,53 @@ export async function fetchAllRepos(): Promise<Repository[]> {
   }
 }
 
+export async function fetchRepositorySubCategories(): Promise<RepositorySubCategory[]> {
+  const url = `${API_URL}/api/v1/repositories/subcategories`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function fetchModelSubCategories(): Promise<ModelSubCategory[]> {
+  const url = `${API_URL}/api/v1/models/subcategories`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function fetchMCPCategories(): Promise<import("./types").MCPCategory[]> {
+  try {
+    const url = `${API_URL}/api/v1/mcps/categories`;
+    const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err: any) {
+    console.warn("Failed to fetch MCP categories:", err?.message || err);
+    return [];
+  }
+}
+
+export async function fetchMCPSubCategories(categorySlug?: string): Promise<import("./types").MCPSubCategory[]> {
+  try {
+    const url = new URL(`${API_URL}/api/v1/mcps/subcategories`);
+    if (categorySlug) url.searchParams.set("category", categorySlug);
+    const res = await fetch(url.toString(), { next: { revalidate: 300 } } as RequestInit);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err: any) {
+    console.warn("Failed to fetch MCP subcategories:", err?.message || err);
+    return [];
+  }
+}
+
+export async function fetchDeviceSubCategories(): Promise<import("./types").DeviceSubCategory[]> {
+  const url = `${API_URL}/api/v1/devices/subcategories`;
+  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+// MCP Items fetch helpers are defined below at the end of the file.
 
 export async function fetchAllVideos(): Promise<any[]> {
   const url = `${API_URL}/api/v1/videos`;
@@ -144,9 +262,17 @@ export async function fetchAllRobots(): Promise<any[]> {
   return res.json();
 }
 
-export async function fetchAllDevices(): Promise<any[]> {
-  const url = `${API_URL}/api/v1/devices`;
+export async function fetchRobotById(idOrSlug: string): Promise<any | null> {
+  const url = `${API_URL}/api/v1/robots/${idOrSlug}`;
   const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function fetchAllDevices(options: { subCategory?: string } = {}): Promise<any[]> {
+  const url = new URL(`${API_URL}/api/v1/devices`);
+  if (options.subCategory) url.searchParams.set("subCategory", options.subCategory);
+  const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
   if (!res.ok) return [];
   return res.json();
 }
@@ -211,17 +337,10 @@ export async function fetchFeaturedTools(): Promise<RealSearchSuggestion[]> {
  * same-account Cloudflare-to-Cloudflare hop — so they're left untouched.
  */
 function resolveServerApiUrl(): string {
-  // If explicitly overridden for server-to-server fetches (e.g. in prod to bypass Cloudflare proxy)
-  const raw = process.env.NEWS_SERVER_API_URL || process.env.SERVER_API_URL;
+  const raw = process.env.NEWS_SERVER_API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (raw && raw !== "undefined") {
-    const withScheme = /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
+    const withScheme = /^https?:\/\//.test(raw) ? raw : (raw.includes("localhost") || raw.includes("127.0.0.1") ? `http://${raw}` : `https://${raw}`);
     return withScheme.replace(/\/$/, "");
-  }
-  
-  // Use the standard public API URL if available
-  const publicUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (publicUrl && publicUrl !== "undefined") {
-    return publicUrl.replace(/\/$/, "");
   }
   
   // Hardcoded fallback that bypasses the proxy (legacy)
@@ -257,3 +376,87 @@ export async function toggleTaskSubscription(slug: string): Promise<boolean> {
     return false;
   }
 }
+
+export async function fetchRepositoryOwners(): Promise<RepositoryOwnerListItem[]> {
+  const url = `${API_URL}/api/v1/repositories/owners`;
+  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// MCP API Fetch Helpers
+// ---------------------------------------------------------------------------
+import type { MCPListResponse, MCPItem } from "./types";
+
+export interface MCPQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  subCategory?: string;
+  type?: "SERVER" | "CLIENT";
+  sortBy?: string;
+}
+
+export async function fetchMCPItems(params: MCPQuery = {}): Promise<MCPListResponse> {
+  const url = new URL(`${API_URL}/api/v1/mcps`);
+  if (params.page) url.searchParams.set("page", String(params.page));
+  if (params.limit) url.searchParams.set("limit", String(params.limit));
+  if (params.search) url.searchParams.set("search", params.search);
+  if (params.category) url.searchParams.set("category", params.category);
+  if (params.subCategory) url.searchParams.set("subCategory", params.subCategory);
+  if (params.type) url.searchParams.set("type", params.type);
+  if (params.sortBy) url.searchParams.set("sortBy", params.sortBy);
+
+  const empty: MCPListResponse = {
+    items: [],
+    total: 0,
+    page: params.page ?? 1,
+    totalPages: 1,
+  };
+
+  try {
+    const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
+    if (!res.ok) return empty;
+    const responseJson = await res.json();
+    if (responseJson && responseJson.success && responseJson.data) {
+      return responseJson.data;
+    }
+    return empty;
+  } catch (err: any) {
+    console.warn("Failed to fetch MCP items:", err?.message || err);
+    return empty;
+  }
+}
+
+export async function fetchMCPItemBySlug(slug: string): Promise<MCPItem | null> {
+  try {
+    const res = await fetch(`${SERVER_API_URL}/api/v1/mcps/${encodeURIComponent(slug)}`);
+    if (!res.ok) return null;
+    const responseJson = await res.json();
+    if (responseJson && responseJson.success && responseJson.data) {
+      return responseJson.data;
+    }
+    return null;
+  } catch (err: any) {
+    console.warn(`Failed to fetch MCP item ${slug}:`, err?.message || err);
+    return null;
+  }
+}
+
+export async function fetchMCPItemAlternatives(slug: string): Promise<MCPItem[]> {
+  try {
+    const res = await fetch(`${SERVER_API_URL}/api/v1/mcps/${encodeURIComponent(slug)}/alternatives`);
+    if (!res.ok) return [];
+    const responseJson = await res.json();
+    if (responseJson && responseJson.success && responseJson.data) {
+      return responseJson.data;
+    }
+    return [];
+  } catch (err: any) {
+    console.warn(`Failed to fetch alternatives for ${slug}:`, err?.message || err);
+    return [];
+  }
+}
+

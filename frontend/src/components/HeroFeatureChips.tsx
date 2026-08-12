@@ -17,62 +17,90 @@ const FILTERS = [
 
 export function HeroFeatureChips() {
   const [activeFilter, setActiveFilter] = useState<string>("");
+  const [hovered, setHovered] = useState<string>("");
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 max-w-4xl relative z-10 select-none">
-      {FILTERS.map((f) => {
-        const isActive = activeFilter === f.name;
-        const Icon = f.icon;
-        return (
-          <button
-            key={f.name}
-            onClick={() => {
-              setActiveFilter(isActive ? "" : f.name);
-              const url = new URL(window.location.href);
-              if (isActive) {
-                url.searchParams.delete(f.param);
-              } else {
-                url.searchParams.set(f.param, f.value);
-              }
-              url.hash = "tools";
-              window.location.href = url.toString();
-            }}
-            className={`group inline-flex items-center gap-1 rounded-full px-2 h-[22px] text-[9.5px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.03] active:scale-[0.98] ${
-              isActive ? "text-black shadow-md" : "bg-[#131316]/70"
-            }`}
-            style={
-              isActive
-                ? { backgroundColor: f.color, borderColor: f.color, boxShadow: `0 4px 12px -6px ${f.color}88` }
-                : { borderColor: `${f.color}55` }
-            }
-            onMouseEnter={(e) => {
-              if (!isActive) {
-                e.currentTarget.style.boxShadow = `0 4px 10px -8px ${f.color}77`;
-                e.currentTarget.style.borderColor = f.color;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isActive) {
-                e.currentTarget.style.boxShadow = "";
-                e.currentTarget.style.borderColor = `${f.color}55`;
-              }
-            }}
-          >
-            <span
-              className="flex h-3 w-3 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:rotate-[8deg]"
-              style={{ backgroundColor: isActive ? "rgba(0,0,0,0.15)" : `${f.color}22` }}
+    <div className="hero-chip-row w-full max-w-4xl relative z-10 flex items-center justify-center overflow-hidden select-none">
+      <div
+        className="flex flex-nowrap items-center"
+        style={{ gap: "calc(10px * var(--chip-scale))" }}
+      >
+        {FILTERS.map((f) => {
+          const isActive = activeFilter === f.name;
+          const isHovered = hovered === f.name;
+          const filled = isActive || isHovered;
+          const Icon = f.icon;
+          return (
+            <button
+              key={f.name}
+              onMouseEnter={() => setHovered(f.name)}
+              onMouseLeave={() => setHovered("")}
+              onClick={() => {
+                setActiveFilter(isActive ? "" : f.name);
+                const url = new URL(window.location.href);
+                if (isActive) {
+                  url.searchParams.delete(f.param);
+                } else {
+                  url.searchParams.set(f.param, f.value);
+                }
+                url.hash = "tools";
+                window.location.href = url.toString();
+              }}
+              className="group inline-flex shrink-0 whitespace-nowrap items-center rounded-full border bg-[#0d0d10] font-medium transition-colors duration-150"
+              style={{
+                borderColor: filled ? f.color : `${f.color}40`,
+                color: filled ? "#ffffff" : "#a1a1aa",
+                height: "calc(28px * var(--chip-scale))",
+                paddingLeft: "calc(8px * var(--chip-scale))",
+                paddingRight: "calc(12px * var(--chip-scale))",
+                gap: "calc(6px * var(--chip-scale))",
+                fontSize: "calc(12px * var(--chip-scale))",
+              }}
             >
-              <Icon
-                size={8}
-                strokeWidth={2.25}
-                className={isActive ? "text-black" : ""}
-                style={isActive ? undefined : { color: f.color, filter: `drop-shadow(0 0 3px ${f.color}99)` }}
-              />
-            </span>
-            <span style={isActive ? undefined : { color: f.color }}>{f.name}</span>
-          </button>
-        );
-      })}
+              <span
+                className="flex shrink-0 items-center justify-center rounded-full border transition-colors duration-150"
+                style={{
+                  backgroundColor: filled ? f.color : "transparent",
+                  borderColor: f.color,
+                  width: "calc(16px * var(--chip-scale))",
+                  height: "calc(16px * var(--chip-scale))",
+                }}
+              >
+                <Icon
+                  strokeWidth={2.25}
+                  style={{
+                    color: filled ? "#000000" : f.color,
+                    width: "calc(9px * var(--chip-scale))",
+                    height: "calc(9px * var(--chip-scale))",
+                  }}
+                />
+              </span>
+              <span>{f.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <style jsx>{`
+        .hero-chip-row {
+          /*
+           * A single dynamic scale factor, computed purely in CSS from the
+           * live viewport width — no JS measurement, no font-load race, no
+           * flash of the wrong size on first paint.
+           *
+           * It's a direct linear model of "available width / natural row
+           * width": (100vw - 48px page padding) / 560px assumed natural
+           * width (deliberately padded above the real ~480px measured
+           * width, so we shrink a bit earlier than strictly required
+           * rather than risk any overflow).
+           *
+           * Below ~320px viewports we hold at the 0.5 floor; from ~608px
+           * viewports upward the row already fits, so scale clamps to 1
+           * and desktop is rendered at its exact original size, untouched.
+           */
+          --chip-scale: clamp(0.5, calc((100vw - 48px) / 560px), 1);
+        }
+      `}</style>
     </div>
   );
 }

@@ -13,6 +13,8 @@ interface FilterDropdownProps {
   searchPlaceholder?: string;
   allLabel?: string;
   id?: string;
+  searchAliases?: Record<string, string[]>;
+  searchKeys?: Record<string, string>;
 }
 
 export function FilterDropdown({
@@ -25,11 +27,28 @@ export function FilterDropdown({
   searchPlaceholder = "Search...",
   allLabel = "All items",
   id,
+  searchAliases,
+  searchKeys,
 }: FilterDropdownProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const triggerElementRef = useRef<HTMLElement | null>(null);
+  const [inputValue, setInputValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [displayLimit, setDisplayLimit] = useState(100);
+
+  // Debounce input value changes to search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(inputValue);
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [inputValue]);
+
+  // Reset display limit when query updates
+  useEffect(() => {
+    setDisplayLimit(100);
+  }, [searchQuery]);
 
   // Capture active trigger element and focus search input on open
   useEffect(() => {
@@ -62,7 +81,9 @@ export function FilterDropdown({
   // Reset search query when dropdown opens
   useEffect(() => {
     if (isOpen) {
+      setInputValue("");
       setSearchQuery("");
+      setDisplayLimit(100);
     }
   }, [isOpen]);
 
@@ -101,10 +122,29 @@ export function FilterDropdown({
   const filteredItems = React.useMemo(() => {
     const entries = Object.entries(itemsCounts);
     if (!searchQuery) return entries;
-    return entries.filter(([item]) =>
-      item.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [itemsCounts, searchQuery]);
+    const query = searchQuery.toLowerCase();
+    return entries.filter(([item]) => {
+      if (searchKeys) {
+        const precomputed = searchKeys[item];
+        return precomputed ? precomputed.includes(query) : item.toLowerCase().includes(query);
+      }
+      if (item.toLowerCase().includes(query)) return true;
+      const aliases = searchAliases?.[item];
+      if (aliases && aliases.some((a) => a.toLowerCase().includes(query))) return true;
+      return false;
+    });
+  }, [itemsCounts, searchQuery, searchAliases, searchKeys]);
+
+  const visibleItems = React.useMemo(() => {
+    return filteredItems.slice(0, displayLimit);
+  }, [filteredItems, displayLimit]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 20) {
+      setDisplayLimit((prev) => Math.min(prev + 150, filteredItems.length));
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -126,8 +166,8 @@ export function FilterDropdown({
           ref={searchInputRef}
           type="text"
           placeholder={searchPlaceholder}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
           aria-label={searchPlaceholder}
           aria-autocomplete="list"
           aria-controls={`${id || 'filter'}-options-list`}
@@ -140,6 +180,7 @@ export function FilterDropdown({
         role="listbox"
         id={`${id || 'filter'}-options-list`}
         aria-label="Available filter options"
+        onScroll={handleScroll}
         className="max-h-52 overflow-y-auto flex flex-col gap-0.5 custom-scrollbar"
       >
         {/* All Items option */}
@@ -161,7 +202,7 @@ export function FilterDropdown({
         </button>
 
         {/* Dynamic items list */}
-        {filteredItems.map(([item, count]) => (
+        {visibleItems.map(([item, count]) => (
           <button
             key={item}
             onClick={() => {

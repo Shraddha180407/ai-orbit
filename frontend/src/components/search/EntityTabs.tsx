@@ -111,7 +111,7 @@ function CountBadge({ children, active }: { children: number; active: boolean })
         active ? "bg-search-accent/15 text-search-accent" : "bg-search-surface-active text-search-text-secondary"
       }`}
     >
-      {children.toLocaleString()}
+      {children.toLocaleString("en-US")}
     </span>
   );
 }

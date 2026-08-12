@@ -2,6 +2,32 @@ import type { Video } from "./types.js";
 import { categorize, isLikelyAiRelated } from "./categorize.js";
 import { logger } from "./logger.js";
 
+interface YouTubeVideosResponse {
+  items?: Array<{
+    id: string;
+    snippet?: {
+      title?: string;
+      description?: string;
+      channelId?: string;
+      channelTitle?: string;
+      publishedAt?: string;
+      defaultAudioLanguage?: string;
+      defaultLanguage?: string;
+      thumbnails?: {
+        default?: { url?: string };
+        high?: { url?: string };
+      };
+    };
+    contentDetails?: {
+      duration?: string;
+    };
+    statistics?: {
+      viewCount?: string;
+      likeCount?: string;
+    };
+  }>;
+}
+
 const API_BASE = "https://www.googleapis.com/youtube/v3";
 
 function apiKey() {
@@ -93,7 +119,7 @@ export async function enrichVideos(videoIds: string[]): Promise<Video[]> {
       logger.error(`[youtube-enrich] videos.list failed: ${res.status}`);
       continue;
     }
-    const json = await res.json();
+    const json = (await res.json()) as YouTubeVideosResponse;
 
     for (const item of json.items ?? []) {
       // Deleted/private/region-restricted videos sometimes come back with

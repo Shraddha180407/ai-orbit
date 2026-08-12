@@ -122,7 +122,7 @@ export function TaskDetailActions({
         }`}
       >
         <Heart className={`h-3.5 w-3.5 ${liked ? "fill-red-400" : ""}`} aria-hidden="true" />
-        {likeCount.toLocaleString()}
+        {likeCount.toLocaleString("en-US")}
       </button>
 
       <button
@@ -136,7 +136,7 @@ export function TaskDetailActions({
             : "bg-[#18181C]/80 ring-1 ring-[#232326]/70 text-[#A1A1AA] hover:text-white hover:ring-[#3A3A3E]"
         }`}
       >
-        {saveCount.toLocaleString()} saves
+        {saveCount.toLocaleString("en-US")} saves
       </button>
 
       <button

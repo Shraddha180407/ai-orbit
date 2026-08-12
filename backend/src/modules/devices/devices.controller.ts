@@ -66,4 +66,17 @@ export class DevicesController {
       await prisma.$disconnect();
     }
   }
+
+  async listDeviceSubCategories(c: Context) {
+    const { prisma, service } = this.createService(c);
+
+    try {
+      const subCategories = await service.listDeviceSubCategories();
+      return c.json(subCategories);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
 }

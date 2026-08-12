@@ -1,196 +1,122 @@
-"use client";
-import React from "react";
-import type { CreatorType } from "@/lib/types";
-import { X } from "lucide-react";
+'use client';
 
-export interface FilterDrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
-  creatorType?: CreatorType;
-  onCreatorTypeChange: (type: CreatorType | undefined) => void;
-  updatedWithin: string;
-  onUpdatedWithinChange: (value: string) => void;
-  featuredOnly: boolean;
-  onFeaturedOnlyChange: (value: boolean) => void;
-  hasRelatedModels: boolean;
-  onHasRelatedModelsChange: (value: boolean) => void;
-  hasRelatedCompanies: boolean;
-  onHasRelatedCompaniesChange: (value: boolean) => void;
-  selectedCategories?: string[];
-  onCategoriesChange?: (categories: string[]) => void;
-  availableCategories?: string[];
-  onReset: () => void;
+import React from "react";
+
+interface Props {
+  nameInput: string;
+  setNameInput: (val: string) => void;
+  setNameSearch: (val: string) => void;
+  selectedCategory: string;
+  setSelectedCategory: (val: string) => void;
+  categories: string[];
+  selectedCreatorType: string;
+  setSelectedCreatorType: (val: string) => void;
+  sortKey: string;
+  sortDir: "asc" | "desc";
+  setSortKey: (val: any) => void;
+  setSortDir: (val: "asc" | "desc") => void;
+  toolsMin: number;
+  toolsMax: number;
+  setToolsMin: (val: number) => void;
+  setToolsMax: (val: number) => void;
+  activeToolsFilter: boolean;
+  setActiveToolsFilter: (val: boolean) => void;
+  setCurrentPage: (val: number) => void;
+  openDropdown: string | null;
+  setOpenDropdown: (val: string | null) => void;
 }
 
-const CREATOR_TYPES: { label: string; value: CreatorType | undefined }[] = [
-  { label: "All", value: undefined },
-  { label: "Editorial", value: "EDITORIAL" },
-  { label: "Community", value: "COMMUNITY" },
-];
-
-export default function CollectionFilters({
-  isOpen,
-  onClose,
-  creatorType,
-  onCreatorTypeChange,
-  updatedWithin,
-  onUpdatedWithinChange,
-  featuredOnly,
-  onFeaturedOnlyChange,
-  hasRelatedModels,
-  onHasRelatedModelsChange,
-  hasRelatedCompanies,
-  onHasRelatedCompaniesChange,
-  selectedCategories = [],
-  onCategoriesChange,
-  availableCategories = [],
-  onReset,
-}: FilterDrawerProps) {
-  if (!isOpen) return null;
-
-  const toggleCategory = (cat: string) => {
-    if (!onCategoriesChange) return;
-    if (selectedCategories.includes(cat)) {
-      onCategoriesChange(selectedCategories.filter((c) => c !== cat));
-    } else {
-      onCategoriesChange([...selectedCategories, cat]);
-    }
-  };
-
+export function CollectionFilters({
+  nameInput,
+  setNameInput,
+  setNameSearch,
+  selectedCategory,
+  setSelectedCategory,
+  categories,
+  selectedCreatorType,
+  setSelectedCreatorType,
+  sortKey,
+  sortDir,
+  setSortKey,
+  setSortDir,
+  toolsMin,
+  toolsMax,
+  setToolsMin,
+  setToolsMax,
+  activeToolsFilter,
+  setActiveToolsFilter,
+  setCurrentPage,
+  openDropdown,
+  setOpenDropdown,
+}: Props) {
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
-      <div className="w-full max-w-md h-full bg-[#09090B] border-l border-[#232326] p-6 flex flex-col justify-between overflow-y-auto">
-        <div>
-          <div className="flex items-center justify-between pb-4 border-b border-[#232326] mb-6">
-            <h2 className="text-lg font-bold text-white">Filters</h2>
-            <button
-              onClick={onClose}
-              className="p-2 text-[#A1A1AA] hover:text-white hover:bg-[#18181B] rounded-lg"
-            >
-              <X className="h-5 w-5" />
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5 items-center">
+      <div className="flex gap-2">
+        <input type="text" placeholder="Search..." value={nameInput}
+          onChange={(e) => setNameInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { setNameSearch(nameInput); setCurrentPage(1); } }}
+          className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 w-full placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF]" />
+        <button onClick={() => { setNameSearch(nameInput); setCurrentPage(1); }}
+          className="text-xs bg-[#6E56CF] hover:bg-[#7C66DF] text-white px-3 py-2 rounded-lg transition-colors font-semibold shrink-0">Apply</button>
+      </div>
+      <select value={selectedCategory} onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
+        className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] w-full">
+        <option value="All Categories">All Categories</option>
+        {categories.map((c) => <option key={c}>{c}</option>)}
+      </select>
+      <select value={selectedCreatorType} onChange={(e) => { setSelectedCreatorType(e.target.value); setCurrentPage(1); }}
+        className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] flex-1 min-w-[140px]">
+        <option value="All">All Creators</option>
+        <option value="EDITORIAL">Editorial Only</option>
+        <option value="COMMUNITY">Community Only</option>
+      </select>
+      <select value={`${sortKey}-${sortDir}`}
+        onChange={(e) => { const [key, dir] = e.target.value.split("-"); setSortKey(key); setSortDir(dir as any); setCurrentPage(1); }}
+        className="bg-[#131316] border border-[#232326] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#6E56CF] w-full">
+        <option value="updated-desc">Sort: Recently Updated</option>
+        <option value="updated-asc">Sort: Oldest Updated</option>
+        <option value="name-asc">Sort: Name A→Z</option>
+        <option value="name-desc">Sort: Name Z→A</option>
+        <option value="tools-desc">Sort: Most Tools</option>
+        <option value="tools-asc">Sort: Fewest Tools</option>
+      </select>
+
+      {/* Tools Count Range Filter */}
+      <div className="relative w-full">
+        <button
+          onClick={() => setOpenDropdown(openDropdown === "grid-tools" ? null : "grid-tools")}
+          className={`flex items-center justify-between w-full bg-[#131316] border text-sm rounded-lg px-3 py-2 transition-colors ${activeToolsFilter ? "border-[#6E56CF] text-[#6E56CF]" : "border-[#232326] text-[#A1A1AA] hover:text-white"}`}
+        >
+          {activeToolsFilter ? `${toolsMin}–${toolsMax} Tools` : "Tools Count"}
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        {openDropdown === "grid-tools" && (
+          <div className="absolute top-11 left-0 right-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-4">
+            <div className="flex justify-between text-[10px] text-[#A1A1AA] mb-3">
+              <span>Min: <span className="text-white font-bold">{toolsMin}</span></span>
+              <span>Max: <span className="text-white font-bold">{toolsMax === 100 ? "100+" : toolsMax}</span></span>
+            </div>
+            <div className="relative h-5 mb-4">
+              <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-[#232326] rounded-full" />
+              <div className="absolute top-1/2 -translate-y-1/2 h-1 bg-[#6E56CF] rounded-full"
+                style={{ left: `${(toolsMin/100)*100}%`, right: `${100-(toolsMax/100)*100}%` }} />
+              <input type="range" min={0} max={100} step={1} value={toolsMin}
+                onChange={(e) => { const val = Math.min(Number(e.target.value), toolsMax-1); setToolsMin(val); setActiveToolsFilter(true); setCurrentPage(1); }}
+                className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: toolsMin > 90 ? 5 : 3 }} />
+              <input type="range" min={0} max={100} step={1} value={toolsMax}
+                onChange={(e) => { const val = Math.max(Number(e.target.value), toolsMin+1); setToolsMax(val); setActiveToolsFilter(true); setCurrentPage(1); }}
+                className="absolute w-full h-full opacity-0 cursor-pointer" style={{ zIndex: 4 }} />
+              <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
+                style={{ left: `calc(${(toolsMin/100)*100}% - 7px)` }} />
+              <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-[#6E56CF] rounded-full border-2 border-white pointer-events-none"
+                style={{ left: `calc(${(toolsMax/100)*100}% - 7px)` }} />
+            </div>
+            <button onClick={() => { setToolsMin(0); setToolsMax(100); setActiveToolsFilter(false); setCurrentPage(1); setOpenDropdown(null); }}
+              className="w-full text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors">
+              Reset
             </button>
           </div>
-
-          <div className="flex flex-col gap-6">
-            {/* Creator Type */}
-            <div>
-              <label className="text-xs font-bold text-[#71717A] uppercase tracking-wider mb-2 block">
-                Creator Type
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {CREATOR_TYPES.map((type) => (
-                  <button
-                    key={type.label}
-                    onClick={() => onCreatorTypeChange(type.value)}
-                    className={`h-9 text-xs rounded-lg border font-semibold capitalize ${
-                      creatorType === type.value
-                        ? "bg-white text-black border-white"
-                        : "bg-[#18181B] border-[#232326] text-[#A1A1AA] hover:border-neutral-500"
-                    }`}
-                  >
-                    {type.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Categories Selection (if categories list passed) */}
-            {availableCategories.length > 0 && (
-              <div>
-                <label className="text-xs font-bold text-[#71717A] uppercase tracking-wider mb-2 block">
-                  Categories
-                </label>
-                <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
-                  {availableCategories.map((cat) => {
-                    const isSelected = selectedCategories.includes(cat);
-                    return (
-                      <button
-                        key={cat}
-                        onClick={() => toggleCategory(cat)}
-                        className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors ${
-                          isSelected
-                            ? "bg-white text-black border-white"
-                            : "bg-[#18181B] border-[#232326] text-[#A1A1AA] hover:border-neutral-500"
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Updated Within */}
-            <div>
-              <label className="text-xs font-bold text-[#71717A] uppercase tracking-wider mb-2 block">
-                Updated Within
-              </label>
-              <select
-                value={updatedWithin}
-                onChange={(e) => onUpdatedWithinChange(e.target.value)}
-                className="w-full h-10 bg-[#18181B] border border-[#232326] rounded-lg px-3 text-xs text-white outline-none"
-              >
-                <option value="">Anytime</option>
-                <option value="7d">Last 7 Days</option>
-                <option value="30d">Last 30 Days</option>
-                <option value="90d">Last 90 Days</option>
-              </select>
-            </div>
-
-            {/* Checkboxes */}
-            <div className="flex flex-col gap-3">
-              <label className="text-xs font-bold text-[#71717A] uppercase tracking-wider block">
-                Attributes
-              </label>
-
-              <label className="flex items-center gap-3 text-xs text-white cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={featuredOnly}
-                  onChange={(e) => onFeaturedOnlyChange(e.target.checked)}
-                  className="rounded border-[#232326] bg-[#18181B] h-4 w-4"
-                />
-                <span>Featured Collections Only</span>
-              </label>
-
-              <label className="flex items-center gap-3 text-xs text-white cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={hasRelatedModels}
-                  onChange={(e) => onHasRelatedModelsChange(e.target.checked)}
-                  className="rounded border-[#232326] bg-[#18181B] h-4 w-4"
-                />
-                <span>Has AI Models Linked</span>
-              </label>
-
-              <label className="flex items-center gap-3 text-xs text-white cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={hasRelatedCompanies}
-                  onChange={(e) => onHasRelatedCompaniesChange(e.target.checked)}
-                  className="rounded border-[#232326] bg-[#18181B] h-4 w-4"
-                />
-                <span>Has Companies Linked</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-3 pt-6 border-t border-[#232326] mt-6">
-          <button
-            onClick={onReset}
-            className="flex-1 h-11 bg-[#18181B] border border-[#232326] text-white font-semibold text-xs rounded-xl hover:border-neutral-500"
-          >
-            Reset All
-          </button>
-          <button
-            onClick={onClose}
-            className="flex-1 h-11 bg-white text-black font-semibold text-xs rounded-xl hover:bg-neutral-200"
-          >
-            Apply Filters
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );

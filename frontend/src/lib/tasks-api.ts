@@ -3,7 +3,7 @@ function resolveApiUrl(): string {
   if (url && url.startsWith("http") && url !== "undefined") {
     return url.replace(/\/$/, "");
   }
-  return "https://api.aiorbit.club";
+  return "https://ai-orbit.palamrendra-pm.workers.dev";
 }
 const BASE_URL = resolveApiUrl();
 

@@ -1,22 +1,16 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import Link from "next/link";
-import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right';
-import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
+import { useSearchParams } from "next/navigation";
 
 import {
   fetchTasks,
   AuthRequiredError,
   type Task,
-  type Category,
-  type Difficulty,
-  type PricingModel,
   type SortOption,
   type FilterOption,
   type TaskListResponse,
 } from "@/lib/tasks-api";
-import { TaskFilters, type ShowFilter } from "./TaskFilters";
 import { TaskCard } from "./TaskCard";
 import { TaskSkeleton } from "./TaskSkeleton";
 import { EmptyTasks } from "./EmptyTasks";
@@ -29,21 +23,32 @@ type TasksClientProps = {
 
 const COLUMN_LABELS = ["SUBSCRIBERS", "SAVES", "TOOLS", "MODELS", "ROBOTS", "DEVICES"];
 
-function showFilterToApiFilter(show: ShowFilter): FilterOption {
-  switch (show) {
-    case "For You":
-      return "for-you";
-    case "Following":
-      return "following";
-    case "All Tasks":
-    default:
-      return "all";
-  }
-}
+const TASK_CATEGORIES = [
+  { name: "All", slug: "" },
+  { name: "Content Creation", slug: "content-creation" },
+  { name: "Image Creation", slug: "image-creation" },
+  { name: "Video Creation", slug: "video-creation" },
+  { name: "Audio", slug: "audio" },
+  { name: "Coding", slug: "coding" },
+  { name: "Data Analysis", slug: "data-analysis" },
+  { name: "Research", slug: "research" },
+  { name: "Productivity", slug: "productivity" },
+  { name: "Marketing", slug: "marketing" },
+  { name: "Customer Support", slug: "customer-support" },
+  { name: "Translation", slug: "translation" },
+  { name: "Presentation", slug: "presentation" },
+  { name: "Brainstorming", slug: "brainstorming" },
+  { name: "Prompting", slug: "prompting" },
+  { name: "Website Building", slug: "website-building" }
+];
 
 export function TasksClient({ initialData }: TasksClientProps) {
+  const searchParams = useSearchParams();
+  const [activeCategory, setActiveCategory] = useState<string>(() => {
+    return searchParams.get("category") || "";
+  });
+
   const [tasks, setTasks] = useState<Task[]>(initialData?.tasks ?? []);
-const [categories, setCategories] = useState<Category[]>(initialData?.categories ?? []);
 const [total, setTotal] = useState(initialData?.total ?? 0);
 const [page, setPage] = useState(initialData?.page ?? 1);
 const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
@@ -52,28 +57,15 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
   const [error, setError] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
 
-  const [search, setSearch] = useState("");
-  const [showFilter, setShowFilter] = useState<ShowFilter>("All Tasks");
-  const [category, setCategory] = useState("");
-  const [difficulty, setDifficulty] = useState<Difficulty | "ALL">("ALL");
-  const [pricing, setPricing] = useState<PricingModel | "ALL">("ALL");
-  const [featuredOnly, setFeaturedOnly] = useState(false);
-  const [sort, setSort] = useState<SortOption>("newest");
-
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const queryParams = useMemo(
     () => ({
-      q: search.trim() || undefined,
-      category: category || undefined,
-      difficulty: difficulty === "ALL" ? undefined : difficulty,
-      pricing: pricing === "ALL" ? undefined : pricing,
-      featuredOnly: featuredOnly || undefined,
-      sort,
-      filter: showFilterToApiFilter(showFilter),
+      sort: "newest" as SortOption,
+      filter: "all" as FilterOption,
+      category: activeCategory || undefined,
     }),
-    [search, category, difficulty, pricing, featuredOnly, sort, showFilter]
+    [activeCategory]
   );
 
   const loadPage = useCallback(
@@ -87,7 +79,6 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
         setTotal(data.total);
         setPage(data.page);
         setTotalPages(data.totalPages);
-        if (data.categories?.length) setCategories(data.categories);
       } catch (e) {
         if (e instanceof AuthRequiredError) {
           setAuthRequired(true);
@@ -103,21 +94,19 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
     [queryParams]
   );
 
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
-  if (initialData && search === "" && !category) {
-    return;
-  }
-
-  if (debounceRef.current) clearTimeout(debounceRef.current);
-
-  debounceRef.current = setTimeout(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      if (initialData) return;
+    }
+    setTasks([]);
+    setPage(1);
+    setTotalPages(1);
     loadPage(1, false);
-  }, 300);
-
-  return () => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-  };
-}, [queryParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryParams.category, queryParams.sort, queryParams.filter]);
 
   const loadMore = useCallback(() => {
     if (isFetching || page >= totalPages) return;
@@ -148,102 +137,47 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
   !error &&
   !authRequired;
 
-  const subtitle = useMemo(() => {
-    if (authRequired) return null;
-    if (!category) {
-      return (
-        <>
-          <span className="text-[#A1A1AA] font-medium tabular-nums">{total.toLocaleString()}</span> Tasks across all
-          categories
-        </>
-      );
-    }
-    const activeCategory = categories.find((c) => c.slug === category);
-    const categoryName = activeCategory?.name ?? category;
-    return (
-      <>
-        <span className="text-[#A1A1AA] font-medium tabular-nums">{total.toLocaleString()}</span> {categoryName}{" "}
-        Tasks
-      </>
-    );
-  }, [category, categories, total, authRequired]);
-
-  const emptyMessage = useMemo(() => {
-    if (showFilter === "For You") {
-      return "Like or save a few tasks and we'll start recommending more like them.";
-    }
-    if (showFilter === "Following") {
-      return "You haven't subscribed to any tasks yet.";
-    }
-    return undefined;
-  }, [showFilter]);
-
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      <main className="w-full max-w-none px-6 lg:px-10 xl:px-14 py-8 flex-1">
-        <nav aria-label="Breadcrumb" className="mb-4">
-          <ol className="flex items-center gap-1.5 text-xs text-[#71717A] font-mono">
-            <li>
-              <Link href="/" className="hover:text-white transition-colors duration-200">
-                Home
-              </Link>
-            </li>
-            <li className="flex items-center gap-1.5">
-              <ChevronRight className="h-3 w-3" />
-              <span className="text-white">Tasks</span>
-            </li>
-          </ol>
-        </nav>
-
-        <div className="mb-5 relative">
-          <div
-            className="pointer-events-none absolute -left-6 -top-10 h-40 w-40 rounded-full opacity-[0.15] blur-3xl"
-            style={{ background: "radial-gradient(circle, #6E56CF, transparent 70%)" }}
-            aria-hidden="true"
-          />
-          <div className="relative flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#18181C] to-[#0A0A0C] border border-[#232326] flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-              <Sparkles className="h-4 w-4 text-[#A78BFA]" aria-hidden="true" />
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">Tasks</h1>
-          </div>
-          {subtitle && <p className="text-sm text-[#71717A] mt-1.5 ml-[46px]">{subtitle}</p>}
-        </div>
-
-        <div className="mb-4">
-          <TaskFilters
-            search={search}
-            onSearchChange={setSearch}
-            showFilter={showFilter}
-            onShowFilterChange={setShowFilter}
-            categories={categories}
-            category={category}
-            onCategoryChange={setCategory}
-            difficulty={difficulty}
-            onDifficultyChange={setDifficulty}
-            pricing={pricing}
-            onPricingChange={setPricing}
-            featuredOnly={featuredOnly}
-            onFeaturedOnlyChange={setFeaturedOnly}
-            sort={sort}
-            onSortChange={setSort}
-          />
+      <main className="w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 py-2 flex-1 selection:bg-neutral-800 selection:text-white">
+        {/* Top Sliding Category Row */}
+        <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+          {TASK_CATEGORIES.map((topic) => {
+            const isSelected = activeCategory === topic.slug;
+            return (
+              <button
+                key={topic.name}
+                onClick={(e) => {
+                  setActiveCategory(topic.slug);
+                  const targetPath = topic.slug ? `/tasks?category=${topic.slug}` : `/tasks`;
+                  window.history.pushState(null, "", targetPath);
+                  e.currentTarget.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "center"
+                  });
+                }}
+                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                  isSelected
+                    ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                    : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+                }`}
+              >
+                {topic.name}
+              </button>
+            );
+          })}
         </div>
 
         {isInitialLoading ? (
           <TaskSkeleton />
         ) : authRequired ? (
           <TaskAuthRequired
-            message={
-              showFilter === "For You"
-                ? "Sign in to see tasks picked for you."
-                : "Sign in to see tasks you're following."
-            }
+            message="Sign in to see tasks you're following."
           />
         ) : error && tasks.length === 0 ? (
           <TaskErrorState message={error} onRetry={() => loadPage(1, false)} />
         ) : tasks.length === 0 ? (
-          <EmptyTasks message={emptyMessage} />
+          <EmptyTasks />
         ) : (
           <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#131316]/60 to-[#0D0D10]/60 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_20px_60px_-30px_rgba(0,0,0,0.8)] ring-1 ring-[#232326]/70">
             <div className="grid grid-cols-[48px_minmax(220px,1.6fr)_repeat(6,minmax(90px,1fr))] items-center gap-4 px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
@@ -277,6 +211,5 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
           </div>
         )}
       </main>
-    </div>
   );
 }

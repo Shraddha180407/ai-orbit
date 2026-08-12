@@ -6,6 +6,7 @@ const router = new Hono();
 const controller = new ToolsController();
 
 router.get('/', (c) => controller.listTools(c));
+router.get('/category/:category', (c) => controller.listToolsByCategory(c));
 router.get('/:slug', optionalJwtMiddleware, (c) => controller.getToolDetails(c));
 router.post('/:slug/reviews', jwtMiddleware, (c) => controller.submitReview(c));
 router.post('/:slug/bookmark', jwtMiddleware, (c) => controller.toggleBookmark(c));

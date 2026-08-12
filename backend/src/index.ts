@@ -19,6 +19,7 @@ import { robotsRouter } from './modules/robots/robots.routes.js'
 import { homepageRouter } from './modules/homepage/homepage.routes.js'
 import { toolsRouter } from './modules/tools/tools.routes.js'
 import { userRouter } from './modules/user/user.routes.js'
+import { mcpRouter } from './modules/mcp/mcp.routes.js'
 import { getPrisma } from './lib/prisma.js'
 import { runIngestion } from './modules/ingestion/ingestion.service.js'
 import type { IngestionContext } from './modules/ingestion/pipeline.js'
@@ -31,6 +32,7 @@ type Bindings = {
   CLOUDINARY_API_KEY: string
   CLOUDINARY_API_SECRET: string
   INGESTION_TOKEN: string
+  GITHUB_TOKEN: string
 }
 
 import { errorHandler } from './middleware/error.js'
@@ -77,6 +79,7 @@ app.route('/api/v1/homepage', homepageRouter)
 app.route('/api/v1/tools', toolsRouter)
 app.route('/api/user', userRouter)
 app.route('/api/bookmarks', bookmarksRouter)
+app.route('/api/v1/mcps', mcpRouter)
 
 app.get('/', (c) => {
   return c.json({

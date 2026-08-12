@@ -3,9 +3,10 @@ import Link from "next/link";
 interface RepositoryBreadcrumbProps {
   owner: string;
   name: string;
+  companySlug?: string | null;
 }
 
-export function RepositoryBreadcrumb({ owner, name }: RepositoryBreadcrumbProps) {
+export function RepositoryBreadcrumb({ owner, name, companySlug }: RepositoryBreadcrumbProps) {
   return (
     <nav 
       aria-label="Breadcrumb" 
@@ -20,9 +21,13 @@ export function RepositoryBreadcrumb({ owner, name }: RepositoryBreadcrumbProps)
           Companies
         </Link>
         <span className="mx-2 text-white/40">&gt;</span>
-        <Link href={`/companies/${owner.toLowerCase()}`} className="hover:text-white transition-colors">
-          {owner}
-        </Link>
+        {companySlug ? (
+          <Link href={`/companies/${companySlug}`} className="hover:text-white transition-colors">
+            {owner}
+          </Link>
+        ) : (
+          <span className="text-white/80 select-none">{owner}</span>
+        )}
         <span className="mx-2 text-white/40">&gt;</span>
         <Link href="/repositories" className="hover:text-white transition-colors">
           Repositories

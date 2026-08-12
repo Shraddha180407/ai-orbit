@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Header } from "@/components/Header";
+import { GlobalHero } from "@/components/GlobalHero";
 import { Footer } from "@/components/Footer";
 import { ToolsClient } from "@/components/tools-client";
 
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "AI Tools — Browse the Full Directory",
     description: "Search and filter AI tools by category, pricing, and rating.",
-  },
+  },  
   alternates: {
     canonical: "/tools",
   },
@@ -28,6 +29,7 @@ export default function ToolsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white">
       <Header />
+      <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
       <Suspense fallback={
         <main className="mx-auto max-w-container px-6 py-10 flex-1">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

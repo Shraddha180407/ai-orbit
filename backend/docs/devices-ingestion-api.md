@@ -35,6 +35,8 @@ The API expects a top-level JSON object containing a `devices` array.
 | `month` | `string` | No | Month of release. |
 | `description` | `string` | **Yes** | Full description of the device. |
 | `imageUrl` | `string` (URL) | **Yes** | URL to an image of the device. |
+| `images` | `string[]` (URLs) | No | Array of URLs to multiple images of the device. Default is `[]`. |
+| `videoUrl` | `string` (URL) | No | URL to a promotional/product video. |
 | `manufacturerLogoUrl` | `string` (URL) | **Yes** | URL to the manufacturer's logo. |
 | `mainTask` | `string` | **Yes** | Primary task the device is used for. |
 | `formFactor` | `string` | No | Physical form factor. |
@@ -80,6 +82,12 @@ The API expects a top-level JSON object containing a `devices` array.
       "month": "July",
       "description": "A high-performance tablet for AI developers.",
       "imageUrl": "https://example.com/orbit-pad.png",
+      "images": [
+        "https://example.com/orbit-pad-front.png",
+        "https://example.com/orbit-pad-back.png",
+        "https://example.com/orbit-pad-side.png"
+      ],
+      "videoUrl": "https://www.youtube.com/watch?v=orbit-pad-pro-demo",
       "manufacturerLogoUrl": "https://example.com/orbit-logo.png",
       "mainTask": "Generative Design",
       "formFactor": "Slate",
