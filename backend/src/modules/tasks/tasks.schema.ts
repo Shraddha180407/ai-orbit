@@ -7,7 +7,13 @@ export const GetTasksQuerySchema = z.object({
   difficulty: z.enum(['EASY', 'MEDIUM', 'ADVANCED']).optional(),
   pricing: z.nativeEnum(PricingModel).optional(),
   featuredOnly: z.string().optional(),
-  sort: z.enum(['newest', 'oldest', 'alphabetical', 'popular']).optional().default('newest'),
+  sort: z.enum([
+    "newest",
+    "oldest",
+    "rating",
+    "name-asc",
+    "name-desc"
+]).optional().default('newest'),
   page: z.string().optional().default('1'),
   filter: z.enum(['all', 'for-you', 'following']).optional().default('all'),
 });

@@ -220,7 +220,6 @@ model Category {
   name String
 
   tools ToolCategory[]
-  tasks Task[]
 }
 
 model Tag {
@@ -908,33 +907,55 @@ model Task {
   slug         String         @unique
   title        String
   description  String
+
+  iconUrl      String?
+  bannerUrl    String?
+
   difficulty   TaskDifficulty @default(EASY)
   pricingModel PricingModel   @default(FREE)
   isFeatured   Boolean        @default(false)
 
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId   String
+  category     TaskCategory   @relation(fields: [categoryId], references: [id])
 
-  creatorId String?
-  creator   User?   @relation("TaskCreator", fields: [creatorId], references: [id])
+  creatorId    String?
+  creator      User?          @relation("TaskCreator", fields: [creatorId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
-  bookmarks   TaskBookmark[]
-  likes       TaskLike[]
-  subscribers TaskSubscriber[]
-  tools       TaskTool[]
-  models      TaskModel[]
-  robots      TaskRobot[]
-  devices     TaskDevice[]
-  resources   TaskResource[]
+  toolCount    Int            @default(0)
+  modelCount   Int            @default(0)
+  robotCount   Int            @default(0)
+  deviceCount  Int            @default(0)
+  saveCount    Int            @default(0)
+  shareUrl     String?
+
+  bookmarks    TaskBookmark[]
+  likes        TaskLike[]
+  subscribers  TaskSubscriber[]
+  tools        TaskTool[]
+  models       TaskModel[]
+  robots       TaskRobot[]
+  devices      TaskDevice[]
+  resources    TaskResource[]
+
+  popularTools  TaskPopularTool[]
+  popularModels TaskPopularModel[]
 
   @@index([categoryId])
   @@index([difficulty])
   @@index([pricingModel])
   @@index([isFeatured])
   @@index([creatorId])
+}
+
+model TaskCategory {
+  id    String @id @default(cuid())
+  name  String
+  slug  String @unique
+
+  tasks Task[]
 }
 
 model TaskLike {
@@ -995,15 +1016,60 @@ model TaskDevice {
 }
 
 model TaskResource {
+  id String @id @default(cuid())
+
+  taskId String
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  title String
+  url   String
+
+  homepage String?
+  source   String?
+  postedAt DateTime?
+  stars    Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+}
+
+model TaskPopularTool {
   id        String   @id @default(cuid())
   taskId    String
-  title     String
-  url       String
+  slug      String
+  name      String
+  logoUrl   String?
+  tagline   String
+  pricingModel String
+  rating    Float?
+  bookmarkCount Int @default(0)
+  visitUrl  String?
   createdAt DateTime @default(now())
 
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
+  @@unique([taskId, slug])
+}
+
+model TaskPopularModel {
+  id        String   @id @default(cuid())
+  taskId    String
+  slug      String
+  name      String
+  provider  String
+  logoUrl   String?
+  modelType String
+  pricingModel String
+  benchmarkScore Float?
+  websiteUrl String?
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@unique([taskId, slug])
 }
 
 model TaskTool {
