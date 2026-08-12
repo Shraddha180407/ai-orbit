@@ -112,10 +112,10 @@ export function MCPClient() {
   });
   const categories = categoriesData || [];
 
-  // Fetch subcategories based on active category
+  // Always fetch all subcategories regardless of selected category
   const { data: subCategoriesData } = useQuery({
-    queryKey: ["mcpSubCategories", activeCategory],
-    queryFn: () => fetchMCPSubCategories(activeCategory || undefined),
+    queryKey: ["mcpSubCategories"],
+    queryFn: () => fetchMCPSubCategories(),
   });
   const subCategories = subCategoriesData || [];
 
@@ -225,7 +225,8 @@ export function MCPClient() {
         </div>
 
         {/* Top Sliding Category + Subcategory Row */}
-        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+        {/* Single combined scrollable pill row — categories + subcategories */}
+        <div className="mb-2 flex flex-nowrap items-center justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
           {[{ name: "All", slug: "" }, ...categories].map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
@@ -233,7 +234,8 @@ export function MCPClient() {
                 key={topic.slug || "all"}
                 onClick={(e) => {
                   setActiveCategory(topic.slug);
-                  updateUrl(topic.slug, activeSubCategory);
+                  setActiveSubCategory("");
+                  updateUrl(topic.slug, "");
                   e.currentTarget.scrollIntoView({
                     behavior: "smooth",
                     block: "nearest",
@@ -250,38 +252,35 @@ export function MCPClient() {
               </button>
             );
           })}
-          {subCategories.length > 0 && !activeSubCategory && subCategories.map((sub) => (
-            <button
-              key={sub.id}
-              onClick={() => {
-                setActiveSubCategory(sub.slug);
-                updateUrl(activeCategory, sub.slug);
-              }}
-              className="whitespace-nowrap text-[11px] font-semibold px-3 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white transition-all cursor-pointer"
-            >
-              {sub.name}
-            </button>
-          ))}
+          {subCategories.length > 0 && (
+            <>
+
+              {subCategories.map((sub) => {
+                const isActiveSub = activeSubCategory === sub.slug;
+                return (
+                  <button
+                    key={sub.id}
+                    onClick={() => {
+                      const next = isActiveSub ? "" : sub.slug;
+                      setActiveSubCategory(next);
+                      setActiveCategory("");
+                      updateUrl("", next);
+                    }}
+                    className={`whitespace-nowrap text-[10px] font-bold px-3 py-1 rounded-full border transition-all duration-200 cursor-pointer ${
+                      isActiveSub
+                        ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                        : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+                    }`}
+                  >
+                    {sub.name}
+                  </button>
+                );
+              })}
+            </>
+          )}
         </div>
 
-        {/* Active Subcategory Filter Chip */}
-        {activeSubCategory && (
-          <div className="flex items-center gap-2 mb-2 bg-white/[0.02] border border-white/[0.08] px-3.5 py-2 rounded-lg w-fit shadow-md animate-fade-in">
-            <span className="text-xs text-white/50">Subcategory:</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white/[0.08] text-white">
-              {subCategories.find(s => s.slug === activeSubCategory)?.name || activeSubCategory}
-            </span>
-            <button
-              onClick={() => {
-                setActiveSubCategory("");
-                updateUrl(activeCategory, "");
-              }}
-              className="text-xs text-red-400 hover:text-red-300 transition-colors ml-2 cursor-pointer font-medium"
-            >
-              Clear
-            </button>
-          </div>
-        )}
+        
         {/* Dynamic content rendering based on loading/error/data states */}
         <div className="pt-0">
           {isLoading && items.length === 0 ? (
