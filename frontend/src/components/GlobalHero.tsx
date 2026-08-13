@@ -120,7 +120,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     <>
       {/* Hero Section */}
       <section
-        className="relative w-full flex flex-col items-center pt-4 pb-6 px-6"
+        className="relative z-20 w-full flex flex-col items-center pt-4 pb-6 px-6"
         style={{
           backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
@@ -236,7 +236,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
       {/* Directory nav strip */}
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
         <div className="mx-auto w-full max-w-[1600px]">
-          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto">
+          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none">
             {DIRECTORY_CARDS.map((card) => {
               const Icon = card.icon;
               const isSelected = card.href === "/" 
