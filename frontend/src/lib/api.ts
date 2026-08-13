@@ -342,6 +342,8 @@ function resolveServerApiUrl(): string {
     const withScheme = /^https?:\/\//.test(raw) ? raw : (raw.includes("localhost") || raw.includes("127.0.0.1") ? `http://${raw}` : `https://${raw}`);
     return withScheme.replace(/\/$/, "");
   }
+  
+  // Hardcoded fallback that bypasses the proxy (legacy)
   return "https://ai-orbit.palamrendra-pm.workers.dev";
 }
 
