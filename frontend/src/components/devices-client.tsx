@@ -153,8 +153,16 @@ export function DevicesClient() {
   const [nameInput, setNameInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
   const [selectedAvailability, setSelectedAvailability] = useState("All");
-  const [sortKey, setSortKey] = useState<SortKey>("release");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const rawSort = searchParams.get("sort") ?? "newest";
+const [sortKey, setSortKey] = useState<SortKey>(() => {
+  if (rawSort === "name-asc" || rawSort === "name-desc") return "name";
+  if (rawSort === "oldest" || rawSort === "newest") return "release";
+  return "release";
+});
+const [sortDir, setSortDir] = useState<"asc" | "desc">(() => {
+  if (rawSort === "oldest" || rawSort === "name-asc") return "asc";
+  return "desc";
+});
   const [activePill, setActivePill] = useState<string | null>(null);
   const [priceMin, setPriceMin] = useState(0);
   const [priceMax, setPriceMax] = useState(10000);
@@ -191,7 +199,14 @@ export function DevicesClient() {
       .finally(() => setIsLoading(false));
   }, []);
 
-
+useEffect(() => {
+  const s = searchParams.get("sort") ?? "newest";
+  if (s === "name-asc")  { setSortKey("name");    setSortDir("asc");  }
+  else if (s === "name-desc") { setSortKey("name"); setSortDir("desc"); }
+  else if (s === "oldest")    { setSortKey("release"); setSortDir("asc"); }
+  else if (s === "rating")    { setSortKey("release"); setSortDir("desc"); } // fallback
+  else                        { setSortKey("release"); setSortDir("desc"); } // newest
+}, [searchParams]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

@@ -24,6 +24,13 @@ export function RepositoriesClient() {
   
   const [sortField, setSortField] = useState<"stars" | "forks" | "size" | "updated" | null>("stars");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  useEffect(() => {
+  const s = searchParams.get("sort") ?? "newest";
+  if (s === "name-asc")       { setSortField("updated"); setSortOrder("asc");  }
+  else if (s === "name-desc") { setSortField("updated"); setSortOrder("desc"); }
+  else if (s === "oldest")    { setSortField("stars");   setSortOrder("asc");  }
+  else                        { setSortField("stars");   setSortOrder("desc"); }
+}, [searchParams]);
   const [selectedLicense, setSelectedLicense] = useState<string | null>(null);
   const [isLicenseDropdownOpen, setIsLicenseDropdownOpen] = useState(false);
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);

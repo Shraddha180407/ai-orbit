@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Video } from "@/lib/video-types";
 import { getVideosPage } from "@/lib/videos-data";
 import { VideoTable } from "./VideoTable";
@@ -34,8 +34,9 @@ export function VideosPageClient({
   initialTotal: number;
   pageSize: number;
 }) {
-  const [videos, setVideos] = useState<Video[]>(initialVideos);
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const [videos, setVideos] = useState<Video[]>(initialVideos);
   const [activeCategory, setActiveCategory] = useState<string>(searchParams?.get("category") || "");
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
@@ -43,11 +44,19 @@ export function VideosPageClient({
 
   const hasMore = videos.length < total;
 
-  const activeVideos = activeCategory
-    ? videos.filter(
-        (v) => v.toolCategory === activeCategory || v.tags?.includes(activeCategory)
-      )
-    : videos;
+  const rawSort = searchParams?.get("sort") ?? "newest";
+
+const activeVideos = (activeCategory
+  ? videos.filter(
+      (v) => v.toolCategory === activeCategory || v.tags?.includes(activeCategory)
+    )
+  : videos
+).slice().sort((a, b) => {
+  if (rawSort === "name-asc")  return a.title.localeCompare(b.title);
+  if (rawSort === "name-desc") return b.title.localeCompare(a.title);
+  if (rawSort === "oldest")    return new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
+  return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+});
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
@@ -93,15 +102,17 @@ export function VideosPageClient({
             <button
               key={topic.name}
               onClick={(e) => {
-                setActiveCategory(topic.slug);
-                const targetPath = topic.slug ? `/videos?category=${topic.slug}` : `/videos`;
-                window.history.pushState(null, "", targetPath);
-                e.currentTarget.scrollIntoView({
-                  behavior: "smooth",
-                  block: "nearest",
-                  inline: "center"
-                });
-              }}
+  setActiveCategory(topic.slug);
+  const params = new URLSearchParams(searchParams.toString());
+  if (topic.slug) params.set("category", topic.slug);
+  else params.delete("category");
+  router.push(`/videos?${params.toString()}`);
+  e.currentTarget.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest",
+    inline: "center"
+  });
+}}
               className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
                 isSelected
                   ? "bg-white text-black border-white shadow-lg shadow-white/5"

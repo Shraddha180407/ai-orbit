@@ -77,7 +77,13 @@ export function CompaniesClient() {
   const [activeType, setActiveType] = useState<CompanyType | null>(null);
   const [sortField, setSortField] = useState<SortField>('valuation');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
-
+useEffect(() => {
+  const s = searchParams.get("sort") ?? "newest";
+  if (s === "name-asc")       { setSortField("name");      setSortDir("asc");  }
+  else if (s === "name-desc") { setSortField("name");      setSortDir("desc"); }
+  else if (s === "oldest")    { setSortField("valuation");  setSortDir("asc");  }
+  else                        { setSortField("valuation");  setSortDir("desc"); }
+}, [searchParams]);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Admin Modal State
