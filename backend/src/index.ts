@@ -32,6 +32,7 @@ type Bindings = {
   CLOUDINARY_API_KEY: string
   CLOUDINARY_API_SECRET: string
   INGESTION_TOKEN: string
+  INGESTION_TOKEN_COLLECTIONS: string
   GITHUB_TOKEN: string
 }
 

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { ingestionRunQuerySchema } from "./ingestion.schemas.js";
 import { IngestionController } from "./ingestion.controller.js";
-import { requireIngestionToken } from "../../middleware/auth.js";
+import { requireIngestionToken, requireCollectionsIngestionToken } from "../../middleware/auth.js";
 import { logger } from "../../lib/logger.js";
 import { toolsIngestPayloadSchema } from "./tools.ingest.schema.js";
 import { ToolsIngestService } from "./tools.ingest.service.js";
@@ -35,6 +35,7 @@ const router = new Hono<{
     CLOUDINARY_API_KEY: string;
     CLOUDINARY_API_SECRET: string;
     INGESTION_TOKEN: string;
+    INGESTION_TOKEN_COLLECTIONS: string;
   };
 }>();
 
@@ -92,7 +93,7 @@ router.post("/devices", requireIngestionToken, async (c) => {
   }
 });
 
-router.post("/collections", requireIngestionToken, async (c) => {
+router.post("/collections", requireCollectionsIngestionToken, async (c) => {
   try {
     const body = await c.req.json();
     const parsed = collectionsIngestPayloadSchema.safeParse(body);
