@@ -54,7 +54,6 @@ describe('TasksService', () => {
       );
       expect(result.page).toBe(1);
       expect(result.sort).toBe('newest');
-      expect(result.categories).toBeDefined();
     });
 
     it('applies pagination correctly', async () => {
@@ -121,15 +120,22 @@ describe('TasksService', () => {
       );
     });
 
-    it('sorts by alphabetical', async () => {
-      await service.listTasks({ sort: 'alphabetical' });
+    it('sorts by name-asc', async () => {
+      await service.listTasks({ sort: 'name-asc' });
       expect(mockPrisma.task.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ orderBy: { title: 'asc' } }),
       );
     });
 
-    it('sorts by popular', async () => {
-      await service.listTasks({ sort: 'popular' });
+    it('sorts by name-desc', async () => {
+      await service.listTasks({ sort: 'name-desc' });
+      expect(mockPrisma.task.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: { title: 'desc' } }),
+      );
+    });
+
+    it('sorts by rating', async () => {
+      await service.listTasks({ sort: 'rating' });
       expect(mockPrisma.task.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ orderBy: { likes: { _count: 'desc' } } }),
       );
@@ -174,13 +180,14 @@ describe('TasksService', () => {
     });
 
     it('serializes task counts correctly', async () => {
+      const updatedAt = new Date('2026-01-01T00:00:00.000Z');
       mockPrisma.task.findMany.mockResolvedValue([
         {
-          id: '1', slug: 's', title: 'T', description: 'D', difficulty: 'EASY',
-          pricingModel: 'FREE', isFeatured: false, createdAt: new Date(),
-          category: { slug: 'ai', name: 'AI' },
-          creator: { id: 'u1', name: 'Bob', image: null },
-          _count: { likes: 3, subscribers: 2, bookmarks: 1, resources: 4, tools: 1, models: 0, robots: 0, devices: 0 },
+          id: '1', slug: 's', title: 'T', description: 'D', iconUrl: null,
+          difficulty: 'EASY', pricingModel: 'FREE', isFeatured: false,
+          category: { id: 'c1', slug: 'ai', name: 'AI' },
+          updatedAt,
+          _count: { tools: 1, models: 0, robots: 0, devices: 0, bookmarks: 1 },
         },
       ]);
       mockPrisma.task.count.mockResolvedValue(1);
@@ -188,7 +195,8 @@ describe('TasksService', () => {
       const result = await service.listTasks({});
       expect(result.tasks[0]).toEqual(
         expect.objectContaining({
-          likes: 3, subscribers: 2, saves: 1, resources: 4,
+          toolCount: 1, modelCount: 0, robotCount: 0, deviceCount: 0, saveCount: 1,
+          updatedAt: updatedAt.toISOString(),
         }),
       );
     });
@@ -203,11 +211,14 @@ describe('TasksService', () => {
 
     it('returns task without interactions when no userId', async () => {
       mockPrisma.task.findUnique.mockResolvedValue({
-        id: '1', slug: 's', title: 'T', description: 'D', difficulty: 'EASY',
-        pricingModel: 'FREE', isFeatured: false, createdAt: new Date(),
-        category: { slug: 'ai', name: 'AI' },
-        creator: null,
-        _count: { likes: 0, subscribers: 0, bookmarks: 0, resources: 0, tools: 0, models: 0, robots: 0, devices: 0 },
+        id: '1', slug: 's', title: 'T', description: 'D', iconUrl: null,
+        difficulty: 'EASY', pricingModel: 'FREE', isFeatured: false,
+        updatedAt: new Date(),
+        category: { id: 'c1', slug: 'ai', name: 'AI' },
+        _count: { tools: 0, models: 0, robots: 0, devices: 0, bookmarks: 0, subscribers: 0 },
+        resources: [],
+        popularTools: [],
+        popularModels: [],
       });
 
       const result = await service.getTaskDetails('s');
@@ -219,11 +230,14 @@ describe('TasksService', () => {
 
     it('returns task with user interactions when userId provided', async () => {
       mockPrisma.task.findUnique.mockResolvedValue({
-        id: '1', slug: 's', title: 'T', description: 'D', difficulty: 'EASY',
-        pricingModel: 'FREE', isFeatured: false, createdAt: new Date(),
-        category: { slug: 'ai', name: 'AI' },
-        creator: null,
-        _count: { likes: 1, subscribers: 1, bookmarks: 1, resources: 0, tools: 0, models: 0, robots: 0, devices: 0 },
+        id: '1', slug: 's', title: 'T', description: 'D', iconUrl: null,
+        difficulty: 'EASY', pricingModel: 'FREE', isFeatured: false,
+        updatedAt: new Date(),
+        category: { id: 'c1', slug: 'ai', name: 'AI' },
+        _count: { tools: 0, models: 0, robots: 0, devices: 0, bookmarks: 1, subscribers: 1 },
+        resources: [],
+        popularTools: [],
+        popularModels: [],
       });
       mockPrisma.taskBookmark.findUnique.mockResolvedValue({ id: 'bm1' });
       mockPrisma.taskLike.findUnique.mockResolvedValue({ taskId: '1', userId: 'u1' });
