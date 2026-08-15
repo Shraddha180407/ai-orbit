@@ -1,0 +1,83 @@
+import type { RobotListItem } from "@/lib/types";
+
+/**
+ * Static fallback robot data — used when the backend API returns empty.
+ * Once the backend is seeded with real data, this will be ignored.
+ */
+export const FALLBACK_ROBOTS: RobotListItem[] = [
+  {
+    id: "tesla-optimus",
+    slug: "tesla-optimus",
+    name: "Tesla Optimus Gen 2",
+    logoUrl: null,
+    thumbnailUrl: null,
+    company: "Tesla",
+    country: "USA",
+    category: "Humanoid",
+    availability: "In development",
+    price: "$20,000",
+    releaseDate: "2025-01-01",
+    mainTask: "General purpose labor",
+    autonomyLevel: "Highly autonomous",
+    primaryUseCases: ["Manufacturing", "Logistics", "Household tasks"],
+    websiteUrl: "https://tesla.com/optimus",
+    about: "Tesla's next-generation humanoid robot with improved hands, faster walking speed, and AI-driven autonomy.",
+    specs: "Weight: 121 lbs. Height: 5'8\". Actuators: 28.",
+    mediaUrls: [],
+    tasks: [],
+  },
+  {
+    id: "figure-02",
+    slug: "figure-02",
+    name: "Figure 02",
+    logoUrl: null,
+    thumbnailUrl: null,
+    company: "Figure AI",
+    country: "USA",
+    category: "Humanoid",
+    availability: "In development",
+    price: null,
+    releaseDate: "2024-08-01",
+    mainTask: "Factory logistics & manipulation",
+    autonomyLevel: "Highly autonomous",
+    primaryUseCases: ["Manufacturing", "Logistics", "Warehouse operations"],
+    websiteUrl: "https://figure.ai",
+    about: "A commercial-grade humanoid robot powered by OpenAI speech-to-speech models, designed for factory logistics.",
+    specs: "Weight: 132 lbs. Height: 5'6\". Payload: 44 lbs.",
+    mediaUrls: [],
+    tasks: [],
+  },
+  {
+    id: "spot",
+    slug: "spot",
+    name: "Spot",
+    logoUrl: null,
+    thumbnailUrl: null,
+    company: "Boston Dynamics",
+    country: "USA",
+    category: "Quadruped",
+    availability: "Commercially available",
+    price: "$74,500",
+    releaseDate: "2020-06-01",
+    mainTask: "Industrial inspection",
+    autonomyLevel: "Semi-autonomous",
+    primaryUseCases: ["Inspection", "Data collection", "Security patrol"],
+    websiteUrl: "https://bostondynamics.com/spot",
+    about: "An agile quadruped robot for industrial inspection, data collection, and hazardous environment exploration.",
+    specs: "Weight: 32.7 kg. Speed: 1.6 m/s. Runtime: 90 min.",
+    mediaUrls: [],
+    tasks: [],
+  },
+];
+
+/** All unique categories derived from production data */
+export const ROBOT_CATEGORIES = [
+  "All",
+  "Humanoid",
+  "Quadruped",
+  "Agricultural",
+  "Industrial",
+  "Medical",
+  "Service",
+  "Delivery",
+] as const;

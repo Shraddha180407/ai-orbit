@@ -31,6 +31,34 @@ export class ToolsController {
       await prisma.$disconnect();
     }
   }
+  async listToolsByCategory(c: Context) {
+    const prisma = getPrisma(c.env);
+    const service = new ToolsService(prisma);
+
+    const query = c.req.query();
+    const parsed = GetToolsQuerySchema.safeParse(query);
+    const category = c.req.param('category');
+
+    if (!parsed.success) {
+      return c.json({ error: 'Invalid parameters', details: parsed.error.issues }, 400);
+    }
+
+    try {
+      const pageNum = Number.parseInt(parsed.data.page, 10) || 1;
+      const result = await service.listTools({
+        q: parsed.data.q,
+        category: category,
+        pricing: parsed.data.pricing,
+        sort: parsed.data.sort,
+        page: pageNum,
+      });
+      return c.json(result);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
 
   async getToolDetails(c: Context) {
     const prisma = getPrisma(c.env);

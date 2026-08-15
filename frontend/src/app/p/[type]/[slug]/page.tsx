@@ -1,6 +1,11 @@
 export const runtime = "edge";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import { Header } from "@/components/Header";
+import { GlobalHero } from "@/components/GlobalHero";
+import { Footer } from "@/components/Footer";
+import { ToolsClient } from "@/components/tools-client";
 import { ToolDetailClient } from "@/components/tool-detail-client";
 import { CollectionDetailClient } from "@/components/detail/CollectionDetailClient";
 import { VideoDetailsClient } from "@/components/detail/VideoDetailsClient";
@@ -10,26 +15,31 @@ import { DeviceDetailClient } from "@/components/detail/DeviceDetailClient";
 import { TaskDetailClient } from "@/components/detail/TaskDetailClient";
 import { RepositoryDetailPage } from "@/components/repository-detail/RepositoryDetailPage";
 import { CompanyDetailClient } from "@/components/company-detail-client";
-import { SERVER_API_URL } from "@/lib/api";
+import { RobotDetailClient } from "@/components/detail/RobotDetailClient";
+import { MCPDetailClient } from "@/components/mcp-detail-client";
+import { SERVER_API_URL, fetchMCPItemBySlug, fetchMCPItemAlternatives } from "@/lib/api";
+
+const VALID_CATEGORIES: Record<string, Set<string>> = {
+  tools: new Set(["writing", "image-generation", "video", "audio", "chatbots", "coding", "marketing", "productivity", "business", "education", "mcp"]),
+  personal: new Set(["productivity", "chatbots", "writing", "audio", "customer-support", "video", "image-generation", "marketing"]),
+  creativity: new Set(["image-generation", "writing", "software-development", "video-creation", "music", "graphic-design", "digital-art", "brainstorming", "3d-creation", "presentation-design", "storytelling", "content-creation", "branding", "motion-graphics", "game-creation"])
+};
 
 interface UnifiedEntityPageProps {
   params: Promise<{ type: string; slug: string }>;
 }
 
-/**
- * Per-type Open Graph/Twitter tags so a shared link shows the real
- * headline/summary instead of the root layout's site-wide default.
- * Every other entity type not listed here falls through to {} and
- * inherits the root layout's metadata unchanged.
- *
- * Uses SERVER_API_URL, not API_URL — this runs server-side (Edge runtime),
- * and API_URL's api.aiorbit.club domain hits Cloudflare's same-account
- * proxy loop-prevention for a Pages Function server-side fetch (see
- * api.ts's own comment on SERVER_API_URL); only client-side fetches are
- * safe on api.aiorbit.club.
- */
 export async function generateMetadata({ params }: UnifiedEntityPageProps): Promise<Metadata> {
   const { type, slug } = await params;
+
+  if ((type === "tools" || type === "personal" || type === "creativity") && VALID_CATEGORIES[type]?.has(slug)) {
+    const formattedSlug = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    const formattedType = type.charAt(0).toUpperCase() + type.slice(1);
+    return {
+      title: `${formattedSlug} ${formattedType} | AI Orbit`,
+      description: `Browse the best AI tools for ${formattedSlug.toLowerCase()} in the ${formattedType.toLowerCase()} directory.`,
+    };
+  }
 
   if (type === "news") {
     try {
@@ -66,6 +76,30 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
     }
   }
 
+  if (type === "robots") {
+    const title = slug
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    return {
+      title: `${title} — Robots — The AI Signal`,
+      description: `Details and specifications for ${title}.`,
+    };
+  }
+  
+  if (type === "mcp") {
+    try {
+      const item = await fetchMCPItemBySlug(slug);
+      if (!item) return { title: "MCP Item Not Found | AI Orbit" };
+      return {
+        title: `${item.name} — Model Context Protocol (MCP) | AI Orbit`,
+        description: item.shortDescription,
+      };
+    } catch {
+      return { title: "MCP Directory | AI Orbit" };
+    }
+  }
+
   return {};
 }
 
@@ -73,8 +107,50 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   const resolvedParams = await params;
   const { type, slug } = resolvedParams;
   
-  
-  if (type === "tools") return <ToolDetailClient />;
+  if ((type === "tools" || type === "personal" || type === "creativity") && VALID_CATEGORIES[type]?.has(slug)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        <Suspense fallback={
+          <main className="mx-auto max-w-container px-6 py-10 flex-1">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {[1,2,3,4,5,6,7,8].map((i) => (
+                <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
+              ))}
+            </div>
+          </main>
+        }>
+          <div className="flex-1">
+            <ToolsClient defaultMode={type as any} defaultCategory={slug} />
+          </div>
+        </Suspense>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (type === "tools" || type === "personal" || type === "creativity") return <ToolDetailClient />;
+  if (type === "mcp") {
+    const item = await fetchMCPItemBySlug(slug);
+    if (!item) return notFound();
+
+    // Fetch alternatives safely so failed fetch doesn't block critical page load
+    let initialAlternatives: any[] = [];
+    try {
+      initialAlternatives = await fetchMCPItemAlternatives(slug);
+    } catch (err) {
+      console.warn("Failed to prefetch alternatives for MCP detail page on server:", err);
+    }
+
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <MCPDetailClient item={item} initialAlternatives={initialAlternatives} />
+        <Footer />
+      </div>
+    );
+  }
   if (type === "collections") return <CollectionDetailClient />;
   if (type === "videos") return <VideoDetailsClient />;
   if (type === "news") return <ArticlePageClient />;
@@ -82,12 +158,21 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   if (type === "repositories") return <RepositoryDetailPage slug={slug} />;
   if (type === "companies") return <CompanyDetailClient />;
 
-  const entityTypeMap: Record<string, "device" | "country" | "fundraise" | "investor" | "robot"> = {
+  if (type === "robots") {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
+        <Header />
+        <RobotDetailClient id={slug} />
+        <Footer />
+      </div>
+    );
+  }
+
+  const entityTypeMap: Record<string, "device" | "country" | "fundraise" | "investor"> = {
     devices: "device",
     countries: "country",
     fundraises: "fundraise",
     investors: "investor",
-    robots: "robot",
   };
 
   if (type === "devices") return <DeviceDetailClient />;

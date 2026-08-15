@@ -1,10 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Video, ToolCategory } from "@/lib/video-types";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import type { Video } from "@/lib/video-types";
 import { getVideosPage } from "@/lib/videos-data";
-import { VideoFilters } from "./VideoFilters";
 import { VideoTable } from "./VideoTable";
+
+const VIDEO_CATEGORIES = [
+  { name: "All", slug: "" },
+  { name: "Product Demos", slug: "product-demos" },
+  { name: "Tutorials", slug: "tutorials" },
+  { name: "AI News", slug: "ai-news" },
+  { name: "Model Showcases", slug: "model-showcases" },
+  { name: "Podcasts", slug: "podcasts" },
+  { name: "Tool Walkthroughs", slug: "tool-walkthroughs" },
+  { name: "Webinars", slug: "webinars" },
+  { name: "Conferences", slug: "conferences" },
+  { name: "Coding", slug: "coding" },
+  { name: "Case Studies", slug: "case-studies" },
+  { name: "Comparisons", slug: "comparisons" },
+  { name: "Educational Content", slug: "educational-content" },
+  { name: "Success Stories", slug: "success-stories" },
+  { name: "AI Trends", slug: "ai-trends" },
+  { name: "Prompting", slug: "prompting" }
+];
 
 export function VideosPageClient({
   initialVideos,
@@ -16,13 +35,19 @@ export function VideosPageClient({
   pageSize: number;
 }) {
   const [videos, setVideos] = useState<Video[]>(initialVideos);
+  const searchParams = useSearchParams();
+  const [activeCategory, setActiveCategory] = useState<string>(searchParams?.get("category") || "");
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
-  const [category, setCategory] = useState<"All" | ToolCategory>("All");
-  const [query, setQuery] = useState("");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const hasMore = videos.length < total;
+
+  const activeVideos = activeCategory
+    ? videos.filter(
+        (v) => v.toolCategory === activeCategory || v.tags?.includes(activeCategory)
+      )
+    : videos;
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
@@ -58,79 +83,47 @@ export function VideosPageClient({
     return () => observer.disconnect();
   }, [loadMore]);
 
-  const channelCount = useMemo(
-    () => new Set(videos.map((v) => v.channelId).filter((id): id is string => Boolean(id))).size,
-    [videos]
-  );
-  const totalViews = useMemo(() => videos.reduce((sum, v) => sum + v.views, 0), [videos]);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return videos.filter((v) => {
-      const matchesCategory = category === "All" || v.toolCategory === category;
-      const matchesQuery =
-        q.length === 0 ||
-        v.title.toLowerCase().includes(q) ||
-        v.toolName.toLowerCase().includes(q) ||
-        v.author.name.toLowerCase().includes(q);
-      return matchesCategory && matchesQuery;
-    });
-  }, [videos, category, query]);
-
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-4 border-b border-border px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2.5">
-          <svg width="20" height="20" viewBox="0 0 16 16" fill="none" className="shrink-0 text-primary">
-            <rect x="1.5" y="3.5" width="9.5" height="9" rx="1.3" stroke="currentColor" strokeWidth="1.3" />
-            <path d="M11 6.3 14.5 4v8L11 9.7Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-          </svg>
-          <h1 className="text-[22px] font-bold tracking-[-0.01em] text-primary">Videos</h1>
-        </div>
-
-        <div className="flex flex-wrap gap-x-6 gap-y-1 font-mono text-[13.5px] text-secondary">
-          <span className="text-muted">
-            Loaded <span className="font-semibold text-primary">{videos.length.toLocaleString("en-US")}</span>
-            {" / "}
-            <span className="font-semibold text-primary">{total.toLocaleString("en-US")}</span>
-          </span>
-          <span className="text-muted">
-            Channels <span className="font-semibold text-primary">{channelCount}</span>
-          </span>
-          <span className="text-muted">
-            Views <span className="font-semibold text-primary">{totalViews.toLocaleString("en-US")}</span>
-          </span>
-        </div>
+      {/* Top Sliding Category Row */}
+      <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+        {VIDEO_CATEGORIES.map((topic) => {
+          const isSelected = activeCategory === topic.slug;
+          return (
+            <button
+              key={topic.name}
+              onClick={(e) => {
+                setActiveCategory(topic.slug);
+                const targetPath = topic.slug ? `/videos?category=${topic.slug}` : `/videos`;
+                window.history.pushState(null, "", targetPath);
+                e.currentTarget.scrollIntoView({
+                  behavior: "smooth",
+                  block: "nearest",
+                  inline: "center"
+                });
+              }}
+              className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                isSelected
+                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+              }`}
+            >
+              {topic.name}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="px-5">
-        <VideoFilters onChange={(state) => { setCategory(state.category); setQuery(state.query); }} />
+      <VideoTable videos={activeVideos} />
+
+      <div ref={sentinelRef} className="flex items-center justify-center py-8">
+        {loading && (
+          <span className="font-mono text-[12.5px] text-muted">Loading more videos…</span>
+        )}
+        {!hasMore && videos.length > 0 && (
+          <span className="font-mono text-[12.5px] text-muted">You've reached the end.</span>
+        )}
       </div>
-
-      {filtered.length === 0 ? (
-        <div className="px-5 pb-10 pt-2 text-center text-[13.5px] text-muted">
-          No videos match that filter.
-        </div>
-      ) : (
-        <>
-          <VideoTable videos={filtered} />
-
-          {/* Only show the scroll-loader when no client-side filter/search is
-              active — otherwise "loading more" would silently pull in videos
-              that don't even match the current filter until user scrolls
-              further, which reads as broken filtering. */}
-          {category === "All" && query.trim().length === 0 && (
-            <div ref={sentinelRef} className="flex items-center justify-center py-8">
-              {loading && (
-                <span className="font-mono text-[12.5px] text-muted">Loading more videos…</span>
-              )}
-              {!hasMore && videos.length > 0 && (
-                <span className="font-mono text-[12.5px] text-muted">You've reached the end.</span>
-              )}
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 }

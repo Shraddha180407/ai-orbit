@@ -42,13 +42,13 @@ describe('RobotsController', () => {
 
   describe('listRobots', () => {
     it('returns robots on success', async () => {
-      const robots = [{ id: 'r1', name: 'Robot1' }];
+      const robots = [{ id: 'r1', name: 'Robot1', tasks: [] }];
       mockService.listRobots.mockResolvedValue(robots);
 
       const c = createContext();
       await controller.listRobots(c as never);
 
-      expect(c.json).toHaveBeenCalledWith(robots);
+      expect(c.json).toHaveBeenCalledWith([{ id: 'r1', name: 'Robot1', tasks: [] }]);
     });
 
     it('returns 500 on service error', async () => {

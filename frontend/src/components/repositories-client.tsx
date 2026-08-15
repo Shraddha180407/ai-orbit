@@ -3,8 +3,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Repository, RepositoryOwnerListItem } from "@/lib/types";
-import { fetchRepositories, fetchRepositoryOwners } from "@/lib/api";
+import { Repository, RepositoryOwnerListItem, RepositorySubCategory } from "@/lib/types";
+import { fetchRepositories, fetchRepositoryOwners, fetchRepositorySubCategories } from "@/lib/api";
 
 import { RepositoryTable } from "@/components/ui/RepositoryTable";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
@@ -31,9 +31,11 @@ export function RepositoriesClient() {
   const [activeRepoSearch, setActiveRepoSearch] = useState(initialQuery);
   const [isRepoFilterOpen, setIsRepoFilterOpen] = useState(false);
   const [owners, setOwners] = useState<RepositoryOwnerListItem[]>([]);
+  const [subCategories, setSubCategories] = useState<RepositorySubCategory[]>([]);
 
   const selectedTopic = searchParams.get("topic") || null;
   const selectedOwnerSlug = searchParams.get("owner") || null;
+  const selectedSubCategorySlug = searchParams.get("subCategory") || null;
 
   // Derive selectedCompany from URL query parameter
   const selectedCompany = React.useMemo(() => {
@@ -60,6 +62,19 @@ export function RepositoriesClient() {
     loadOwners();
   }, []);
 
+  // Fetch subcategories once on mount
+  useEffect(() => {
+    async function loadSubCategories() {
+      try {
+        const data = await fetchRepositorySubCategories();
+        setSubCategories(data || []);
+      } catch (e) {
+        console.error("Failed to fetch repository subcategories:", e);
+      }
+    }
+    loadSubCategories();
+  }, []);
+
   const {
     data,
     fetchNextPage,
@@ -75,6 +90,7 @@ export function RepositoriesClient() {
         order: sortOrder,
         topic: selectedTopic,
         owner: selectedOwnerSlug,
+        subCategory: selectedSubCategorySlug,
       },
     ],
     queryFn: async ({ pageParam }) => {
@@ -84,6 +100,7 @@ export function RepositoriesClient() {
         sort: backendSort,
         topic: selectedTopic || undefined,
         owner: selectedOwnerSlug || undefined,
+        subCategory: selectedSubCategorySlug || undefined,
         cursor: pageParam || null,
         limit: 15,
       });
@@ -216,6 +233,16 @@ export function RepositoriesClient() {
     router.push(`/repositories?${params.toString()}`);
   }
 
+  const handleSelectSubCategory = (slug: string | null) => {
+    const params = new URLSearchParams(window.location.search);
+    if (slug) {
+      params.set("subCategory", slug);
+    } else {
+      params.delete("subCategory");
+    }
+    router.push(`/repositories?${params.toString()}`);
+  };
+
   const handleSelectCompany = (displayName: string | null) => {
     const ownerSlug = displayName ? owners.find(o => o.displayName === displayName)?.owner || null : null;
     const params = new URLSearchParams(window.location.search);
@@ -250,6 +277,35 @@ export function RepositoriesClient() {
             >
               Clear
             </button>
+          </div>
+        )}
+
+        {/* Subcategory Filter Chips */}
+        {subCategories.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            <button
+              onClick={() => handleSelectSubCategory(null)}
+              className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                !selectedSubCategorySlug
+                  ? "border-[#6E56CF] bg-[#6E56CF] text-white"
+                  : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+              }`}
+            >
+              All
+            </button>
+            {subCategories.map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => handleSelectSubCategory(sub.slug)}
+                className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                  selectedSubCategorySlug === sub.slug
+                    ? "border-[#6E56CF] bg-[#6E56CF] text-white"
+                    : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                }`}
+              >
+                {sub.name}
+              </button>
+            ))}
           </div>
         )}
 

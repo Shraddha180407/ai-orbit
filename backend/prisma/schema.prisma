@@ -44,22 +44,63 @@ enum UserPersona {
   CONTENT_CREATORS
 }
 
+enum CompanyType {
+  AI_NATIVE
+  MODEL_COMPANIES
+  UNICORNS
+  AI_MODEL_PROVIDERS
+  INFRASTRUCTURE
+  ENTERPRISE
+  HEALTHCARE
+  GENERATIVE_AI
+  MARKETING
+  DEVELOPER_TOOLS
+  ROBOTICS
+  EDUCATION
+  OPEN_SOURCE
+  FINANCE
+}
+
 // ---- Stub models owned by other modules ----
 // Module 4 (Companies) and Module 11 (Auth) will extend these.
 // Do not add fields here beyond what Module 3 needs for its relations.
 
 model Company {
-  id      String  @id @default(cuid())
-  slug    String  @unique
-  name    String
-  logoUrl String?
+  id                 String      @id @default(cuid())
+  slug               String      @unique
+  name               String
+  logoUrl            String?
+  description        String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  website            String?
+  country            String?
+  city               String?
+  foundedYear        Int?
+
+  type               CompanyType[] @default([])
+  sector             String?
+
+  verified           Boolean     @default(false)
+  featured           Boolean     @default(false)
+
+  valuation          BigInt?
+  fundingRaised      BigInt?
+  latestFundingRound String?
+  employeeCount      Int?
+
+  linkedinUrl        String?
+  twitterUrl         String?
+
+  views              Int         @default(0)
+  upvotes            Int         @default(0)
+  impressions        Int         @default(0)
+
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
   collectionCompanies CollectionCompany[]
-  tools               Tool[]
-  aiModels            AIModel[]
+  tools              Tool[]
+  aiModels           AIModel[]
 }
 
 model User {
@@ -91,6 +132,33 @@ model User {
   taskLikes         TaskLike[]       @relation("TaskLikeUser")
   taskSubscriptions TaskSubscriber[] @relation("TaskSubscriberUser")
   toolVotes         ToolVote[]
+  
+  // MCP Directory relations
+  mcpReviews        MCPDirectoryReview[]
+  mcpDiscussions    MCPDirectoryDiscussion[]
+  mcpDiscussionReplies MCPDirectoryDiscussionReply[]
+  mcpUpvotes        MCPDirectoryUpvote[]
+  mcpSavedItems     MCPDirectorySavedMCP[]
+  mcpClaims         MCPDirectoryClaim[]
+  mcpReports        MCPDirectoryReport[]
+}
+
+enum ToolCategoryEnum {
+  WRITING
+  IMAGE_GENERATION
+  VIDEO_GENERATION
+  AUDIO
+  CHATBOTS
+  CODING
+  MARKETING
+  PRODUCTIVITY
+  BUSINESS
+  EDUCATION
+  AGENTS
+  PRESENTATIONS
+  THREE_D_GENERATION
+  NO_CODE_AI_BUILDERS
+  WORKFLOW_AUTOMATION
 }
 
 // ---- Module 3: AI Tools ----
@@ -129,7 +197,8 @@ model Tool {
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
 
-  categories   ToolCategory[]
+  categories     ToolCategory[]
+  toolCategories ToolCategoryEnum[] @default([])
   tags         ToolTag[]
   integrations ToolIntegration[]
 
@@ -170,7 +239,6 @@ model Category {
   name String
 
   tools ToolCategory[]
-  tasks Task[]
 }
 
 model Tag {
@@ -269,7 +337,16 @@ model Bookmark {
   @@index([toolId])
   @@index([userId])
 }
-
+enum ModelType {
+  TEXT
+  IMAGE
+  VIDEO
+  MULTIMODAL
+  AUDIO
+  CODE
+  THREE_D
+  STRUCTURED_DATA
+}
 model AIModel {
   id               String            @id @default(cuid())
   slug             String            @unique
@@ -284,13 +361,41 @@ model AIModel {
   updatedAt        DateTime          @default(now()) @updatedAt
   collectionModels CollectionModel[]
   tasks            TaskModel[]
-
   providerId String?
   provider   Company? @relation(fields: [providerId], references: [id])
   websiteUrl    String?
   capabilities  String[]  @default([])
-  
+
+  apiAvailable  Boolean     @default(false)
+  documentation Json?
+  promptExamples String[]   @default([])
+  openSource    Boolean     @default(false)
+  primaryTask   String?
+  modelType     ModelType?
+  subCategories ModelSubCategoryItem[]
   @@index([providerId])
+}
+
+model ModelSubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+
+  items ModelSubCategoryItem[]
+
+  @@index([slug])
+}
+
+model ModelSubCategoryItem {
+  id              String              @id @default(cuid())
+  modelId         String
+  subCategoryId   String
+  model           AIModel             @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  subCategory     ModelSubCategory    @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([modelId, subCategoryId])
+  @@index([subCategoryId])
 }
 
 // ---- News module ----
@@ -410,10 +515,34 @@ model Repository {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  subCategories   RepositorySubCategoryItem[]
+
   @@index([stars])
   @@index([language])
   @@index([topics], type: Gin)
   @@index([syncedAt])
+}
+
+model RepositorySubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+
+  items RepositorySubCategoryItem[]
+
+  @@index([slug])
+}
+
+model RepositorySubCategoryItem {
+  id              String               @id @default(cuid())
+  repositoryId    String
+  subCategoryId   String
+  repository      Repository           @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  subCategory     RepositorySubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, subCategoryId])
+  @@index([subCategoryId])
 }
 
 // Synced from live production DB via `prisma db pull` on 2026-07-12 — this
@@ -540,6 +669,29 @@ model Device {
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @default(now()) @updatedAt
   tasks               TaskDevice[]
+  subCategories       DeviceSubCategoryItem[]
+}
+
+model DeviceSubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+
+  items DeviceSubCategoryItem[]
+
+  @@index([slug])
+}
+
+model DeviceSubCategoryItem {
+  id              String              @id @default(cuid())
+  deviceId        String
+  subCategoryId   String
+  device          Device              @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  subCategory     DeviceSubCategory   @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, subCategoryId])
+  @@index([subCategoryId])
 }
 
 // ---- Auth Module ----
@@ -668,6 +820,7 @@ model Collection {
   updatedAt DateTime @updatedAt
 
   categories       CollectionCategory[]
+  subCategories    CollectionSubCategoryItem[]
   tools            CollectionTool[]
   relatedModels    CollectionModel[]
   relatedCompanies CollectionCompany[]
@@ -738,6 +891,28 @@ model CollectionBookmark {
   @@unique([userId, collectionId])
 }
 
+model CollectionSubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+
+  items CollectionSubCategoryItem[]
+
+  @@index([slug])
+}
+
+model CollectionSubCategoryItem {
+  id              String                  @id @default(cuid())
+  collectionId    String
+  subCategoryId   String
+  collection      Collection              @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  subCategory     CollectionSubCategory   @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, subCategoryId])
+  @@index([subCategoryId])
+}
+
 // ---- Module: Tasks ----
 
 enum TaskDifficulty {
@@ -751,33 +926,55 @@ model Task {
   slug         String         @unique
   title        String
   description  String
+
+  iconUrl      String?
+  bannerUrl    String?
+
   difficulty   TaskDifficulty @default(EASY)
   pricingModel PricingModel   @default(FREE)
   isFeatured   Boolean        @default(false)
 
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId   String
+  category     TaskCategory   @relation(fields: [categoryId], references: [id])
 
-  creatorId String?
-  creator   User?   @relation("TaskCreator", fields: [creatorId], references: [id])
+  creatorId    String?
+  creator      User?          @relation("TaskCreator", fields: [creatorId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
-  bookmarks   TaskBookmark[]
-  likes       TaskLike[]
-  subscribers TaskSubscriber[]
-  tools       TaskTool[]
-  models      TaskModel[]
-  robots      TaskRobot[]
-  devices     TaskDevice[]
-  resources   TaskResource[]
+  toolCount    Int            @default(0)
+  modelCount   Int            @default(0)
+  robotCount   Int            @default(0)
+  deviceCount  Int            @default(0)
+  saveCount    Int            @default(0)
+  shareUrl     String?
+
+  bookmarks    TaskBookmark[]
+  likes        TaskLike[]
+  subscribers  TaskSubscriber[]
+  tools        TaskTool[]
+  models       TaskModel[]
+  robots       TaskRobot[]
+  devices      TaskDevice[]
+  resources    TaskResource[]
+
+  popularTools  TaskPopularTool[]
+  popularModels TaskPopularModel[]
 
   @@index([categoryId])
   @@index([difficulty])
   @@index([pricingModel])
   @@index([isFeatured])
   @@index([creatorId])
+}
+
+model TaskCategory {
+  id    String @id @default(cuid())
+  name  String
+  slug  String @unique
+
+  tasks Task[]
 }
 
 model TaskLike {
@@ -838,15 +1035,60 @@ model TaskDevice {
 }
 
 model TaskResource {
+  id String @id @default(cuid())
+
+  taskId String
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  title String
+  url   String
+
+  homepage String?
+  source   String?
+  postedAt DateTime?
+  stars    Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+}
+
+model TaskPopularTool {
   id        String   @id @default(cuid())
   taskId    String
-  title     String
-  url       String
+  slug      String
+  name      String
+  logoUrl   String?
+  tagline   String
+  pricingModel String
+  rating    Float?
+  bookmarkCount Int @default(0)
+  visitUrl  String?
   createdAt DateTime @default(now())
 
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
+  @@unique([taskId, slug])
+}
+
+model TaskPopularModel {
+  id        String   @id @default(cuid())
+  taskId    String
+  slug      String
+  name      String
+  provider  String
+  logoUrl   String?
+  modelType String
+  pricingModel String
+  benchmarkScore Float?
+  websiteUrl String?
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@unique([taskId, slug])
 }
 
 model TaskTool {
@@ -894,6 +1136,25 @@ model Report {
   reportedNews   News?   @relation(fields: [reportedNewsId], references: [id], onDelete: Cascade)
 }
 
+model MCPDirectoryReport {
+  id        String   @id @default(cuid())
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  reporterId String
+  reporter   User   @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  reportedMCPItemId String
+  reportedMCPItem   MCPItem @relation(fields: [reportedMCPItemId], references: [id], onDelete: Cascade)
+
+  reason     String
+  description String?
+
+  @@index([reportedMCPItemId])
+  @@index([reporterId])
+}
+
 model LinkBookmark {
   id        String   @id @default(cuid())
   title     String?
@@ -904,5 +1165,391 @@ model LinkBookmark {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+}
+
+// ---- MCP Directory Platform Models ----
+
+enum MCPItemType {
+  SERVER
+  CLIENT
+}
+
+enum MCPPricingType {
+  FREE
+  FREEMIUM
+  PAID
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+  ONE_TIME
+}
+
+enum EditorialGrade {
+  AA
+  A_PLUS
+  A
+  B_PLUS
+  B
+  C
+}
+
+model MCPItem {
+  id                    String            @id @default(cuid())
+  itemType              MCPItemType
+  name                  String
+  slug                  String            @unique
+  logoUrl               String?
+  coverImageUrl          String?
+  shortDescription      String
+  fullDescription       String
+  providerName          String
+  providerUrl           String?
+  license               String?
+  pricingType           MCPPricingType    @default(FREE)
+  startingPrice         Decimal?          @db.Decimal(10, 2)
+  isFeatured            Boolean           @default(false)
+  isVerified            Boolean           @default(false)
+  launchDate            DateTime?
+  lastUpdatedDate       DateTime          @default(now())
+  websiteUrl            String?
+  documentationUrl      String?
+  repositoryUrl         String?
+  qualityScore          Float?            @default(0)
+  easeOfUseScore        Float?            @default(0)
+  globalRank            Int?
+  leaderboardRank       Int?
+  editorialVerdict      String?
+  viewCount             Int               @default(0)
+  monthlyVisits         Int               @default(0)
+  upvoteCount           Int               @default(0)
+  saveCount             Int               @default(0)
+  
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  // Relations
+  categories            MCPItemCategory[]
+  subCategories         MCPItemSubCategory[]
+  mcpSubCategories      MCPSubCategoryItem[]
+  tags                  MCPItemTag[]
+  technicalSpecs        TechnicalSpec[]
+  installationGuides    InstallationGuide[]
+  features              MCPFeature[]
+  useCases              MCPUseCase[]
+  pricingPlans          PricingPlan[]
+  reviews               MCPDirectoryReview[]
+  editorialReviews      MCPDirectoryEditorialReview[]
+  discussions           MCPDirectoryDiscussion[]
+  faqs                  MCPDirectoryFAQ[]
+  upvotes               MCPDirectoryUpvote[]
+  savedItems            MCPDirectorySavedMCP[]
+  claims                MCPDirectoryClaim[]
+  reports               MCPDirectoryReport[]
+
+  @@index([itemType])
+  @@index([slug])
+  @@index([pricingType])
+  @@index([isFeatured])
+  @@index([createdAt])
+  @@index([viewCount])
+  @@index([lastUpdatedDate])
+  @@index([qualityScore])
+  @@index([monthlyVisits])
+  @@index([upvoteCount])
+}
+
+model MCPDirectoryCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+  icon        String?
+  color       String?
+
+  mcpItems MCPItemCategory[]
+  subCategories MCPDirectorySubCategory[]
+
+  @@index([slug])
+}
+
+model MCPDirectorySubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+  categoryId  String
+  category    MCPDirectoryCategory @relation(fields: [categoryId], references: [id])
+
+  mcpItems MCPItemSubCategory[]
+
+  @@unique([slug, categoryId])
+  @@index([categoryId])
+}
+
+model MCPDirectoryTag {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+
+  mcpItems MCPItemTag[]
+
+  @@index([slug])
+}
+
+model MCPItemCategory {
+  id        String @id @default(cuid())
+  mcpItemId String
+  categoryId String
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+  category MCPDirectoryCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, categoryId])
+  @@index([categoryId])
+}
+
+model MCPItemSubCategory {
+  id           String @id @default(cuid())
+  mcpItemId    String
+  subCategoryId String
+
+  mcpItem    MCPItem    @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+  subCategory MCPDirectorySubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, subCategoryId])
+  @@index([subCategoryId])
+}
+
+model MCPItemTag {
+  id        String @id @default(cuid())
+  mcpItemId String
+  tagId     String
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+  tag     MCPDirectoryTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, tagId])
+  @@index([tagId])
+}
+
+model MCPSubCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+
+  items MCPSubCategoryItem[]
+
+  @@index([slug])
+}
+
+model MCPSubCategoryItem {
+  id              String              @id @default(cuid())
+  mcpItemId       String
+  subCategoryId   String
+  mcpItem         MCPItem             @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+  subCategory     MCPSubCategory      @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, subCategoryId])
+  @@index([subCategoryId])
+}
+
+model TechnicalSpec {
+  id             String   @id @default(cuid())
+  mcpItemId      String
+  supportedPlatforms String[]
+  compatibility  String
+  integrations   String[]
+  localBindingControls String
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
+}
+
+model InstallationGuide {
+  id          String   @id @default(cuid())
+  mcpItemId   String
+  stepNumber  Int
+  title       String
+  codeSnippet String
+  instructions String
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, stepNumber])
+  @@index([mcpItemId])
+}
+
+model MCPFeature {
+  id          String   @id @default(cuid())
+  mcpItemId   String
+  title       String
+  icon        String?
+  description String
+  badge       String?
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
+}
+
+model MCPUseCase {
+  id          String   @id @default(cuid())
+  mcpItemId   String
+  title       String
+  description String
+  applications String[]
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
+}
+
+model PricingPlan {
+  id          String       @id @default(cuid())
+  mcpItemId   String
+  planName    String
+  price       Decimal      @db.Decimal(10, 2)
+  billingCycle BillingCycle @default(MONTHLY)
+  featuresList String[]
+
+  mcpItem MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
+}
+
+model MCPDirectoryReview {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, userId])
+  @@index([mcpItemId])
+  @@index([userId])
+}
+
+model MCPDirectoryEditorialReview {
+  id          String         @id @default(cuid())
+  grade       EditorialGrade
+  verdict     String
+  reviewDate  DateTime       @default(now())
+  badge       String?
+  notes       String?
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
+}
+
+model MCPDirectoryDiscussion {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  upvotes   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  replies   MCPDirectoryDiscussionReply[]
+
+  @@index([mcpItemId])
+  @@index([userId])
+}
+
+model MCPDirectoryDiscussionReply {
+  id        String   @id @default(cuid())
+  content   String
+  upvotes   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  discussionId String
+  discussion   MCPDirectoryDiscussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([discussionId])
+  @@index([userId])
+}
+
+model MCPDirectoryFAQ {
+  id          String   @id @default(cuid())
+  question    String
+  answer      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
+}
+
+model MCPDirectoryUpvote {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, userId])
+  @@index([mcpItemId])
+  @@index([userId])
+}
+
+model MCPDirectorySavedMCP {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([mcpItemId, userId])
+  @@index([mcpItemId])
+  @@index([userId])
+}
+
+model MCPDirectoryClaim {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  relationship String
+  message     String
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mcpItemId String
+  mcpItem   MCPItem @relation(fields: [mcpItemId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([mcpItemId])
   @@index([userId])
 }

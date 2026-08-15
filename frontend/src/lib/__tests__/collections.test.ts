@@ -100,7 +100,7 @@ describe("toggleBookmark", () => {
     const result = await toggleBookmark("col-1", false);
     expect(result).toBe(false);
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/collections/col-1/bookmark"),
+      expect.stringContaining("/api/v1/collections/col-1/bookmark"),
       expect.objectContaining({ method: "POST" })
     );
   });
@@ -110,7 +110,7 @@ describe("toggleBookmark", () => {
     const result = await toggleBookmark("col-1", true);
     expect(result).toBe(true);
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/collections/col-1/bookmark"),
+      expect.stringContaining("/api/v1/collections/col-1/bookmark"),
       expect.objectContaining({ method: "DELETE" })
     );
   });

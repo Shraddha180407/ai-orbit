@@ -3,6 +3,13 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaNeon } from '@prisma/adapter-neon';
 
+// Module-level cache for the Cloudflare Worker isolate context.
+// Worker isolates are reused across requests. Without caching, every
+// call to getPrisma() creates a new PrismaClient + PrismaNeon adapter
+// that is never $disconnect()ed, causing resource accumulation and
+// eventual Cloudflare Error 1102 (resource limits exceeded).
+let _cachedWorkerPrisma: PrismaClient | null = null;
+let _cachedDbUrl: string | null = null;
 
 export function getPrisma(env: unknown) {
   const envObj = (typeof env === 'object' && env !== null) ? env as Record<string, unknown> : {};
@@ -10,8 +17,18 @@ export function getPrisma(env: unknown) {
   if (!dbUrl) {
     throw new Error('DATABASE_URL is not configured');
   }
+
+  // Reuse the PrismaClient within the same Worker isolate.
+  // The Neon HTTP driver is stateless (each query is an independent
+  // HTTP request), so sharing a client across concurrent requests is safe.
+  if (_cachedWorkerPrisma && _cachedDbUrl === dbUrl) {
+    return _cachedWorkerPrisma;
+  }
+
   const adapter = new PrismaNeon({ connectionString: dbUrl });
-  return new PrismaClient({ adapter });
+  _cachedWorkerPrisma = new PrismaClient({ adapter });
+  _cachedDbUrl = dbUrl;
+  return _cachedWorkerPrisma;
 }
 
 // Singleton pg client for non-worker environments (e.g. scripts / dev server / auth module fallback)

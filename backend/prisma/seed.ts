@@ -105,6 +105,24 @@ const CATEGORY_NAMES = [
   "Customer Support",
 ];
 
+const TASK_CATEGORY_NAMES = [
+  "content-creation",
+  "image-creation",
+  "video-creation",
+  "audio",
+  "coding",
+  "data-analysis",
+  "research",
+  "productivity",
+  "marketing",
+  "customer-support",
+  "translation",
+  "presentation",
+  "brainstorming",
+  "prompting",
+  "website-building",
+];
+
 const TAG_NAMES = [
   "API",
   "Open Source",
@@ -1667,22 +1685,68 @@ const TOOLS: SeedTool[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Tasks — temporary sample data until Soumya's real dataset lands.
-// Swap TASKS for `import tasks from "./tasks.json"` once that PR merges.
+// Tasks — real dataset from seed_task.json.
 // ---------------------------------------------------------------------------
 
 interface SeedTask {
+  id: string;
   title: string;
   slug: string;
   description: string;
-  category: string;
+  iconUrl: string | null;
+  bannerUrl: string | null;
+
+  category: {
+    name: string;
+    slug: string;
+  };
+
   difficulty: "EASY" | "MEDIUM" | "ADVANCED";
   pricingModel: PricingModel;
   isFeatured: boolean;
-  recommendedAITools: string[];
-}
 
-import tasksData from "./task.json" with { type: "json" };
+  toolCount: number;
+  modelCount: number;
+  robotCount: number;
+  deviceCount: number;
+  saveCount: number;
+  updatedAt: string;
+  shareUrl: string;
+
+  _toolNames: string[];
+
+  resources: {
+    title: string;
+    url: string;
+    homepage?: string | null;
+    source?: string | null;
+    postedAt?: string | null;
+    stars?: number | null;
+  }[];
+
+  popularTools: {
+    slug: string;
+    name: string;
+    logoUrl: string | null;
+    tagline: string;
+    pricingModel: string;
+    rating: number | null;
+    bookmarkCount: number;
+    visitUrl: string | null;
+  }[];
+
+  popularModels: {
+    slug: string;
+    name: string;
+    provider: string;
+    logoUrl: string | null;
+    modelType: string;
+    pricingModel: string;
+    benchmarkScore: number | null;
+    websiteUrl: string | null;
+  }[];
+}
+import tasksData from "./seed_task.json" with { type: "json" };
 const TASKS: SeedTask[] = tasksData as SeedTask[];
 
 // ---------------------------------------------------------------------------
@@ -1743,6 +1807,29 @@ async function main() {
     categoryBySlug.set(slug, category);
   }
   logger.info(`Upserted ${categoryBySlug.size} categories.`);
+
+  logger.info("Upserting task categories...");
+
+const taskCategoryBySlug = new Map<string, { id: string }>();
+
+for (const name of TASK_CATEGORY_NAMES) {
+  const slug = name.toLowerCase().replace(/ & /g, "-").replace(/\s+/g, "-");
+
+  const taskCategory = await prisma.taskCategory.upsert({
+    where: { slug },
+    update: {
+      name,
+    },
+    create: {
+      name,
+      slug,
+    },
+  });
+
+  taskCategoryBySlug.set(slug, taskCategory);
+}
+
+logger.info(`Upserted ${taskCategoryBySlug.size} task categories.`);
 
   logger.info("Upserting tags...");
   const tagBySlug = new Map<string, { id: string }>();
@@ -1856,73 +1943,218 @@ async function main() {
     if (tool) toolByName.set(t.name.toLowerCase(), tool);
   }
 
-  const taskToolLinks: { taskId: string; toolId: string }[] = [];
-  
-  // 1. Process in batches of 100 to avoid overwhelming the database
-  const BATCH_SIZE = 100; 
+  // Task data references some tools by a shorter/alternate name than the
+  // canonical Tool.name in TOOLS (e.g. tasks say "Grammarly", the seeded
+  // tool is "Grammarly AI"). Map those known aliases onto the canonical
+  // name so task-tool linking resolves correctly. Only include genuine
+  // same-product aliases here — not similarly-named but different products.
+  const TOOL_NAME_ALIASES: Record<string, string> = {
+    "canva": "canva magic studio",
+    "canva ai": "canva magic studio",
+    "canva color palette generator": "canva magic studio",
+    "canva magic write": "canva magic studio",
+    "framer": "framer ai",
+    "grammarly": "grammarly ai",
+    "replit": "replit agent",
+    "zapier": "zapier central",
+    // "runway" intentionally omitted: TOOLS has both "Runway Gen-2" and
+    // "Runway Gen-3 Alpha", and the task dataset never specifies which
+    // generation it means. Mapping to either would be a guess — leave
+    // unresolved until the dataset is specific.
+  };
 
-  for (let i = 0; i < TASKS.length; i += BATCH_SIZE) {
-    const batch = TASKS.slice(i, i + BATCH_SIZE);
+ const taskToolLinks: { taskId: string; toolId: string }[] = [];
 
-    // Promise.all runs all 100 upserts in this batch simultaneously
-    await Promise.all(
-      batch.map(async (t) => {
-        const categorySlug = t.category.toLowerCase().replace(/ /g, "-");
-        const category = categoryBySlug.get(categorySlug);
+const BATCH_SIZE = 100;
 
-        if (!category) return;
+for (let i = 0; i < TASKS.length; i += BATCH_SIZE) {
+  const batch = TASKS.slice(i, i + BATCH_SIZE);
 
-        const createdTask = await prisma.task.upsert({
-          where: { slug: t.slug },
-          update: {
-            title: t.title,
-            description: t.description,
-            difficulty: t.difficulty,
-            pricingModel: t.pricingModel,
-            isFeatured: t.isFeatured,
-            categoryId: category.id,
-          },
-          create: {
-            slug: t.slug,
-            title: t.title,
-            description: t.description,
-            difficulty: t.difficulty,
-            pricingModel: t.pricingModel,
-            isFeatured: t.isFeatured,
-            categoryId: category.id,
-          },
+  await Promise.all(
+    batch.map(async (t) => {
+      const categorySlug = t.category?.slug
+        ? t.category.slug.toLowerCase().replace(/ & /g, "-").replace(/\s+/g, "-")
+        : null;
+
+      const category = categorySlug ? taskCategoryBySlug.get(categorySlug) : undefined;
+
+      if (!category) {
+        logger.warn(`Task category not found: ${t.category?.slug ?? t.category?.name ?? "unknown"}`);
+        return;
+      }
+
+      // Derive toolCount from actual resolvable tool links rather than the
+      // raw JSON value, which is frequently stale/inconsistent with
+      // _toolNames (see tasks module review — JSON toolCount doesn't track
+      // _toolNames.length even for tasks that already had it populated).
+      // Dedup by resolved tool id in case _toolNames has repeats or two
+      // names alias to the same tool.
+      const resolvedToolIds = new Set(
+        (t._toolNames ?? [])
+          .map((name) => {
+            const key = name.toLowerCase();
+            return toolByName.get(key) ?? toolByName.get(TOOL_NAME_ALIASES[key] ?? "");
+          })
+          .filter((tool): tool is NonNullable<typeof tool> => Boolean(tool))
+          .map((tool) => tool.id)
+      );
+      const resolvedToolCount = resolvedToolIds.size;
+
+      const createdTask = await prisma.task.upsert({
+        where: {
+          slug: t.slug,
+        },
+        update: {
+          title: t.title,
+          description: t.description,
+
+          iconUrl: t.iconUrl ?? null,
+          bannerUrl: t.bannerUrl ?? null,
+
+          difficulty: t.difficulty,
+          pricingModel: t.pricingModel,
+          isFeatured: t.isFeatured,
+
+          shareUrl: t.shareUrl ?? null,
+          toolCount: resolvedToolCount,
+          modelCount: t.modelCount ?? 0,
+          robotCount: t.robotCount ?? 0,
+          deviceCount: t.deviceCount ?? 0,
+          saveCount: t.saveCount ?? 0,
+
+          categoryId: category.id,
+        },
+        create: {
+          slug: t.slug,
+          title: t.title,
+          description: t.description,
+
+          iconUrl: t.iconUrl ?? null,
+          bannerUrl: t.bannerUrl ?? null,
+
+          difficulty: t.difficulty,
+          pricingModel: t.pricingModel,
+          isFeatured: t.isFeatured,
+
+          shareUrl: t.shareUrl ?? null,
+          toolCount: resolvedToolCount,
+          modelCount: t.modelCount ?? 0,
+          robotCount: t.robotCount ?? 0,
+          deviceCount: t.deviceCount ?? 0,
+          saveCount: t.saveCount ?? 0,
+
+          categoryId: category.id,
+        },
+      });
+
+      // Remove existing resources
+      await prisma.taskResource.deleteMany({
+        where: {
+          taskId: createdTask.id,
+        },
+      });
+
+      // Insert resources
+      if (t.resources?.length) {
+        await prisma.taskResource.createMany({
+          data: t.resources.map((resource) => ({
+            taskId: createdTask.id,
+            title: resource.title,
+            url: resource.url,
+            homepage: resource.homepage ?? null,
+            source: resource.source ?? null,
+            postedAt: resource.postedAt
+              ? new Date(resource.postedAt)
+              : null,
+            stars: resource.stars ?? null,
+          })),
         });
+      }
 
-        // Store relations in memory
-        for (const toolName of t.recommendedAITools) {
-          const tool = toolByName.get(toolName.toLowerCase());
-          if (tool) {
-            taskToolLinks.push({ taskId: createdTask.id, toolId: tool.id });
-          }
+      // Refresh popular-tools preview cards
+      await prisma.taskPopularTool.deleteMany({
+        where: { taskId: createdTask.id },
+      });
+      if (t.popularTools?.length) {
+        await prisma.taskPopularTool.createMany({
+          data: t.popularTools.map((pt) => ({
+            taskId: createdTask.id,
+            slug: pt.slug,
+            name: pt.name,
+            logoUrl: pt.logoUrl ?? null,
+            tagline: pt.tagline,
+            pricingModel: pt.pricingModel,
+            rating: pt.rating ?? null,
+            bookmarkCount: pt.bookmarkCount ?? 0,
+            visitUrl: pt.visitUrl ?? null,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      // Refresh popular-models preview cards
+      await prisma.taskPopularModel.deleteMany({
+        where: { taskId: createdTask.id },
+      });
+      if (t.popularModels?.length) {
+        await prisma.taskPopularModel.createMany({
+          data: t.popularModels.map((pm) => ({
+            taskId: createdTask.id,
+            slug: pm.slug,
+            name: pm.name,
+            provider: pm.provider,
+            logoUrl: pm.logoUrl ?? null,
+            modelType: pm.modelType,
+            pricingModel: pm.pricingModel,
+            benchmarkScore: pm.benchmarkScore ?? null,
+            websiteUrl: pm.websiteUrl ?? null,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      // Queue tool relations — use the already-deduped resolvedToolIds so a
+      // task with duplicate/aliased names doesn't create duplicate links.
+      for (const toolId of resolvedToolIds) {
+        taskToolLinks.push({ taskId: createdTask.id, toolId });
+      }
+      // Separately, warn about any name that didn't resolve at all.
+      for (const toolName of t._toolNames ?? []) {
+        const key = toolName.toLowerCase();
+        const tool = toolByName.get(key) ?? toolByName.get(TOOL_NAME_ALIASES[key] ?? "");
+        if (!tool) {
+          logger.warn(`Tool not found for task "${t.slug}": ${toolName}`);
         }
-      })
-    );
+      }
+    })
+  );
 
-    logger.info(`... processed ${Math.min(i + BATCH_SIZE, TASKS.length)} / ${TASKS.length} tasks`);
-  }
+  logger.info(
+    `... processed ${Math.min(i + BATCH_SIZE, TASKS.length)} / ${TASKS.length} tasks`
+  );
+}
 
-  logger.info("Wiping old task-tool relations...");
-  await prisma.taskTool.deleteMany({}); 
+logger.info("Wiping old task-tool relations...");
+await prisma.taskTool.deleteMany();
 
-  logger.info(`Bulk inserting ${taskToolLinks.length} task-tool relations in chunks...`);
-  
-  // 2. Chunk the relation inserts too (Neon sometimes drops connections on massive arrays)
-  const RELATION_BATCH_SIZE = 5000;
-  for (let i = 0; i < taskToolLinks.length; i += RELATION_BATCH_SIZE) {
-    const linksBatch = taskToolLinks.slice(i, i + RELATION_BATCH_SIZE);
-    
-    await prisma.taskTool.createMany({ 
-      data: linksBatch,
-      skipDuplicates: true 
-    });
-  }
+logger.info(
+  `Bulk inserting ${taskToolLinks.length} task-tool relations in chunks...`
+);
 
-  logger.info(`Seeded ${TASKS.length} tasks successfully!`);
+const RELATION_BATCH_SIZE = 5000;
+
+for (
+  let i = 0;
+  i < taskToolLinks.length;
+  i += RELATION_BATCH_SIZE
+) {
+  await prisma.taskTool.createMany({
+    data: taskToolLinks.slice(i, i + RELATION_BATCH_SIZE),
+    skipDuplicates: true,
+  });
+}
+
+logger.info(`Seeded ${TASKS.length} tasks successfully!`);
   // Curated similar mappings
   const ALTERNATIVE_PAIRS: [string, string][] = [
     ["chatgpt", "claude"],
@@ -2060,10 +2292,13 @@ async function main() {
   
   const seedModelsWithSlug = seedModels.map(model => ({
     ...model,
-    slug: model.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
-  }));
+  slug: model.name
+  .toLowerCase()
+  .replace(/\+/g, '-plus')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/(^-|-$)+/g, '')  }));
   
-  await prisma.aIModel.createMany({ data: seedModelsWithSlug });
+  await prisma.aIModel.createMany({ data: seedModelsWithSlug, skipDuplicates: true });
 
   // News is no longer static-seeded — the news module gets its data from
   // real RSS ingestion (`npm run ingest`), not mock rows. See

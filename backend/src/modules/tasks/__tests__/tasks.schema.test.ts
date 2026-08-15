@@ -20,7 +20,7 @@ describe('GetTasksQuerySchema', () => {
       difficulty: 'ADVANCED',
       pricing: 'FREE',
       featuredOnly: 'true',
-      sort: 'popular',
+      sort: 'name-asc',
       page: '3',
       filter: 'for-you',
     });
@@ -31,7 +31,7 @@ describe('GetTasksQuerySchema', () => {
       expect(result.data.difficulty).toBe('ADVANCED');
       expect(result.data.pricing).toBe('FREE');
       expect(result.data.featuredOnly).toBe('true');
-      expect(result.data.sort).toBe('popular');
+      expect(result.data.sort).toBe('name-asc');
       expect(result.data.page).toBe('3');
       expect(result.data.filter).toBe('for-you');
     }
@@ -46,10 +46,10 @@ describe('GetTasksQuerySchema', () => {
   });
 
   it('validates sort enum', () => {
-    const valid = GetTasksQuerySchema.safeParse({ sort: 'alphabetical' });
+    const valid = GetTasksQuerySchema.safeParse({ sort: 'rating' });
     expect(valid.success).toBe(true);
 
-    const invalid = GetTasksQuerySchema.safeParse({ sort: 'rating' });
+    const invalid = GetTasksQuerySchema.safeParse({ sort: 'alphabetical' });
     expect(invalid.success).toBe(false);
   });
 

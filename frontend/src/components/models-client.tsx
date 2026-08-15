@@ -2,13 +2,11 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Search from 'lucide-react/dist/esm/icons/search';
-import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down';
 import Plus from 'lucide-react/dist/esm/icons/plus';
 import Pencil from 'lucide-react/dist/esm/icons/pencil';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
-import { AIModel, ModelsSortOption } from "@/lib/types";
-import { API_URL, fetchModels } from "@/lib/api";
+import { AIModel, ModelSubCategory } from "@/lib/types";
+import { API_URL, fetchModels, fetchModelSubCategories } from "@/lib/api";
 import { ModelListView } from "@/components/ModelListView";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
@@ -16,38 +14,22 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/shadcn-button";
 import { toast } from "sonner";
 
-const SORT_OPTIONS: { value: ModelsSortOption; label: string }[] = [
-  { value: "newest", label: "Newest" },
-  { value: "oldest", label: "Oldest" },
-  { value: "alphabetical", label: "Name (A-Z)" },
-  { value: "releaseDate", label: "Release Date" },
-];
-
 export function ModelsClient() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const { user } = useUser();
   const isAdmin = user?.role === "ADMIN";
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [models, setModels] = useState<AIModel[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
-  const [providers, setProviders] = useState<{ slug: string; name: string; count: number }[]>([]);
-  const [modalities, setModalities] = useState<{ modality: string; count: number }[]>([]);
+
+  const [subCategories, setSubCategories] = useState<ModelSubCategory[]>([]);
+  const selectedSubCategorySlug = searchParams.get("subCategory") || null;
 
   const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // URL-driven filters (same pattern as homepage)
-  const search = (searchParams.get("search") || searchParams.get("q") || "").trim();
-  const provider = searchParams.get("provider") || undefined;
-  const modality = searchParams.get("modality") || undefined;
-  const sort = (searchParams.get("sort") as ModelsSortOption | null) || "newest";
-
-  const [searchInput, setSearchInput] = useState(search);
-
-  const filterKey = `${search}-${provider || ""}-${modality || ""}-${sort}`;
 
   // Admin modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,40 +45,28 @@ export function ModelsClient() {
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  // Debounce search box → URL
+  // Fetch subcategories once on mount
   useEffect(() => {
-    const t = setTimeout(() => {
-      const next = searchInput.trim();
-      const params = new URLSearchParams(searchParams.toString());
-      if (next) {
-        params.set("search", next);
-        params.delete("q");
-      } else {
-        params.delete("search");
-        params.delete("q");
+    async function loadSubCategories() {
+      try {
+        const data = await fetchModelSubCategories();
+        setSubCategories(data || []);
+      } catch (e) {
+        console.error("Failed to fetch model subcategories:", e);
       }
-      const qs = params.toString();
-      const target = qs ? `/models?${qs}` : "/models";
-      const current = searchParams.toString()
-        ? `/models?${searchParams.toString()}`
-        : "/models";
-      if (target !== current) router.push(target);
-    }, 300);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchInput]);
+    }
+    loadSubCategories();
+  }, []);
 
-  // Sync input when URL changes externally
-  useEffect(() => {
-    setSearchInput(search);
-  }, [search]);
-
-  // Reset list when filters change
-  useEffect(() => {
-    setModels([]);
-    setPage(1);
-    setTotalPages(1);
-  }, [filterKey]);
+  const handleSelectSubCategory = (slug: string | null) => {
+    const params = new URLSearchParams(window.location.search);
+    if (slug) {
+      params.set("subCategory", slug);
+    } else {
+      params.delete("subCategory");
+    }
+    router.push(`/models?${params.toString()}`);
+  };
 
   // Fetch page
   useEffect(() => {
@@ -104,18 +74,10 @@ export function ModelsClient() {
       if (page === 1) setIsLoading(true);
       else setIsFetchingMore(true);
       try {
-        const data = await fetchModels({
-          search: search || undefined,
-          provider,
-          modality,
-          sort,
-          page,
-        });
+        const data = await fetchModels({ page, subCategory: selectedSubCategorySlug || undefined });
         if (page === 1) setModels(data.items);
         else setModels((prev) => [...prev, ...data.items]);
         setTotalPages(data.pagination.totalPages || 1);
-        if (data.filters?.providers) setProviders(data.filters.providers);
-        if (data.filters?.modalities) setModalities(data.filters.modalities);
       } catch (e) {
         console.error("Failed to fetch models:", e);
       } finally {
@@ -125,7 +87,7 @@ export function ModelsClient() {
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterKey, page]);
+  }, [page, selectedSubCategorySlug]);
 
   // Infinite scroll
   useEffect(() => {
@@ -143,30 +105,10 @@ export function ModelsClient() {
     };
   }, [isLoading, isFetchingMore, page, totalPages]);
 
-  const patchQuery = (patch: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(patch)) {
-      if (value) params.set(key, value);
-      else params.delete(key);
-    }
-    const qs = params.toString();
-    router.push(qs ? `/models?${qs}` : "/models");
-  };
-
-  const setSort = (value: string) => {
-    patchQuery({ sort: value && value !== "newest" ? value : null });
-  };
-
   const reloadFirstPage = async () => {
     setIsLoading(true);
     try {
-      const data = await fetchModels({
-        search: search || undefined,
-        provider,
-        modality,
-        sort,
-        page: 1,
-      });
+      const data = await fetchModels({ page: 1 });
       setModels(data.items);
       setPage(1);
       setTotalPages(data.pagination.totalPages || 1);
@@ -243,85 +185,47 @@ export function ModelsClient() {
 
   return (
     <div className="flex-1 w-full flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      {/* Toolbar — search + sort, homepage density */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-        <div className="mx-auto w-full max-w-[1600px] flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#71717A]" />
-            <input
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search models…"
-              className="w-full rounded-lg border border-[#232326] bg-[#131316] py-1.5 pl-9 pr-3 text-xs font-semibold text-white placeholder:text-[#52525B] hover:border-neutral-500 focus:border-neutral-500 focus:outline-none transition-all h-8"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <div className="relative inline-flex items-center">
-              <select
-                value={provider || ""}
-                onChange={(e) => patchQuery({ provider: e.target.value || null })}
-                className="appearance-none rounded-lg border border-[#232326] bg-[#131316] pl-3 pr-8 py-1 text-xs font-semibold text-white hover:border-neutral-500 focus:outline-none transition-all cursor-pointer h-7 max-w-[140px]"
-              >
-                <option value="">All companies</option>
-                {providers.map((p) => (
-                  <option key={p.slug} value={p.slug}>
-                    {p.name} ({p.count})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={11} className="absolute right-2 text-[#71717A] pointer-events-none" />
-            </div>
-
-            <div className="relative inline-flex items-center">
-              <select
-                value={modality || ""}
-                onChange={(e) => patchQuery({ modality: e.target.value || null })}
-                className="appearance-none rounded-lg border border-[#232326] bg-[#131316] pl-3 pr-8 py-1 text-xs font-semibold text-white hover:border-neutral-500 focus:outline-none transition-all cursor-pointer h-7 max-w-[160px]"
-              >
-                <option value="">All types</option>
-                {modalities.map((m) => (
-                  <option key={m.modality} value={m.modality}>
-                    {m.modality} ({m.count})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={11} className="absolute right-2 text-[#71717A] pointer-events-none" />
-            </div>
-
-            <div className="flex items-center gap-2 select-none">
-              <span className="text-xs text-[#71717A]">Sort by</span>
-              <div className="relative inline-flex items-center">
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                  className="appearance-none rounded-lg border border-[#232326] bg-[#131316] pl-3 pr-8 py-1 text-xs font-semibold text-white hover:border-neutral-500 focus:outline-none transition-all cursor-pointer h-7"
-                >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={11} className="absolute right-2 text-[#71717A] pointer-events-none" />
-              </div>
-            </div>
-
-            {isAdmin && (
-              <Button
-                className="h-7 bg-white text-black hover:bg-neutral-200 text-xs"
-                onClick={openAdd}
-              >
-                <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Model
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Table — same container as homepage tools section */}
-      <div className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2 flex-1">
+      <div className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-6 pb-2 flex-1">
         <div className="mx-auto w-full max-w-[1600px] space-y-3">
+          {isAdmin && (
+            <Button
+              className="h-7 bg-white text-black hover:bg-neutral-200 text-xs"
+              onClick={openAdd}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Model
+            </Button>
+          )}
+
+          {/* Subcategory Filter Chips */}
+          {subCategories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              <button
+                onClick={() => handleSelectSubCategory(null)}
+                className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                  !selectedSubCategorySlug
+                    ? "border-[#6E56CF] bg-[#6E56CF] text-white"
+                    : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                }`}
+              >
+                All
+              </button>
+              {subCategories.map((sub) => (
+                <button
+                  key={sub.id}
+                  onClick={() => handleSelectSubCategory(sub.slug)}
+                  className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                    selectedSubCategorySlug === sub.slug
+                      ? "border-[#6E56CF] bg-[#6E56CF] text-white"
+                      : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                  }`}
+                >
+                  {sub.name}
+                </button>
+              ))}
+            </div>
+          )}
+
           <ModelListView models={models} loading={isLoading && page === 1} />
 
           {/* Admin quick-edit strip (kept out of row chrome) */}

@@ -1,13 +1,19 @@
 import { z } from 'zod';
-import { PricingModel } from '@prisma/client';
+import type { PricingModel } from '@prisma/client';
 
 export const GetTasksQuerySchema = z.object({
   q: z.string().optional().default(''),
   category: z.string().optional(),
   difficulty: z.enum(['EASY', 'MEDIUM', 'ADVANCED']).optional(),
-  pricing: z.nativeEnum(PricingModel).optional(),
+  pricing: z.enum(['FREE', 'FREEMIUM', 'PAID', 'FREE_TRIAL']).optional(),
   featuredOnly: z.string().optional(),
-  sort: z.enum(['newest', 'oldest', 'alphabetical', 'popular']).optional().default('newest'),
+  sort: z.enum([
+    "newest",
+    "oldest",
+    "rating",
+    "name-asc",
+    "name-desc"
+]).optional().default('newest'),
   page: z.string().optional().default('1'),
   filter: z.enum(['all', 'for-you', 'following']).optional().default('all'),
 });

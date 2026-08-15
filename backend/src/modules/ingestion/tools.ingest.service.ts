@@ -131,6 +131,7 @@ export class ToolsIngestService {
               apiDocsUrl: toolData.apiDocsUrl || null,
               performanceScore: toolData.performanceScore || null,
               companyId,
+              toolCategories: toolData.toolCategories,
               categories: {
                 create: categoryIds.map(cId => ({ categoryId: cId }))
               },
@@ -166,6 +167,7 @@ export class ToolsIngestService {
               apiDocsUrl: toolData.apiDocsUrl || null,
               performanceScore: toolData.performanceScore || null,
               companyId,
+              toolCategories: toolData.toolCategories,
               categories: {
                 create: categoryIds.map(cId => ({ categoryId: cId }))
               },

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Search from 'lucide-react/dist/esm/icons/search';
 import Wrench from 'lucide-react/dist/esm/icons/wrench';
@@ -39,7 +39,10 @@ const BROWSE_BY_TYPE = [
   { label: ENTITY_META.device.label, href: ENTITY_META.device.basePath, icon: ENTITY_META.device.icon },
 ];
 
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
+
 const DIRECTORY_CARDS = [
+  { name: "New", href: "/", description: "Discover the newest AI additions.", icon: Sparkles, color: "#6E56CF" },
   { name: "Tools", href: "/tools", description: "Browse the full AI tools directory, filter by category and pricing.", icon: Wrench, color: "#FFC53D" },
   { name: "Tasks", href: "/tasks", description: "Find the right AI tool for a specific job to be done.", icon: ListChecks, color: "#FB923C" },
   { name: "Companies", href: "/companies", description: "Explore the labs and startups building the AI ecosystem.", icon: Building2, color: "#38BDF8" },
@@ -49,19 +52,34 @@ const DIRECTORY_CARDS = [
   { name: "Devices", href: "/devices", description: "Hardware built for and powered by AI.", icon: Smartphone, color: "#F472B6" },
   { name: "Models", href: "/models", description: "Compare context windows, pricing, and benchmarks across AI models.", icon: Cpu, color: "#A78BFA" },
   { name: "Repositories", href: "/repositories", description: "Trending open-source AI repositories on GitHub.", icon: GitBranch, color: "#22D3EE" },
-  { name: "MCP", href: "/tools", description: "Model Context Protocol servers and integrations.", icon: Plug, color: "#818CF8" },
+  { name: "MCP", href: "/mcp", description: "Model Context Protocol servers and integrations.", icon: Plug, color: "#818CF8" },
   { name: "Collections", href: "/collections", description: "Curated bundles of tools grouped by use case.", icon: FolderHeart, color: "#34D399" },
-  { name: "Personal", href: "/tools?category=personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
-  { name: "Creativity", href: "/tools?category=creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
+  { name: "Personal", href: "/personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
+  { name: "Creativity", href: "/creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
 
-export function GlobalHero() {
+export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string } = {}) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const q = searchParams.get("q") || "";
 
   const [searchOpen, setSearchOpen] = useState(false);
   const searchContainerRef = useRef<HTMLFormElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const query = searchInputRef.current?.value || "";
+    const params = new URLSearchParams(searchParams.toString());
+    if (query.trim()) {
+      params.set("q", query);
+    } else {
+      params.delete("q");
+    }
+    setSearchOpen(false);
+    router.push(`${searchAction}?${params.toString()}`);
+  };
 
   // Close the search dropdown on outside click or Escape.
   useEffect(() => {
@@ -102,7 +120,7 @@ export function GlobalHero() {
     <>
       {/* Hero Section */}
       <section
-        className="relative w-full flex flex-col items-center pt-4 pb-6 px-6"
+        className="relative z-20 w-full flex flex-col items-center pt-4 pb-6 px-6"
         style={{
           backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
@@ -121,8 +139,9 @@ export function GlobalHero() {
           </h1>
 
           <form
-            action="/tools"
+            action={searchAction}
             method="GET"
+            onSubmit={handleSubmit}
             ref={searchContainerRef}
             className="relative w-full max-w-[520px] mx-auto mb-4 sm:mb-5 group"
           >
@@ -217,33 +236,60 @@ export function GlobalHero() {
       {/* Directory nav strip */}
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
         <div className="mx-auto w-full max-w-[1600px]">
-          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto">
+          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none">
             {DIRECTORY_CARDS.map((card) => {
               const Icon = card.icon;
+              const isSelected = card.href === "/" 
+                ? pathname === "/" 
+                : card.name === "Tools"
+                  ? (pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp")))
+                  : pathname?.startsWith(card.href);
+              const isNew = card.name === "New";
+              
               return (
-                <a
+                <Link
                   key={card.name}
                   href={card.href}
-                  className="group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-[#232326]/60 bg-[#0d0d10] px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-colors duration-200"
+                  className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${
+                    (isNew && isSelected) ? 'border-transparent' : 'border-[#232326]/60 bg-[#0d0d10]'
+                  }`}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = card.color;
+                    if (!(isNew && isSelected)) e.currentTarget.style.borderColor = card.color;
                     e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "";
-                    e.currentTarget.style.boxShadow = "";
+                    if (!isSelected) {
+                      e.currentTarget.style.borderColor = "";
+                      e.currentTarget.style.boxShadow = "";
+                    }
                   }}
+                  style={
+                    isSelected && !isNew
+                      ? { borderColor: card.color, boxShadow: `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55` }
+                      : undefined
+                  }
                 >
+                  {isNew && isSelected && (
+                    <>
+                      <div 
+                        className="absolute inset-[-100%] animate-[spin_3s_linear_infinite] opacity-70"
+                        style={{ 
+                          background: `conic-gradient(from 0deg at 50% 50%, transparent 0%, transparent 60%, ${card.color} 100%)` 
+                        }} 
+                      />
+                      <div className="absolute inset-[1px] rounded-[7px] bg-[#0d0d10]" />
+                    </>
+                  )}
                   <div
-                    className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border"
+                    className="relative z-10 flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border transition-colors"
                     style={{ backgroundColor: `${card.color}1a`, borderColor: `${card.color}40` }}
                   >
                     <Icon size={10} strokeWidth={1.75} style={{ color: card.color }} />
                   </div>
-                  <span className="text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
+                  <span className="relative z-10 text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
                     {card.name}
                   </span>
-                </a>
+                </Link>
               );
             })}
           </div>

@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useMemo } from "react";
-import { CollectionListItem } from "@/lib/types";
+import { CollectionListItem, CollectionSubCategory } from "@/lib/types";
+import { fetchCollectionSubCategories } from "@/lib/collections";
+import { API_URL } from "@/lib/api";
 
 // Import modular components
 import { CollectionToolbar } from "@/components/collections/CollectionToolbar";
@@ -103,6 +105,8 @@ export default function CollectionsPageClient({ initialItems }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("updated");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [activePill, setActivePill] = useState<string | null>(null);
+  const [subCategories, setSubCategories] = useState<CollectionSubCategory[]>([]);
+  const [selectedSubCategorySlug, setSelectedSubCategorySlug] = useState<string | null>(null);
 
   const [toolsMin, setToolsMin] = useState(0);
   const [toolsMax, setToolsMax] = useState(100);
@@ -116,8 +120,7 @@ export default function CollectionsPageClient({ initialItems }: Props) {
       setIsLoading(false);
     } else {
       setIsLoading(true);
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
-      fetch(`${API_BASE_URL}/collections?sort=recently_updated`)
+      fetch(`${API_URL}/api/v1/collections?sort=recently_updated`)
         .then(res => res.json())
         .then(data => {
           if (data && Array.isArray(data.items)) {
@@ -139,12 +142,16 @@ export default function CollectionsPageClient({ initialItems }: Props) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const hasActiveFilters = nameSearch || selectedCategory !== ALL_CATEGORIES || selectedCreatorType !== "All" || activeToolsFilter || activePill;
+  useEffect(() => {
+    fetchCollectionSubCategories().then(setSubCategories).catch(() => {});
+  }, []);
+
+  const hasActiveFilters = nameSearch || selectedCategory !== ALL_CATEGORIES || selectedCreatorType !== "All" || activeToolsFilter || activePill || selectedSubCategorySlug;
 
   function clearAllFilters() {
     setNameSearch(""); setNameInput(""); setSelectedCategory(ALL_CATEGORIES);
     setSelectedCreatorType("All"); setToolsMin(0); setToolsMax(100);
-    setActiveToolsFilter(false); setActivePill(null); setCurrentPage(1);
+    setActiveToolsFilter(false); setActivePill(null); setSelectedSubCategorySlug(null); setCurrentPage(1);
   }
 
   const categoryCounts = useMemo(() => {
@@ -171,6 +178,7 @@ export default function CollectionsPageClient({ initialItems }: Props) {
     }
     if (selectedCategory !== ALL_CATEGORIES) list = list.filter((d) => d.category === selectedCategory);
     if (selectedCreatorType !== "All") list = list.filter((d) => d.creatorType === selectedCreatorType);
+    if (selectedSubCategorySlug) list = list.filter((d) => (d as any).subCategorySlugs?.includes(selectedSubCategorySlug));
     if (activeToolsFilter) {
       list = list.filter((d) => d.toolCount >= toolsMin && d.toolCount <= toolsMax);
     }
@@ -189,9 +197,9 @@ export default function CollectionsPageClient({ initialItems }: Props) {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return list;
-  }, [collections, nameSearch, selectedCategory, selectedCreatorType, activeToolsFilter, activePill, toolsMin, toolsMax, sortKey, sortDir]);
+  }, [collections, nameSearch, selectedCategory, selectedCreatorType, selectedSubCategorySlug, activeToolsFilter, activePill, toolsMin, toolsMax, sortKey, sortDir]);
 
-  useEffect(() => { setCurrentPage(1); }, [nameSearch, selectedCategory, selectedCreatorType, sortKey, sortDir, activeToolsFilter, activePill]);
+  useEffect(() => { setCurrentPage(1); }, [nameSearch, selectedCategory, selectedCreatorType, selectedSubCategorySlug, sortKey, sortDir, activeToolsFilter, activePill]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -205,15 +213,40 @@ export default function CollectionsPageClient({ initialItems }: Props) {
     <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
       {/* ── TOOLBAR ── */}
       <CollectionToolbar
-        nameInput={nameInput}
-        setNameInput={setNameInput}
-        setNameSearch={setNameSearch}
-        setCurrentPage={setCurrentPage}
         viewMode={viewMode}
         setViewMode={setViewMode}
         hasActiveFilters={!!hasActiveFilters}
         clearAllFilters={clearAllFilters}
       />
+
+      {/* ── SUBCATEGORY FILTER CHIPS ── */}
+      {subCategories.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4 mt-2">
+          <button
+            onClick={() => { setSelectedSubCategorySlug(null); setCurrentPage(1); }}
+            className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+              !selectedSubCategorySlug
+                ? "border-[#6E56CF] bg-[#6E56CF] text-white"
+                : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+            }`}
+          >
+            All
+          </button>
+          {subCategories.map((sub) => (
+            <button
+              key={sub.id}
+              onClick={() => { setSelectedSubCategorySlug(sub.slug); setCurrentPage(1); }}
+              className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                selectedSubCategorySlug === sub.slug
+                  ? "border-[#6E56CF] bg-[#6E56CF] text-white"
+                  : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+              }`}
+            >
+              {sub.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── GRID VIEW ── */}
       {viewMode === "grid" && (

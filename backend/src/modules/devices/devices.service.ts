@@ -68,4 +68,11 @@ export class DevicesService {
 
     return transformDeviceForDetail(device);
   }
+
+  async listDeviceSubCategories() {
+    return this.prisma.deviceSubCategory.findMany({
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, slug: true, description: true },
+    });
+  }
 }

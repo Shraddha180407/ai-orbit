@@ -41,13 +41,14 @@ The API expects a top-level JSON object containing a `tools` array.
 | `isOpenSource` | `boolean` | No | Indicates if the tool is open source. Default is `false`. |
 | `isTrending` | `boolean` | No | Indicates if the tool is currently trending. Default is `false`. |
 | `verified` | `boolean` | No | Indicates if the tool is verified. Default is `false`. |
-| `compatibility` | `string[]` | No | Supported platforms. E.g. `"WEB"`, `"WINDOWS"`, `"MACOS"`, `"IOS"`, `"ANDROID"`, `"CHROME_EXTENSION"`, `"LINUX"`. Default is `[]`. |
-| `targetUsers` | `string[]` | No | Target personas. E.g. `"DEVELOPERS"`, `"DESIGNERS"`, `"STUDENTS"`, `"MARKETERS"`. Default is `[]`. |
+| `compatibility` | `string[]` | No | Supported platforms. Must be from: `"WEB"`, `"WINDOWS"`, `"MACOS"`, `"LINUX"`, `"IOS"`, `"ANDROID"`, `"CHROME_EXTENSION"`. Default is `[]`. |
+| `targetUsers` | `string[]` | No | Target personas. Must be from: `"DEVELOPERS"`, `"DESIGNERS"`, `"STUDENTS"`, `"MARKETERS"`, `"WRITERS"`, `"RESEARCHERS"`, `"EDUCATORS"`, `"SALES"`, `"ENTERPRISE"`, `"CONTENT_CREATORS"`. Default is `[]`. |
 | `hasApi` | `boolean` | No | Indicates if the tool provides an API. Default is `false`. |
 | `apiDocsUrl` | `string` (URL) | No | URL to the API documentation. |
 | `performanceScore` | `number` | No | A numerical performance score. |
 | `company` | `object` | No | Details about the parent company. See Company Object. |
-| `categories` | `object[]` | No | Array of categories this tool belongs to. See Entity Object. |
+| `toolCategories`| `string[]` | No | Array of category enums. Must be from: `"WRITING"`, `"IMAGE_GENERATION"`, `"VIDEO_GENERATION"`, `"AUDIO"`, `"CHATBOTS"`, `"CODING"`, `"MARKETING"`, `"PRODUCTIVITY"`, `"BUSINESS"`, `"EDUCATION"`, `"AGENTS"`, `"PRESENTATIONS"`, `"THREE_D_GENERATION"`, `"NO_CODE_AI_BUILDERS"`, `"WORKFLOW_AUTOMATION"`. |
+| `categories` | `object[]` | No | Array of legacy category objects. |
 | `tags` | `object[]` | No | Array of tags describing the tool. See Entity Object. |
 | `integrations` | `object[]` | No | Array of integrations the tool supports. See Integration Object. |
 | `tasks` | `object[]` | No | Array of tasks the tool is associated with. See Task Object. |
@@ -114,6 +115,10 @@ The API expects a top-level JSON object containing a `tools` array.
         "name": "Orbit Inc.",
         "logoUrl": "https://orbit-inc.example.com/logo.png"
       },
+      "toolCategories": [
+        "IMAGE_GENERATION",
+        "PRODUCTIVITY"
+      ],
       "categories": [
         { "slug": "ai-generators", "name": "AI Generators" },
         { "slug": "productivity", "name": "Productivity" }
