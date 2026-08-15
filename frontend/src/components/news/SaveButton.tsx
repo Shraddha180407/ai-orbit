@@ -5,6 +5,8 @@ import Bookmark from "lucide-react/dist/esm/icons/bookmark";
 import { API_URL } from "@/lib/api";
 import { getClientId } from "@/lib/clientId";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/hooks/use-user";
+import { toast } from "sonner";
 
 interface SaveButtonProps {
   id: string;
@@ -12,13 +14,8 @@ interface SaveButtonProps {
   initialBookmarked?: boolean;
 }
 
-/**
- * Real, persisted bookmarking via POST/DELETE /api/news/:slug/bookmark.
- * Same button treatment as VoteButtons.tsx now — bg-[#18181C]/border-
- * [#232326] resting, var(--color-signal) active — matching the homepage's
- * accent color instead of the old purple theme.
- */
 export function SaveButton({ id, fluid, initialBookmarked }: SaveButtonProps) {
+  const { user } = useUser();
   const key = "tas_bm_" + id;
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState(false);
@@ -30,16 +27,20 @@ export function SaveButton({ id, fluid, initialBookmarked }: SaveButtonProps) {
         if (initialBookmarked) window.localStorage.setItem(key, "1");
         else window.localStorage.removeItem(key);
       } catch {
-        // localStorage unavailable — ignore
+        // ignore
       }
       return;
     }
     try {
       setSaved(window.localStorage.getItem(key) === "1");
     } catch {
-      // localStorage unavailable — ignore
+      // ignore
     }
   }, [key, initialBookmarked]);
+
+  if (!user) {
+    return null; // Bookmark option should appear only after login is done (Feedback Point 4)
+  }
 
   const toggle = async () => {
     if (pending) return;
@@ -62,8 +63,9 @@ export function SaveButton({ id, fluid, initialBookmarked }: SaveButtonProps) {
         if (next) window.localStorage.setItem(key, "1");
         else window.localStorage.removeItem(key);
       } catch {
-        // localStorage unavailable — ignore
+        // ignore
       }
+      toast.success(next ? "Article saved to bookmarks" : "Article removed from bookmarks");
     } catch (err) {
       console.error("Bookmark failed:", err);
     } finally {
@@ -78,14 +80,14 @@ export function SaveButton({ id, fluid, initialBookmarked }: SaveButtonProps) {
       disabled={pending}
       aria-pressed={saved}
       className={cn(
-        "inline-flex items-center gap-2 rounded-md border h-10 px-4 text-sm font-medium transition-colors",
+        "inline-flex items-center gap-2 rounded-md border h-10 px-4 text-sm font-medium transition-colors cursor-pointer",
         fluid ? "w-full justify-center" : "justify-start",
-        saved ? "border-transparent text-black" : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white",
+        saved ? "border-transparent text-black" : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#F5A623] hover:text-white",
         pending && "opacity-70 cursor-default"
       )}
       style={saved ? { backgroundColor: "var(--color-signal)" } : undefined}
     >
-      <Bookmark size={16} fill={saved ? "currentColor" : "none"} />
+      <Bookmark size={15} fill={saved ? "currentColor" : "none"} />
       {saved ? "Saved" : "Save"}
     </button>
   );

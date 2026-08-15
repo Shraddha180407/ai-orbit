@@ -10,6 +10,7 @@ import { useEffect, useState, type MouseEvent } from "react";
 import { PublisherIcon } from "./PublisherIcon";
 import { publishedLabel } from "@/lib/news/format";
 import type { NewsArticle, NewsSource } from "@/types/news";
+import { useUser } from "@/hooks/use-user";
 import { Pencil, Trash2 } from "lucide-react";
 
 interface NewsTableProps {
@@ -20,7 +21,7 @@ interface NewsTableProps {
   onDelete?: (id: string) => void;
 }
 
-function NewsRowActions({ article }: { article: NewsArticle }) {
+function NewsRowActions({ article, isLoggedIn }: { article: NewsArticle; isLoggedIn: boolean }) {
   const key = "tas_bm_" + article.id;
   const [saved, setSaved] = useState(false);
   const [shared, setShared] = useState(false);
@@ -29,20 +30,21 @@ function NewsRowActions({ article }: { article: NewsArticle }) {
     try {
       setSaved(window.localStorage.getItem(key) === "1");
     } catch {
-      // localStorage unavailable — ignore
+      // ignore
     }
   }, [key]);
 
   const toggle = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isLoggedIn) return;
     const next = !saved;
     setSaved(next);
     try {
       if (next) window.localStorage.setItem(key, "1");
       else window.localStorage.removeItem(key);
     } catch {
-      // localStorage unavailable — ignore
+      // ignore
     }
   };
 
@@ -69,20 +71,25 @@ function NewsRowActions({ article }: { article: NewsArticle }) {
 
   return (
     <div className="flex items-center justify-end gap-1.5">
-      <button
-        type="button"
-        onClick={toggle}
-        aria-label={saved ? "Saved" : "Save"}
-        title={saved ? "Saved" : "Save"}
-        className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors ${
-          saved
-            ? "border-transparent text-black"
-            : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#F5A623] hover:text-white"
-        }`}
-        style={saved ? { backgroundColor: "var(--color-signal)" } : undefined}
-      >
-        <Bookmark size={12} fill={saved ? "currentColor" : "none"} />
-      </button>
+      {/* Render Bookmark option only if user is logged in */}
+      {isLoggedIn && (
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={saved ? "Saved" : "Save"}
+          title={saved ? "Saved" : "Save"}
+          className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors ${
+            saved
+              ? "border-transparent text-black"
+              : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#F5A623] hover:text-white"
+          }`}
+          style={saved ? { backgroundColor: "var(--color-signal)" } : undefined}
+        >
+          <Bookmark size={13} fill={saved ? "currentColor" : "none"} />
+        </button>
+      )}
+
+      {/* Share option */}
       <button
         type="button"
         onClick={share}
@@ -90,13 +97,13 @@ function NewsRowActions({ article }: { article: NewsArticle }) {
         title={shared ? "Link copied" : "Share"}
         className="inline-flex items-center justify-center rounded-md border border-[#232326]/60 bg-[#18181C] p-1.5 text-[#A1A1AA] transition-colors hover:border-[#F5A623] hover:text-white"
       >
-        {shared ? <Check size={12} /> : <Share2 size={12} />}
+        {shared ? <Check size={13} /> : <Share2 size={13} />}
       </button>
     </div>
   );
 }
 
-function NewsRow({ article, sources, isAdmin, onEdit, onDelete }: { article: NewsArticle; sources: Record<string, NewsSource>; isAdmin?: boolean; onEdit?: (news: NewsArticle) => void; onDelete?: (id: string) => void }) {
+function NewsRow({ article, sources, isAdmin, isLoggedIn, onEdit, onDelete }: { article: NewsArticle; sources: Record<string, NewsSource>; isAdmin?: boolean; isLoggedIn: boolean; onEdit?: (news: NewsArticle) => void; onDelete?: (id: string) => void }) {
   const source = sources[article.source];
   const [primaryTopic] = article.topics;
 
@@ -109,31 +116,26 @@ function NewsRow({ article, sources, isAdmin, onEdit, onDelete }: { article: New
       {/* Column 1: Left accent line + Headline & Square Publisher logo */}
       <td className="relative py-2.5 pl-4 pr-4">
         <span className="absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
-        <Link href={`/news/${article.id}`} className="flex items-center gap-3.5">
-          {/* Square logo container matching manager's request */}
+        <Link href={`/news/${article.id}`} className="flex items-center gap-3">
+          {/* Square logo container matching manager feedback */}
           <span className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-white p-1 transition-transform duration-300 ease-out group-hover:scale-[1.05] group-hover:shadow-[0_0_0_1.5px_var(--color-signal)] flex items-center justify-center shadow-sm">
             <PublisherIcon source={source} box={36} />
           </span>
-          <span className="min-w-0">
-            <span className="line-clamp-2 text-[14.5px] font-medium leading-snug text-white transition-colors group-hover:text-[#F5A623]">
+          <span className="min-w-0 flex-1">
+            <span className="line-clamp-2 text-[14.5px] font-semibold leading-snug text-white transition-colors group-hover:text-[#F5A623]">
               {article.headline}
             </span>
-            {article.dek && (
-              <span className="line-clamp-1 text-xs text-[#A1A1AA] mt-0.5 font-normal">
-                {article.dek}
-              </span>
-            )}
           </span>
         </Link>
       </td>
 
       {/* Column 2: Posted */}
-      <td className="whitespace-nowrap px-4 py-2.5 font-mono text-[13px] text-[#A1A1AA]">
+      <td className="whitespace-nowrap px-3 sm:px-4 py-2.5 font-mono text-[13px] text-[#A1A1AA]">
         {publishedLabel(article.hours)}
       </td>
 
       {/* Column 3: Category */}
-      <td className="whitespace-nowrap px-4 py-2.5">
+      <td className="whitespace-nowrap px-3 sm:px-4 py-2.5">
         {primaryTopic ? (
           <span className="inline-flex items-center rounded-full border border-[#232326] bg-[#131316] px-2.5 py-0.5 font-mono text-[11.5px] font-medium text-white">
             {primaryTopic}
@@ -144,7 +146,7 @@ function NewsRow({ article, sources, isAdmin, onEdit, onDelete }: { article: New
       </td>
 
       {/* Column 4: Publisher Channel */}
-      <td className="whitespace-nowrap px-4 py-2.5">
+      <td className="whitespace-nowrap px-3 sm:px-4 py-2.5">
         <a
           href={article.articleUrl || "#"}
           target="_blank"
@@ -162,9 +164,9 @@ function NewsRow({ article, sources, isAdmin, onEdit, onDelete }: { article: New
       </td>
 
       {/* Column 5: Actions */}
-      <td className="px-4 py-2.5 text-right whitespace-nowrap">
+      <td className="px-3 sm:px-4 py-2.5 text-right whitespace-nowrap">
         <div className="flex items-center justify-end gap-1.5">
-          <NewsRowActions article={article} />
+          <NewsRowActions article={article} isLoggedIn={isLoggedIn} />
           {isAdmin && (
             <div className="flex items-center gap-1 ml-1">
               <button
@@ -190,24 +192,27 @@ function NewsRow({ article, sources, isAdmin, onEdit, onDelete }: { article: New
 }
 
 export function NewsTable({ articles, sources, isAdmin, onEdit, onDelete }: NewsTableProps) {
+  const { user } = useUser();
+  const isLoggedIn = Boolean(user);
+
   return (
     <div className="overflow-x-auto border border-[#232326]/70 rounded-xl bg-[#0d0d10] shadow-xl">
-      <table className="w-full min-w-[720px] border-collapse">
+      <table className="w-full min-w-[680px] border-collapse">
         <thead>
           <tr className="border-b border-[#232326] bg-[#131316]/70">
             <th className="select-none px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A] pl-4">
               HEADLINE
             </th>
-            <th className="select-none px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-3 sm:px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               POSTED
             </th>
-            <th className="select-none px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-3 sm:px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               CATEGORY
             </th>
-            <th className="select-none px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-3 sm:px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               PUBLISHER
             </th>
-            <th className="select-none px-4 py-2 text-right font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A] pr-4">
+            <th className="select-none px-3 sm:px-4 py-2 text-right font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A] pr-4">
               ACTIONS
             </th>
           </tr>
@@ -219,6 +224,7 @@ export function NewsTable({ articles, sources, isAdmin, onEdit, onDelete }: News
               article={article}
               sources={sources}
               isAdmin={isAdmin}
+              isLoggedIn={isLoggedIn}
               onEdit={onEdit}
               onDelete={onDelete}
             />
