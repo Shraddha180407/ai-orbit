@@ -11,6 +11,8 @@ import { PublisherIcon } from "./PublisherIcon";
 import { publishedLabel } from "@/lib/news/format";
 import type { NewsArticle, NewsSource } from "@/types/news";
 import { useUser } from "@/hooks/use-user";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { Pencil, Trash2 } from "lucide-react";
 
 interface NewsTableProps {
@@ -22,6 +24,7 @@ interface NewsTableProps {
 }
 
 function NewsRowActions({ article, isLoggedIn }: { article: NewsArticle; isLoggedIn: boolean }) {
+  const router = useRouter();
   const key = "tas_bm_" + article.id;
   const [saved, setSaved] = useState(false);
   const [shared, setShared] = useState(false);
@@ -37,7 +40,18 @@ function NewsRowActions({ article, isLoggedIn }: { article: NewsArticle; isLogge
   const toggle = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isLoggedIn) return;
+    if (!isLoggedIn) {
+      toast.error("Sign in required to bookmark articles", {
+        description: "Please sign in or create an account to save stories.",
+        action: {
+          label: "Sign In",
+          onClick: () => router.push("/auth/signin"),
+        },
+        duration: 5000,
+      });
+      return;
+    }
+
     const next = !saved;
     setSaved(next);
     try {
@@ -46,6 +60,7 @@ function NewsRowActions({ article, isLoggedIn }: { article: NewsArticle; isLogge
     } catch {
       // ignore
     }
+    toast.success(next ? "Article saved to bookmarks" : "Article removed from bookmarks");
   };
 
   const share = async (e: MouseEvent) => {
@@ -67,27 +82,26 @@ function NewsRowActions({ article, isLoggedIn }: { article: NewsArticle; isLogge
     }
     setShared(true);
     setTimeout(() => setShared(false), 1400);
+    toast.success("Link copied to clipboard");
   };
 
   return (
     <div className="flex items-center justify-end gap-1.5">
-      {/* Render Bookmark option only if user is logged in */}
-      {isLoggedIn && (
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={saved ? "Saved" : "Save"}
-          title={saved ? "Saved" : "Save"}
-          className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors ${
-            saved
-              ? "border-transparent text-black"
-              : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#F5A623] hover:text-white"
-          }`}
-          style={saved ? { backgroundColor: "var(--color-signal)" } : undefined}
-        >
-          <Bookmark size={13} fill={saved ? "currentColor" : "none"} />
-        </button>
-      )}
+      {/* Bookmark option always rendered for both guest and logged in users */}
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label={saved ? "Saved" : "Save"}
+        title={saved ? "Saved" : "Save"}
+        className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors cursor-pointer ${
+          saved
+            ? "border-transparent text-black"
+            : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#F5A623] hover:text-white"
+        }`}
+        style={saved ? { backgroundColor: "var(--color-signal)" } : undefined}
+      >
+        <Bookmark size={13} fill={saved ? "currentColor" : "none"} />
+      </button>
 
       {/* Share option */}
       <button
@@ -95,7 +109,7 @@ function NewsRowActions({ article, isLoggedIn }: { article: NewsArticle; isLogge
         onClick={share}
         aria-label={shared ? "Link copied" : "Share"}
         title={shared ? "Link copied" : "Share"}
-        className="inline-flex items-center justify-center rounded-md border border-[#232326]/60 bg-[#18181C] p-1.5 text-[#A1A1AA] transition-colors hover:border-[#F5A623] hover:text-white"
+        className="inline-flex items-center justify-center rounded-md border border-[#232326]/60 bg-[#18181C] p-1.5 text-[#A1A1AA] transition-colors hover:border-[#F5A623] hover:text-white cursor-pointer"
       >
         {shared ? <Check size={13} /> : <Share2 size={13} />}
       </button>
@@ -114,10 +128,10 @@ function NewsRow({ article, sources, isAdmin, isLoggedIn, onEdit, onDelete }: { 
       style={{ ["--row-accent" as string]: "var(--color-signal)" }}
     >
       {/* Column 1: Left accent line + Headline & Square Publisher logo */}
-      <td className="relative py-2.5 pl-4 pr-4">
+      <td className="relative py-2.5 pl-3 pr-3">
         <span className="absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
         <Link href={`/news/${article.id}`} className="flex items-center gap-3">
-          {/* Square logo container matching manager feedback */}
+          {/* Square logo container */}
           <span className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-white p-1 transition-transform duration-300 ease-out group-hover:scale-[1.05] group-hover:shadow-[0_0_0_1.5px_var(--color-signal)] flex items-center justify-center shadow-sm">
             <PublisherIcon source={source} box={36} />
           </span>
@@ -130,12 +144,12 @@ function NewsRow({ article, sources, isAdmin, isLoggedIn, onEdit, onDelete }: { 
       </td>
 
       {/* Column 2: Posted */}
-      <td className="whitespace-nowrap px-3 sm:px-4 py-2.5 font-mono text-[13px] text-[#A1A1AA]">
+      <td className="whitespace-nowrap px-3 py-2.5 font-mono text-[13px] text-[#A1A1AA]">
         {publishedLabel(article.hours)}
       </td>
 
       {/* Column 3: Category */}
-      <td className="whitespace-nowrap px-3 sm:px-4 py-2.5">
+      <td className="whitespace-nowrap px-3 py-2.5">
         {primaryTopic ? (
           <span className="inline-flex items-center rounded-full border border-[#232326] bg-[#131316] px-2.5 py-0.5 font-mono text-[11.5px] font-medium text-white">
             {primaryTopic}
@@ -146,7 +160,7 @@ function NewsRow({ article, sources, isAdmin, isLoggedIn, onEdit, onDelete }: { 
       </td>
 
       {/* Column 4: Publisher Channel */}
-      <td className="whitespace-nowrap px-3 sm:px-4 py-2.5">
+      <td className="whitespace-nowrap px-3 py-2.5">
         <a
           href={article.articleUrl || "#"}
           target="_blank"
@@ -164,7 +178,7 @@ function NewsRow({ article, sources, isAdmin, isLoggedIn, onEdit, onDelete }: { 
       </td>
 
       {/* Column 5: Actions */}
-      <td className="px-3 sm:px-4 py-2.5 text-right whitespace-nowrap">
+      <td className="px-3 py-2.5 text-right whitespace-nowrap">
         <div className="flex items-center justify-end gap-1.5">
           <NewsRowActions article={article} isLoggedIn={isLoggedIn} />
           {isAdmin && (
@@ -196,23 +210,23 @@ export function NewsTable({ articles, sources, isAdmin, onEdit, onDelete }: News
   const isLoggedIn = Boolean(user);
 
   return (
-    <div className="overflow-x-auto border border-[#232326]/70 rounded-xl bg-[#0d0d10] shadow-xl">
+    <div className="overflow-x-auto border border-[#232326]/70 rounded-xl bg-[#0d0d10] shadow-xl w-full">
       <table className="w-full min-w-[680px] border-collapse">
         <thead>
           <tr className="border-b border-[#232326] bg-[#131316]/70">
-            <th className="select-none px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A] pl-4">
+            <th className="select-none px-3 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               HEADLINE
             </th>
-            <th className="select-none px-3 sm:px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-3 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               POSTED
             </th>
-            <th className="select-none px-3 sm:px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-3 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               CATEGORY
             </th>
-            <th className="select-none px-3 sm:px-4 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-3 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               PUBLISHER
             </th>
-            <th className="select-none px-3 sm:px-4 py-2 text-right font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A] pr-4">
+            <th className="select-none px-3 py-2 text-right font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               ACTIONS
             </th>
           </tr>
@@ -237,10 +251,10 @@ export function NewsTable({ articles, sources, isAdmin, onEdit, onDelete }: News
 
 export function NewsTableSkeleton({ rows = 8 }: { rows?: number }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-[#232326]/70 bg-[#0d0d10]">
+    <div className="overflow-x-auto rounded-xl border border-[#232326]/70 bg-[#0d0d10] w-full">
       <div className="flex flex-col divide-y divide-[#232326]/60">
         {Array.from({ length: rows }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 px-4 py-2.5">
+          <div key={i} className="flex items-center gap-4 px-3 py-2.5">
             <div className="h-11 w-11 animate-pulse rounded-lg bg-[#18181C]" />
             <div className="space-y-1.5 flex-1">
               <div className="h-3 w-40 animate-pulse rounded bg-[#18181C]" />
@@ -258,7 +272,7 @@ export function NewsTableSkeleton({ rows = 8 }: { rows?: number }) {
 
 export function NewsTableEmpty({ searchActive = false }: { searchActive?: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[#232326]/70 bg-[#0d0d10] py-12 text-center shadow-xl">
+    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[#232326]/70 bg-[#0d0d10] py-12 text-center shadow-xl w-full">
       <SearchX size={28} className="text-[#71717A]" aria-hidden="true" />
       <div>
         <p className="text-sm font-medium text-white">{searchActive ? "No stories match your filters" : "No stories yet"}</p>

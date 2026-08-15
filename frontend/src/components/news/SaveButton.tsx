@@ -7,6 +7,7 @@ import { getClientId } from "@/lib/clientId";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface SaveButtonProps {
   id: string;
@@ -16,6 +17,7 @@ interface SaveButtonProps {
 
 export function SaveButton({ id, fluid, initialBookmarked }: SaveButtonProps) {
   const { user } = useUser();
+  const router = useRouter();
   const key = "tas_bm_" + id;
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState(false);
@@ -38,11 +40,19 @@ export function SaveButton({ id, fluid, initialBookmarked }: SaveButtonProps) {
     }
   }, [key, initialBookmarked]);
 
-  if (!user) {
-    return null; // Bookmark option should appear only after login is done (Feedback Point 4)
-  }
-
   const toggle = async () => {
+    if (!user) {
+      toast.error("Sign in required to bookmark articles", {
+        description: "Please sign in or create an account to save stories.",
+        action: {
+          label: "Sign In",
+          onClick: () => router.push("/auth/signin"),
+        },
+        duration: 5000,
+      });
+      return;
+    }
+
     if (pending) return;
     setPending(true);
     const next = !saved;

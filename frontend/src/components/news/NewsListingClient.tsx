@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/shadcn-button";
 import { cn } from "@/lib/utils";
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 40;
 
 const DEFAULT_NEWS_CATEGORIES = [
   { key: "all", label: "All" },
@@ -138,7 +138,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDefaultView, mode, isLoadingInitial]);
 
-  // Enhanced IntersectionObserver with 1000px rootMargin for fast seamless scroll
+  // Enhanced IntersectionObserver with 1200px rootMargin for instantaneous scroll load
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (mode !== "paginated" || !hasMore) return;
@@ -148,7 +148,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       (entries) => {
         if (entries[0].isIntersecting && !isLoadingMore) loadPage(nextPage, true);
       },
-      { rootMargin: "1000px" }
+      { rootMargin: "1200px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -245,7 +245,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
   if (isLoadingInitial) {
     return (
-      <main className="mx-auto w-full max-w-[1720px] px-2 sm:px-4 lg:px-6 py-4 flex-1 flex flex-col">
+      <main className="w-full px-2 sm:px-4 py-4 flex-1 flex flex-col">
         <LoadingSkeleton />
       </main>
     );
@@ -253,14 +253,14 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
   if (initialError) {
     return (
-      <main className="mx-auto w-full max-w-[1720px] px-2 sm:px-4 lg:px-6 py-4 flex-1 flex flex-col">
+      <main className="w-full px-2 sm:px-4 py-4 flex-1 flex flex-col">
         <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
       </main>
     );
   }
 
   return (
-    <main className="mx-auto w-full max-w-[1720px] px-2 sm:px-4 lg:px-6 py-3 flex-1 flex flex-col">
+    <main className="w-full px-2 sm:px-4 py-3 flex-1 flex flex-col">
       {/* Toolbar & Search & Filter Chips */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1">
@@ -339,7 +339,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       )}
 
       {/* News Table List matching Video Table UI */}
-      <div className="space-y-4">
+      <div className="space-y-4 w-full">
         <NewsList articles={list} sources={sources} emptyKind={emptyKind} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
 
         {mode === "paginated" && list.length > 0 && (
