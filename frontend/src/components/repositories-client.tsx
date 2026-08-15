@@ -28,8 +28,8 @@ export function RepositoriesClient() {
   const s = searchParams.get("sort") ?? "newest";
   if (s === "name-asc")       { setSortField("updated"); setSortOrder("asc");  }
   else if (s === "name-desc") { setSortField("updated"); setSortOrder("desc"); }
-  else if (s === "oldest")    { setSortField("stars");   setSortOrder("asc");  }
-  else                        { setSortField("stars");   setSortOrder("desc"); }
+  else if (s === "oldest")    { setSortField("updated"); setSortOrder("asc");  }
+  else                        { setSortField("updated"); setSortOrder("desc"); }
 }, [searchParams]);
   const [selectedLicense, setSelectedLicense] = useState<string | null>(null);
   const [isLicenseDropdownOpen, setIsLicenseDropdownOpen] = useState(false);

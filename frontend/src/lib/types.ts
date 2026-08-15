@@ -163,6 +163,7 @@ export type Company = {
   slug: string;
   name: string;
   logoUrl: string | null;
+  createdAt?: string;
   description?: string | null;
   website?: string | null;
   websiteUrl?: string | null;
