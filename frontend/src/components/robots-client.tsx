@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-
+import { useSearchParams } from "next/navigation";
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import { RobotListItem } from "@/lib/types";
 import { fetchAllRobots } from "@/lib/api";
@@ -121,9 +121,10 @@ function RobotTableSkeleton({ rows = 8 }: { rows?: number }) {
 export function RobotsClient() {
   const [robots, setRobots] = useState<RobotListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const searchParams = useSearchParams();
+const [query, setQuery] = useState("");
+const [activeCategory, setActiveCategory] = useState("All");
+const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -161,6 +162,8 @@ export function RobotsClient() {
     "Surveillance"
   ];
 
+  const rawSort = searchParams.get("sort") ?? "newest";
+
   const filtered = useMemo(() => {
     let list = robots;
     if (activeCategory !== "All") {
@@ -177,8 +180,14 @@ export function RobotsClient() {
           (r.country || "").toLowerCase().includes(q)
       );
     }
+    list = list.slice().sort((a, b) => {
+      if (rawSort === "name-asc")  return a.name.localeCompare(b.name);
+      if (rawSort === "name-desc") return b.name.localeCompare(a.name);
+      if (rawSort === "oldest")    return (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "");
+      return (b.releaseDate ?? "").localeCompare(a.releaseDate ?? "");
+    });
     return list;
-  }, [robots, query, activeCategory]);
+  }, [robots, query, activeCategory, rawSort]);
 
   const visibleRobots = filtered.slice(0, visibleCount);
 

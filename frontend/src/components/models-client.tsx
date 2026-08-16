@@ -28,6 +28,14 @@ export function ModelsClient() {
 
   const [subCategories, setSubCategories] = useState<ModelSubCategory[]>([]);
   const selectedSubCategorySlug = searchParams.get("subCategory") || null;
+const rawSort = searchParams.get("sort") || "newest";
+const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
+  ? "alphabetical"
+  : rawSort === "oldest"
+  ? "oldest"
+  : rawSort === "rating"
+  ? "releaseDate"
+  : "newest";
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -58,6 +66,11 @@ export function ModelsClient() {
     loadSubCategories();
   }, []);
 
+  useEffect(() => {
+  setPage(1);
+  setModels([]);
+}, [selectedSort, selectedSubCategorySlug]);
+
   const handleSelectSubCategory = (slug: string | null) => {
     const params = new URLSearchParams(window.location.search);
     if (slug) {
@@ -65,6 +78,7 @@ export function ModelsClient() {
     } else {
       params.delete("subCategory");
     }
+    setPage(1);
     router.push(`/models?${params.toString()}`);
   };
 
@@ -74,7 +88,7 @@ export function ModelsClient() {
       if (page === 1) setIsLoading(true);
       else setIsFetchingMore(true);
       try {
-        const data = await fetchModels({ page, subCategory: selectedSubCategorySlug || undefined });
+        const data = await fetchModels({ page, subCategory: selectedSubCategorySlug || undefined, sort: selectedSort as any });
         if (page === 1) setModels(data.items);
         else setModels((prev) => [...prev, ...data.items]);
         setTotalPages(data.pagination.totalPages || 1);
@@ -87,7 +101,7 @@ export function ModelsClient() {
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, selectedSubCategorySlug]);
+  }, [page, selectedSubCategorySlug, selectedSort]);
 
   // Infinite scroll
   useEffect(() => {
