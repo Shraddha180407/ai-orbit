@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { BLUR_DATA_URL } from "@/lib/video-types";
 
 /**
  * Thumbnails are the single most failure-prone part of this page — they're
- * third-party URLs we don't control. This wrapper makes sure a bad URL never
- * shows a broken-image icon: it swaps to a branded gradient tile instead,
- * and shows a shimmer (not a blank gray box) while a good one is loading.
+ * third-party URLs we don't control. By default this wrapper makes sure a
+ * bad URL never shows a broken-image icon: it swaps to a branded gradient
+ * tile instead, and shows a shimmer (not a blank gray box) while a good one
+ * is loading.
+ *
+ * Some callers (e.g. the videos list table) want stricter behavior: every
+ * row must show a real thumbnail, and if one fails to load the whole item
+ * should disappear rather than show a fallback tile. Pass `onError` for
+ * that case — when provided, this component reports the failure upward and
+ * renders nothing itself, letting the parent remove the item from the list.
  */
 export function ThumbImage({
   src,
@@ -17,6 +24,7 @@ export function ThumbImage({
   accent,
   sizes,
   priority = false,
+  onError,
 }: {
   src: string;
   alt: string;
@@ -24,10 +32,24 @@ export function ThumbImage({
   accent: string;
   sizes: string;
   priority?: boolean;
+  onError?: () => void;
 }) {
-  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "loaded" | "error">(
+    src ? "loading" : "error"
+  );
+
+  useEffect(() => {
+    if (!src) {
+      setStatus("error");
+      onError?.();
+    }
+    // Only re-check when the src itself changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src]);
 
   if (status === "error") {
+    if (onError) return null;
+
     return (
       <div
         className="flex h-full w-full items-center justify-center"
@@ -62,7 +84,10 @@ export function ThumbImage({
           status === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]"
         } group-hover:scale-[1.06]`}
         onLoad={() => setStatus("loaded")}
-        onError={() => setStatus("error")}
+        onError={() => {
+          setStatus("error");
+          onError?.();
+        }}
       />
     </>
   );

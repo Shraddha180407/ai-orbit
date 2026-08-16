@@ -5,8 +5,9 @@ import Link from "next/link";
 import { Video, formatDuration, getChannelUrl } from "@/lib/video-types";
 import { ThumbImage } from "./ThumbImage";
 import { VideoSaveButton } from "./VideoSaveButton";
+import { VideoShareButton } from "./VideoShareButton";
 
-type SortKey = "name" | "posted" | "views";
+type SortKey = "name" | "duration" | "posted" | "views";
 type SortDir = "asc" | "desc";
 
 const LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert"] as const;
@@ -54,6 +55,19 @@ function FilterIcon() {
 export function VideoTable({ videos }: { videos: Video[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("posted");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  // Every row in this list must show a real thumbnail — if one fails to
+  // load, the video is dropped from the list entirely rather than shown
+  // with a placeholder (see ThumbImage's onError prop).
+  const [failedThumbIds, setFailedThumbIds] = useState<Set<string>>(new Set());
+
+  function markThumbFailed(id: string) {
+    setFailedThumbIds((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -65,20 +79,22 @@ export function VideoTable({ videos }: { videos: Video[] }) {
   }
 
   const sorted = useMemo(() => {
-    const copy = [...videos];
+    const copy = videos.filter((v) => !failedThumbIds.has(v.id));
     copy.sort((a, b) => {
       let cmp = 0;
       if (sortKey === "name") cmp = a.title.localeCompare(b.title);
+      else if (sortKey === "duration") cmp = a.durationSeconds - b.durationSeconds;
       else if (sortKey === "posted")
         cmp = new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
       else if (sortKey === "views") cmp = a.views - b.views;
       return sortDir === "asc" ? cmp : -cmp;
     });
     return copy;
-  }, [videos, sortKey, sortDir]);
+  }, [videos, sortKey, sortDir, failedThumbIds]);
 
   const columns: { key: SortKey; label: string; align?: "right" }[] = [
     { key: "name", label: "Name" },
+    { key: "duration", label: "Duration" },
     { key: "posted", label: "Posted" },
     { key: "views", label: "Views", align: "right" },
   ];
@@ -119,7 +135,7 @@ export function VideoTable({ videos }: { videos: Video[] }) {
             <th className="px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted">
               Channel
             </th>
-            <th className="w-12 px-4 py-[9.6px]" aria-hidden="true" />
+            <th className="w-20 px-4 py-[9.6px]" aria-hidden="true" />
           </tr>
         </thead>
         <tbody>
@@ -139,6 +155,7 @@ export function VideoTable({ videos }: { videos: Video[] }) {
                       toolName={v.toolName}
                       accent={v.accent}
                       sizes="106px"
+                      onError={() => markThumbFailed(v.id)}
                     />
                     <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow-md">
@@ -157,6 +174,9 @@ export function VideoTable({ videos }: { videos: Video[] }) {
                     </span>
                   </span>
                 </Link>
+              </td>
+              <td className="whitespace-nowrap px-4 py-[9.6px] font-mono text-[13.5px] text-secondary">
+                {formatDuration(v.durationSeconds)}
               </td>
               <td className="whitespace-nowrap px-4 py-[9.6px] font-mono text-[13.5px] text-secondary">
                 {formatPosted(v.publishedAt)}
@@ -206,8 +226,11 @@ export function VideoTable({ videos }: { videos: Video[] }) {
                   </svg>
                 </a>
               </td>
-              <td className="px-4 py-[9.6px] text-right">
-                <VideoSaveButton id={v.id} />
+              <td className="px-4 py-[9.6px] text-right whitespace-nowrap">
+                <div className="flex items-center justify-end gap-1.5">
+                  <VideoShareButton slug={v.slug} title={v.title} />
+                  <VideoSaveButton id={v.id} />
+                </div>
               </td>
             </tr>
           ))}
