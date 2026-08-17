@@ -66,7 +66,7 @@ function ShareButton({ slug, name }: { slug: string; name: string }) {
   );
 }
 
-export function MCPClient() {
+export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { defaultCategory?: string; defaultSubCategory?: string }) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -74,48 +74,49 @@ export function MCPClient() {
   const initialCategory = searchParams.get("category") ?? "";
   const initialSubCategory = searchParams.get("subCategory") ?? "";
 
-  const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
-  const [activeSubCategory, setActiveSubCategory] = useState<string>(initialSubCategory);
+  const [activeCategory, setActiveCategory] = useState<string>(defaultCategory || initialCategory);
+  const [activeSubCategory, setActiveSubCategory] = useState<string>(defaultSubCategory || initialSubCategory);
 
   // Synchronize state when URL query parameters change (e.g. browser back/forward buttons)
   useEffect(() => {
     const categoryParam = searchParams.get("category") ?? "";
     const subCategoryParam = searchParams.get("subCategory") ?? "";
-    setActiveCategory(categoryParam);
-    setActiveSubCategory(subCategoryParam);
-  }, [searchParams]);
+    setActiveCategory(defaultCategory || categoryParam);
+    setActiveSubCategory(defaultSubCategory || subCategoryParam);
+  }, [searchParams, defaultCategory, defaultSubCategory]);
 
 
   // Helper to update URL search parameters without losing other queries (like search)
   const updateUrl = (category: string, subCategory: string = "") => {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete("category");
+    params.delete("subCategory");
     
-    if (category) {
-      params.set("category", category);
-    } else {
-      params.delete("category");
-    }
-
-    if (subCategory) {
-      params.set("subCategory", subCategory);
-    } else {
-      params.delete("subCategory");
-    }
+    const slug = subCategory || category;
+    const targetPath = slug ? `/p/mcp/${slug}` : `/mcp`;
     
-    router.replace(`/mcp?${params.toString()}`);
+    const queryString = params.toString();
+    const finalUrl = queryString ? `${targetPath}?${queryString}` : targetPath;
+    
+    router.replace(finalUrl);
   };
 
+  // Fetch categories from API
   // Fetch categories from API
   const { data: categoriesData } = useQuery({
     queryKey: ["mcpCategories"],
     queryFn: fetchMCPCategories,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
   const categories = categoriesData || [];
 
-  // Always fetch all subcategories regardless of selected category
+  // Fetch subcategories based on active category
   const { data: subCategoriesData } = useQuery({
-    queryKey: ["mcpSubCategories"],
-    queryFn: () => fetchMCPSubCategories(),
+    queryKey: ["mcpSubCategories", activeCategory],
+    queryFn: () => fetchMCPSubCategories(activeCategory || undefined),
+    retry: false,
+    refetchOnWindowFocus: false,
   });
   const subCategories = subCategoriesData || [];
 
@@ -147,6 +148,8 @@ export function MCPClient() {
         type: "SERVER",
       });
     },
+    retry: false,
+    refetchOnWindowFocus: false,
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       return lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined;
@@ -213,20 +216,9 @@ export function MCPClient() {
         }
       `}</style>
       <div className="mx-auto w-full max-w-[1600px] space-y-4 animate-fade-in">
-        {/* Breadcrumb Navigation */}
-        <div className="flex justify-start">
-          <Breadcrumb
-            items={[
-              { label: "Home", href: "/" },
-              { label: "MCP", href: "/mcp" },
-              { label: "MCP Servers" }
-            ]}
-          />
-        </div>
-
         {/* Top Sliding Category + Subcategory Row */}
         {/* Single combined scrollable pill row — categories + subcategories */}
-        <div className="mb-2 flex flex-nowrap items-center justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           {[{ name: "All", slug: "" }, ...categories].map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
@@ -263,8 +255,7 @@ export function MCPClient() {
                     onClick={() => {
                       const next = isActiveSub ? "" : sub.slug;
                       setActiveSubCategory(next);
-                      setActiveCategory("");
-                      updateUrl("", next);
+                      updateUrl(activeCategory, next);
                     }}
                     className={`whitespace-nowrap text-[10px] font-bold px-3 py-1 rounded-full border transition-all duration-200 cursor-pointer ${
                       isActiveSub

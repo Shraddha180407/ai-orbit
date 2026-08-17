@@ -55,7 +55,7 @@ const DIRECTORY_CARDS = [
   { name: "MCP", href: "/mcp", description: "Model Context Protocol servers and integrations.", icon: Plug, color: "#818CF8" },
   { name: "Collections", href: "/collections", description: "Curated bundles of tools grouped by use case.", icon: FolderHeart, color: "#34D399" },
   { name: "Personal", href: "/personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
-  { name: "Creativity", href: "/creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
+  { name: "Creativity", href: "/creativity/image-generation", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
 
 export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string } = {}) {
@@ -243,13 +243,21 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                 ? pathname === "/" 
                 : card.name === "Tools"
                   ? (pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp")))
-                  : pathname?.startsWith(card.href);
+                  : card.name === "Creativity"
+                    ? pathname?.startsWith("/creativity")
+                    : pathname?.startsWith(card.href);
               const isNew = card.name === "New";
               
               return (
                 <Link
                   key={card.name}
                   href={card.href}
+                  onClick={(e) => {
+                    if (["MCP", "Collections", "Personal", "Creativity"].includes(card.name)) {
+                      e.preventDefault();
+                      router.push(card.href);
+                    }
+                  }}
                   className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${
                     (isNew && isSelected) ? 'border-transparent' : 'border-[#232326]/60 bg-[#0d0d10]'
                   }`}
