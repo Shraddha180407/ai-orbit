@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { AuthController } from './auth.controller.js';
 import { jwtMiddleware } from '../../middleware/jwt.js';
 import { getPrisma } from '../../lib/prisma.js';
-import { sign } from 'jsonwebtoken';
+import { sign } from 'hono/jwt';
 import { setCookie } from 'hono/cookie';
 
 interface GoogleTokenResponse {
@@ -122,14 +122,16 @@ authRoutes.get('/google/callback', async (c) => {
     }
 
     const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
-    const jwtToken = sign({ id: user.id, email: user.email, name: user.name, role: user.role }, jwtSecret!, { expiresIn: '7d' });
+    const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
+    const jwtToken = await sign({ id: user.id, email: user.email, name: user.name, role: user.role, exp }, jwtSecret!);
     const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', jwtToken, {
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? 'None' : 'Lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7
+      maxAge: 60 * 60 * 24 * 7,
+      domain: isProd ? 'aiorbit.club' : undefined
     });
 
     if (user.role === 'ADMIN') {
@@ -230,14 +232,16 @@ authRoutes.get('/github/callback', async (c) => {
     }
 
     const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
-    const jwtToken = sign({ id: user.id, email: user.email, name: user.name, role: user.role }, jwtSecret!, { expiresIn: '7d' });
+    const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
+    const jwtToken = await sign({ id: user.id, email: user.email, name: user.name, role: user.role, exp }, jwtSecret!);
     const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', jwtToken, {
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? 'None' : 'Lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7
+      maxAge: 60 * 60 * 24 * 7,
+      domain: isProd ? 'aiorbit.club' : undefined
     });
 
     if (user.role === 'ADMIN') {

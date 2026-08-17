@@ -1,6 +1,6 @@
 import { Context } from 'hono';
 import { setCookie, deleteCookie } from 'hono/cookie';
-import { sign } from 'jsonwebtoken';
+import { sign } from 'hono/jwt';
 import { AuthService } from './auth.service.js';
 import { 
   signupSchema, 
@@ -53,11 +53,10 @@ export class AuthController {
 
     const user = await this.getService(c).login(result.data);
     const jwtSecret = c.env?.JWT_SECRET || process.env.JWT_SECRET;
-
-    const token = sign(
-      { id: user.id, email: user.email, name: user.name, role: user.role }, 
-      jwtSecret!, 
-      { expiresIn: '7d' }
+    const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
+    const token = await sign(
+      { id: user.id, email: user.email, name: user.name, role: user.role, exp }, 
+      jwtSecret!
     );
     
     const isProd = c.req.url.startsWith('https://');
@@ -66,17 +65,20 @@ export class AuthController {
       secure: isProd,
       sameSite: isProd ? 'None' : 'Lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7
+      maxAge: 60 * 60 * 24 * 7,
+      domain: isProd ? 'aiorbit.club' : undefined
     });
 
     return c.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   }
 
   async logout(c: Context) {
+    const isProd = c.req.url.startsWith('https://');
     deleteCookie(c, 'auth_token', { 
       path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+      secure: isProd,
+      sameSite: isProd ? 'None' : 'Lax',
+      domain: isProd ? 'aiorbit.club' : undefined
     });
     return c.json({ success: true, message: 'Logged out successfully.' });
   }
@@ -97,11 +99,10 @@ export class AuthController {
 
     const user = await this.getService(c).verifyEmail(result.data);
     const jwtSecret = c.env?.JWT_SECRET || process.env.JWT_SECRET;
-
-    const token = sign(
-      { id: user.id, email: user.email, name: user.name, role: user.role }, 
-      jwtSecret!, 
-      { expiresIn: '7d' }
+    const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
+    const token = await sign(
+      { id: user.id, email: user.email, name: user.name, role: user.role, exp }, 
+      jwtSecret!
     );
     
     const isProd = c.req.url.startsWith('https://');
@@ -110,7 +111,8 @@ export class AuthController {
       secure: isProd,
       sameSite: isProd ? 'None' : 'Lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7
+      maxAge: 60 * 60 * 24 * 7,
+      domain: isProd ? 'aiorbit.club' : undefined
     });
 
     return c.json({ success: true, message: 'Email verified successfully.' });
@@ -179,6 +181,7 @@ export class AuthController {
       path: '/',
       secure: isProd,
       sameSite: isProd ? 'None' : 'Lax',
+      domain: isProd ? 'aiorbit.club' : undefined
     });
 
     return c.json({ success: true, message: 'Account deleted successfully' });
