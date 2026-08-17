@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@/hooks/use-user';
 import { API_URL } from '@/lib/api';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/shadcn-button';
 import { Input } from '@/components/ui/input';
 import { Search, MoreHorizontal, Shield, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';

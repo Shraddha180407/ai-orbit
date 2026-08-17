@@ -9,7 +9,7 @@ import { Company } from '@/lib/types';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ExternalLink, Twitter, Linkedin, Building, MapPin, Calendar, Briefcase, TrendingUp, DollarSign, Users, CheckCircle, Star, ArrowLeft } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/shadcn-button";
 
 function formatValuation(val: string | null | undefined): string {
   if (!val) return "—";

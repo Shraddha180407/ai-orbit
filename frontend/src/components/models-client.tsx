@@ -11,7 +11,7 @@ import { ModelListView } from "@/components/ModelListView";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/shadcn-button";
 import { toast } from "sonner";
 
 export function ModelsClient() {

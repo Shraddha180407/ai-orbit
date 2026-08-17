@@ -2,7 +2,7 @@
 import { API_URL } from '@/lib/api';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/shadcn-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
 import { toast } from 'sonner';

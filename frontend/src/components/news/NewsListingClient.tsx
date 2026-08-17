@@ -13,7 +13,7 @@ import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/shadcn-button";
 
 const PAGE_SIZE = 25;
 
