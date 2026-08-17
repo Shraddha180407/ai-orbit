@@ -89,7 +89,8 @@ app.get('/', async (c) => {
       include: {
         creator: { select: { id: true, name: true, image: true } },
         categories: { take: 3, select: { categoryName: true } },
-        _count: { select: { relatedModels: true, relatedCompanies: true } }
+        _count: { select: { relatedModels: true, relatedCompanies: true } },
+        subCategories: { select: { subCategory: { select: { slug: true } } } }
       }
     }
 

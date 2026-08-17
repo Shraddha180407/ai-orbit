@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/shadcn-button";
 import { cn } from "@/lib/utils";
 
-const PAGE_SIZE = 40;
+const PAGE_SIZE = 50;
 
 const DEFAULT_NEWS_CATEGORIES = [
   { key: "all", label: "All" },
@@ -148,7 +148,11 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       (entries) => {
         if (entries[0].isIntersecting && !isLoadingMore) loadPage(nextPage, true);
       },
+<<<<<<< HEAD
       { rootMargin: "1200px" }
+=======
+      { rootMargin: "800px" }
+>>>>>>> upstream/main
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -245,21 +249,36 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
   if (isLoadingInitial) {
     return (
+<<<<<<< HEAD
       <main className="w-full px-2 sm:px-4 py-4 flex-1 flex flex-col">
         <LoadingSkeleton />
+=======
+      <main className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
+        <div className="mx-auto w-full max-w-[1600px] space-y-3">
+          <LoadingSkeleton />
+        </div>
+>>>>>>> upstream/main
       </main>
     );
   }
 
   if (initialError) {
     return (
+<<<<<<< HEAD
       <main className="w-full px-2 sm:px-4 py-4 flex-1 flex flex-col">
         <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
+=======
+      <main className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
+        <div className="mx-auto w-full max-w-[1600px] space-y-3">
+          <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
+        </div>
+>>>>>>> upstream/main
       </main>
     );
   }
 
   return (
+<<<<<<< HEAD
     <main className="w-full px-2 sm:px-4 py-3 flex-1 flex flex-col">
       {/* Toolbar & Search & Filter Chips */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
@@ -350,13 +369,70 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
                 <span className="text-sm text-[#71717A]">Couldn&apos;t load more stories.</span>
                 <button onClick={() => loadPage(nextPage, true)} className="text-sm font-semibold text-white hover:underline">
                   Retry
+=======
+    <>
+      <main className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
+        <div className="mx-auto w-full max-w-[1600px] space-y-3">
+          {isAdmin && (
+            <div className="flex justify-end mb-4">
+              <Button className="bg-white text-black hover:bg-neutral-200 h-8 text-xs font-bold px-3 rounded-lg shrink-0" onClick={openAdd}>
+                <Plus className="h-3.5 w-3.5 mr-1.5" /> Add News
+              </Button>
+            </div>
+          )}
+
+          {/* Top Sliding Category Row */}
+          <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+            {NEWS_CATEGORIES.map((topic) => {
+              const isSelected = activeCategory === topic.slug;
+              return (
+                <button
+                  key={topic.name}
+                  onClick={(e) => {
+                    setActiveCategory(topic.slug);
+                    if (mode === "paginated") loadFull();
+                    const targetPath = topic.slug ? `/news?category=${topic.slug}` : `/news`;
+                    window.history.pushState(null, "", targetPath);
+                    e.currentTarget.scrollIntoView({
+                      behavior: "smooth",
+                      block: "nearest",
+                      inline: "center"
+                    });
+                  }}
+                  className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                    isSelected
+                      ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                      : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+                  }`}
+                >
+                  {topic.name}
+>>>>>>> upstream/main
                 </button>
+              );
+            })}
+          </div>
+
+          {/* News Table List matching Video Table UI */}
+          <div className="space-y-4">
+            <NewsList articles={list} sources={sources} emptyKind="empty" isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
+
+            {mode === "paginated" && list.length > 0 && (
+              <div ref={sentinelRef} className="flex items-center justify-center py-6">
+                {isLoadingMore && <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />}
+                {!isLoadingMore && loadMoreError && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-[#71717A]">Couldn&apos;t load more stories.</span>
+                    <button onClick={() => loadPage(nextPage, true)} className="text-sm font-semibold text-white hover:underline">
+                      Retry
+                    </button>
+                  </div>
+                )}
+                {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-[#71717A]">You&apos;re all caught up</span>}
               </div>
             )}
-            {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-[#71717A]">You&apos;re all caught up</span>}
           </div>
-        )}
-      </div>
+        </div>
+      </main>
 
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? 'Edit News' : 'Add News'} footer={
         <>
@@ -372,6 +448,6 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
           <div><label className="text-xs text-[#8A8F98]">Summary / Dek</label><textarea className="w-full p-2 text-sm bg-[#111113] border border-[#1C1C1F] text-white rounded-md h-20" placeholder="Brief description..." value={formData.summary} onChange={e => setFormData({...formData, summary: e.target.value})} /></div>
         </div>
       </Modal>
-    </main>
+    </>
   );
 }

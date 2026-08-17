@@ -15,6 +15,15 @@ interface RelatedNewsProps {
   categoryName?: string;
 }
 
+const getDomainFromUrl = (url?: string): string => {
+  if (!url) return "";
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+};
+
 export function RelatedNews({ articles, sources, title = "Related news", categoryName }: RelatedNewsProps) {
   const router = useRouter();
 
@@ -29,7 +38,8 @@ export function RelatedNews({ articles, sources, title = "Related news", categor
     >
       <div className="flex flex-col divide-y divide-[#232326]">
         {articles.slice(0, 5).map((a) => {
-          const s = sources[a.source] || { name: a.source, domain: `${a.source.toLowerCase()}.com` };
+          const realDomain = sources[a.source]?.domain || getDomainFromUrl(a.articleUrl) || getDomainFromUrl(a.url) || a.source;
+          const s: NewsSource = sources[a.source] || { key: a.source, name: a.source, domain: realDomain };
           return (
             <div
               key={a.id}

@@ -23,7 +23,7 @@ export function PopularSources({ popular, sources }: PopularSourcesProps) {
     >
       <div className="flex flex-col divide-y divide-[#232326]">
         {popular.map((key) => {
-          const s = sources[key] || { name: key, domain: `${key.toLowerCase()}.com` };
+          const s = sources[key] || { key, name: key, domain: key };
           return (
             <Link
               key={key}
@@ -35,7 +35,7 @@ export function PopularSources({ popular, sources }: PopularSourcesProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-semibold text-white truncate group-hover:text-[#F5A623] transition-colors">{s.name}</div>
-                <div className="text-[11px] text-[#71717A] mt-0.5">{s.followers || "50k+"} followers</div>
+                {s.followers && <div className="text-[11px] text-[#71717A] mt-0.5">{s.followers} followers</div>}
               </div>
               <ChevronRight size={14} className="text-[#71717A] group-hover:text-[#F5A623] transition-colors shrink-0" />
             </Link>

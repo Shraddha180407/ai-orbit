@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
+import Home from "lucide-react/dist/esm/icons/home";
 import ExternalLink from "lucide-react/dist/esm/icons/external-link";
 import Calendar from "lucide-react/dist/esm/icons/calendar";
 import { TopicChip } from "./TopicChip";
@@ -24,31 +25,42 @@ interface ArticleDetailProps {
   comments: NewsComment[];
 }
 
+const getDomainFromUrl = (url?: string): string => {
+  if (!url) return "";
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+};
+
 export function ArticleDetail({ article: a, related, sources, popularSources, comments }: ArticleDetailProps) {
-  const source = sources[a.source] || { name: a.source, domain: `${a.source.toLowerCase()}.com` };
+  // Real domain extraction without fake ".com" fallback
+  const realDomain = sources[a.source]?.domain || getDomainFromUrl(a.articleUrl) || getDomainFromUrl(a.url) || a.source;
+  const sourceName = sources[a.source]?.name || a.source;
+  const source: NewsSource = sources[a.source] || { key: a.source, name: sourceName, domain: realDomain };
+  
   const sourceUrl = articleSourceUrl(a);
 
-  // Expanded AI Summary - 6 to 8 lines detailed description (Feedback Point)
-  const baseSummary = a.aiSummary || a.dek || `This article covers major strategic updates regarding ${a.headline}.`;
-  
-  const detailedSummaryParagraphs = [
-    baseSummary,
-    `Key developments highlight ongoing market transformations, engineering breakthroughs, and architectural updates across leading AI platforms and foundation models. Industry analysts note that these shifts reflect broader trends in scalability, safety guardrails, and enterprise adoption.`,
-    `As deployment continues across production environments, developer ecosystems are adapting to new capabilities, integration standards, and real-time benchmark considerations.`
-  ];
+  // Authentic AI Summary from API/database without fabricated paragraphs
+  const rawSummary = a.aiSummary || a.dek || "";
+  const summaryParagraphs = rawSummary
+    ? rawSummary.split(/\n\n+/).filter(Boolean)
+    : [a.headline];
 
   // Filter related articles strictly by same category / topic
   const categoryRelated = related.filter(
     (item) => item.id !== a.id && (item.category === a.category || item.topics.some((t) => a.topics.includes(t)))
   );
-  const displayRelated = categoryRelated.length > 0 ? categoryRelated : related;
+  const displayRelated = categoryRelated.length > 0 ? categoryRelated : related.filter((item) => item.id !== a.id);
 
   return (
     <main className="mx-auto max-w-[1240px] px-4 sm:px-6 py-8">
       {/* Breadcrumb: Home > News */}
       <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-2 text-sm font-medium text-[#71717A]">
-        <Link href="/" className="hover:text-white transition-colors">
-          Home
+        <Link href="/" className="inline-flex items-center gap-1 hover:text-white transition-colors">
+          <Home size={15} />
+          <span>Home</span>
         </Link>
         <ChevronRight size={14} className="text-[#52525B]" />
         <Link href="/news" className="hover:text-white transition-colors">
@@ -93,11 +105,11 @@ export function ArticleDetail({ article: a, related, sources, popularSources, co
 
           <div className="h-px bg-[#232326] mt-6" />
 
-          {/* AI Summary Section - Long, detailed 6-8 line description */}
+          {/* AI Summary Section - Authentic API content */}
           <div className="mt-6">
             <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[#F5A623] mb-3">AI SUMMARY</h2>
             <div className="space-y-3.5 text-[15px] leading-relaxed text-[#A1A1AA]">
-              {detailedSummaryParagraphs.map((p, idx) => (
+              {summaryParagraphs.map((p, idx) => (
                 <p key={idx} style={{ overflowWrap: "break-word", wordBreak: "break-word" }}>
                   {p}
                 </p>
@@ -126,7 +138,7 @@ export function ArticleDetail({ article: a, related, sources, popularSources, co
           <CommentBox id={a.id} initialComments={comments} />
         </article>
 
-        {/* Sidebar: Related News (strictly same category) & Popular Sources (in-site navigation) */}
+        {/* Sidebar: Related News & Popular Sources */}
         <div className="static lg:sticky lg:top-6 flex flex-col gap-6">
           <RelatedNews articles={displayRelated} sources={sources} categoryName={a.topics[0] || a.category} />
           <PopularSources popular={popularSources} sources={sources} />

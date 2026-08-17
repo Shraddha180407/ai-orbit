@@ -30,7 +30,7 @@ const COMPANY_TYPES: { label: string; value: CompanyType }[] = [
   { label: "Unicorns", value: "UNICORNS" }
 ];
 
-type SortField = 'name' | 'valuation' | 'employeeCount' | 'country' | 'sector';
+type SortField = 'name' | 'valuation' | 'employeeCount' | 'country' | 'sector' | 'createdAt';
 type SortDir = 'asc' | 'desc';
 
 function formatValuation(val: string | null | undefined): string {
@@ -77,7 +77,13 @@ export function CompaniesClient() {
   const [activeType, setActiveType] = useState<CompanyType | null>(null);
   const [sortField, setSortField] = useState<SortField>('valuation');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
-
+useEffect(() => {
+  const s = searchParams.get("sort") ?? "newest";
+  if (s === "name-asc")       { setSortField("name");      setSortDir("asc");  }
+  else if (s === "name-desc") { setSortField("name");      setSortDir("desc"); }
+  else if (s === "oldest")    { setSortField("createdAt"); setSortDir("asc");  }
+  else                        { setSortField("createdAt"); setSortDir("desc"); }
+}, [searchParams]);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Admin Modal State
@@ -130,6 +136,9 @@ export function CompaniesClient() {
           break;
         case 'sector':
           cmp = (a.sector || '').localeCompare(b.sector || '');
+          break;
+        case 'createdAt':
+          cmp = new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
           break;
       }
       return sortDir === 'asc' ? cmp : -cmp;

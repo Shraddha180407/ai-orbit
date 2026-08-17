@@ -146,6 +146,7 @@ export function DevicesClient() {
   const [devices, setDevices] = useState<DeviceData[]>(DEVICES_DATA);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const loaderRef = useRef<HTMLDivElement>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
 
@@ -153,8 +154,16 @@ export function DevicesClient() {
   const [nameInput, setNameInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
   const [selectedAvailability, setSelectedAvailability] = useState("All");
-  const [sortKey, setSortKey] = useState<SortKey>("release");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const rawSort = searchParams.get("sort") ?? "newest";
+const [sortKey, setSortKey] = useState<SortKey>(() => {
+  if (rawSort === "name-asc" || rawSort === "name-desc") return "name";
+  if (rawSort === "oldest" || rawSort === "newest") return "release";
+  return "release";
+});
+const [sortDir, setSortDir] = useState<"asc" | "desc">(() => {
+  if (rawSort === "oldest" || rawSort === "name-asc") return "asc";
+  return "desc";
+});
   const [activePill, setActivePill] = useState<string | null>(null);
   const [priceMin, setPriceMin] = useState(0);
   const [priceMax, setPriceMax] = useState(10000);
@@ -162,6 +171,8 @@ export function DevicesClient() {
 
   const [bookmarked, setBookmarked] = React.useState<Set<string>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [hoverPreview, setHoverPreview] = React.useState<{ x: number; y: number; src: string; name: string } | null>(null);
 
   function toggleBookmark(e: React.MouseEvent, id: string) {
     e.preventDefault();
@@ -191,7 +202,14 @@ export function DevicesClient() {
       .finally(() => setIsLoading(false));
   }, []);
 
-
+useEffect(() => {
+  const s = searchParams.get("sort") ?? "newest";
+  if (s === "name-asc")  { setSortKey("name");    setSortDir("asc");  }
+  else if (s === "name-desc") { setSortKey("name"); setSortDir("desc"); }
+  else if (s === "oldest")    { setSortKey("release"); setSortDir("asc"); }
+  else if (s === "rating")    { setSortKey("release"); setSortDir("desc"); } // fallback
+  else                        { setSortKey("release"); setSortDir("desc"); } // newest
+}, [searchParams]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -296,7 +314,20 @@ export function DevicesClient() {
   useEffect(() => { setCurrentPage(1); }, [nameSearch, selectedCategory, selectedAvailability, sortKey, sortDir, activePriceFilter]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const visible = filtered.slice(0, currentPage * PAGE_SIZE);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && currentPage < totalPages) {
+          setCurrentPage((p) => p + 1);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    return () => observer.disconnect();
+  }, [currentPage, totalPages]);
 
   function handleSort(key: SortKey) {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -357,10 +388,11 @@ export function DevicesClient() {
   );
 
   return (
+    <>
     <div className="w-full flex-1 flex flex-col">
       {/* ── SUBCATEGORY PILLS ── */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden justify-start lg:justify-center">
+<div className="w-full px-4 sm:px-6 lg:px-8 py-3">
+  <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden lg:justify-center">
           <button
             onClick={() => { setSelectedCategory(ALL_CATEGORIES); setCurrentPage(1); }}
             className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
@@ -388,7 +420,7 @@ export function DevicesClient() {
       </div>
 
       {/* ── LIST VIEW ── */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-0.5 pb-8">
           {/*  Outer container matches ToolListView exactly */}
           <div className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
               <div ref={dropdownRef} style={{ minWidth: '1150px' }} className="relative bg-[#000000]">
@@ -588,10 +620,21 @@ export function DevicesClient() {
     if (name) name.style.color = '';
   }}
 >
-                        {/* Col 1: Logo */}
-                        <div data-logo="true" className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white transition-all duration-200">
-                          <LogoCell name={device.name} logoUrl={device.manufacturerLogoUrl} color={device.mainTaskColor} />
-                        </div>
+                        {/* Col 1: Device image */}
+                        <div
+  className="relative"
+  onMouseEnter={(e) => {
+    if (device.imageUrl) {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      setHoverPreview({ x: rect.right + 12, y: rect.top - 20, src: device.imageUrl, name: device.name });
+    }
+  }}
+  onMouseLeave={() => setHoverPreview(null)}
+>
+  <div data-logo="true" className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white transition-all duration-200">
+    <GridImageCell name={device.name} imageUrl={device.imageUrl} color={device.mainTaskColor} />
+  </div>
+</div>
 
                         {/* Col 2: Name + description */}
                         <div className="min-w-0">
@@ -608,9 +651,9 @@ export function DevicesClient() {
 
                         {/* Col 3: Company */}
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#52525B" strokeWidth="2" className="shrink-0">
-                            <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                          </svg>
+                          <div className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded bg-white">
+                            <LogoCell name={device.manufacturer || device.name} logoUrl={device.manufacturerLogoUrl} color={device.mainTaskColor} />
+                          </div>
                           <span className="text-[12px] font-mono text-[#A1A1AA] truncate">{device.manufacturer || "—"}</span>
                         </div>
 
@@ -681,32 +724,10 @@ export function DevicesClient() {
                   </div>
                 )}
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 px-4 py-4 border-t border-[#232326]/60">
-                    <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                      ← Prev
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1)
-                      .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
-                      .reduce<(number | string)[]>((acc, p, i, arr) => {
-                        if (i > 0 && (p as number) - (arr[i - 1] as number) > 1) acc.push("...");
-                        acc.push(p);
-                        return acc;
-                      }, [])
-                      .map((p, i) => p === "..." ? (
-                        <span key={`e-${i}`} className="text-[#52525B] text-xs px-1">...</span>
-                      ) : (
-                        <button key={p} onClick={() => setCurrentPage(p as number)}
-                          className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${currentPage === p ? "border-[#6E56CF] bg-[#6E56CF] text-white" : "border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF]"}`}>
-                          {p}
-                        </button>
-                      ))}
-                    <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-[#6E56CF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                      Next →
-                    </button>
+                {/* Infinite scroll sentinel */}
+                {currentPage < totalPages && (
+                  <div ref={loaderRef} className="flex items-center justify-center py-6 border-t border-[#232326]/60">
+                    <div className="h-4 w-4 rounded-full border-2 border-[#6E56CF] border-t-transparent animate-spin" />
                   </div>
                 )}
 
@@ -714,5 +735,15 @@ export function DevicesClient() {
           </div>
       </div>
     </div>
+
+    {hoverPreview && (
+      <div
+        className="fixed z-[9999] pointer-events-none w-44 h-44 rounded-xl border border-[#232326] bg-white shadow-2xl overflow-hidden"
+        style={{ left: hoverPreview.x, top: hoverPreview.y }}
+      >
+        <img src={hoverPreview.src} alt={hoverPreview.name} className="w-full h-full object-contain" />
+      </div>
+    )}
+    </>
   );
 }

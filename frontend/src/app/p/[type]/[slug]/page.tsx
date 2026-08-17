@@ -17,12 +17,16 @@ import { RepositoryDetailPage } from "@/components/repository-detail/RepositoryD
 import { CompanyDetailClient } from "@/components/company-detail-client";
 import { RobotDetailClient } from "@/components/detail/RobotDetailClient";
 import { MCPDetailClient } from "@/components/mcp-detail-client";
+import { MCPClient } from "@/components/mcp-client";
+import CollectionsPageClient from "@/app/collections/CollectionsPageClient";
 import { SERVER_API_URL, fetchMCPItemBySlug, fetchMCPItemAlternatives } from "@/lib/api";
 
 const VALID_CATEGORIES: Record<string, Set<string>> = {
   tools: new Set(["writing", "image-generation", "video", "audio", "chatbots", "coding", "marketing", "productivity", "business", "education", "mcp"]),
   personal: new Set(["productivity", "chatbots", "writing", "audio", "customer-support", "video", "image-generation", "marketing"]),
-  creativity: new Set(["image-generation", "writing", "software-development", "video-creation", "music", "graphic-design", "digital-art", "brainstorming", "3d-creation", "presentation-design", "storytelling", "content-creation", "branding", "motion-graphics", "game-creation"])
+  creativity: new Set(["image-generation", "writing", "software-development", "video-creation", "music", "graphic-design", "digital-art", "brainstorming", "3d-creation", "presentation-design", "storytelling", "content-creation", "branding", "motion-graphics", "game-creation"]),
+  mcp: new Set(["mcp-servers", "developer-tools", "databases", "file-systems", "productivity", "apis", "cloud", "ml-platforms", "browser", "community", "mcp-clients", "core-mcp-servers", "sdks-frameworks", "specialized-mcp-servers", "testing-tools", "version-control", "automation", "smart-devices", "data-analytics"]),
+  collections: new Set(["research", "productivity", "creative", "developer", "business", "education", "industry", "open-source", "freelancer-toolkit", "recruiters", "analytics", "ecommerce", "no-code-ai", "healthcare", "finance"])
 };
 
 interface UnifiedEntityPageProps {
@@ -32,12 +36,12 @@ interface UnifiedEntityPageProps {
 export async function generateMetadata({ params }: UnifiedEntityPageProps): Promise<Metadata> {
   const { type, slug } = await params;
 
-  if ((type === "tools" || type === "personal" || type === "creativity") && VALID_CATEGORIES[type]?.has(slug)) {
+  if ((type === "tools" || type === "personal" || type === "creativity" || type === "mcp" || type === "collections") && VALID_CATEGORIES[type]?.has(slug)) {
     const formattedSlug = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-    const formattedType = type.charAt(0).toUpperCase() + type.slice(1);
+    const formattedType = type === "mcp" ? "MCP Directory" : type === "collections" ? "Collections" : type.charAt(0).toUpperCase() + type.slice(1);
     return {
       title: `${formattedSlug} ${formattedType} | AI Orbit`,
-      description: `Browse the best AI tools for ${formattedSlug.toLowerCase()} in the ${formattedType.toLowerCase()} directory.`,
+      description: `Browse the best AI tools/servers for ${formattedSlug.toLowerCase()} in the ${formattedType.toLowerCase()} directory.`,
     };
   }
 
@@ -123,6 +127,50 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
         }>
           <div className="flex-1">
             <ToolsClient defaultMode={type as any} defaultCategory={slug} />
+          </div>
+        </Suspense>
+        <Footer />
+      </div>
+    );
+  }
+  if (type === "mcp" && VALID_CATEGORIES.mcp.has(slug)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        <Suspense fallback={
+          <main className="mx-auto max-w-container px-6 py-10 flex-1">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {[1,2,3,4,5,6,7,8].map((i) => (
+                <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
+              ))}
+            </div>
+          </main>
+        }>
+          <div className="flex-1">
+            <MCPClient defaultSubCategory={slug} />
+          </div>
+        </Suspense>
+        <Footer />
+      </div>
+    );
+  }
+  if (type === "collections" && VALID_CATEGORIES.collections.has(slug)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        <Suspense fallback={
+          <main className="mx-auto max-w-container px-6 py-10 flex-1">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {[1,2,3,4,5,6,7,8].map((i) => (
+                <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
+              ))}
+            </div>
+          </main>
+        }>
+          <div className="flex-1">
+            <CollectionsPageClient defaultSubCategory={slug} />
           </div>
         </Suspense>
         <Footer />

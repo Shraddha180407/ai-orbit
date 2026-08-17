@@ -160,7 +160,23 @@ enum ToolCategoryEnum {
   NO_CODE_AI_BUILDERS
   WORKFLOW_AUTOMATION
 }
-
+enum CreativityCategory {
+  IMAGE_GENERATION
+  WRITING
+  SOFTWARE_DEVELOPMENT
+  VIDEO_CREATION
+  MUSIC
+  GRAPHIC_DESIGN
+  DIGITAL_ART
+  BRAINSTORMING
+  THREE_D_CREATION
+  PRESENTATION_DESIGN
+  STORYTELLING
+  CONTENT_CREATION
+  BRANDING
+  MOTION_GRAPHICS
+  GAME_CREATION
+}
 // ---- Module 3: AI Tools ----
 
 model Tool {
@@ -224,6 +240,8 @@ model Tool {
 
   collectionTools CollectionTool[]
 
+  creativityCategories CreativityCategory[] @default([])
+
   @@index([companyId])
   @@index([pricingModel])
   @@index([createdAt])
@@ -231,6 +249,8 @@ model Tool {
   @@index([releaseDate])
   @@index([isTrending])
   @@index([verified])
+
+  @@index([creativityCategories])
 }
 
 model Category {

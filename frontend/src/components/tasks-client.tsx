@@ -59,14 +59,21 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const queryParams = useMemo(
-    () => ({
-      sort: "newest" as SortOption,
-      filter: "all" as FilterOption,
-      category: activeCategory || undefined,
-    }),
-    [activeCategory]
-  );
+  const rawSort = searchParams.get("sort") ?? "newest";
+const mappedSort: SortOption =
+  rawSort === "oldest" ? "oldest" :
+  rawSort === "name-asc" || rawSort === "name-desc" ? "alphabetical" :
+  rawSort === "rating" ? "popular" :
+  "newest";
+
+const queryParams = useMemo(
+  () => ({
+    sort: mappedSort as SortOption,
+    filter: "all" as FilterOption,
+    category: activeCategory || undefined,
+  }),
+  [activeCategory, mappedSort]
+);
 
   const loadPage = useCallback(
     async (pageNum: number, append: boolean) => {
@@ -147,15 +154,17 @@ const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
               <button
                 key={topic.name}
                 onClick={(e) => {
-                  setActiveCategory(topic.slug);
-                  const targetPath = topic.slug ? `/tasks?category=${topic.slug}` : `/tasks`;
-                  window.history.pushState(null, "", targetPath);
-                  e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center"
-                  });
-                }}
+  setActiveCategory(topic.slug);
+  const params = new URLSearchParams(searchParams.toString());
+  if (topic.slug) params.set("category", topic.slug);
+  else params.delete("category");
+  window.history.pushState(null, "", `/tasks?${params.toString()}`);
+  e.currentTarget.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest",
+    inline: "center"
+  });
+}}
                 className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"

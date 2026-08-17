@@ -23,6 +23,9 @@ export function HomeClient() {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const INITIAL_PAGE_SIZE = 50; // Load 50 items on first load
+  const DEFAULT_PAGE_SIZE = 12; // Load 12 items for subsequent pages
+
   // Build params object from URL search params
   const params = {
     q: searchParams.get("q") || undefined,
@@ -54,6 +57,8 @@ export function HomeClient() {
         if (params.pricing) query.set("pricing", params.pricing);
         if (params.sort) query.set("sort", params.sort);
         query.set("page", page.toString());
+        // Use larger page size for initial load
+        query.set("pageSize", page === 1 ? INITIAL_PAGE_SIZE.toString() : DEFAULT_PAGE_SIZE.toString());
 
         const toolsRes = await fetch(`${API_URL}/api/v1/tools?${query.toString()}`);
 
