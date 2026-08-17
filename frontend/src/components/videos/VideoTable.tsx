@@ -94,8 +94,8 @@ export function VideoTable({ videos }: { videos: Video[] }) {
 
   const columns: { key: SortKey; label: string; align?: "right" }[] = [
     { key: "name", label: "Name" },
-    { key: "duration", label: "Duration" },
     { key: "posted", label: "Posted" },
+    { key: "duration", label: "Duration" },
     { key: "views", label: "Views", align: "right" },
   ];
 
@@ -176,10 +176,10 @@ export function VideoTable({ videos }: { videos: Video[] }) {
                 </Link>
               </td>
               <td className="whitespace-nowrap px-4 py-[9.6px] font-mono text-[13.5px] text-secondary">
-                {formatDuration(v.durationSeconds)}
+                {formatPosted(v.publishedAt)}
               </td>
               <td className="whitespace-nowrap px-4 py-[9.6px] font-mono text-[13.5px] text-secondary">
-                {formatPosted(v.publishedAt)}
+                {formatDuration(v.durationSeconds)}
               </td>
               <td className="whitespace-nowrap px-4 py-[9.6px] text-right font-mono text-[13.5px] text-secondary">
                 {formatViewsCompact(v.views)}
