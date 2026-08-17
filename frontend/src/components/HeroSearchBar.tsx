@@ -55,6 +55,8 @@ export function HeroSearchBar({ defaultValue }: { defaultValue?: string }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const inputNameRef = useRef(`search-${Math.random().toString(36).slice(2)}`);
+
 
   const { suggestions, popular, featured, isLoading } = useHomeSearch(value);
   const { recent, addRecent, clearRecent } = useRecentSearches();
@@ -110,20 +112,25 @@ export function HeroSearchBar({ defaultValue }: { defaultValue?: string }) {
     <div ref={containerRef} className="relative w-full max-w-[900px] mx-auto mb-[22px]">
       <div className="relative w-full rounded-lg border border-[#232326] bg-[#111113] h-[48px] flex items-center px-5 pr-20 focus-within:border-neutral-500 transition-all duration-300">
         <input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onFocus={() => setOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              goToResults(value);
-            }
-          }}
-          placeholder="Search AI tools, models, companies..."
-          className="w-full bg-transparent text-sm text-white placeholder:text-[#71717A] focus:outline-none"
-        />
+  ref={inputRef}
+  type="text"
+  readOnly
+  onFocus={(e) => {
+    e.target.removeAttribute("readonly");
+    setOpen(true);
+  }}
+  autoComplete="off"
+  value={value}
+  onChange={(e) => setValue(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      goToResults(value);
+    }
+  }}
+  placeholder="Search AI tools, models, companies..."
+  className="w-full bg-transparent text-sm text-white placeholder:text-[#71717A] focus:outline-none"
+/>
         <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-2">
           {value ? (
             <button
