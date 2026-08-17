@@ -215,30 +215,25 @@ const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   }, [isLoading, visibleCount, filtered.length]);
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
-      <div className="mx-auto w-full max-w-[1600px] space-y-2">
-        {/* Page header */}
-        <header className="text-center flex flex-col items-center">
-
-
-          {/* Category filter chips */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+    <main className="w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 py-2 flex-1">
+      <div className="w-full space-y-2">
+        {/* Top Sliding Category Row */}
+        <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
             {ROBOT_CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setActiveCategory(cat)}
-                className={`inline-flex items-center rounded-md border px-2 py-1 text-[9.5px] font-bold tracking-tight transition-colors duration-200 ${
+                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
                   activeCategory === cat
-                    ? "border-[#2DD4BF] bg-[#2DD4BF]/10 text-[#2DD4BF] shadow-[0_0_0_1px_#2DD4BF]"
-                    : "border-[#232326]/60 bg-[#0d0d10] text-white hover:border-[#2DD4BF]/40 hover:shadow-[0_0_0_1px_#2DD4BF40]"
+                    ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                    : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
                 }`}
               >
                 {cat}
               </button>
             ))}
           </div>
-        </header>
 
         {/* Table */}
         {isLoading ? (
@@ -255,7 +250,7 @@ const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
           </div>
         ) : (
           <div className="flex flex-col rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto scrollbar-none">
               {/* Column headers */}
               <div className="border-b border-[#232326]/60 bg-[#131316]/40">
                 <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2`}>
@@ -286,6 +281,6 @@ const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
