@@ -32,12 +32,17 @@ export async function getAllVideos(): Promise<Video[]> {
   return (await fetchJson<Video[]>(`/api/videos?sort=latest`)) ?? [];
 }
 
-export async function getVideosPage(limit: number, offset: number): Promise<Video[]> {
-  return (await fetchJson<Video[]>(`/api/videos?sort=latest&limit=${limit}&offset=${offset}`)) ?? [];
+export async function getVideosPage(limit: number, offset: number, category?: string): Promise<Video[]> {
+  const params = new URLSearchParams({ sort: "latest", limit: String(limit), offset: String(offset) });
+  if (category) params.set("category", category);
+  return (await fetchJson<Video[]>(`/api/videos?${params.toString()}`)) ?? [];
 }
 
-export async function getVideosCount(): Promise<number> {
-  const result = await fetchJson<{ total: number }>(`/api/videos/count`);
+export async function getVideosCount(category?: string): Promise<number> {
+  const params = new URLSearchParams();
+  if (category) params.set("category", category);
+  const qs = params.toString();
+  const result = await fetchJson<{ total: number }>(`/api/videos/count${qs ? `?${qs}` : ""}`);
   return result?.total ?? 0;
 }
 
