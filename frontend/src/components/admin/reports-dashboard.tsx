@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_URL } from '@/lib/api';
-import { Button } from '@/components/ui/shadcn-button';
+import { Button } from '@/components/ui/button';
 import { Flag, MoreHorizontal, Check, X, Ban, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 

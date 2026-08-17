@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 import { signOut } from '@/lib/auth-client';
-import { Button } from '@/components/ui/shadcn-button';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import LayoutDashboard from 'lucide-react/dist/esm/icons/layout-dashboard';
 import Compass from 'lucide-react/dist/esm/icons/compass';

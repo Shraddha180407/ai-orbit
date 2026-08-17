@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/shadcn-button';
+import { Button } from '@/components/ui/button';
 import { API_URL } from '@/lib/api';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 

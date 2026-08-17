@@ -3,7 +3,7 @@ import { API_URL } from '@/lib/api';
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Button } from '@/components/ui/shadcn-button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { useUser } from '@/hooks/use-user';

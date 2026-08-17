@@ -8,7 +8,7 @@ import { Pencil, Trash2, Plus, Settings2 } from "lucide-react";
 import { buildToolsUrl, cn } from "@/lib/utils";
 import type { ToolsSearchParams } from "@/lib/types";
 import { useUser } from "@/hooks/use-user";
-import { Button } from "@/components/ui/shadcn-button";
+import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";

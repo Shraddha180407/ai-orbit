@@ -10,7 +10,7 @@ import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, ChevronDown, ArrowUpDown } from "lucide-react";
-import { Button } from "@/components/ui/shadcn-button";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
 const COMPANY_TYPES: { label: string; value: CompanyType }[] = [
