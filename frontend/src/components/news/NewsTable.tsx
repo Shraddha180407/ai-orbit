@@ -36,6 +36,15 @@ function NewsRowActions({ article }: { article: NewsArticle }) {
   const toggle = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Check if user is logged in
+    const token = document.cookie.split('; ').find(row => row.startsWith('token='));
+    if (!token) {
+      // Redirect to signin page
+      window.location.href = '/auth/signin';
+      return;
+    }
+    
     const next = !saved;
     setSaved(next);
     try {
