@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left";
+import Home from "lucide-react/dist/esm/icons/home";
 import ExternalLink from "lucide-react/dist/esm/icons/external-link";
 import Calendar from "lucide-react/dist/esm/icons/calendar";
 import { TopicChip } from "./TopicChip";
@@ -36,10 +37,15 @@ export function ArticleDetail({ article: a, related, sources, popularSources, co
 
   return (
     <main className="mx-auto max-w-[1070px] px-6 py-10">
-      <Link href="/news" className="inline-flex items-center gap-1.5 text-sm text-foreground-muted hover:text-white transition-colors">
-        <ChevronLeft size={16} />
-        All news
-      </Link>
+      <div className="inline-flex items-center gap-2 text-sm text-foreground-muted">
+        <Link href="/news" className="hover:text-white transition-colors">
+          <Home size={16} />
+        </Link>
+        <ChevronLeft size={16} className="rotate-180" />
+        <Link href="/news" className="hover:text-white transition-colors">
+          News
+        </Link>
+      </div>
 
       <div className="grid grid-cols-1 gap-10 items-start mt-6 lg:gap-9 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
         <article className="min-w-0">

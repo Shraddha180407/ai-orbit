@@ -7,6 +7,7 @@ export const GetToolsQuerySchema = z.object({
   pricing: z.enum(['FREE', 'FREEMIUM', 'PAID', 'FREE_TRIAL']).optional(),
   sort: z.enum(['newest', 'oldest', 'name-asc', 'name-desc', 'rating']).optional().default('newest'),
   page: z.string().optional().default('1'),
+  pageSize: z.string().optional().default('12'),
 });
 
 export const CreateReviewSchema = z.object({

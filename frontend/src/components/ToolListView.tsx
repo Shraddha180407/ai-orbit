@@ -452,6 +452,9 @@ function ToolRow({
   );
 }
 
+// Memoize ToolRow for better performance with large lists
+const MemoizedToolRow = React.memo(ToolRow);
+
 // Main component ------------------------------------------------------------
 
 function ToolListViewInner({
@@ -596,7 +599,7 @@ function ToolListViewInner({
               const isSelected = compareSet.some((t) => t.id === tool.id);
               return (
                 <div key={tool.id} role="listitem">
-                  <ToolRow
+                  <MemoizedToolRow
                     tool={tool}
                     isSelected={isSelected}
                     isCompareFull={compareSet.length >= MAX_COMPARE}
