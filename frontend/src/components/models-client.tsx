@@ -14,7 +14,25 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/shadcn-button";
 import { toast } from "sonner";
 
-export function ModelsClient() {
+const MODEL_SUBCATEGORIES: ModelSubCategory[] = [
+  { id: "1", name: "LLM", slug: "llm" },
+  { id: "2", name: "Image Generation", slug: "image-generation" },
+  { id: "3", name: "Video Generation", slug: "video-generation" },
+  { id: "4", name: "Speech", slug: "speech" },
+  { id: "5", name: "Multimodal", slug: "multimodal" },
+  { id: "6", name: "Code Generation", slug: "code-generation" },
+  { id: "7", name: "Embedding", slug: "embedding" },
+  { id: "8", name: "Reasoning", slug: "reasoning" },
+  { id: "9", name: "Vision Models", slug: "vision-models" },
+  { id: "10", name: "Open Source Models", slug: "open-source-models" },
+  { id: "11", name: "Testing", slug: "testing" },
+  { id: "12", name: "E-commerce", slug: "e-commerce" },
+  { id: "13", name: "Recruitment", slug: "recruitment" },
+  { id: "14", name: "Translation", slug: "translation" },
+  { id: "15", name: "Project Management", slug: "project-management" },
+];
+
+export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: string }) {
   const { user } = useUser();
   const isAdmin = user?.role === "ADMIN";
   const searchParams = useSearchParams();
@@ -26,8 +44,8 @@ export function ModelsClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
-  const [subCategories, setSubCategories] = useState<ModelSubCategory[]>([]);
-  const selectedSubCategorySlug = searchParams.get("subCategory") || null;
+  const [subCategories, setSubCategories] = useState<ModelSubCategory[]>(MODEL_SUBCATEGORIES);
+  const selectedSubCategorySlug = defaultSubCategory || searchParams.get("subCategory") || null;
 const rawSort = searchParams.get("sort") || "newest";
 const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
   ? "alphabetical"
@@ -53,18 +71,7 @@ const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch subcategories once on mount
-  useEffect(() => {
-    async function loadSubCategories() {
-      try {
-        const data = await fetchModelSubCategories();
-        setSubCategories(data || []);
-      } catch (e) {
-        console.error("Failed to fetch model subcategories:", e);
-      }
-    }
-    loadSubCategories();
-  }, []);
+  // Static subcategories list is used as the source of truth to match the prompt specifications
 
   useEffect(() => {
   setPage(1);
@@ -72,14 +79,12 @@ const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
 }, [selectedSort, selectedSubCategorySlug]);
 
   const handleSelectSubCategory = (slug: string | null) => {
-    const params = new URLSearchParams(window.location.search);
-    if (slug) {
-      params.set("subCategory", slug);
-    } else {
-      params.delete("subCategory");
-    }
     setPage(1);
-    router.push(`/models?${params.toString()}`);
+    if (slug) {
+      router.push(`/models/${slug}`);
+    } else {
+      router.push(`/models`);
+    }
   };
 
   // Fetch page
@@ -200,7 +205,7 @@ const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
   return (
     <div className="flex-1 w-full flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       {/* Table — same container as homepage tools section */}
-      <div className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-6 pb-2 flex-1">
+      <div className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2 flex-1">
         <div className="mx-auto w-full max-w-[1600px] space-y-3">
           {isAdmin && (
             <Button
@@ -213,13 +218,13 @@ const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
 
           {/* Subcategory Filter Chips */}
           {subCategories.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
               <button
                 onClick={() => handleSelectSubCategory(null)}
-                className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
                   !selectedSubCategorySlug
-                    ? "border-[#6E56CF] bg-[#6E56CF] text-white"
-                    : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                    ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                    : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
                 }`}
               >
                 All
@@ -228,10 +233,10 @@ const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
                 <button
                   key={sub.id}
                   onClick={() => handleSelectSubCategory(sub.slug)}
-                  className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                  className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
                     selectedSubCategorySlug === sub.slug
-                      ? "border-[#6E56CF] bg-[#6E56CF] text-white"
-                      : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                      ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                      : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
                   }`}
                 >
                   {sub.name}

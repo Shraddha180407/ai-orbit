@@ -7,10 +7,12 @@ export default function ReactQueryProvider({ children }: { children: React.React
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 10 * 60 * 1000,  // 10 minutes — cached data stays fresh during navigation
-        gcTime: 30 * 60 * 1000,     // 30 minutes — keep data in memory even after component unmounts
+        // In development, refetch in the background immediately so changes are visible instantly.
+        // In production, keep cache fresh for 10 minutes.
+        staleTime: process.env.NODE_ENV === 'development' ? 0 : 10 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,     // 30 minutes — keep data in memory to avoid screen flashing
         retry: false,               // Don't retry failed API calls (avoids flashing on DB disconnect)
-        refetchOnWindowFocus: false, // Don't refetch when switching browser tabs
+        refetchOnWindowFocus: process.env.NODE_ENV !== 'development', // Don't refetch on window focus in dev to avoid noise
       },
     },
   }));

@@ -63,7 +63,41 @@ function TypeBadge({ hasType }: { hasType: boolean }) {
   );
 }
 
-export function CompaniesClient() {
+const SLUG_TO_TYPE: Record<string, CompanyType> = {
+  "ai-model-providers": "AI_MODEL_PROVIDERS",
+  "infrastructure": "INFRASTRUCTURE",
+  "enterprise": "ENTERPRISE",
+  "healthcare": "HEALTHCARE",
+  "generative-ai": "GENERATIVE_AI",
+  "marketing": "MARKETING",
+  "developer-tools": "DEVELOPER_TOOLS",
+  "robotics": "ROBOTICS",
+  "education": "EDUCATION",
+  "open-source": "OPEN_SOURCE",
+  "finance": "FINANCE",
+  "ai-native": "AI_NATIVE",
+  "model-companies": "MODEL_COMPANIES",
+  "unicorns": "UNICORNS",
+};
+
+const TYPE_TO_SLUG: Record<CompanyType, string> = {
+  "AI_MODEL_PROVIDERS": "ai-model-providers",
+  "INFRASTRUCTURE": "infrastructure",
+  "ENTERPRISE": "enterprise",
+  "HEALTHCARE": "healthcare",
+  "GENERATIVE_AI": "generative-ai",
+  "MARKETING": "marketing",
+  "DEVELOPER_TOOLS": "developer-tools",
+  "ROBOTICS": "robotics",
+  "EDUCATION": "education",
+  "OPEN_SOURCE": "open-source",
+  "FINANCE": "finance",
+  "AI_NATIVE": "ai-native",
+  "MODEL_COMPANIES": "model-companies",
+  "UNICORNS": "unicorns",
+};
+
+export function CompaniesClient({ defaultCategory }: { defaultCategory?: string }) {
   const { user } = useUser();
   const isAdmin = user?.role === 'ADMIN';
   const router = useRouter();
@@ -74,7 +108,18 @@ export function CompaniesClient() {
   const searchParams = useSearchParams();
   const q = (searchParams.get("q") || "").trim();
 
-  const [activeType, setActiveType] = useState<CompanyType | null>(null);
+  const [activeType, setActiveType] = useState<CompanyType | null>(() => {
+    if (defaultCategory && SLUG_TO_TYPE[defaultCategory]) {
+      return SLUG_TO_TYPE[defaultCategory];
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (defaultCategory !== undefined) {
+      setActiveType(defaultCategory && SLUG_TO_TYPE[defaultCategory] ? SLUG_TO_TYPE[defaultCategory] : null);
+    }
+  }, [defaultCategory]);
   const [sortField, setSortField] = useState<SortField>('valuation');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 useEffect(() => {
@@ -218,38 +263,50 @@ useEffect(() => {
 
   return (
     <>
-      <main className="mx-auto max-w-[1440px] px-4 sm:px-8 pt-2 pb-8 flex-1 w-full selection:bg-neutral-800 selection:text-white">
-        <div className="relative flex items-center justify-center gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
-          <button
-            onClick={() => setActiveType(null)}
-            className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition-all whitespace-nowrap ${
-              activeType === null
-                ? 'bg-white text-black border-white'
-                : 'bg-transparent text-[#A1A1AA] border-[#2A2A2E] hover:border-[#555] hover:text-white'
-            }`}
-          >
-            All
-          </button>
-          {COMPANY_TYPES.map((ct) => (
+      <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1 w-full selection:bg-neutral-800 selection:text-white">
+        <div className="mx-auto w-full max-w-[1440px] space-y-3">
+          <div className="relative mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
             <button
-              key={ct.value}
-              onClick={() => setActiveType(activeType === ct.value ? null : ct.value)}
-              className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition-all whitespace-nowrap ${
-                activeType === ct.value
-                  ? 'bg-white text-black border-white'
-                  : 'bg-transparent text-[#A1A1AA] border-[#2A2A2E] hover:border-[#555] hover:text-white'
+              onClick={() => {
+                setActiveType(null);
+                router.push(`/companies`);
+              }}
+              className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                activeType === null
+                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
               }`}
             >
-              {ct.label}
+              All
             </button>
-          ))}
+            {COMPANY_TYPES.map((ct) => (
+              <button
+                key={ct.value}
+                onClick={() => {
+                  if (activeType === ct.value) {
+                    setActiveType(null);
+                    router.push(`/companies`);
+                  } else {
+                    setActiveType(ct.value);
+                    router.push(`/companies/${TYPE_TO_SLUG[ct.value]}`);
+                  }
+                }}
+                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                  activeType === ct.value
+                    ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                    : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+                }`}
+              >
+                {ct.label}
+              </button>
+            ))}
 
-          {isAdmin && (
-            <Button className="absolute right-0 bg-white text-black hover:bg-neutral-200 h-7 px-3 text-[11px]" onClick={openAdd}>
-              <Plus className="h-3 w-3 mr-1" /> Add Company
-            </Button>
-          )}
-        </div>
+            {isAdmin && (
+              <Button className="absolute right-0 bg-white text-black hover:bg-neutral-200 h-7 px-3 text-[11px]" onClick={openAdd}>
+                <Plus className="h-3 w-3 mr-1" /> Add Company
+              </Button>
+            )}
+          </div>
 
         {/* Table */}
         {isLoading ? (
@@ -367,6 +424,7 @@ useEffect(() => {
            </div>
           </div>
         )}
+        </div>
       </main>
 
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? 'Edit Company' : 'Add Company'} footer={

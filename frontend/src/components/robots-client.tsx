@@ -118,13 +118,63 @@ function RobotTableSkeleton({ rows = 8 }: { rows?: number }) {
   );
 }
 
-export function RobotsClient() {
+import { useRouter } from "next/navigation";
+
+const ROBOT_SLUGS: Record<string, string> = {
+  "humanoid-robots": "Humanoid Robots",
+  "industrial": "Industrial",
+  "service": "Service",
+  "healthcare": "Healthcare",
+  "educational": "Educational",
+  "autonomous-mobile-robots": "Autonomous Mobile Robots",
+  "drones": "Drones",
+  "companion": "Companion",
+  "agricultural": "Agricultural",
+  "research": "Research",
+  "multi-agent": "Multi-Agent",
+  "task-specific": "Task-Specific",
+  "autonomous-navigation": "Autonomous Navigation",
+  "reinforcement-learning": "Reinforcement Learning",
+  "surveillance": "Surveillance"
+};
+
+const ROBOT_TO_SLUG: Record<string, string> = {
+  "Humanoid Robots": "humanoid-robots",
+  "Industrial": "industrial",
+  "Service": "service",
+  "Healthcare": "healthcare",
+  "Educational": "educational",
+  "Autonomous Mobile Robots": "autonomous-mobile-robots",
+  "Drones": "drones",
+  "Companion": "companion",
+  "Agricultural": "agricultural",
+  "Research": "research",
+  "Multi-Agent": "multi-agent",
+  "Task-Specific": "task-specific",
+  "Autonomous Navigation": "autonomous-navigation",
+  "Reinforcement Learning": "reinforcement-learning",
+  "Surveillance": "surveillance"
+};
+
+export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) {
   const [robots, setRobots] = useState<RobotListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const searchParams = useSearchParams();
-const [query, setQuery] = useState("");
-const [activeCategory, setActiveCategory] = useState("All");
-const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState(() => {
+    if (defaultCategory && ROBOT_SLUGS[defaultCategory]) {
+      return ROBOT_SLUGS[defaultCategory];
+    }
+    return "All";
+  });
+
+  useEffect(() => {
+    if (defaultCategory !== undefined) {
+      setActiveCategory(defaultCategory && ROBOT_SLUGS[defaultCategory] ? ROBOT_SLUGS[defaultCategory] : "All");
+    }
+  }, [defaultCategory]);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -215,25 +265,41 @@ const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   }, [isLoading, visibleCount, filtered.length]);
 
   return (
-    <main className="w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 py-2 flex-1">
-      <div className="w-full space-y-2">
+    <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2 flex-1">
+      <div className="mx-auto w-full max-w-[1440px] space-y-3">
         {/* Top Sliding Category Row */}
-        <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
-            {ROBOT_CATEGORIES.map((cat) => (
+        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+          {ROBOT_CATEGORIES.map((cat) => {
+            const isSelected = activeCategory === cat;
+            const slug = ROBOT_TO_SLUG[cat];
+            return (
               <button
                 key={cat}
                 type="button"
-                onClick={() => setActiveCategory(cat)}
+                onClick={(e) => {
+                  setActiveCategory(cat);
+                  if (cat === "All") {
+                    router.push(`/robots`);
+                  } else {
+                    router.push(`/robots/${slug}`);
+                  }
+                  e.currentTarget.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "center"
+                  });
+                }}
                 className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
-                  activeCategory === cat
+                  isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
                 }`}
               >
                 {cat}
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
 
         {/* Table */}
         {isLoading ? (

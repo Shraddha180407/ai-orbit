@@ -29,15 +29,23 @@ export function VideosPageClient({
   initialVideos,
   initialTotal,
   pageSize,
+  defaultCategory,
 }: {
   initialVideos: Video[];
   initialTotal: number;
   pageSize: number;
+  defaultCategory?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [videos, setVideos] = useState<Video[]>(initialVideos);
-  const [activeCategory, setActiveCategory] = useState<string>(searchParams?.get("category") || "");
+  const [activeCategory, setActiveCategory] = useState<string>(defaultCategory || searchParams?.get("category") || "");
+
+  useEffect(() => {
+    if (defaultCategory !== undefined) {
+      setActiveCategory(defaultCategory);
+    }
+  }, [defaultCategory]);
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -87,10 +95,11 @@ export function VideosPageClient({
   // Re-fetch from the start whenever the category changes, instead of
   // filtering whatever happens to already be loaded in memory.
   useEffect(() => {
-    if (!didMountRef.current) {
+    if (!didMountRef.current && initialVideos.length > 0) {
       didMountRef.current = true;
       return;
     }
+    didMountRef.current = true;
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -127,53 +136,56 @@ export function VideosPageClient({
   }, [loadMore]);
 
   return (
-    <div className="flex flex-col gap-0.5">
-      {/* Top Sliding Category Row */}
-      <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
-        {VIDEO_CATEGORIES.map((topic) => {
-          const isSelected = activeCategory === topic.slug;
-          return (
-            <button
-              key={topic.name}
-              onClick={(e) => {
-  setActiveCategory(topic.slug);
-  const params = new URLSearchParams(searchParams.toString());
-  if (topic.slug) params.set("category", topic.slug);
-  else params.delete("category");
-  router.push(`/videos?${params.toString()}`);
-  e.currentTarget.scrollIntoView({
-    behavior: "smooth",
-    block: "nearest",
-    inline: "center"
-  });
-}}
-              className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
-                isSelected
-                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
-                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-              }`}
-            >
-              {topic.name}
-            </button>
-          );
-        })}
-      </div>
-
-      <VideoTable videos={activeVideos} />
-
-      {!loading && activeVideos.length === 0 && (
-        <div className="flex items-center justify-center py-16">
-          <span className="font-mono text-[12.5px] text-muted">No videos found in this category.</span>
+    <div className="w-full px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1440px] flex flex-col gap-0.5">
+        {/* Top Sliding Category Row */}
+        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+          {VIDEO_CATEGORIES.map((topic) => {
+            const isSelected = activeCategory === topic.slug;
+            return (
+              <button
+                key={topic.name}
+                onClick={(e) => {
+                  setActiveCategory(topic.slug);
+                  if (topic.slug) {
+                    router.push(`/videos/${topic.slug}`);
+                  } else {
+                    router.push(`/videos`);
+                  }
+                  e.currentTarget.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "center"
+                  });
+                }}
+                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                  isSelected
+                    ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                    : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+                }`}
+              >
+                {topic.name}
+              </button>
+            );
+          })}
         </div>
-      )}
 
-      <div ref={sentinelRef} className="flex items-center justify-center py-8">
-        {loading && (
-          <span className="font-mono text-[12.5px] text-muted">Loading more videos…</span>
+        <VideoTable videos={activeVideos} />
+
+        {!loading && activeVideos.length === 0 && (
+          <div className="flex items-center justify-center py-16">
+            <span className="font-mono text-[12.5px] text-muted">No videos found in this category.</span>
+          </div>
         )}
-        {!loading && !hasMore && videos.length > 0 && (
-          <span className="font-mono text-[12.5px] text-muted">You've reached the end.</span>
-        )}
+
+        <div ref={sentinelRef} className="flex items-center justify-center py-8">
+          {loading && (
+            <span className="font-mono text-[12.5px] text-muted">Loading more videos…</span>
+          )}
+          {!loading && !hasMore && videos.length > 0 && (
+            <span className="font-mono text-[12.5px] text-muted">You've reached the end.</span>
+          )}
+        </div>
       </div>
     </div>
   );

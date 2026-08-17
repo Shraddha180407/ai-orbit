@@ -14,6 +14,7 @@ import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/shadcn-button";
+import { useRouter } from "next/navigation";
 
 const PAGE_SIZE = 50;
 
@@ -49,9 +50,16 @@ interface NewsListingClientProps {
 export function NewsListingClient({ category, initialTopic }: NewsListingClientProps) {
   const { user } = useUser();
   const isAdmin = user?.role === 'ADMIN';
+  const router = useRouter();
 
   const [sort] = useState<SortState>({ key: "date", dir: "desc" });
   const [activeCategory, setActiveCategory] = useState<string>(category || "");
+
+  useEffect(() => {
+    if (category !== undefined) {
+      setActiveCategory(category);
+    }
+  }, [category]);
 
   // Admin Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -184,25 +192,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   if (activeCategory) list = list.filter((a) => a.category === activeCategory || a.filters?.includes(activeCategory));
   list = sortArticles(list, sort, sources);
 
-  if (isLoadingInitial) {
-    return (
-      <main className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
-        <div className="mx-auto w-full max-w-[1600px] space-y-3">
-          <LoadingSkeleton />
-        </div>
-      </main>
-    );
-  }
 
-  if (initialError) {
-    return (
-      <main className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
-        <div className="mx-auto w-full max-w-[1600px] space-y-3">
-          <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
-        </div>
-      </main>
-    );
-  }
 
   return (
     <>
@@ -217,7 +207,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
           )}
 
           {/* Top Sliding Category Row */}
-          <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+          <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
             {NEWS_CATEGORIES.map((topic) => {
               const isSelected = activeCategory === topic.slug;
               return (
@@ -226,8 +216,8 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
                   onClick={(e) => {
                     setActiveCategory(topic.slug);
                     if (mode === "paginated") loadFull();
-                    const targetPath = topic.slug ? `/news?category=${topic.slug}` : `/news`;
-                    window.history.pushState(null, "", targetPath);
+                    const targetPath = topic.slug ? `/news/${topic.slug}` : `/news`;
+                    router.push(targetPath);
                     e.currentTarget.scrollIntoView({
                       behavior: "smooth",
                       block: "nearest",
@@ -246,25 +236,31 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
             })}
           </div>
 
-          {/* News Table List matching Video Table UI */}
-          <div className="space-y-4">
-            <NewsList articles={list} sources={sources} emptyKind="empty" isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
+          {isLoadingInitial ? (
+            <LoadingSkeleton />
+          ) : initialError ? (
+            <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
+          ) : (
+            /* News Table List matching Video Table UI */
+            <div className="space-y-4">
+              <NewsList articles={list} sources={sources} emptyKind="empty" isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
 
-            {mode === "paginated" && list.length > 0 && (
-              <div ref={sentinelRef} className="flex items-center justify-center py-6">
-                {isLoadingMore && <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />}
-                {!isLoadingMore && loadMoreError && (
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-[#71717A]">Couldn&apos;t load more stories.</span>
-                    <button onClick={() => loadPage(nextPage, true)} className="text-sm font-semibold text-white hover:underline">
-                      Retry
-                    </button>
-                  </div>
-                )}
-                {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-[#71717A]">You&apos;re all caught up</span>}
-              </div>
-            )}
-          </div>
+              {mode === "paginated" && list.length > 0 && (
+                <div ref={sentinelRef} className="flex items-center justify-center py-6">
+                  {isLoadingMore && <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />}
+                  {!isLoadingMore && loadMoreError && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-[#71717A]">Couldn&apos;t load more stories.</span>
+                      <button onClick={() => loadPage(nextPage, true)} className="text-sm font-semibold text-white hover:underline">
+                        Retry
+                      </button>
+                    </div>
+                  )}
+                  {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-[#71717A]">You&apos;re all caught up</span>}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
 
