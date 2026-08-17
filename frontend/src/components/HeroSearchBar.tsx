@@ -53,9 +53,8 @@ export function HeroSearchBar({ defaultValue }: { defaultValue?: string }) {
   const router = useRouter();
   const [value, setValue] = useState(defaultValue ?? "");
   const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const inputNameRef = useRef(`search-${Math.random().toString(36).slice(2)}`);
+  const [searchName] = useState(() => "search-hero-input");
+  const inputNameRef = useRef(searchName);
 
 
   const { suggestions, popular, featured, isLoading } = useHomeSearch(value);

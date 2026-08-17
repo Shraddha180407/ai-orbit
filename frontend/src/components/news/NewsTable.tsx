@@ -13,9 +13,7 @@ import { publishedLabel } from "@/lib/news/format";
 import type { NewsArticle, NewsSource } from "@/types/news";
 import { useUser } from "@/hooks/use-user";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { Pencil, Trash2 } from "lucide-react";
-import { useUser } from "@/hooks/use-user";
 
 interface NewsTableProps {
   articles: NewsArticle[];
@@ -25,14 +23,8 @@ interface NewsTableProps {
   onDelete?: (id: string) => void;
 }
 
-<<<<<<< HEAD
 function NewsRowActions({ article, isLoggedIn }: { article: NewsArticle; isLoggedIn: boolean }) {
   const router = useRouter();
-=======
-function NewsRowActions({ article }: { article: NewsArticle }) {
-  const router = useRouter();
-  const { isAuthenticated } = useUser();
->>>>>>> upstream/main
   const key = "tas_bm_" + article.id;
   const [saved, setSaved] = useState(false);
   const [shared, setShared] = useState(false);
@@ -48,7 +40,6 @@ function NewsRowActions({ article }: { article: NewsArticle }) {
   const toggle = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-<<<<<<< HEAD
     if (!isLoggedIn) {
       toast.error("Sign in required to bookmark articles", {
         description: "Please sign in or create an account to save stories.",
@@ -61,16 +52,6 @@ function NewsRowActions({ article }: { article: NewsArticle }) {
       return;
     }
 
-=======
-    
-    // Check if user is logged in using useUser hook
-    if (!isAuthenticated) {
-      // Redirect to signin page
-      router.push('/auth/signin');
-      return;
-    }
-    
->>>>>>> upstream/main
     const next = !saved;
     setSaved(next);
     try {
