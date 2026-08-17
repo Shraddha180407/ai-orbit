@@ -7,10 +7,12 @@ import Share2 from "lucide-react/dist/esm/icons/share-2";
 import Check from "lucide-react/dist/esm/icons/check";
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right";
 import { useEffect, useState, type MouseEvent } from "react";
+import { useRouter } from "next/navigation";
 import { PublisherIcon } from "./PublisherIcon";
 import { publishedLabel } from "@/lib/news/format";
 import type { NewsArticle, NewsSource } from "@/types/news";
 import { Pencil, Trash2 } from "lucide-react";
+import { useUser } from "@/hooks/use-user";
 
 interface NewsTableProps {
   articles: NewsArticle[];
@@ -21,6 +23,8 @@ interface NewsTableProps {
 }
 
 function NewsRowActions({ article }: { article: NewsArticle }) {
+  const router = useRouter();
+  const { isAuthenticated } = useUser();
   const key = "tas_bm_" + article.id;
   const [saved, setSaved] = useState(false);
   const [shared, setShared] = useState(false);
@@ -37,11 +41,10 @@ function NewsRowActions({ article }: { article: NewsArticle }) {
     e.preventDefault();
     e.stopPropagation();
     
-    // Check if user is logged in
-    const token = document.cookie.split('; ').find(row => row.startsWith('token='));
-    if (!token) {
+    // Check if user is logged in using useUser hook
+    if (!isAuthenticated) {
       // Redirect to signin page
-      window.location.href = '/auth/signin';
+      router.push('/auth/signin');
       return;
     }
     
