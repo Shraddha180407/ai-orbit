@@ -83,7 +83,21 @@ export function ThumbImage({
         className={`object-cover transition-all duration-500 ease-out ${
           status === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]"
         } group-hover:scale-[1.06]`}
-        onLoad={() => setStatus("loaded")}
+        onLoad={(e) => {
+          // YouTube doesn't 404 for deleted/private videos' thumbnail URLs —
+          // it returns a real 200 OK image, but it's always a fixed-size
+          // generic gray placeholder (120x90px). A real thumbnail is always
+          // larger than that. Checking the loaded image's actual pixel
+          // dimensions is the only reliable way to catch this, since
+          // onError never fires for it.
+          const img = e.currentTarget;
+          if (img.naturalWidth === 120 && img.naturalHeight === 90) {
+            setStatus("error");
+            onError?.();
+            return;
+          }
+          setStatus("loaded");
+        }}
         onError={() => {
           setStatus("error");
           onError?.();
