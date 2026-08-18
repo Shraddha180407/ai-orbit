@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left";
+import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import Home from "lucide-react/dist/esm/icons/home";
 import ExternalLink from "lucide-react/dist/esm/icons/external-link";
 import Calendar from "lucide-react/dist/esm/icons/calendar";
@@ -23,74 +25,100 @@ interface ArticleDetailProps {
   comments: NewsComment[];
 }
 
-/**
- * Restyled to the same design system as the rest of the site (homepage/
- * tools) — plain Tailwind classes + the top-level @theme tokens
- * (text-foreground, border-border, bg-surface, etc.) instead of the old
- * `.news-scope` purple theme. Same `mx-auto max-w-[1070px] px-6 py-10`
- * container as NewsListingClient/ToolsClient for a consistent page width
- * across the whole /news section.
- */
+const getDomainFromUrl = (url?: string): string => {
+  if (!url) return "";
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+};
+
 export function ArticleDetail({ article: a, related, sources, popularSources, comments }: ArticleDetailProps) {
-  const source = sources[a.source];
+  // Real domain extraction without fake ".com" fallback
+  const realDomain = sources[a.source]?.domain || getDomainFromUrl(a.articleUrl) || getDomainFromUrl(a.url) || a.source;
+  const sourceName = sources[a.source]?.name || a.source;
+  const source: NewsSource = sources[a.source] || { key: a.source, name: sourceName, domain: realDomain };
+  
   const sourceUrl = articleSourceUrl(a);
 
+  // Authentic AI Summary from API/database without fabricated paragraphs
+  const rawSummary = a.aiSummary || a.dek || "";
+  const summaryParagraphs = rawSummary
+    ? rawSummary.split(/\n\n+/).filter(Boolean)
+    : [a.headline];
+
+  // Filter related articles strictly by same category / topic
+  const categoryRelated = related.filter(
+    (item) => item.id !== a.id && (item.category === a.category || item.topics.some((t) => a.topics.includes(t)))
+  );
+  const displayRelated = categoryRelated.length > 0 ? categoryRelated : related.filter((item) => item.id !== a.id);
+
   return (
-    <main className="mx-auto max-w-[1070px] px-6 py-10">
-      <div className="inline-flex items-center gap-2 text-sm text-foreground-muted">
-        <Link href="/news" className="hover:text-white transition-colors">
-          <Home size={16} />
+    <main className="mx-auto max-w-[1240px] px-4 sm:px-6 py-8">
+      {/* Breadcrumb: Home > News */}
+      <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-2 text-sm font-medium text-[#71717A]">
+        <Link href="/" className="inline-flex items-center gap-1 hover:text-white transition-colors">
+          <Home size={15} />
+          <span>Home</span>
         </Link>
-        <ChevronLeft size={16} className="rotate-180" />
+        <ChevronRight size={14} className="text-[#52525B]" />
         <Link href="/news" className="hover:text-white transition-colors">
           News
         </Link>
-      </div>
+        <ChevronRight size={14} className="text-[#52525B]" />
+        <span className="text-white truncate max-w-[320px]">{a.headline}</span>
+      </nav>
 
-      <div className="grid grid-cols-1 gap-10 items-start mt-6 lg:gap-9 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+      <div className="grid grid-cols-1 gap-10 items-start lg:gap-9 lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
         <article className="min-w-0">
           {a.topics[0] && (
             <div className="flex flex-wrap gap-2 mb-3.5">
-              <Link href={`/news?topic=${encodeURIComponent(a.topics[0])}`}>
+              <Link href={`/news?filter=${encodeURIComponent(a.topics[0].toLowerCase().replace(/\s+/g, '-'))}`}>
                 <TopicChip large>{a.topics[0]}</TopicChip>
               </Link>
             </div>
           )}
 
-          <h1 className="text-2xl font-semibold leading-[1.3] text-foreground">{a.headline}</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold leading-[1.25] text-white tracking-tight">{a.headline}</h1>
 
-          <div className="flex items-center flex-wrap gap-2.5 mt-3">
+          <div className="flex items-center flex-wrap gap-3 mt-4">
             <a
               href={sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              title={`Opens the original article on ${source.name}`}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface pl-1 pr-2.5 py-0.5 no-underline hover:border-accent transition-colors"
+              title={`Opens original article on ${source.name}`}
+              className="inline-flex items-center gap-2 rounded-lg border border-[#232326] bg-[#131316] pl-1.5 pr-3 py-1 no-underline hover:border-[#F5A623] transition-colors"
             >
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-white">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[#232326] bg-white p-0.5 shadow-sm">
                 <PublisherIcon key={source.domain} source={source} box={22} />
               </div>
-              <span className="text-[13px] font-semibold text-foreground">{source.name}</span>
-              <ExternalLink size={12} className="text-foreground-faint" />
+              <span className="text-[13px] font-semibold text-white">{source.name}</span>
+              <ExternalLink size={12} className="text-[#71717A]" />
             </a>
-            <span className="text-foreground-faint">·</span>
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground-muted">
-              <Calendar size={15} className="text-foreground-faint" />
+            <span className="text-[#52525B]">·</span>
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#A1A1AA]">
+              <Calendar size={14} className="text-[#71717A]" />
               {publishedLabel(a.hours)}
             </span>
           </div>
 
-          <div className="h-px bg-border mt-6" />
+          <div className="h-px bg-[#232326] mt-6" />
 
+          {/* AI Summary Section - Authentic API content */}
           <div className="mt-6">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-foreground mb-3">AI Summary</h2>
-            <p className="text-[15px] leading-relaxed text-foreground-muted" style={{ overflowWrap: "break-word", wordBreak: "break-word" }}>
-              {a.aiSummary}
-            </p>
+            <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[#F5A623] mb-3">AI SUMMARY</h2>
+            <div className="space-y-3.5 text-[15px] leading-relaxed text-[#A1A1AA]">
+              {summaryParagraphs.map((p, idx) => (
+                <p key={idx} style={{ overflowWrap: "break-word", wordBreak: "break-word" }}>
+                  {p}
+                </p>
+              ))}
+            </div>
           </div>
 
           {/* Desktop engagement row */}
-          <div className="hidden lg:flex items-center gap-3 mt-10 pt-6 border-t border-border flex-wrap">
+          <div className="hidden lg:flex items-center gap-3 mt-8 pt-6 border-t border-[#232326] flex-wrap">
             <ShareButton title={a.headline} />
             <SaveButton id={a.id} initialBookmarked={a.bookmarked} />
             <div className="ml-auto">
@@ -99,7 +127,7 @@ export function ArticleDetail({ article: a, related, sources, popularSources, co
           </div>
 
           {/* Mobile engagement grid */}
-          <div className="grid lg:hidden grid-cols-2 gap-3 mt-8 pt-5 border-t border-border">
+          <div className="grid lg:hidden grid-cols-2 gap-3 mt-8 pt-5 border-t border-[#232326]">
             <ShareButton fluid title={a.headline} />
             <SaveButton id={a.id} fluid initialBookmarked={a.bookmarked} />
             <div className="col-span-2">
@@ -110,8 +138,9 @@ export function ArticleDetail({ article: a, related, sources, popularSources, co
           <CommentBox id={a.id} initialComments={comments} />
         </article>
 
+        {/* Sidebar: Related News & Popular Sources */}
         <div className="static lg:sticky lg:top-6 flex flex-col gap-6">
-          <RelatedNews articles={related} sources={sources} />
+          <RelatedNews articles={displayRelated} sources={sources} categoryName={a.topics[0] || a.category} />
           <PopularSources popular={popularSources} sources={sources} />
         </div>
       </div>

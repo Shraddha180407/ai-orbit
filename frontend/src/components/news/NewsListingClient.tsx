@@ -1,45 +1,50 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import X from "lucide-react/dist/esm/icons/x";
+import Search from "lucide-react/dist/esm/icons/search";
 import { Plus } from "lucide-react";
+import { TopicChip } from "./TopicChip";
 import { NewsList } from "./NewsList";
 import { LoadingSkeleton } from "./LoadingSkeleton";
 import { ErrorState } from "./ErrorState";
 import { API_URL } from "@/lib/api";
 import { getClientId } from "@/lib/clientId";
-import { sortArticles } from "@/lib/news/news";
-import type { NewsArticle, NewsSource, SortState } from "@/types/news";
+import { applySearch, sortArticles } from "@/lib/news/news";
+import type { NewsArticle, NewsCategory, NewsFilterChip, NewsSource, SortState } from "@/types/news";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/shadcn-button";
+import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
+
+const DEFAULT_NEWS_CATEGORIES = [
+  { key: "all", label: "All" },
+  { key: "ai-industry", label: "AI Industry" },
+  { key: "product-launches", label: "Product Launches" },
+  { key: "innovations", label: "Innovations" },
+  { key: "company-updates", label: "Company Updates" },
+  { key: "open-source", label: "Open Source" },
+  { key: "regulations", label: "Regulations" },
+  { key: "interviews", label: "Interviews" },
+  { key: "market-trends", label: "Market Trends" },
+  { key: "breakthroughs", label: "Breakthroughs" },
+  { key: "security", label: "Security" },
+  { key: "agents", label: "Agents" },
+  { key: "llms", label: "LLMs" },
+  { key: "technology", label: "Technology" },
+];
 
 interface NewsListingResponse {
   articles: NewsArticle[];
   sources: Record<string, NewsSource>;
+  categories: NewsCategory[];
+  filterChips: NewsFilterChip[];
   pagination?: { page: number; perPage: number; total: number; hasMore: boolean };
 }
-
-const NEWS_CATEGORIES = [
-  { name: "All", slug: "" },
-  { name: "AI Industry", slug: "ai-industry" },
-  { name: "Product Launches", slug: "product-launches" },
-  { name: "Innovations", slug: "innovations" },
-  { name: "Company Updates", slug: "company-updates" },
-  { name: "Open Source", slug: "open-source" },
-  { name: "Regulations", slug: "regulations" },
-  { name: "Interviews", slug: "interviews" },
-  { name: "Market Trends", slug: "market-trends" },
-  { name: "Breakthroughs", slug: "breakthroughs" },
-  { name: "Security", slug: "security" },
-  { name: "Agents", slug: "agents" },
-  { name: "LLMs", slug: "llms" },
-  { name: "Developer Ecosystem", slug: "developer-ecosystem" },
-  { name: "Consumer", slug: "consumer" }
-];
 
 interface NewsListingClientProps {
   category?: string;
@@ -50,8 +55,11 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   const { user } = useUser();
   const isAdmin = user?.role === 'ADMIN';
 
+  const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
+  const [selectedTopics, setSelectedTopics] = useState<string[]>(initialTopic ? [initialTopic] : []);
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [sort] = useState<SortState>({ key: "date", dir: "desc" });
-  const [activeCategory, setActiveCategory] = useState<string>(category || "");
 
   // Admin Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,15 +69,17 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [sources, setSources] = useState<Record<string, NewsSource>>({});
+  const [categories, setCategories] = useState<NewsCategory[]>([]);
 
   const [mode, setMode] = useState<"paginated" | "full">("paginated");
   const [nextPage, setNextPage] = useState(1);
-  const [serverTotal, setServerTotal] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingInitial, setIsLoadingInitial] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [initialError, setInitialError] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState(false);
+
+  const isDefaultView = !category && filter === "all" && !query.trim() && selectedTopics.length === 0 && selectedSources.length === 0;
 
   const loadFull = useCallback(async () => {
     setInitialError(false);
@@ -79,8 +89,9 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       const res = await fetch(`${API_URL}/api/news${clientId ? `?clientId=${encodeURIComponent(clientId)}` : ""}`);
       if (!res.ok) throw new Error(String(res.status));
       const json: NewsListingResponse = await res.json();
-      setArticles(json.articles);
-      setSources(json.sources);
+      setArticles(json.articles || []);
+      setSources(json.sources || {});
+      setCategories(json.categories || []);
       setMode("full");
       setHasMore(false);
     } catch {
@@ -103,8 +114,8 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       if (!res.ok) throw new Error(String(res.status));
       const json: NewsListingResponse = await res.json();
       setArticles((prev) => (append ? [...prev, ...json.articles] : json.articles));
-      setSources(json.sources);
-      setServerTotal(json.pagination?.total ?? json.articles.length);
+      setSources(json.sources || {});
+      setCategories(json.categories || []);
       setHasMore(json.pagination?.hasMore ?? false);
       setNextPage(page + 1);
     } catch {
@@ -122,6 +133,12 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!isDefaultView && mode === "paginated" && !isLoadingInitial) loadFull();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDefaultView, mode, isLoadingInitial]);
+
+  // Enhanced IntersectionObserver with 1200px rootMargin for instantaneous scroll load
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (mode !== "paginated" || !hasMore) return;
@@ -131,11 +148,26 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       (entries) => {
         if (entries[0].isIntersecting && !isLoadingMore) loadPage(nextPage, true);
       },
-      { rootMargin: "800px" }
+      { rootMargin: "1200px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
   }, [mode, hasMore, isLoadingMore, nextPage, loadPage]);
+
+  const toggleTopic = (v: string) => setSelectedTopics((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
+  const toggleSource = (v: string) => setSelectedSources((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
+
+  // Fix "All" button behavior so it resets all filters 100% reliably
+  const handleSelectFilter = (fKey: string) => {
+    if (fKey === "all") {
+      setFilter("all");
+      setSelectedTopics([]);
+      setSelectedSources([]);
+      setQuery("");
+    } else {
+      setFilter(fKey);
+    }
+  };
 
   // Admin handlers
   const handleSave = async () => {
@@ -180,93 +212,153 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     setIsModalOpen(true);
   };
 
+  // Robust, fuzzy category & subcategory filter matching
   let list = articles.slice();
-  if (activeCategory) list = list.filter((a) => a.category === activeCategory || a.filters?.includes(activeCategory));
+  if (category) list = list.filter((a) => a.category === category || (a.filters && a.filters.includes(category)));
+  
+  if (filter === "trending") {
+    list = list.filter((a) => a.hours <= 48);
+  } else if (filter !== "all") {
+    const fKey = filter.toLowerCase().replace(/[-_]/g, " ");
+    const fSlug = filter.toLowerCase().replace(/\s+/g, "-");
+    list = list.filter((a) => {
+      const catName = (a.category || "").toLowerCase();
+      const matchCat = catName.includes(fKey) || catName.includes(fSlug);
+      const matchTopics = (a.topics || []).some((t) => {
+        const tLow = t.toLowerCase().replace(/[-_]/g, " ");
+        return tLow.includes(fKey) || fKey.includes(tLow) || t.toLowerCase().includes(fSlug);
+      });
+      const matchFilters = (a.filters || []).some((f) => f.toLowerCase().includes(fSlug) || f.toLowerCase().includes(fKey));
+      return matchCat || matchTopics || matchFilters;
+    });
+  }
+
+  list = applySearch(list, query, sources);
+  if (selectedTopics.length) list = list.filter((a) => selectedTopics.some((t) => (a.topics || []).includes(t)));
+  if (selectedSources.length) list = list.filter((a) => selectedSources.includes(a.source));
   list = sortArticles(list, sort, sources);
+
+  const emptyKind: "search" | "empty" = query || selectedTopics.length || selectedSources.length ? "search" : "empty";
+
+  // Build filter pills list dynamically combining default & API categories
+  const activeChipsList = DEFAULT_NEWS_CATEGORIES;
 
   if (isLoadingInitial) {
     return (
-      <main className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
-        <div className="mx-auto w-full max-w-[1600px] space-y-3">
-          <LoadingSkeleton />
-        </div>
+      <main className="w-full px-2 sm:px-4 py-4 flex-1 flex flex-col">
+        <LoadingSkeleton />
       </main>
     );
   }
 
   if (initialError) {
     return (
-      <main className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
-        <div className="mx-auto w-full max-w-[1600px] space-y-3">
-          <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
-        </div>
+      <main className="w-full px-2 sm:px-4 py-4 flex-1 flex flex-col">
+        <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
       </main>
     );
   }
 
   return (
     <>
-      <main className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
-        <div className="mx-auto w-full max-w-[1600px] space-y-3">
-          {isAdmin && (
-            <div className="flex justify-end mb-4">
-              <Button className="bg-white text-black hover:bg-neutral-200 h-8 text-xs font-bold px-3 rounded-lg shrink-0" onClick={openAdd}>
-                <Plus className="h-3.5 w-3.5 mr-1.5" /> Add News
-              </Button>
-            </div>
-          )}
+      <main className="w-full px-2 sm:px-4 py-3 flex-1 flex flex-col">
+      {/* Toolbar & Search & Filter Chips */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1">
+          {activeChipsList.map((chip) => {
+            const isSelected = filter === chip.key;
+            return (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => handleSelectFilter(chip.key)}
+                className={cn(
+                  "rounded-full px-3 py-1 text-[12px] font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer",
+                  isSelected
+                    ? "bg-white text-black border-transparent font-bold shadow-sm"
+                    : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#F5A623]/50 hover:text-white"
+                )}
+              >
+                <span>{chip.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
-          {/* Top Sliding Category Row */}
-          <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
-            {NEWS_CATEGORIES.map((topic) => {
-              const isSelected = activeCategory === topic.slug;
-              return (
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative w-full max-w-[280px]">
+            <div className="relative w-full rounded-lg border border-[#232326]/80 bg-[#111113] h-[34px] flex items-center px-3 focus-within:border-[#F5A623] focus-within:ring-2 focus-within:ring-[#F5A623]/20 transition-all duration-150">
+              <Search size={13} className="mr-2 text-[#71717A] shrink-0" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search news..."
+                className="w-full bg-transparent text-xs text-white placeholder:text-[#71717A] focus:outline-none font-sans"
+              />
+              {query && (
                 <button
-                  key={topic.name}
-                  onClick={(e) => {
-                    setActiveCategory(topic.slug);
-                    if (mode === "paginated") loadFull();
-                    const targetPath = topic.slug ? `/news?category=${topic.slug}` : `/news`;
-                    window.history.pushState(null, "", targetPath);
-                    e.currentTarget.scrollIntoView({
-                      behavior: "smooth",
-                      block: "nearest",
-                      inline: "center"
-                    });
-                  }}
-                  className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
-                    isSelected
-                      ? "bg-white text-black border-white shadow-lg shadow-white/5"
-                      : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                  }`}
+                  onClick={() => setQuery("")}
+                  className="text-[#71717A] hover:text-white text-xs font-bold px-1 py-0.5 rounded transition-colors"
                 >
-                  {topic.name}
+                  <X size={13} />
                 </button>
-              );
-            })}
+              )}
+            </div>
           </div>
 
-          {/* News Table List matching Video Table UI */}
-          <div className="space-y-4">
-            <NewsList articles={list} sources={sources} emptyKind="empty" isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
+          {isAdmin && (
+            <Button className="bg-white text-black hover:bg-neutral-200 h-8 text-xs font-bold px-3 rounded-lg shrink-0" onClick={openAdd}>
+              <Plus className="h-3.5 w-3.5 mr-1.5" /> Add News
+            </Button>
+          )}
+        </div>
+      </div>
 
-            {mode === "paginated" && list.length > 0 && (
-              <div ref={sentinelRef} className="flex items-center justify-center py-6">
-                {isLoadingMore && <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />}
-                {!isLoadingMore && loadMoreError && (
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-[#71717A]">Couldn&apos;t load more stories.</span>
-                    <button onClick={() => loadPage(nextPage, true)} className="text-sm font-semibold text-white hover:underline">
-                      Retry
-                    </button>
-                  </div>
-                )}
-                {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-[#71717A]">You&apos;re all caught up</span>}
+      {(selectedTopics.length > 0 || selectedSources.length > 0) && (
+        <div className="flex items-center gap-2 flex-wrap pb-3">
+          {selectedTopics.map((t) => (
+            <TopicChip key={"t" + t} active onClick={() => toggleTopic(t)}>
+              {t}
+              <X size={12} className="ml-1.5" />
+            </TopicChip>
+          ))}
+          {selectedSources.map((s) => (
+            <TopicChip key={"s" + s} active onClick={() => toggleSource(s)}>
+              {sources[s]?.name || s}
+              <X size={12} className="ml-1.5" />
+            </TopicChip>
+          ))}
+          <button
+            onClick={() => handleSelectFilter("all")}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#232326] bg-[#131316] px-3 py-1.5 text-xs font-medium text-[#A1A1AA] hover:border-[#F5A623] hover:text-white transition-all active:scale-95 cursor-pointer"
+          >
+            <X size={12} aria-hidden="true" />
+            Clear all filters
+          </button>
+        </div>
+      )}
+
+      {/* News Table List matching Video Table UI */}
+      <div className="space-y-4 w-full">
+        <NewsList articles={list} sources={sources} emptyKind={emptyKind} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
+
+        {mode === "paginated" && list.length > 0 && (
+          <div ref={sentinelRef} className="flex items-center justify-center py-6">
+            {isLoadingMore && <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />}
+            {!isLoadingMore && loadMoreError && (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-[#71717A]">Couldn&apos;t load more stories.</span>
+                <button onClick={() => loadPage(nextPage, true)} className="text-sm font-semibold text-white hover:underline">
+                  Retry
+                </button>
               </div>
             )}
+            {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-[#71717A]">You&apos;re all caught up</span>}
           </div>
-        </div>
-      </main>
+        )}
+      </div>
+    </main>
 
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? 'Edit News' : 'Add News'} footer={
         <>
