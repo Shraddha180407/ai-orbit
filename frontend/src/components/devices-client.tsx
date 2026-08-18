@@ -433,7 +433,6 @@ useEffect(() => {
   return (
     <>
     <div className="w-full flex-1 flex flex-col">
-      {/* ── SUBCATEGORY PILLS ── */}
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
         <div className="flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           <button
