@@ -140,7 +140,39 @@ const COLUMN_HEADERS = [
   { label: "MAIN TASK" },
 ];
 
-export function DevicesClient() {
+const DEVICE_SLUGS: Record<string, string> = {
+  "ai-pcs": "AI PCs",
+  "smartphones": "Smartphones",
+  "smart-home": "Smart Home",
+  "wearables": "Wearables",
+  "ai-cameras": "AI Cameras",
+  "audio": "Audio",
+  "ar-vr": "AR/VR",
+  "edge-ai": "Edge AI",
+  "robotics-hardware": "Robotics Hardware",
+  "medical": "Medical",
+  "development-boards": "Development Boards",
+  "smart-sensors": "Smart Sensors",
+  "automotive-ai-devices": "Automotive AI Devices",
+};
+
+const DEVICE_TO_SLUG: Record<string, string> = {
+  "AI PCs": "ai-pcs",
+  "Smartphones": "smartphones",
+  "Smart Home": "smart-home",
+  "Wearables": "wearables",
+  "AI Cameras": "ai-cameras",
+  "Audio": "audio",
+  "AR/VR": "ar-vr",
+  "Edge AI": "edge-ai",
+  "Robotics Hardware": "robotics-hardware",
+  "Medical": "medical",
+  "Development Boards": "development-boards",
+  "Smart Sensors": "smart-sensors",
+  "Automotive AI Devices": "automotive-ai-devices",
+};
+
+export function DevicesClient({ defaultCategory }: { defaultCategory?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [devices, setDevices] = useState<DeviceData[]>(DEVICES_DATA);
@@ -152,7 +184,18 @@ export function DevicesClient() {
 
   const [nameSearch, setNameSearch] = useState("");
   const [nameInput, setNameInput] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    if (defaultCategory && DEVICE_SLUGS[defaultCategory]) {
+      return DEVICE_SLUGS[defaultCategory];
+    }
+    return ALL_CATEGORIES;
+  });
+
+  useEffect(() => {
+    if (defaultCategory !== undefined) {
+      setSelectedCategory(defaultCategory && DEVICE_SLUGS[defaultCategory] ? DEVICE_SLUGS[defaultCategory] : ALL_CATEGORIES);
+    }
+  }, [defaultCategory]);
   const [selectedAvailability, setSelectedAvailability] = useState("All");
   const rawSort = searchParams.get("sort") ?? "newest";
 const [sortKey, setSortKey] = useState<SortKey>(() => {
@@ -390,42 +433,41 @@ useEffect(() => {
   return (
     <>
     <div className="w-full flex-1 flex flex-col">
-      {/* ── SUBCATEGORY PILLS ── */}
-<div className="w-full px-4 sm:px-6 lg:px-8 py-2">
-  <div
-    className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden scroll-smooth"
-    style={{
-      maskImage: 'linear-gradient(to right, transparent 0%, black 32px, black calc(100% - 32px), transparent 100%)',
-      WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 32px, black calc(100% - 32px), transparent 100%)',
-    }}
-  >
-    <div className="shrink-0 w-2" />
-    <button
-      onClick={() => { setSelectedCategory(ALL_CATEGORIES); setCurrentPage(1); }}
-      className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
-        selectedCategory === ALL_CATEGORIES
-          ? "bg-[#6E56CF] border-[#6E56CF] text-white"
-          : "bg-transparent border-[#232326] text-[#A1A1AA] hover:border-[#52525B] hover:text-white"
-      }`}
-    >
-      All
-    </button>
-    {DEVICE_SUBCATEGORIES.map((sub) => (
-      <button
-        key={sub}
-        onClick={() => { setSelectedCategory(sub); setCurrentPage(1); }}
-        className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
-          selectedCategory === sub
-            ? "bg-[#6E56CF] border-[#6E56CF] text-white"
-            : "bg-transparent border-[#232326] text-[#A1A1AA] hover:border-[#52525B] hover:text-white"
-        }`}
-      >
-        {sub}
-      </button>
-    ))}
-    <div className="shrink-0 w-2" />
-  </div>
-</div>
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
+        <div className="flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+          <button
+            onClick={() => {
+              setSelectedCategory(ALL_CATEGORIES);
+              setCurrentPage(1);
+              router.push(`/devices`);
+            }}
+            className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+              selectedCategory === ALL_CATEGORIES
+                ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+            }`}
+          >
+            All
+          </button>
+          {DEVICE_SUBCATEGORIES.map((sub) => (
+            <button
+              key={sub}
+              onClick={() => {
+                setSelectedCategory(sub);
+                setCurrentPage(1);
+                router.push(`/devices/${DEVICE_TO_SLUG[sub]}`);
+              }}
+              className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                selectedCategory === sub
+                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+              }`}
+            >
+              {sub}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* ── LIST VIEW ── */}
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-0.5 pb-8">

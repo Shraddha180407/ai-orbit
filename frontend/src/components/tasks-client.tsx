@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 import {
   fetchTasks,
@@ -19,6 +19,7 @@ import { TaskAuthRequired } from "./TaskAuthRequired";
 
 type TasksClientProps = {
   initialData?: TaskListResponse;
+  defaultCategory?: string;
 };
 
 const COLUMN_LABELS = ["SUBSCRIBERS", "SAVES", "TOOLS", "MODELS", "ROBOTS", "DEVICES"];
@@ -42,11 +43,18 @@ const TASK_CATEGORIES = [
   { name: "Website Building", slug: "website-building" }
 ];
 
-export function TasksClient({ initialData }: TasksClientProps) {
+export function TasksClient({ initialData, defaultCategory }: TasksClientProps) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<string>(() => {
-    return searchParams.get("category") || "";
+    return defaultCategory || searchParams.get("category") || "";
   });
+
+  useEffect(() => {
+    if (defaultCategory !== undefined) {
+      setActiveCategory(defaultCategory);
+    }
+  }, [defaultCategory]);
 
   const [tasks, setTasks] = useState<Task[]>(initialData?.tasks ?? []);
 const [total, setTotal] = useState(initialData?.total ?? 0);
@@ -145,26 +153,28 @@ const queryParams = useMemo(
   !authRequired;
 
   return (
-      <main className="w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 py-2 flex-1 selection:bg-neutral-800 selection:text-white">
-        {/* Top Sliding Category Row */}
-        <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+      <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2 flex-1 selection:bg-neutral-800 selection:text-white">
+        <div className="mx-auto w-full max-w-[1440px] space-y-3">
+          {/* Top Sliding Category Row */}
+          <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           {TASK_CATEGORIES.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
               <button
                 key={topic.name}
                 onClick={(e) => {
-  setActiveCategory(topic.slug);
-  const params = new URLSearchParams(searchParams.toString());
-  if (topic.slug) params.set("category", topic.slug);
-  else params.delete("category");
-  window.history.pushState(null, "", `/tasks?${params.toString()}`);
-  e.currentTarget.scrollIntoView({
-    behavior: "smooth",
-    block: "nearest",
-    inline: "center"
-  });
-}}
+                  setActiveCategory(topic.slug);
+                  if (topic.slug) {
+                    router.push(`/tasks/${topic.slug}`);
+                  } else {
+                    router.push(`/tasks`);
+                  }
+                  e.currentTarget.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "center"
+                  });
+                }}
                 className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
@@ -219,6 +229,7 @@ const queryParams = useMemo(
             )}
           </div>
         )}
-      </main>
+      </div>
+    </main>
   );
 }

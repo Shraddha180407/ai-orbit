@@ -16,8 +16,9 @@ import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/shadcn-button";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/shadcn-button";
 
 const PAGE_SIZE = 50;
 
@@ -54,12 +55,19 @@ interface NewsListingClientProps {
 export function NewsListingClient({ category, initialTopic }: NewsListingClientProps) {
   const { user } = useUser();
   const isAdmin = user?.role === 'ADMIN';
+  const router = useRouter();
 
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [selectedTopics, setSelectedTopics] = useState<string[]>(initialTopic ? [initialTopic] : []);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [sort] = useState<SortState>({ key: "date", dir: "desc" });
+
+  useEffect(() => {
+    if (category !== undefined) {
+      setFilter(category || "all");
+    }
+  }, [category]);
 
   // Admin Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -164,8 +172,10 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       setSelectedTopics([]);
       setSelectedSources([]);
       setQuery("");
+      router.push(`/news`);
     } else {
       setFilter(fKey);
+      router.push(`/news/${fKey}`);
     }
   };
 
@@ -243,22 +253,6 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   // Build filter pills list dynamically combining default & API categories
   const activeChipsList = DEFAULT_NEWS_CATEGORIES;
 
-  if (isLoadingInitial) {
-    return (
-      <main className="w-full px-2 sm:px-4 py-4 flex-1 flex flex-col">
-        <LoadingSkeleton />
-      </main>
-    );
-  }
-
-  if (initialError) {
-    return (
-      <main className="w-full px-2 sm:px-4 py-4 flex-1 flex flex-col">
-        <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
-      </main>
-    );
-  }
-
   return (
     <>
       <main className="w-full px-2 sm:px-4 py-3 flex-1 flex flex-col">
@@ -281,84 +275,94 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
               >
                 <span>{chip.label}</span>
               </button>
-            );
-          })}
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="relative w-full max-w-[280px]">
-            <div className="relative w-full rounded-lg border border-[#232326]/80 bg-[#111113] h-[34px] flex items-center px-3 focus-within:border-[#F5A623] focus-within:ring-2 focus-within:ring-[#F5A623]/20 transition-all duration-150">
-              <Search size={13} className="mr-2 text-[#71717A] shrink-0" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search news..."
-                className="w-full bg-transparent text-xs text-white placeholder:text-[#71717A] focus:outline-none font-sans"
-              />
-              {query && (
-                <button
-                  onClick={() => setQuery("")}
-                  className="text-[#71717A] hover:text-white text-xs font-bold px-1 py-0.5 rounded transition-colors"
-                >
-                  <X size={13} />
-                </button>
-              )}
-            </div>
+              );
+            })}
           </div>
 
-          {isAdmin && (
-            <Button className="bg-white text-black hover:bg-neutral-200 h-8 text-xs font-bold px-3 rounded-lg shrink-0" onClick={openAdd}>
-              <Plus className="h-3.5 w-3.5 mr-1.5" /> Add News
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {(selectedTopics.length > 0 || selectedSources.length > 0) && (
-        <div className="flex items-center gap-2 flex-wrap pb-3">
-          {selectedTopics.map((t) => (
-            <TopicChip key={"t" + t} active onClick={() => toggleTopic(t)}>
-              {t}
-              <X size={12} className="ml-1.5" />
-            </TopicChip>
-          ))}
-          {selectedSources.map((s) => (
-            <TopicChip key={"s" + s} active onClick={() => toggleSource(s)}>
-              {sources[s]?.name || s}
-              <X size={12} className="ml-1.5" />
-            </TopicChip>
-          ))}
-          <button
-            onClick={() => handleSelectFilter("all")}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#232326] bg-[#131316] px-3 py-1.5 text-xs font-medium text-[#A1A1AA] hover:border-[#F5A623] hover:text-white transition-all active:scale-95 cursor-pointer"
-          >
-            <X size={12} aria-hidden="true" />
-            Clear all filters
-          </button>
-        </div>
-      )}
-
-      {/* News Table List matching Video Table UI */}
-      <div className="space-y-4 w-full">
-        <NewsList articles={list} sources={sources} emptyKind={emptyKind} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
-
-        {mode === "paginated" && list.length > 0 && (
-          <div ref={sentinelRef} className="flex items-center justify-center py-6">
-            {isLoadingMore && <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />}
-            {!isLoadingMore && loadMoreError && (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-[#71717A]">Couldn&apos;t load more stories.</span>
-                <button onClick={() => loadPage(nextPage, true)} className="text-sm font-semibold text-white hover:underline">
-                  Retry
-                </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="relative w-full max-w-[280px]">
+              <div className="relative w-full rounded-lg border border-[#232326]/80 bg-[#111113] h-[34px] flex items-center px-3 focus-within:border-[#F5A623] focus-within:ring-2 focus-within:ring-[#F5A623]/20 transition-all duration-150">
+                <Search size={13} className="mr-2 text-[#71717A] shrink-0" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search news..."
+                  className="w-full bg-transparent text-xs text-white placeholder:text-[#71717A] focus:outline-none font-sans"
+                />
+                {query && (
+                  <button
+                    onClick={() => setQuery("")}
+                    className="text-[#71717A] hover:text-white text-xs font-bold px-1 py-0.5 rounded transition-colors"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
               </div>
+            </div>
+
+            {isAdmin && (
+              <Button className="bg-white text-black hover:bg-neutral-200 h-8 text-xs font-bold px-3 rounded-lg shrink-0" onClick={openAdd}>
+                <Plus className="h-3.5 w-3.5 mr-1.5" /> Add News
+              </Button>
             )}
-            {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-[#71717A]">You&apos;re all caught up</span>}
+          </div>
+        </div>
+
+        {(selectedTopics.length > 0 || selectedSources.length > 0) && (
+          <div className="flex items-center gap-2 flex-wrap pb-3">
+            {selectedTopics.map((t) => (
+              <TopicChip key={"t" + t} active onClick={() => toggleTopic(t)}>
+                {t}
+                <X size={12} className="ml-1.5" />
+              </TopicChip>
+            ))}
+            {selectedSources.map((s) => (
+              <TopicChip key={"s" + s} active onClick={() => toggleSource(s)}>
+                {sources[s]?.name || s}
+                <X size={12} className="ml-1.5" />
+              </TopicChip>
+            ))}
+            <button
+              onClick={() => handleSelectFilter("all")}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#232326] bg-[#131316] px-3 py-1.5 text-xs font-medium text-[#A1A1AA] hover:border-[#F5A623] hover:text-white transition-all active:scale-95 cursor-pointer"
+            >
+              <X size={12} aria-hidden="true" />
+              Clear all filters
+            </button>
           </div>
         )}
-      </div>
-    </main>
+
+        {isLoadingInitial ? (
+          <div className="w-full flex-1 flex flex-col">
+            <LoadingSkeleton />
+          </div>
+        ) : initialError ? (
+          <div className="w-full flex-1 flex flex-col">
+            <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
+          </div>
+        ) : (
+          /* News Table List matching Video Table UI */
+          <div className="space-y-4 w-full">
+            <NewsList articles={list} sources={sources} emptyKind={emptyKind} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
+
+            {mode === "paginated" && list.length > 0 && (
+              <div ref={sentinelRef} className="flex items-center justify-center py-6">
+                {isLoadingMore && <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />}
+                {!isLoadingMore && loadMoreError && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-[#71717A]">Couldn&apos;t load more stories.</span>
+                    <button onClick={() => loadPage(nextPage, true)} className="text-sm font-semibold text-white hover:underline">
+                      Retry
+                    </button>
+                  </div>
+                )}
+                {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-[#71717A]">You&apos;re all caught up</span>}
+              </div>
+            )}
+          </div>
+        )}
+      </main>
 
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? 'Edit News' : 'Add News'} footer={
         <>
