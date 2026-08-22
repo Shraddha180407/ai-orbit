@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { ToolListView } from "@/components/ToolListView";
@@ -75,6 +75,7 @@ export function ToolsClient({
 }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const router = useRouter();
 
   const [mode, setMode] = useState<DirectoryMode>(() => {
     if (defaultMode) return defaultMode;
@@ -119,18 +120,17 @@ export function ToolsClient({
   useEffect(() => {
     const pathParts = pathname.split("/").filter(Boolean);
     let categoryFromPath = "";
-    
-    // Check if path has a subcategory slug (e.g. /personal/relationships or /p/personal/relationships)
-    if (pathParts.includes("personal") || pathParts.includes("creativity")) {
-      const modeIdx = pathParts.findIndex(p => p === "personal" || p === "creativity");
-      if (modeIdx !== -1 && pathParts[modeIdx + 1]) {
-        categoryFromPath = pathParts[modeIdx + 1];
-      }
+
+    // Extract subcategory slug from /tools/[slug], /personal/[slug], /creativity/[slug]
+    const modeKeys = ["tools", "personal", "creativity"];
+    const modeIdx = pathParts.findIndex(p => modeKeys.includes(p));
+    if (modeIdx !== -1 && pathParts[modeIdx + 1]) {
+      categoryFromPath = pathParts[modeIdx + 1];
     }
-    
+
     const queryCategory = searchParams.get("category") || "";
-    const resolvedCategory = defaultCategory || categoryFromPath || queryCategory;
-    
+    const resolvedCategory = categoryFromPath || queryCategory || defaultCategory;
+
     if (resolvedCategory) {
       setActiveCategory(resolvedCategory);
     } else {
@@ -203,21 +203,24 @@ export function ToolsClient({
     <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
       <div className="mx-auto w-full max-w-[1600px] space-y-3">
         {/* Top Sliding Category Row */}
-                <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 w-full px-4 md:px-0 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
+        <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
               <button
                 key={topic.name}
-                                onClick={(e) => {
+                onClick={(e) => {
                   setActiveCategory(topic.slug);
+                  const base = mode === "personal" ? "/personal" : mode === "creativity" ? "/creativity" : "/tools";
+                  const url = topic.slug ? `${base}/${topic.slug}` : base;
+                  window.history.pushState(null, "", url);
                   e.currentTarget.scrollIntoView({
                     behavior: "smooth",
                     block: "nearest",
                     inline: "center"
                   });
                 }}
-                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"

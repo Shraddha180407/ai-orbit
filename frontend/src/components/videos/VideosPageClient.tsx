@@ -187,21 +187,10 @@ export function VideosPageClient({
                 onClick={(e) => {
                   setActiveCategory(topic.slug);
 
-                  // Query-param navigation on the SAME /videos route — not
-                  // a path segment (/videos/<slug>), since there is no
-                  // app/videos/[category]/page.tsx route to match that. A
-                  // path-based push forced a full remount of this page,
-                  // which wiped the activeCategory state set just above,
-                  // right before it could take effect — that was the
-                  // sub-category filter bug (URL changed, list didn't).
-                  const params = new URLSearchParams(searchParams?.toString());
-                  if (topic.slug) {
-                    params.set("category", topic.slug);
-                  } else {
-                    params.delete("category");
+                  const url = topic.slug ? `/videos/${topic.slug}` : "/videos";
+                  if (typeof window !== "undefined") {
+                    window.history.pushState(null, "", url);
                   }
-                  const qs = params.toString();
-                  router.push(`/videos${qs ? `?${qs}` : ""}`, { scroll: false });
 
                   e.currentTarget.scrollIntoView({
                     behavior: "smooth",
@@ -209,7 +198,7 @@ export function VideosPageClient({
                     inline: "center",
                   });
                 }}
-                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"

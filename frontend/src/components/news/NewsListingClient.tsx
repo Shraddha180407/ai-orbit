@@ -234,7 +234,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     } else {
       setFilter(fKey);
       if (mode === "paginated") loadFull();
-      if (typeof window !== "undefined") window.history.pushState(null, "", `/news?filter=${encodeURIComponent(fKey)}`);
+      if (typeof window !== "undefined") window.history.pushState(null, "", `/news/${encodeURIComponent(fKey)}`);
     }
   };
 

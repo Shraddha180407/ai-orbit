@@ -9,21 +9,22 @@ import { ToolListView } from "@/components/ToolListView";
 import { API_URL } from "@/lib/api";
 
 const CATEGORY_TOPICS = [
-  "Image Generation",
-  "Writing",
-  "Software Development",
-  "Video Creation",
-  "Music",
-  "Graphic Design",
-  "Digital Art",
-  "Brainstorming",
-  "3D Creation",
-  "Presentation Design",
-  "Storytelling",
-  "Content Creation",
-  "Branding",
-  "Motion Graphics",
-  "Game Creation"
+  { name: "All", slug: "" },
+  { name: "Image Generation", slug: "image-generation" },
+  { name: "Writing", slug: "writing" },
+  { name: "Software Development", slug: "software-development" },
+  { name: "Video Creation", slug: "video-creation" },
+  { name: "Music", slug: "music" },
+  { name: "Graphic Design", slug: "graphic-design" },
+  { name: "Digital Art", slug: "digital-art" },
+  { name: "Brainstorming", slug: "brainstorming" },
+  { name: "3D Creation", slug: "3d-creation" },
+  { name: "Presentation Design", slug: "presentation-design" },
+  { name: "Storytelling", slug: "storytelling" },
+  { name: "Content Creation", slug: "content-creation" },
+  { name: "Branding", slug: "branding" },
+  { name: "Motion Graphics", slug: "motion-graphics" },
+  { name: "Game Creation", slug: "game-creation" }
 ];
 
 const ALLOWED_CATEGORIES = [
@@ -45,7 +46,7 @@ const ALLOWED_CATEGORIES = [
 ];
 
 export default function CreativityTasksPage() {
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(CATEGORY_TOPICS[0]);
+  const [selectedTopic, setSelectedTopic] = useState<string>("");
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const [backendTools, setBackendTools] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,7 +78,7 @@ export default function CreativityTasksPage() {
   }, [backendTools]);
 
   const filteredTools = useMemo(() => {
-    if (!selectedTopic) return categoryTools;
+    if (!selectedTopic || selectedTopic === "All") return categoryTools;
     return categoryTools.filter((tool) => {
       const cats = tool.categories?.map((c: { category?: { name: string } }) => c.category?.name) || [tool.category];
       if (selectedTopic === "Design") {
@@ -86,15 +87,6 @@ export default function CreativityTasksPage() {
       return cats.includes(selectedTopic);
     });
   }, [categoryTools, selectedTopic]);
-
-  const handleTopicClick = (topic: string | null, e: React.MouseEvent<HTMLButtonElement>) => {
-    setSelectedTopic(topic);
-    e.currentTarget.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center"
-    });
-  };
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between">
@@ -115,18 +107,27 @@ export default function CreativityTasksPage() {
         </h1>
 
         {/* Top Sliding Category Row */}
-        <div className="mb-8 flex items-center justify-start md:justify-center gap-2 overflow-x-auto pb-3 scrollbar-none w-full">
+        <div className="mb-8 flex items-center justify-start md:justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
           {CATEGORY_TOPICS.map((topic) => (
             <button
-              key={topic}
-              onClick={(e) => handleTopicClick(topic, e)}
-              className={`rounded-full px-3 py-1 text-[9.5px] font-bold whitespace-nowrap transition-all duration-200 border ${
-                selectedTopic === topic
+              key={topic.slug}
+              onClick={(e) => {
+                setSelectedTopic(topic.name); // store name for filtering
+                const url = topic.slug ? `/creativity/${topic.slug}` : `/creativity`;
+                window.history.pushState(null, "", url);
+                e.currentTarget.scrollIntoView({
+                  behavior: "smooth",
+                  block: "nearest",
+                  inline: "center"
+                });
+              }}
+              className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                selectedTopic === topic.name // compare against name
                   ? "bg-white text-black border-white shadow-lg shadow-white/5"
-                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-white/[0.05] hover:border-white/[0.15]"
+                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
               }`}
             >
-              {topic}
+              {topic.name}
             </button>
           ))}
         </div>
