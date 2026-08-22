@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Video, formatDuration, getChannelUrl } from "@/lib/video-types";
+import type { VideoSortBy, VideoSortDir } from "@/lib/videos-data";
 import { ThumbImage } from "./ThumbImage";
 import { VideoSaveButton } from "./VideoSaveButton";
 import { VideoShareButton } from "./VideoShareButton";
 
-type SortKey = "name" | "duration" | "posted" | "views";
 type SortDir = "asc" | "desc";
 
 const LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert"] as const;
@@ -52,9 +52,17 @@ function FilterIcon() {
   );
 }
 
-export function VideoTable({ videos }: { videos: Video[] }) {
-  const [sortKey, setSortKey] = useState<SortKey>("posted");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
+export function VideoTable({
+  videos,
+  sortBy,
+  sortDir,
+  onSortChange,
+}: {
+  videos: Video[];
+  sortBy: VideoSortBy;
+  sortDir: SortDir;
+  onSortChange: (key: VideoSortBy) => void;
+}) {
   // Every row in this list must show a real thumbnail — if one fails to
   // load, the video is dropped from the list entirely rather than shown
   // with a placeholder (see ThumbImage's onError prop).
@@ -69,30 +77,12 @@ export function VideoTable({ videos }: { videos: Video[] }) {
     });
   }
 
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDir("desc");
-    }
-  }
+  // Sort order now comes from the backend (see VideosPageClient) — sorting
+  // only the currently-loaded page(s) client-side gave wrong results across
+  // the full dataset. This only filters out thumbnail failures locally.
+  const visibleVideos = videos.filter((v) => !failedThumbIds.has(v.id));
 
-  const sorted = useMemo(() => {
-    const copy = videos.filter((v) => !failedThumbIds.has(v.id));
-    copy.sort((a, b) => {
-      let cmp = 0;
-      if (sortKey === "name") cmp = a.title.localeCompare(b.title);
-      else if (sortKey === "duration") cmp = a.durationSeconds - b.durationSeconds;
-      else if (sortKey === "posted")
-        cmp = new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
-      else if (sortKey === "views") cmp = a.views - b.views;
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-    return copy;
-  }, [videos, sortKey, sortDir, failedThumbIds]);
-
-  const columns: { key: SortKey; label: string; align?: "right" }[] = [
+  const columns: { key: VideoSortBy; label: string; align?: "right" }[] = [
     { key: "name", label: "Name" },
     { key: "posted", label: "Posted" },
     { key: "duration", label: "Duration" },
@@ -112,9 +102,9 @@ export function VideoTable({ videos }: { videos: Video[] }) {
                 } ${col.key === "name" ? "pl-4" : ""}`}
               >
                 <button
-                  onClick={() => toggleSort(col.key)}
+                  onClick={() => onSortChange(col.key)}
                   className={`inline-flex items-center gap-1.5 transition-colors hover:text-secondary ${
-                    sortKey === col.key ? "text-secondary" : ""
+                    sortBy === col.key ? "text-secondary" : ""
                   } ${col.align === "right" ? "flex-row-reverse" : ""}`}
                 >
                   {col.label}
@@ -139,7 +129,7 @@ export function VideoTable({ videos }: { videos: Video[] }) {
           </tr>
         </thead>
         <tbody>
-          {sorted.map((v) => (
+          {visibleVideos.map((v) => (
             <tr
               key={v.id}
               className="group relative border-b border-white/[0.03] transition-all duration-200 ease-out hover:-translate-y-[1px] hover:bg-bg-hover hover:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_8px_24px_rgba(0,0,0,0.18)]"

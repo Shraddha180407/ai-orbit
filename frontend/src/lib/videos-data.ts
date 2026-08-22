@@ -20,6 +20,9 @@ async function fetchJson<T>(path: string): Promise<T | null> {
   }
 }
 
+export type VideoSortBy = "name" | "duration" | "posted" | "views";
+export type VideoSortDir = "asc" | "desc";
+
 export async function getTrendingVideos(limit = 4): Promise<Video[]> {
   return (await fetchJson<Video[]>(`/api/videos?sort=trending&limit=${limit}`)) ?? [];
 }
@@ -32,9 +35,20 @@ export async function getAllVideos(): Promise<Video[]> {
   return (await fetchJson<Video[]>(`/api/videos?sort=latest`)) ?? [];
 }
 
-export async function getVideosPage(limit: number, offset: number, category?: string): Promise<Video[]> {
+export async function getVideosPage(
+  limit: number,
+  offset: number,
+  category?: string,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): Promise<Video[]> {
+  // NOTE: `sort=latest` here is the existing feed-mode param (separate from
+  // sortBy/sortDir below, which is the per-column table sort — kept as a
+  // distinct param name specifically so it doesn't collide with this one).
   const params = new URLSearchParams({ sort: "latest", limit: String(limit), offset: String(offset) });
   if (category) params.set("category", category);
+  if (sortBy) params.set("sortBy", sortBy);
+  if (sortDir) params.set("sortDir", sortDir);
   return (await fetchJson<Video[]>(`/api/videos?${params.toString()}`)) ?? [];
 }
 

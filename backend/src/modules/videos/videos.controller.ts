@@ -11,6 +11,7 @@ import {
 import { logger } from "../../lib/logger.js";
 import {
   ListQuerySchema,
+  CountQuerySchema,
   SlugParamSchema,
   RelatedQuerySchema,
 } from "./videos.schemas.js";
@@ -29,7 +30,7 @@ function toApiShape(video: Video | null) {
   return { ...rest, author: { name: authorName, avatar: authorAvatar } };
 }
 
-// GET /api/videos?sort=latest|trending&limit=N
+// GET /api/videos?sort=latest|trending&limit=N&offset=N&category=slug&sortBy=name|duration|posted|views&sortDir=asc|desc
 export async function listVideos(c: Context) {
   const prisma = getPrisma(c);
   try {
@@ -38,8 +39,8 @@ export async function listVideos(c: Context) {
       return c.json({ error: "Invalid query parameters", details: result.error.format() }, 400);
     }
 
-    const { sort, limit, offset } = result.data;
-    const videos = await fetchVideos(prisma, sort, limit, offset);
+    const { sort, limit, offset, category, sortBy, sortDir } = result.data;
+    const videos = await fetchVideos(prisma, sort, limit, offset, category, sortBy, sortDir);
     return c.json(videos.map(toApiShape));
   } catch (error: unknown) {
     logger.error("Videos API Controller Error:", error);
@@ -49,11 +50,16 @@ export async function listVideos(c: Context) {
   }
 }
 
-// GET /api/videos/count
+// GET /api/videos/count?category=slug
 export async function getVideosCount(c: Context) {
   const prisma = getPrisma(c);
   try {
-    const total = await countVideos(prisma);
+    const result = CountQuerySchema.safeParse(c.req.query());
+    if (!result.success) {
+      return c.json({ error: "Invalid query parameters", details: result.error.format() }, 400);
+    }
+
+    const total = await countVideos(prisma, result.data.category);
     return c.json({ total });
   } catch (error: unknown) {
     logger.error("Videos API Controller Error:", error);

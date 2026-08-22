@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Video } from "@/lib/video-types";
-import { getVideosPage, getVideosCount } from "@/lib/videos-data";
+import {
+  getVideosPage,
+  getVideosCount,
+  type VideoSortBy,
+  type VideoSortDir,
+} from "@/lib/videos-data";
 import { VideoTable } from "./VideoTable";
 
 const VIDEO_CATEGORIES = [
@@ -22,7 +27,7 @@ const VIDEO_CATEGORIES = [
   { name: "Educational Content", slug: "educational-content" },
   { name: "Success Stories", slug: "success-stories" },
   { name: "AI Trends", slug: "ai-trends" },
-  { name: "Prompting", slug: "prompting" }
+  { name: "Prompting", slug: "prompting" },
 ];
 
 export function VideosPageClient({
@@ -38,50 +43,49 @@ export function VideosPageClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const [videos, setVideos] = useState<Video[]>(initialVideos);
-  const [activeCategory, setActiveCategory] = useState<string>(defaultCategory || searchParams?.get("category") || "");
+
+  const [activeCategory, setActiveCategory] = useState<string>(
+    defaultCategory || searchParams?.get("category") || ""
+  );
+
+  const [sortBy, setSortBy] = useState<VideoSortBy>("posted");
+  const [sortDir, setSortDir] = useState<VideoSortDir>("desc");
 
   useEffect(() => {
     if (defaultCategory !== undefined) {
       setActiveCategory(defaultCategory);
     }
   }, [defaultCategory]);
+
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  // Guards the very first render so we don't immediately re-fetch the
-  // category we were already given via SSR initialVideos/initialTotal.
+
   const didMountRef = useRef(false);
 
   const hasMore = videos.length < total;
 
-  const rawSort = searchParams?.get("sort") ?? "newest";
-
-  // NOTE: category filtering now happens server-side, via the category
-  // param passed to getVideosPage/getVideosCount below — this used to
-  // filter the in-memory `videos` slice client-side, which broke down for
-  // categories with few matches: with ~8000 total videos and 24 per page,
-  // the sentinel could trigger hundreds of sequential fetches before
-  // `hasMore` ever went false, looking like the page was stuck on
-  // "Loading more videos…" indefinitely.
-  const activeVideos = videos.slice().sort((a, b) => {
-    if (rawSort === "name-asc")  return a.title.localeCompare(b.title);
-    if (rawSort === "name-desc") return b.title.localeCompare(a.title);
-    if (rawSort === "oldest")    return new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
-    return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
-  });
-
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
+
     setLoading(true);
+
     try {
-      const next = await getVideosPage(pageSize, videos.length, activeCategory || undefined);
+      const next = await getVideosPage(
+        pageSize,
+        videos.length,
+        activeCategory || undefined,
+        sortBy,
+        sortDir
+      );
+
       if (next.length === 0) {
-        // Backend and our locally-tracked total disagree (e.g. rows were
-        // deleted since initial load) — stop trying rather than looping.
         setTotal(videos.length);
         return;
       }
+
       setVideos((prev) => {
         const seen = new Set(prev.map((v) => v.id));
         const deduped = next.filter((v) => !seen.has(v.id));
@@ -90,72 +94,119 @@ export function VideosPageClient({
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore, pageSize, videos.length, activeCategory]);
+  }, [
+    loading,
+    hasMore,
+    pageSize,
+    videos.length,
+    activeCategory,
+    sortBy,
+    sortDir,
+  ]);
 
-  // Re-fetch from the start whenever the category changes, instead of
-  // filtering whatever happens to already be loaded in memory.
   useEffect(() => {
     if (!didMountRef.current && initialVideos.length > 0) {
       didMountRef.current = true;
       return;
     }
+
     didMountRef.current = true;
+
     let cancelled = false;
+
     (async () => {
       setLoading(true);
       setVideos([]);
+
       try {
         const [firstPage, count] = await Promise.all([
-          getVideosPage(pageSize, 0, activeCategory || undefined),
+          getVideosPage(
+            pageSize,
+            0,
+            activeCategory || undefined,
+            sortBy,
+            sortDir
+          ),
           getVideosCount(activeCategory || undefined),
         ]);
+
         if (cancelled) return;
+
         setVideos(firstPage);
         setTotal(count);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     })();
+
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory, pageSize]);
+  }, [activeCategory, sortBy, sortDir, pageSize]);
 
   useEffect(() => {
     const node = sentinelRef.current;
     if (!node) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) loadMore();
+        if (entries[0]?.isIntersecting) {
+          loadMore();
+        }
       },
-      { rootMargin: "600px" } // start loading well before the user hits bottom
+      { rootMargin: "600px" }
     );
+
     observer.observe(node);
+
     return () => observer.disconnect();
   }, [loadMore]);
+
+  function handleSortChange(key: VideoSortBy) {
+    if (key === sortBy) {
+      setSortDir((dir) => (dir === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(key);
+      setSortDir("desc");
+    }
+  }
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-[1440px] flex flex-col gap-0.5">
-        {/* Top Sliding Category Row */}
         <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           {VIDEO_CATEGORIES.map((topic) => {
             const isSelected = activeCategory === topic.slug;
+
             return (
               <button
                 key={topic.name}
                 onClick={(e) => {
                   setActiveCategory(topic.slug);
+
+                  // Query-param navigation on the SAME /videos route — not
+                  // a path segment (/videos/<slug>), since there is no
+                  // app/videos/[category]/page.tsx route to match that. A
+                  // path-based push forced a full remount of this page,
+                  // which wiped the activeCategory state set just above,
+                  // right before it could take effect — that was the
+                  // sub-category filter bug (URL changed, list didn't).
+                  const params = new URLSearchParams(searchParams?.toString());
                   if (topic.slug) {
-                    router.push(`/videos/${topic.slug}`);
+                    params.set("category", topic.slug);
                   } else {
-                    router.push(`/videos`);
+                    params.delete("category");
                   }
+                  const qs = params.toString();
+                  router.push(`/videos${qs ? `?${qs}` : ""}`, { scroll: false });
+
                   e.currentTarget.scrollIntoView({
                     behavior: "smooth",
                     block: "nearest",
-                    inline: "center"
+                    inline: "center",
                   });
                 }}
                 className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
@@ -170,20 +221,35 @@ export function VideosPageClient({
           })}
         </div>
 
-        <VideoTable videos={activeVideos} />
+        <VideoTable
+          videos={videos}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          onSortChange={handleSortChange}
+        />
 
-        {!loading && activeVideos.length === 0 && (
+        {!loading && videos.length === 0 && (
           <div className="flex items-center justify-center py-16">
-            <span className="font-mono text-[12.5px] text-muted">No videos found in this category.</span>
+            <span className="font-mono text-[12.5px] text-muted">
+              No videos found in this category.
+            </span>
           </div>
         )}
 
-        <div ref={sentinelRef} className="flex items-center justify-center py-8">
+        <div
+          ref={sentinelRef}
+          className="flex items-center justify-center py-8"
+        >
           {loading && (
-            <span className="font-mono text-[12.5px] text-muted">Loading more videos…</span>
+            <span className="font-mono text-[12.5px] text-muted">
+              Loading more videos…
+            </span>
           )}
+
           {!loading && !hasMore && videos.length > 0 && (
-            <span className="font-mono text-[12.5px] text-muted">You've reached the end.</span>
+            <span className="font-mono text-[12.5px] text-muted">
+              You've reached the end.
+            </span>
           )}
         </div>
       </div>

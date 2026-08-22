@@ -588,12 +588,18 @@ model Video {
   tags            String[] @default([])
   accent          String
 
+  // false once confirmed private/deleted/members-only via YouTube's oEmbed
+  // check (see checkVideoAvailability in videos.services.ts). Defaults to
+  // true so existing rows aren't affected until the backfill script runs.
+  available       Boolean  @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   @@index([toolCategory])
   @@index([publishedAt])
   @@index([views])
+  @@index([available])
 }
 
 enum RobotCategory {
