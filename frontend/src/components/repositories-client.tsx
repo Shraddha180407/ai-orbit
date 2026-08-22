@@ -248,7 +248,7 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
 
   const handleSelectSubCategory = (slug: string | null) => {
     if (slug) {
-      router.push(`/repositories/${slug}`);
+      router.push(`/p/repositories/${slug}`);
     } else {
       router.push(`/repositories`);
     }
