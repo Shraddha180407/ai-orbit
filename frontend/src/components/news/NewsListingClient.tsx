@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import X from "lucide-react/dist/esm/icons/x";
 import Search from "lucide-react/dist/esm/icons/search";
 import { Plus } from "lucide-react";
@@ -11,14 +12,13 @@ import { ErrorState } from "./ErrorState";
 import { API_URL } from "@/lib/api";
 import { getClientId } from "@/lib/clientId";
 import { applySearch, sortArticles } from "@/lib/news/news";
-import type { NewsArticle, NewsCategory, NewsFilterChip, NewsSource, SortState } from "@/types/news";
+import type { NewsArticle, NewsCategory, NewsFilterChip, NewsSource } from "@/types/news";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/shadcn-button";
+import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
 
@@ -52,22 +52,80 @@ interface NewsListingClientProps {
   initialTopic?: string;
 }
 
+function matchesCategoryFilter(a: NewsArticle, filterKey: string): boolean {
+  if (!filterKey || filterKey === "all") return true;
+  if (filterKey === "trending") return a.hours <= 48;
+
+  const keyLower = filterKey.toLowerCase();
+  const keyWords = keyLower.split(/[-_\s]+/).filter(Boolean);
+
+  const catName = (a.category || "").toLowerCase();
+  const headline = (a.headline || "").toLowerCase();
+  const dek = (a.dek || a.aiSummary || "").toLowerCase();
+  const topicsStr = (a.topics || []).join(" ").toLowerCase();
+  const filtersStr = (a.filters || []).join(" ").toLowerCase();
+
+  const fullContent = `${catName} ${topicsStr} ${filtersStr} ${headline} ${dek}`;
+
+  switch (keyLower) {
+    case "ai-industry":
+      return fullContent.includes("industry") || fullContent.includes("market") || fullContent.includes("enterprise") || fullContent.includes("business") || fullContent.includes("company");
+    case "product-launches":
+      return fullContent.includes("product") || fullContent.includes("launch") || fullContent.includes("release") || fullContent.includes("announc") || fullContent.includes("introduce");
+    case "innovations":
+      return fullContent.includes("innovat") || fullContent.includes("new") || fullContent.includes("feature") || fullContent.includes("capability") || fullContent.includes("advance");
+    case "company-updates":
+      return fullContent.includes("company") || fullContent.includes("corporate") || fullContent.includes("google") || fullContent.includes("openai") || fullContent.includes("microsoft") || fullContent.includes("meta") || fullContent.includes("anthropic");
+    case "open-source":
+      return fullContent.includes("open source") || fullContent.includes("open-source") || fullContent.includes("github") || fullContent.includes("weights") || fullContent.includes("hugging");
+    case "regulations":
+      return fullContent.includes("regulation") || fullContent.includes("policy") || fullContent.includes("law") || fullContent.includes("gov") || fullContent.includes("legal") || fullContent.includes("safety") || fullContent.includes("eu");
+    case "interviews":
+      return fullContent.includes("interview") || fullContent.includes("podcast") || fullContent.includes("talk") || fullContent.includes("q&a") || fullContent.includes("ceo") || fullContent.includes("founder");
+    case "market-trends":
+      return fullContent.includes("trend") || fullContent.includes("market") || fullContent.includes("report") || fullContent.includes("growth") || fullContent.includes("investment") || fullContent.includes("funding");
+    case "breakthroughs":
+      return fullContent.includes("breakthrough") || fullContent.includes("benchmark") || fullContent.includes("state-of-the-art") || fullContent.includes("sota") || fullContent.includes("research") || fullContent.includes("paper");
+    case "security":
+      return fullContent.includes("security") || fullContent.includes("vulnerability") || fullContent.includes("privacy") || fullContent.includes("hack") || fullContent.includes("safety") || fullContent.includes("risk");
+    case "agents":
+      return fullContent.includes("agent") || fullContent.includes("autonomous") || fullContent.includes("action") || fullContent.includes("workflow");
+    case "llms":
+      return fullContent.includes("llm") || fullContent.includes("language model") || fullContent.includes("gpt") || fullContent.includes("claude") || fullContent.includes("gemini") || fullContent.includes("llama");
+    case "technology":
+      return fullContent.includes("tech") || fullContent.includes("model") || fullContent.includes("compute") || fullContent.includes("chip") || fullContent.includes("gpu") || fullContent.includes("infra");
+    default:
+      return keyWords.some((w) => fullContent.includes(w));
+  }
+}
+
 export function NewsListingClient({ category, initialTopic }: NewsListingClientProps) {
   const { user } = useUser();
   const isAdmin = user?.role === 'ADMIN';
-  const router = useRouter();
+
+  const searchParams = useSearchParams();
+  const sortParam = searchParams.get("sort") || "newest";
+  const urlFilterParam = searchParams.get("filter") || searchParams.get("category");
 
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [selectedTopics, setSelectedTopics] = useState<string[]>(initialTopic ? [initialTopic] : []);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [sort] = useState<SortState>({ key: "date", dir: "desc" });
+
+  // Update filter state when URL parameter changes
+  useEffect(() => {
+    if (urlFilterParam) {
+      setFilter(urlFilterParam);
+    }
+  }, [urlFilterParam]);
 
   useEffect(() => {
-    if (category !== undefined) {
-      setFilter(category || "all");
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlSource = params.get("source");
+      if (urlSource) setSelectedSources([urlSource]);
     }
-  }, [category]);
+  }, []);
 
   // Admin Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,7 +135,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
 
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [sources, setSources] = useState<Record<string, NewsSource>>({});
-  const [categories, setCategories] = useState<NewsCategory[]>([]);
+  const [, setCategories] = useState<NewsCategory[]>([]);
 
   const [mode, setMode] = useState<"paginated" | "full">("paginated");
   const [nextPage, setNextPage] = useState(1);
@@ -165,17 +223,18 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   const toggleTopic = (v: string) => setSelectedTopics((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
   const toggleSource = (v: string) => setSelectedSources((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
 
-  // Fix "All" button behavior so it resets all filters 100% reliably
+  // In-page subcategory filter selection with full dataset loading
   const handleSelectFilter = (fKey: string) => {
     if (fKey === "all") {
       setFilter("all");
       setSelectedTopics([]);
       setSelectedSources([]);
       setQuery("");
-      router.push(`/news`);
+      if (typeof window !== "undefined") window.history.pushState(null, "", "/news");
     } else {
       setFilter(fKey);
-      router.push(`/news/${fKey}`);
+      if (mode === "paginated") loadFull();
+      if (typeof window !== "undefined") window.history.pushState(null, "", `/news?filter=${encodeURIComponent(fKey)}`);
     }
   };
 
@@ -222,64 +281,69 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     setIsModalOpen(true);
   };
 
-  // Robust, fuzzy category & subcategory filter matching
+  // Comprehensive subcategory filtering
   let list = articles.slice();
   if (category) list = list.filter((a) => a.category === category || (a.filters && a.filters.includes(category)));
   
-  if (filter === "trending") {
-    list = list.filter((a) => a.hours <= 48);
-  } else if (filter !== "all") {
-    const fKey = filter.toLowerCase().replace(/[-_]/g, " ");
-    const fSlug = filter.toLowerCase().replace(/\s+/g, "-");
-    list = list.filter((a) => {
-      const catName = (a.category || "").toLowerCase();
-      const matchCat = catName.includes(fKey) || catName.includes(fSlug);
-      const matchTopics = (a.topics || []).some((t) => {
-        const tLow = t.toLowerCase().replace(/[-_]/g, " ");
-        return tLow.includes(fKey) || fKey.includes(tLow) || t.toLowerCase().includes(fSlug);
-      });
-      const matchFilters = (a.filters || []).some((f) => f.toLowerCase().includes(fSlug) || f.toLowerCase().includes(fKey));
-      return matchCat || matchTopics || matchFilters;
-    });
+  if (filter !== "all") {
+    list = list.filter((a) => matchesCategoryFilter(a, filter));
   }
 
   list = applySearch(list, query, sources);
   if (selectedTopics.length) list = list.filter((a) => selectedTopics.some((t) => (a.topics || []).includes(t)));
   if (selectedSources.length) list = list.filter((a) => selectedSources.includes(a.source));
-  list = sortArticles(list, sort, sources);
+  
+  // Sort articles based on reactive top-right SortDropdown parameter (sortParam)
+  list = sortArticles(list, sortParam, sources);
 
   const emptyKind: "search" | "empty" = query || selectedTopics.length || selectedSources.length ? "search" : "empty";
 
-  // Build filter pills list dynamically combining default & API categories
   const activeChipsList = DEFAULT_NEWS_CATEGORIES;
+
+  if (isLoadingInitial) {
+    return (
+      <main className="w-full px-2 sm:px-4 py-4 flex-1 flex flex-col">
+        <LoadingSkeleton />
+      </main>
+    );
+  }
+
+  if (initialError) {
+    return (
+      <main className="w-full px-2 sm:px-4 py-4 flex-1 flex flex-col">
+        <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
+      </main>
+    );
+  }
 
   return (
     <>
       <main className="w-full px-2 sm:px-4 py-3 flex-1 flex flex-col">
-      {/* Toolbar & Search & Filter Chips */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1">
-          {activeChipsList.map((chip) => {
-            const isSelected = filter === chip.key;
-            return (
-              <button
-                key={chip.key}
-                type="button"
-                onClick={() => handleSelectFilter(chip.key)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-[12px] font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer",
-                  isSelected
-                    ? "bg-white text-black border-transparent font-bold shadow-sm"
-                    : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#F5A623]/50 hover:text-white"
-                )}
-              >
-                <span>{chip.label}</span>
-              </button>
+        {/* Toolbar & Search & Subcategory Filter Chips */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1">
+            {activeChipsList.map((chip) => {
+              const isSelected = filter === chip.key;
+              return (
+                <button
+                  key={chip.key}
+                  type="button"
+                  onClick={() => handleSelectFilter(chip.key)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-[12px] font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer",
+                    isSelected
+                      ? "bg-white text-black border-transparent font-bold shadow-sm"
+                      : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#F5A623]/50 hover:text-white"
+                  )}
+                >
+                  <span>{chip.label}</span>
+                </button>
               );
             })}
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {/* Search Input */}
             <div className="relative w-full max-w-[280px]">
               <div className="relative w-full rounded-lg border border-[#232326]/80 bg-[#111113] h-[34px] flex items-center px-3 focus-within:border-[#F5A623] focus-within:ring-2 focus-within:ring-[#F5A623]/20 transition-all duration-150">
                 <Search size={13} className="mr-2 text-[#71717A] shrink-0" />
@@ -333,35 +397,25 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
           </div>
         )}
 
-        {isLoadingInitial ? (
-          <div className="w-full flex-1 flex flex-col">
-            <LoadingSkeleton />
-          </div>
-        ) : initialError ? (
-          <div className="w-full flex-1 flex flex-col">
-            <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
-          </div>
-        ) : (
-          /* News Table List matching Video Table UI */
-          <div className="space-y-4 w-full">
-            <NewsList articles={list} sources={sources} emptyKind={emptyKind} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
+        {/* News Table List */}
+        <div className="space-y-4 w-full">
+          <NewsList articles={list} sources={sources} emptyKind={emptyKind} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
 
-            {mode === "paginated" && list.length > 0 && (
-              <div ref={sentinelRef} className="flex items-center justify-center py-6">
-                {isLoadingMore && <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />}
-                {!isLoadingMore && loadMoreError && (
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-[#71717A]">Couldn&apos;t load more stories.</span>
-                    <button onClick={() => loadPage(nextPage, true)} className="text-sm font-semibold text-white hover:underline">
-                      Retry
-                    </button>
-                  </div>
-                )}
-                {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-[#71717A]">You&apos;re all caught up</span>}
-              </div>
-            )}
-          </div>
-        )}
+          {mode === "paginated" && list.length > 0 && (
+            <div ref={sentinelRef} className="flex items-center justify-center py-6">
+              {isLoadingMore && <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />}
+              {!isLoadingMore && loadMoreError && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-[#71717A]">Couldn&apos;t load more stories.</span>
+                  <button onClick={() => loadPage(nextPage, true)} className="text-sm font-semibold text-white hover:underline">
+                    Retry
+                  </button>
+                </div>
+              )}
+              {!isLoadingMore && !loadMoreError && !hasMore && <span className="text-sm text-[#71717A]">You&apos;re all caught up</span>}
+            </div>
+          )}
+        </div>
       </main>
 
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? 'Edit News' : 'Add News'} footer={
