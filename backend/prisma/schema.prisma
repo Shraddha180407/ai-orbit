@@ -209,14 +209,27 @@ model Tool {
   apiDocsUrl String?
 
   performanceScore Float?
+  longDescription String?
+  videoUrl        String?
+  releasedBy      String?
+  country         String?
+  launchDate      String?
+  views           Int              @default(0)
+  useCases        String[]         @default([])
+  pricingTiers    Json?
+  verdict         String?
+  linkedInUrl     String?
+  twitterUrl      String?
+  githubUrl       String?
+  alternativeIds  String[]         @default([])
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
 
   categories     ToolCategory[]
   toolCategories ToolCategoryEnum[] @default([])
-  tags         ToolTag[]
-  integrations ToolIntegration[]
+  tags           ToolTag[]
+  integrations   ToolIntegration[]
 
   reviews   Review[]
   bookmarks Bookmark[]
@@ -227,8 +240,6 @@ model Tool {
   alternativeOf Tool[]     @relation("ToolAlternatives")
   ttasks        TaskTool[]
 
-  // Denormalized for fast listing-page sort/display. Recomputed by the
-  // reviews API on every create/update/delete — see lib/reviews.ts.
   avgRating   Float @default(0)
   reviewCount Int   @default(0)
 
@@ -249,7 +260,6 @@ model Tool {
   @@index([releaseDate])
   @@index([isTrending])
   @@index([verified])
-
   @@index([creativityCategories])
 }
 

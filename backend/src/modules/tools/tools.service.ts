@@ -7,9 +7,9 @@ type ToolCard = {
   logoUrl: string | null;
   description: string;
   pricingModel: PricingModel;
-  pricingAmount: Prisma.Decimal | null;
+  pricingAmount: string | null;
   billingFrequency: string | null;
-  avgRating: number;
+  avgRating: number | null;
   createdAt: Date;
   releaseDate: Date | null;
   isOpenSource: boolean;
@@ -161,9 +161,26 @@ export class ToolsService {
         apiDocsUrl: true,
         performanceScore: true,
         createdAt: true,
+
+        // --- NEW FIELDS SELECTED FOR API ---
+        longDescription: true,
+        videoUrl: true,
+        releasedBy: true,
+        country: true,
+        launchDate: true,
+        views: true,
+        useCases: true,
+        pricingTiers: true,
+        verdict: true,
+        linkedInUrl: true,
+        twitterUrl: true,
+        githubUrl: true,
+        alternativeIds: true,
+
         company: { select: { slug: true, name: true, logoUrl: true } },
         categories: { select: { category: { select: { slug: true, name: true } } } },
         tags: { select: { tag: { select: { slug: true, name: true } } } },
+        ttasks: { select: { task: { select: { slug: true, title: true } } } },
         integrations: { select: { integration: { select: { slug: true, name: true, logoUrl: true } } } },
         _count: { select: { reviews: true, bookmarks: true } },
       },
@@ -206,13 +223,17 @@ export class ToolsService {
         ttasks: { select: { task: { select: { slug: true, title: true } } } },
         _count: { select: { reviews: true, bookmarks: true } },
         company: { select: { slug: true, name: true } }
-    };
+      };
 
       const curated = alternativeIds.length
         ? await this.prisma.tool.findMany({ where: { id: { in: alternativeIds } }, select: cardSelect })
         : [];
 
-      similarTools = curated;
+      similarTools = curated.map((t) => ({
+        ...t,
+        pricingAmount: t.pricingAmount?.toString() ?? null,
+        avgRating: t.avgRating > 0 ? t.avgRating : null,
+      }));
 
       if (similarTools.length < 4 && categoryIds.length > 0) {
         const excludeIds = [tool.id, ...similarTools.map((t) => t.id)];
@@ -225,7 +246,14 @@ export class ToolsService {
           take: 4 - similarTools.length,
           select: cardSelect,
         });
-        similarTools = [...similarTools, ...fillers];
+        similarTools = [
+          ...similarTools,
+          ...fillers.map((t) => ({
+            ...t,
+            pricingAmount: t.pricingAmount?.toString() ?? null,
+            avgRating: t.avgRating > 0 ? t.avgRating : null,
+          }))
+        ];
       }
     }
 
@@ -257,11 +285,7 @@ export class ToolsService {
         pricingAmount: tool.pricingAmount?.toString() ?? null,
         avgRating: tool.avgRating > 0 ? tool.avgRating : null,
       },
-      similarTools: similarTools.map((t) => ({
-        ...t,
-        pricingAmount: t.pricingAmount?.toString() ?? null,
-        avgRating: t.avgRating > 0 ? t.avgRating : null,
-      })),
+      similarTools,
       reviews: reviews.map((r) => ({
         ...r,
         createdAt: r.createdAt.toISOString(),
