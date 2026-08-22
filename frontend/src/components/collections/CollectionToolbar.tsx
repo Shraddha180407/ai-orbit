@@ -3,7 +3,7 @@
 import React from "react";
 
 interface Props {
-  viewMode: "list";
+  viewMode: "list" | "grid";
   setViewMode: (val: "list" | "grid") => void;
   hasActiveFilters: boolean;
   clearAllFilters: () => void;

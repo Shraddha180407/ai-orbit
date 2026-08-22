@@ -2,6 +2,7 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { fetchAllDevices, fetchDeviceById } from "@/lib/api";
 import { Device } from "@/lib/types";
@@ -64,14 +65,11 @@ function mergeDevice(api: Device | null, slug: string): DeviceData | null {
 export function DeviceDetailClient() {
   const params = useParams();
   const slug = params.slug as string;
-  const [device, setDevice] = useState<DeviceData | null>(null);
-  const [similar, setSimilar] = useState<DeviceData[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
+  const { data: deviceDetailData, isLoading: loading } = useQuery({
+    queryKey: ["device-detail", slug],
+    queryFn: async () => {
       try {
-        // Try API first
         let apiData: Device | null = null;
         try {
           apiData = await fetchDeviceById(slug);
@@ -84,99 +82,58 @@ export function DeviceDetailClient() {
         }
 
         const merged = mergeDevice(apiData, slug);
-        setDevice(merged);
+        if (!merged) return { device: null, similar: [] };
 
-        if (merged) {
-          // Build similar from API data first, fall back to dummy
-          const allApiDevices = await fetchAllDevices().catch(() => []);
-          if (allApiDevices && allApiDevices.length > 0) {
-            const apiSimilar = allApiDevices
-              .filter((d: Device) => d.id !== merged.id && d.category === merged.category)
-              .slice(0, 4)
-              .map((api: Device) => {
-                const dummy = DEVICES_DATA.find((d) => d.id === api.id || d.slug === api.slug);
-                const mainTask = api.mainTask || dummy?.mainTask || "Device";
-                const slug = dummy?.slug || api.slug || api.id;
-                const manufacturer = api.manufacturer || dummy?.manufacturer || "—";
-                return {
-                  id: api.id,
-                  slug,
-                  name: api.name,
-                  manufacturer,
-                  manufacturerSlug: dummy?.manufacturerSlug || "",
-                  category: api.category || dummy?.category || "Other",
-                  availability: api.availability || dummy?.availability || "Announced",
-                  price: api.price || dummy?.price || null,
-                  year: api.year || dummy?.year || "—",
-                  month: dummy?.month || api.month || api.year || "—",
-                  description: api.description || dummy?.description || "",
-                  imageUrl: api.imageUrl || dummy?.imageUrl || "",
-                  manufacturerLogoUrl: dummy?.manufacturerLogoUrl || `https://www.google.com/s2/favicons?sz=64&domain=${manufacturer.toLowerCase().replace(/\s+/g, "")}.com`,
-                  mainTask,
-                  mainTaskColor: getMainTaskColor(mainTask),
-                  formFactor: api.formFactor || dummy?.formFactor || null,
-                  country: api.country || dummy?.country || null,
-                  ram: api.ram || dummy?.ram || null,
-                  aiFeatures: api.aiFeatures || dummy?.aiFeatures || [],
-                  primaryUseCases: api.primaryUseCases || dummy?.primaryUseCases || [],
-                  additionalInfo: api.additionalInfo || dummy?.additionalInfo || null,
-                  buyUrl: api.buyUrl || dummy?.buyUrl || null,
-                } as DeviceData;
-              });
-            // If not enough same-category devices, fill with other API devices
-            if (apiSimilar.length < 4) {
-              const others = allApiDevices
-                .filter((d: Device) => d.id !== merged.id && d.category !== merged.category)
-                .slice(0, 4 - apiSimilar.length)
-                .map((api: Device) => {
-                  const dummy = DEVICES_DATA.find((d) => d.id === api.id || d.slug === api.slug);
-                  const mainTask = api.mainTask || dummy?.mainTask || "Device";
-                  const slug = dummy?.slug || api.slug || api.id;
-                  const manufacturer = api.manufacturer || dummy?.manufacturer || "—";
-                  return {
-                    id: api.id,
-                    slug,
-                    name: api.name,
-                    manufacturer,
-                    manufacturerSlug: dummy?.manufacturerSlug || "",
-                    category: api.category || dummy?.category || "Other",
-                    availability: api.availability || dummy?.availability || "Announced",
-                    price: api.price || dummy?.price || null,
-                    year: api.year || dummy?.year || "—",
-                    month: dummy?.month || api.month || api.year || "—",
-                    description: api.description || dummy?.description || "",
-                    imageUrl: api.imageUrl || dummy?.imageUrl || "",
-                    manufacturerLogoUrl: dummy?.manufacturerLogoUrl || `https://www.google.com/s2/favicons?sz=64&domain=${manufacturer.toLowerCase().replace(/\s+/g, "")}.com`,
-                    mainTask,
-                    mainTaskColor: getMainTaskColor(mainTask),
-                    formFactor: api.formFactor || dummy?.formFactor || null,
-                    country: api.country || dummy?.country || null,
-                    ram: api.ram || dummy?.ram || null,
-                    aiFeatures: api.aiFeatures || dummy?.aiFeatures || [],
-                    primaryUseCases: api.primaryUseCases || dummy?.primaryUseCases || [],
-                    additionalInfo: api.additionalInfo || dummy?.additionalInfo || null,
-                    buyUrl: api.buyUrl || dummy?.buyUrl || null,
-                  } as DeviceData;
-                });
-              setSimilar([...apiSimilar, ...others]);
-            } else {
-              setSimilar(apiSimilar);
-            }
-          } else {
-            setSimilar(getSimilarDevices(merged));
-          }
+        const allApiDevices = await fetchAllDevices().catch(() => []);
+        let similarDevices: DeviceData[] = [];
+        if (allApiDevices && allApiDevices.length > 0) {
+          similarDevices = allApiDevices
+            .filter((d: Device) => d.id !== merged.id && d.category === merged.category)
+            .slice(0, 4)
+            .map((api: Device) => {
+              const dummy = DEVICES_DATA.find((d) => d.id === api.id || d.slug === api.slug);
+              const mainTask = api.mainTask || dummy?.mainTask || "Device";
+              const dSlug = dummy?.slug || api.slug || api.id;
+              const manufacturer = api.manufacturer || dummy?.manufacturer || "—";
+              return {
+                id: api.id,
+                slug: dSlug,
+                name: api.name,
+                manufacturer,
+                manufacturerSlug: dummy?.manufacturerSlug || "",
+                category: api.category || dummy?.category || "Other",
+                availability: api.availability || dummy?.availability || "Announced",
+                price: api.price || dummy?.price || null,
+                year: api.year || dummy?.year || "—",
+                month: dummy?.month || api.month || api.year || "—",
+                description: api.description || dummy?.description || "",
+                imageUrl: api.imageUrl || dummy?.imageUrl || "",
+                manufacturerLogoUrl: dummy?.manufacturerLogoUrl || getFaviconUrl(manufacturer, dSlug),
+                mainTask,
+                mainTaskColor: getMainTaskColor(mainTask),
+                formFactor: api.formFactor || dummy?.formFactor || null,
+                country: api.country || dummy?.country || null,
+                ram: api.ram || dummy?.ram || null,
+                aiFeatures: api.aiFeatures || dummy?.aiFeatures || [],
+                primaryUseCases: api.primaryUseCases || dummy?.primaryUseCases || [],
+                additionalInfo: api.additionalInfo || dummy?.additionalInfo || null,
+                buyUrl: api.buyUrl || dummy?.buyUrl || null,
+              } as DeviceData;
+            });
+        } else {
+          similarDevices = getSimilarDevices(merged);
         }
-      } catch (e) {
-        // fallback to dummy only
+        return { device: merged, similar: similarDevices };
+      } catch {
         const dummy = getDeviceBySlug(slug);
-        setDevice(dummy);
-        if (dummy) setSimilar(getSimilarDevices(dummy));
-      } finally {
-        setLoading(false);
+        return { device: dummy, similar: dummy ? getSimilarDevices(dummy) : [] };
       }
-    }
-    load();
-  }, [slug]);
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const device = deviceDetailData?.device || null;
+  const similar = deviceDetailData?.similar || [];
 
   if (loading) {
     return (

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { ToolListView } from "@/components/ToolListView";
 import { API_URL } from "@/lib/api";
@@ -153,6 +153,7 @@ export function ToolsClient({
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isPlaceholderData,
   } = useInfiniteQuery({
     queryKey,
     queryFn: async ({ pageParam = 1 }) => {
@@ -166,15 +167,21 @@ export function ToolsClient({
         ? `${API_URL}/api/v1/tools/category/${activeCategory}`
         : `${API_URL}/api/v1/tools`;
 
-      const res = await fetch(`${endpoint}?${query.toString()}`);
-      if (!res.ok) return { tools: [], totalPages: 1, page: pageParam };
-      return res.json();
+      try {
+        const res = await fetch(`${endpoint}?${query.toString()}`);
+        if (!res.ok) return { tools: [], totalPages: 1, page: pageParam };
+        return await res.json();
+      } catch {
+        return { tools: [], totalPages: 1, page: pageParam };
+      }
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage: any) => {
-      if (lastPage.page < lastPage.totalPages) return lastPage.page + 1;
+      if (lastPage?.page < lastPage?.totalPages) return lastPage.page + 1;
       return undefined;
     },
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
   });
 
   // Flatten all fetched pages into a single list
@@ -201,7 +208,7 @@ export function ToolsClient({
 
   return (
     <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
-      <div className="mx-auto w-full max-w-[1600px] space-y-3">
+      <div className={`mx-auto w-full max-w-[1600px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
         {/* Top Sliding Category Row */}
         <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           {categories.map((topic) => {

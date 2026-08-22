@@ -152,8 +152,9 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     setLoadMoreError(false);
     try {
       const clientId = getClientId();
-      const res = await fetch(`${API_URL}/api/news${clientId ? `?clientId=${encodeURIComponent(clientId)}` : ""}`);
-      if (!res.ok) throw new Error(String(res.status));
+      const url = `${API_URL}/api/news${clientId ? `?clientId=${encodeURIComponent(clientId)}` : ""}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch news");
       const json: NewsListingResponse = await res.json();
       setArticles(json.articles || []);
       setSources(json.sources || {});
@@ -176,8 +177,9 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     }
     try {
       const clientId = getClientId();
-      const res = await fetch(`${API_URL}/api/news?page=${page}&perPage=${PAGE_SIZE}${clientId ? `&clientId=${encodeURIComponent(clientId)}` : ""}`);
-      if (!res.ok) throw new Error(String(res.status));
+      const url = `${API_URL}/api/news?page=${page}&perPage=${PAGE_SIZE}${clientId ? `&clientId=${encodeURIComponent(clientId)}` : ""}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch news");
       const json: NewsListingResponse = await res.json();
       setArticles((prev) => (append ? [...prev, ...json.articles] : json.articles));
       setSources(json.sources || {});

@@ -12,6 +12,7 @@ import {
   TrendingUp, Code2, Github, Twitter, Linkedin, Share2,
 } from 'lucide-react';
 
+import { useQuery } from "@tanstack/react-query";
 import { API_URL } from "@/lib/api";
 import type { ToolDetailData, ToolCardData, ReviewData } from "@/lib/types";
 import type { ToolDetailDataExtended, PricingTier } from "@/data/tools";
@@ -236,75 +237,70 @@ export function ToolDetailClient() {
   const params = useParams();
   const slug = params.slug as string;
 
-  const [tool, setTool] = useState<ToolDetailDataExtended | null>(null);
-  const [similarTools, setSimilarTools] = useState<ToolCardData[]>([]);
-  const [reviews, setReviews] = useState<ReviewData[]>([]);
   const [bookmarked, setBookmarked] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [notFoundState, setNotFoundState] = useState(false);
   const [upvoted, setUpvoted] = useState(false);
   const [upvoteCount, setUpvoteCount] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "pricing" | "reviews">("overview");
 
-  useEffect(() => {
-    async function fetchTool() {
-      setIsLoading(true);
-      try {
-        // Try sample data first (for design preview)
-        const sample = getSampleTool(slug);
-        if (sample) {
-          setTool(sample);
-          setSimilarTools(getSampleSimilarTools(slug));
-          setUpvoteCount(sample.upvoteCount);
-          setIsLoading(false);
-          return;
-        }
+  const { data: detailData, isLoading, isError } = useQuery({
+    queryKey: ["tool-detail", slug],
+    queryFn: async () => {
+      const sample = getSampleTool(slug);
+      if (sample) {
+        return {
+          tool: sample,
+          similarTools: getSampleSimilarTools(slug),
+          reviews: [],
+          bookmarked: false,
+        };
+      }
+      const res = await fetch(`${API_URL}/api/v1/tools/${slug}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Tool not found");
+      return await res.json();
+    },
+    staleTime: 10 * 60 * 1000,
+  });
 
-        // Fall back to API
-        const res = await fetch(`${API_URL}/api/v1/tools/${slug}`, { credentials: "include" });
-        if (!res.ok) { setNotFoundState(true); return; }
-        const data = await res.json();
-        // Merge API data with extended type defaults
-        setTool({
-          ...data.tool,
-          longDescription: data.tool.longDescription ?? null,
-          videoUrl: data.tool.videoUrl ?? null,
-          websiteScreenshotUrl: data.tool.websiteScreenshotUrl ?? null,
-          releasedBy: data.tool.releasedBy ?? data.tool.company?.name ?? null,
-          country: data.tool.country ?? null,
-          views: data.tool.views ?? 0,
-          saves: data.tool._count?.bookmarks ?? 0,
-          useCases: data.tool.useCases ?? [],
-          pricingTiers: data.tool.pricingTiers ?? [],
-          verdict: data.tool.verdict ?? null,
-          linkedInUrl: data.tool.linkedInUrl ?? null,
-          twitterUrl: data.tool.twitterUrl ?? null,
-          githubUrl: data.tool.githubUrl ?? null,
-          launchDate: data.tool.launchDate ?? null,
-          alternativeIds: data.tool.alternativeIds ?? [],
-        });
-        setSimilarTools(data.similarTools || []);
-        setReviews(data.reviews || []);
-        setBookmarked(data.bookmarked || false);
-        setUpvoteCount(data.tool?.upvoteCount || 0);
-        const stored = localStorage.getItem(`upvoted-${data.tool?.id}`);
-        if (stored === "true") setUpvoted(true);
-        if (data.tool?.id) {
-          fetch(`${API_URL}/api/user/history`, {
-            method: "POST", credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ toolId: data.tool.id }),
-          }).catch(() => {});
-        }
-      } catch {
-        setNotFoundState(true);
-      } finally {
-        setIsLoading(false);
+  const toolRaw = detailData?.tool;
+  const tool: ToolDetailDataExtended | null = toolRaw ? {
+    ...toolRaw,
+    longDescription: toolRaw.longDescription ?? null,
+    videoUrl: toolRaw.videoUrl ?? null,
+    websiteScreenshotUrl: toolRaw.websiteScreenshotUrl ?? null,
+    releasedBy: toolRaw.releasedBy ?? toolRaw.company?.name ?? null,
+    country: toolRaw.country ?? null,
+    views: toolRaw.views ?? 0,
+    saves: toolRaw._count?.bookmarks ?? 0,
+    useCases: toolRaw.useCases ?? [],
+    pricingTiers: toolRaw.pricingTiers ?? [],
+    verdict: toolRaw.verdict ?? null,
+    linkedInUrl: toolRaw.linkedInUrl ?? null,
+    twitterUrl: toolRaw.twitterUrl ?? null,
+    githubUrl: toolRaw.githubUrl ?? null,
+    launchDate: toolRaw.launchDate ?? null,
+    alternativeIds: toolRaw.alternativeIds ?? [],
+  } : null;
+
+  const similarTools: ToolCardData[] = detailData?.similarTools || [];
+  const reviews: ReviewData[] = detailData?.reviews || [];
+  const notFoundState = isError || (!isLoading && !tool);
+
+  useEffect(() => {
+    if (detailData?.tool) {
+      setUpvoteCount(detailData.tool.upvoteCount || 0);
+      setBookmarked(detailData.bookmarked || false);
+      const stored = localStorage.getItem(`upvoted-${detailData.tool.id}`);
+      if (stored === "true") setUpvoted(true);
+      if (detailData.tool.id) {
+        fetch(`${API_URL}/api/user/history`, {
+          method: "POST", credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ toolId: detailData.tool.id }),
+        }).catch(() => {});
       }
     }
-    fetchTool();
-  }, [slug]);
+  }, [detailData]);
 
   useEffect(() => {
     if (tool) document.title = `${tool.name} — AI Tool Details, Pricing & Reviews | AI Orbit`;

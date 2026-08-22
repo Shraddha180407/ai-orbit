@@ -13,11 +13,13 @@ import Share2 from 'lucide-react/dist/esm/icons/share-2';
 import BadgeCheck from 'lucide-react/dist/esm/icons/badge-check';
 import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
 import GitCompare from 'lucide-react/dist/esm/icons/git-compare';
+import { useQueryClient } from "@tanstack/react-query";
 import { PricingBadge } from "@/components/PricingBadge";
 import { CategoryChip } from "@/components/CategoryChip";
 import type { ToolCardData } from "@/lib/types";
 import { useUser } from "@/hooks/use-user";
 import { toggleBookmark } from "@/lib/actions";
+import { API_URL } from "@/lib/api";
 
 const MAX_COMPARE = 2;
 
@@ -211,6 +213,7 @@ function ToolRow({
   onToggleCompare: (t: ListTool) => void;
   basePath?: string;
 }) {
+  const queryClient = useQueryClient();
   const accentColor = ROW_ACCENT_COLORS[index % ROW_ACCENT_COLORS.length];
   const isOpenSource = isTruthy(tool.isOpenSource, tool.openSource);
   const hasApi = isTruthy(tool.hasApi);
@@ -220,7 +223,18 @@ function ToolRow({
       href={`${basePath}/${tool.slug}`}
       role="listitem"
       className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
-      onMouseEnter={(e) => {
+      onPointerEnter={(e) => {
+        if (tool?.slug) {
+          queryClient.prefetchQuery({
+            queryKey: ["tool-detail", tool.slug],
+            queryFn: async () => {
+              const res = await fetch(`${API_URL}/api/v1/tools/${tool.slug}`, { credentials: "include" });
+              if (!res.ok) throw new Error("Tool not found");
+              return res.json();
+            },
+            staleTime: 10 * 60 * 1000,
+          }).catch(() => {});
+        }
         const el = e.currentTarget;
         el.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
         const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');

@@ -172,15 +172,30 @@ const DEVICE_TO_SLUG: Record<string, string> = {
   "Automotive AI Devices": "automotive-ai-devices",
 };
 
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+
 export function DevicesClient({ defaultCategory }: { defaultCategory?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [devices, setDevices] = useState<DeviceData[]>(DEVICES_DATA);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const { data: fetchedDevices, isLoading, isPlaceholderData } = useQuery<DeviceData[]>({
+    queryKey: ["devices"],
+    queryFn: async () => {
+      try {
+        const data = await fetchAllDevices({});
+        return mergeWithDummy(data || []);
+      } catch {
+        return DEVICES_DATA;
+      }
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const devices = fetchedDevices || DEVICES_DATA;
   const [currentPage, setCurrentPage] = useState(1);
   const loaderRef = useRef<HTMLDivElement>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
 
   const [nameSearch, setNameSearch] = useState("");
   const [nameInput, setNameInput] = useState("");
@@ -237,13 +252,6 @@ const [sortDir, setSortDir] = useState<"asc" | "desc">(() => {
       navigator.clipboard.writeText(url);
     }
   }
-
-  useEffect(() => {
-    fetchAllDevices({})
-      .then((data) => setDevices(mergeWithDummy(data || [])))
-      .catch(() => setDevices(DEVICES_DATA))
-      .finally(() => setIsLoading(false));
-  }, []);
 
 useEffect(() => {
   const s = searchParams.get("sort") ?? "newest";
@@ -473,7 +481,7 @@ useEffect(() => {
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-0.5 pb-8">
           {/*  Outer container matches ToolListView exactly */}
           <div className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
-              <div ref={dropdownRef} style={{ minWidth: '1150px' }} className="relative bg-[#000000]">
+              <div ref={dropdownRef} style={{ minWidth: '1150px' }} className={`relative bg-[#000000] transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
 
                 {/* Header row matches ToolListView exactly */}
                 <div className="border-b border-[#232326]/60 bg-[#131316]/40">

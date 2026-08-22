@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
 
 // Lucide icons
 import ArrowUp from 'lucide-react/dist/esm/icons/arrow-up';
@@ -102,12 +102,12 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
   };
 
   // Fetch categories from API
-  // Fetch categories from API
   const { data: categoriesData } = useQuery({
     queryKey: ["mcpCategories"],
     queryFn: fetchMCPCategories,
     retry: false,
     refetchOnWindowFocus: false,
+    staleTime: 10 * 60 * 1000,
   });
   const categories = categoriesData || [];
 
@@ -117,6 +117,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
     queryFn: () => fetchMCPSubCategories(activeCategory || undefined),
     retry: false,
     refetchOnWindowFocus: false,
+    staleTime: 10 * 60 * 1000,
   });
   const subCategories = subCategoriesData || [];
 
@@ -127,6 +128,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isPlaceholderData,
     error,
   } = useInfiniteQuery({
     queryKey: [
@@ -154,6 +156,8 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
     getNextPageParam: (lastPage) => {
       return lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined;
     },
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
   });
 
   const items = React.useMemo(() => {
@@ -318,7 +322,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
               </div>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10">
+            <div className={`overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
               <div className="flex flex-col">
                 {/* Column Headers */}
                 <div className="border-b border-[#232326]/60 bg-[#131316]/40">

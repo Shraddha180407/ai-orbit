@@ -45,6 +45,54 @@ export class CollectionsService {
   async listCollections(params: { category?: string; page?: number }) {
     const page = Math.max(1, params.page ?? 1);
 
+    // 1. Check if DB has explicit collections
+    let explicitCollections: any[] = [];
+    try {
+      explicitCollections = await this.prisma.collection.findMany({
+        orderBy: { updatedAt: 'desc' },
+        include: {
+          creator: { select: { name: true, image: true } },
+          categories: true,
+          subCategories: { include: { subCategory: true } },
+          tools: { include: { tool: { select: { id: true, name: true, logoUrl: true, slug: true } } } },
+        },
+      });
+    } catch {}
+
+    if (explicitCollections.length > 0) {
+      const allItems = explicitCollections.map((c) => ({
+        id: c.id,
+        slug: c.slug,
+        name: c.name,
+        title: c.name,
+        description: c.description || `Curated bundle of ${c.name} tools.`,
+        creatorName: c.creator?.name || 'AI Orbit Curators',
+        creatorAvatar: c.creator?.image || '',
+        creatorType: c.creatorType || 'EDITORIAL',
+        isFeatured: c.isFeatured,
+        isCurated: c.isCurated,
+        category: c.categories?.[0]?.categoryName || 'General',
+        categories: c.categories || [],
+        subCategories: c.subCategories || [],
+        toolCount: c.tools?.length || c.toolCount || 0,
+        updatedAt: (c.updatedAt || new Date()).toISOString(),
+        tools: c.tools?.map((t: any) => t.tool) || [],
+      }));
+
+      const filtered = params.category
+        ? allItems.filter((item) => item.category.toLowerCase() === params.category!.toLowerCase())
+        : allItems;
+
+      const total = filtered.length;
+      const items = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+      return {
+        items,
+        pagination: { total, page, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)) },
+      };
+    }
+
+    // 2. If no explicit collections in DB, build collections dynamically from all Categories
     const categories = await this.prisma.category.findMany({
       orderBy: { name: 'asc' },
       select: {
@@ -53,40 +101,45 @@ export class CollectionsService {
         name: true,
         tools: {
           orderBy: { tool: { avgRating: 'desc' } },
-          take: 4,
+          take: 8,
           select: {
-            tool: { select: { name: true, logoUrl: true, updatedAt: true } },
+            tool: { select: { id: true, slug: true, name: true, logoUrl: true, updatedAt: true } },
           },
         },
         _count: { select: { tools: true } },
       },
     });
 
-    const allItems = categories
-      .filter((cat) => cat._count.tools > 0)
-      .map((cat) => {
-        const previewTools = cat.tools.map((t) => ({
-          name: t.tool.name,
-          logoUrl: t.tool.logoUrl,
-        }));
-        const latestUpdate = cat.tools.reduce<Date | null>((max, t) => {
-          const updated = t.tool.updatedAt;
-          return !max || updated > max ? updated : max;
-        }, null);
+    const allItems = categories.map((cat) => {
+      const previewTools = cat.tools.map((t) => ({
+        id: t.tool.id,
+        slug: t.tool.slug,
+        name: t.tool.name,
+        logoUrl: t.tool.logoUrl,
+      }));
+      const latestUpdate = cat.tools.reduce<Date | null>((max, t) => {
+        const updated = t.tool.updatedAt;
+        return !max || updated > max ? updated : max;
+      }, null);
 
-        return {
-          id: cat.id,
-          slug: cat.slug,
-          title: `Best ${cat.name} Tools`,
-          description: `A curated bundle of the top ${cat.name.toLowerCase()} tools, ranked by rating.`,
-          curatedBy: 'AI Orbit Team',
-          category: cat.name,
-          featured: cat._count.tools >= FEATURED_THRESHOLD,
-          updatedAt: (latestUpdate ?? new Date()).toISOString(),
-          toolCount: cat._count.tools,
-          previewTools,
-        };
-      });
+      return {
+        id: cat.id,
+        slug: cat.slug,
+        name: `Best ${cat.name} Tools`,
+        title: `Best ${cat.name} Tools`,
+        description: `A curated bundle of top ${cat.name.toLowerCase()} tools and AI solutions.`,
+        creatorName: 'AI Orbit Curators',
+        creatorType: 'EDITORIAL' as const,
+        isFeatured: cat._count.tools >= FEATURED_THRESHOLD || true,
+        isCurated: true,
+        category: cat.name,
+        categories: [{ categoryName: cat.name }],
+        subCategories: [{ subCategory: { slug: cat.slug, name: cat.name } }],
+        updatedAt: (latestUpdate ?? new Date()).toISOString(),
+        toolCount: Math.max(cat._count.tools, previewTools.length, 1),
+        tools: previewTools,
+      };
+    });
 
     const categoryCounts: Record<string, number> = {};
     for (const item of allItems) {

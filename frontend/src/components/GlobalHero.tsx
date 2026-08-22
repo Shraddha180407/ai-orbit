@@ -54,15 +54,156 @@ const DIRECTORY_CARDS = [
   { name: "Repositories", href: "/repositories", description: "Trending open-source AI repositories on GitHub.", icon: GitBranch, color: "#22D3EE" },
   { name: "MCP", href: "/mcp", description: "Model Context Protocol servers and integrations.", icon: Plug, color: "#818CF8" },
   { name: "Collections", href: "/collections", description: "Curated bundles of tools grouped by use case.", icon: FolderHeart, color: "#34D399" },
-  { name: "Personal", href: "/personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
-  { name: "Creativity", href: "/creativity/image-generation", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
+  { name: "Personal", href: "/tasks/personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
+  { name: "Creativity", href: "/tasks/creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
+
+import { useQueryClient } from "@tanstack/react-query";
+import { API_URL, fetchAllCompanies, fetchAllRobots, fetchAllDevices, fetchModels, fetchRepositories, fetchMCPItems } from "@/lib/api";
+import { fetchTasks as fetchTasksApi } from "@/lib/tasks-api";
 
 export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string } = {}) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const q = searchParams.get("q") || "";
+  const hoverTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
+
+  const prefetchCategory = (cardName: string, href: string) => {
+    switch (cardName) {
+      case "New":
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ["home-tools", { q: undefined, category: undefined, pricing: undefined, sort: undefined }],
+          queryFn: async () => {
+            const res = await fetch(`${API_URL}/api/v1/tools?page=1&pageSize=50`);
+            return res.ok ? res.json() : { tools: [], totalPages: 1, page: 1 };
+          },
+          initialPageParam: 1,
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Tools":
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ["tools", { q: undefined, category: undefined, pricing: undefined, sort: undefined }],
+          queryFn: async () => {
+            const res = await fetch(`${API_URL}/api/v1/tools?page=1&pageSize=50`);
+            return res.ok ? res.json() : { tools: [], totalPages: 1, page: 1 };
+          },
+          initialPageParam: 1,
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Personal":
+      case "Creativity":
+        queryClient.prefetchQuery({
+          queryKey: ["tools", cardName.toLowerCase()],
+          queryFn: async () => {
+            const res = await fetch(`${API_URL}/api/v1/tools?limit=100`);
+            return res.ok ? res.json() : { tools: [] };
+          },
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Companies":
+        queryClient.prefetchQuery({ queryKey: ["companies"], queryFn: fetchAllCompanies, staleTime: 10 * 60 * 1000 }).catch(() => {});
+        break;
+      case "Robots":
+        queryClient.prefetchQuery({ queryKey: ["robots"], queryFn: fetchAllRobots, staleTime: 10 * 60 * 1000 }).catch(() => {});
+        break;
+      case "Devices":
+        queryClient.prefetchQuery({ queryKey: ["devices"], queryFn: () => fetchAllDevices({}), staleTime: 10 * 60 * 1000 }).catch(() => {});
+        break;
+      case "Models":
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ["models", { subCategory: null, sort: "newest" }],
+          queryFn: () => fetchModels({ page: 1, sort: "newest" as any }),
+          initialPageParam: 1,
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "News":
+        queryClient.prefetchQuery({
+          queryKey: ["news-list", "all", undefined],
+          queryFn: async () => {
+            const res = await fetch(`${API_URL}/api/news?page=1&perPage=50`);
+            return res.ok ? res.json() : null;
+          },
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Videos":
+        queryClient.prefetchQuery({
+          queryKey: ["videos", { sort: "latest", page: 1 }],
+          queryFn: async () => {
+            const res = await fetch(`${API_URL}/api/videos?sort=latest&limit=24&offset=0`);
+            return res.ok ? res.json() : [];
+          },
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Tasks":
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ["tasks", { sort: "newest", filter: "all", category: undefined }],
+          queryFn: () => fetchTasksApi({ sort: "newest", filter: "all", page: 1 }),
+          initialPageParam: 1,
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Repositories":
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ["repositories", { q: "", sort: "stars", order: "desc", topic: undefined, owner: undefined, subCategory: undefined }],
+          queryFn: () => fetchRepositories({ sort: "stars_desc", limit: 15 }),
+          initialPageParam: null,
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "MCP":
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ["mcpItems", { q: "", category: "all", subCategory: null, type: "SERVER" }],
+          queryFn: () => fetchMCPItems({ page: 1, limit: 20, type: "SERVER" }),
+          initialPageParam: 1,
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Collections":
+        queryClient.prefetchQuery({
+          queryKey: ["collections", "list"],
+          queryFn: async () => {
+            const res = await fetch(`${API_URL}/api/v1/collections?sort=recently_updated`);
+            const data = res.ok ? await res.json() : null;
+            return data?.items || [];
+          },
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+    }
+  };
+
+  const handlePointerEnter = (cardName: string, href: string) => {
+    try { router.prefetch(href); } catch {}
+    if (hoverTimeoutRef.current[cardName]) clearTimeout(hoverTimeoutRef.current[cardName]);
+    hoverTimeoutRef.current[cardName] = setTimeout(() => {
+      prefetchCategory(cardName, href);
+    }, 75);
+  };
+
+  const handlePointerLeave = (cardName: string) => {
+    if (hoverTimeoutRef.current[cardName]) {
+      clearTimeout(hoverTimeoutRef.current[cardName]);
+      delete hoverTimeoutRef.current[cardName];
+    }
+  };
+
+  // Idle background prefetch for top categories
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      prefetchCategory("Tools", "/tools");
+      prefetchCategory("Companies", "/companies");
+      prefetchCategory("Models", "/models");
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   const [searchOpen, setSearchOpen] = useState(false);
   const searchContainerRef = useRef<HTMLFormElement>(null);
@@ -239,37 +380,41 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
           <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none">
             {DIRECTORY_CARDS.map((card) => {
               const Icon = card.icon;
-              const isSelected = card.href === "/" 
-                ? pathname === "/" 
-                : card.name === "Tools"
-                  ? (pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp")))
+              const isSelected =
+                card.href === "/"
+                  ? pathname === "/"
+                  : card.name === "Tools"
+                  ? pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp") && !pathname?.startsWith("/tools/compare"))
+                  : card.name === "Tasks"
+                  ? pathname === "/tasks"
+                  : card.name === "Personal"
+                  ? pathname === "/tasks/personal" || pathname === "/personal"
                   : card.name === "Creativity"
-                    ? pathname?.startsWith("/creativity")
-                    : pathname?.startsWith(card.href);
+                  ? pathname === "/tasks/creativity" || pathname?.startsWith("/creativity")
+                  : pathname?.startsWith(card.href);
               const isNew = card.name === "New";
-              
+
               return (
                 <Link
                   key={card.name}
                   href={card.href}
-                  onClick={(e) => {
-                    if (["MCP", "Collections", "Personal", "Creativity"].includes(card.name)) {
-                      e.preventDefault();
-                      router.push(card.href);
-                    }
-                  }}
                   className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${
-                    (isNew && isSelected) ? 'border-transparent' : 'border-[#232326]/60 bg-[#0d0d10]'
+                    isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
                   }`}
-                  onMouseEnter={(e) => {
+                  onPointerEnter={(e) => {
+                    handlePointerEnter(card.name, card.href);
                     if (!(isNew && isSelected)) e.currentTarget.style.borderColor = card.color;
                     e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
                   }}
-                  onMouseLeave={(e) => {
+                  onPointerLeave={(e) => {
+                    handlePointerLeave(card.name);
                     if (!isSelected) {
                       e.currentTarget.style.borderColor = "";
                       e.currentTarget.style.boxShadow = "";
                     }
+                  }}
+                  onFocus={() => {
+                    handlePointerEnter(card.name, card.href);
                   }}
                   style={
                     isSelected && !isNew

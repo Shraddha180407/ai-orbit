@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { buildPageUrl } from "@/lib/utils";
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down';
 
 const SORT_OPTIONS = [
