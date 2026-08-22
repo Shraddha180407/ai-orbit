@@ -27,31 +27,28 @@ function formatValuation(val: string | number | null | undefined): string {
   return `$${num}`;
 }
 
+import { useQuery } from "@tanstack/react-query";
+
 export function CompanyDetailClient() {
   const params = useParams();
   const router = useRouter();
   const slug = params.slug as string;
   const { user } = useUser();
 
-  const [company, setCompany] = useState<Company | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: company = null, isLoading } = useQuery<Company | null>({
+    queryKey: ["company-detail", slug],
+    queryFn: () => fetchCompanyDetails(slug),
+    staleTime: 10 * 60 * 1000,
+  });
+
   const [activeTab, setActiveTab] = useState<'tools' | 'models'>('tools');
   const [isFollowing, setIsFollowing] = useState(false);
 
   useEffect(() => {
-    if (!slug) return;
-    setIsLoading(true);
-    fetchCompanyDetails(slug)
-      .then((data) => {
-        if (!data) {
-          router.replace('/companies');
-        } else {
-          setCompany(data);
-        }
-      })
-      .catch((e) => console.error(e))
-      .finally(() => setIsLoading(false));
-  }, [slug, router]);
+    if (!isLoading && !company && slug) {
+      router.replace('/companies');
+    }
+  }, [isLoading, company, slug, router]);
 
   const handleFollowClick = () => {
     if (!user) {
@@ -91,7 +88,7 @@ export function CompanyDetailClient() {
   const toolsCount = company.tools?.length || company._count?.tools || 0;
   const modelsCount = company.aiModels?.length || company._count?.aiModels || 0;
   const sectorName = company.sector || "Artificial Intelligence";
-  const typesList = company.type || [];
+  const typesList = (company.type || []) as string[];
   const isAiNative = typesList.length > 0 ? typesList.includes('AI_NATIVE') : null;
   const isProfitable = typesList.length > 0 ? typesList.includes('PROFITABLE') : null;
   const mostPopularTool = company.tools && company.tools.length > 0 ? company.tools[0] : null;

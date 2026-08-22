@@ -63,7 +63,10 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
 
   if (type === "news") {
     try {
-      const res = await fetch(`${SERVER_API_URL}/api/news/${encodeURIComponent(slug)}`);
+      const res = await fetch(`${SERVER_API_URL}/api/news/${encodeURIComponent(slug)}`, {
+        next: { revalidate: 300 },
+        signal: AbortSignal.timeout(1500),
+      } as RequestInit);
       if (!res.ok) return {};
       const { article } = (await res.json()) as { article?: { headline: string; aiSummary: string; dek: string } };
       if (!article) return {};
@@ -82,7 +85,10 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
 
   if (type === "tasks") {
     try {
-      const res = await fetch(`${SERVER_API_URL}/api/v1/tasks/${encodeURIComponent(slug)}`);
+      const res = await fetch(`${SERVER_API_URL}/api/v1/tasks/${encodeURIComponent(slug)}`, {
+        next: { revalidate: 300 },
+        signal: AbortSignal.timeout(1500),
+      } as RequestInit);
       if (!res.ok) return { title: "Task Not Found | AI Orbit" };
       const data = (await res.json()) as { task?: { title: string; description: string } };
       if (!data.task) return { title: "Task Not Found | AI Orbit" };

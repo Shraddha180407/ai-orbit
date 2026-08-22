@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
 import { Repository, RepositoryOwnerListItem, RepositorySubCategory } from "@/lib/types";
 import { fetchRepositories, fetchRepositoryOwners, fetchRepositorySubCategories } from "@/lib/api";
 
@@ -94,6 +94,7 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isPlaceholderData,
   } = useInfiniteQuery({
     queryKey: [
       "repositories",
@@ -120,7 +121,8 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
     },
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor || null,
-    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
   });
 
   const repos = React.useMemo(() => {
@@ -177,7 +179,8 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
   const companyCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
     owners.forEach((o) => {
-      counts[o.displayName] = o.repositoryCount;
+      const name = o.displayName || o.owner;
+      counts[name] = o.repositoryCount ?? o.count ?? 0;
     });
     return counts;
   }, [owners]);
@@ -185,7 +188,8 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
   const companySearchKeys = React.useMemo(() => {
     const keys: Record<string, string> = {};
     owners.forEach((o) => {
-      keys[o.displayName] = o.searchText || "";
+      const name = o.displayName || o.owner;
+      keys[name] = o.searchText || "";
     });
     return keys;
   }, [owners]);
@@ -275,7 +279,7 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <main className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-12 flex-1">
-        <div className="mx-auto w-full max-w-[1440px] space-y-3">
+        <div className={`mx-auto w-full max-w-[1440px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
         {/* Active Topic Filter Chip */}
         {selectedTopic && (
           <div className="flex items-center gap-2 mb-6 bg-white/[0.02] border border-white/[0.08] px-3.5 py-2 rounded-lg w-fit shadow-md animate-fade-in">

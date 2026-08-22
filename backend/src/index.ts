@@ -38,6 +38,7 @@ type Bindings = {
 }
 
 import { errorHandler } from './middleware/error.js'
+import { cacheMiddleware } from './middleware/cache.js'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -59,6 +60,9 @@ app.use('*', cors({
   },
   credentials: true,
 }))
+
+// High-speed in-memory response cache for GET endpoints (120s TTL)
+app.use('*', cacheMiddleware(120))
 
 app.route('/api/videos', videosRouter)
 app.route('/api/news', newsRouter)

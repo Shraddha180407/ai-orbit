@@ -156,9 +156,9 @@ const ROBOT_TO_SLUG: Record<string, string> = {
   "Surveillance": "surveillance"
 };
 
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+
 export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) {
-  const [robots, setRobots] = useState<RobotListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const searchParams = useSearchParams();
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -169,6 +169,18 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
     return "All";
   });
 
+  const { data: fetchedRobots, isLoading, isPlaceholderData } = useQuery<RobotListItem[]>({
+    queryKey: ["robots"],
+    queryFn: async () => {
+      const data = await fetchAllRobots();
+      return data && data.length > 0 ? data : FALLBACK_ROBOTS;
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const robots = fetchedRobots || FALLBACK_ROBOTS;
+
   useEffect(() => {
     if (defaultCategory !== undefined) {
       setActiveCategory(defaultCategory && ROBOT_SLUGS[defaultCategory] ? ROBOT_SLUGS[defaultCategory] : "All");
@@ -177,21 +189,6 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    async function getRobots() {
-      try {
-        const data = await fetchAllRobots();
-        setRobots(data && data.length > 0 ? data : FALLBACK_ROBOTS);
-      } catch (e) {
-        console.error("Failed to fetch robots:", e);
-        setRobots(FALLBACK_ROBOTS);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    getRobots();
-  }, []);
 
   const ROBOT_CATEGORIES = [
     "All",
@@ -217,7 +214,11 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
   const filtered = useMemo(() => {
     let list = robots;
     if (activeCategory !== "All") {
-      list = list.filter((r) => r.category === activeCategory);
+      const activeNorm = activeCategory.toLowerCase().replace(/[\s-_]+/g, "");
+      list = list.filter((r) => {
+        const catNorm = (r.category || "").toLowerCase().replace(/[\s-_]+/g, "");
+        return catNorm === activeNorm || catNorm.includes(activeNorm) || activeNorm.includes(catNorm);
+      });
     }
     if (query.trim()) {
       const q = query.toLowerCase();
@@ -315,7 +316,7 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
             </div>
           </div>
         ) : (
-          <div className="flex flex-col rounded-lg overflow-hidden">
+          <div className={`flex flex-col rounded-lg overflow-hidden transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
             <div className="overflow-x-auto scrollbar-none">
               {/* Column headers */}
               <div className="border-b border-[#232326]/60 bg-[#131316]/40">

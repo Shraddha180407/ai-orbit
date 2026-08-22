@@ -27,6 +27,7 @@ export interface NewsArticleRecord {
   aiSummary: string;
   /** The original article URL at the source — never the publisher homepage. */
   articleUrl: string;
+  url?: string;
   category: string;
   topics: string[];
   /** Key into the sources map (see getSourcesMap()) — not a display name. */

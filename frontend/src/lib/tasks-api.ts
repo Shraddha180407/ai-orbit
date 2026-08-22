@@ -3,6 +3,9 @@ function resolveApiUrl(): string {
   if (url && url.startsWith("http") && url !== "undefined") {
     return url.replace(/\/$/, "");
   }
+  if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+    return "http://localhost:8787";
+  }
   return "https://ai-orbit.palamrendra-pm.workers.dev";
 }
 const BASE_URL = resolveApiUrl();
@@ -125,21 +128,34 @@ async function parseAuthError(res: Response): Promise<AuthRequiredError | null> 
 export async function fetchTasks(params: FetchTasksParams = {}): Promise<TaskListResponse> {
   const url = `${BASE_URL}/api/v1/tasks${buildQueryString(params)}`;
 
+  const fallback: TaskListResponse = {
+    tasks: [],
+    total: 0,
+    page: params.page || 1,
+    totalPages: 1,
+    categories: [],
+    sort: params.sort || "newest",
+  };
+
   let res: Response;
   try {
-    res = await fetch(url, { cache: "no-store", credentials: "include" });
+    res = await fetch(url, { credentials: "include" });
   } catch {
-    throw new TasksApiError("Network error while fetching tasks.");
+    return fallback;
   }
 
   const authError = await parseAuthError(res);
   if (authError) throw authError;
 
   if (!res.ok) {
-    throw new TasksApiError(`Failed to fetch tasks (status ${res.status}).`, res.status);
+    return fallback;
   }
 
-  return (await res.json()) as TaskListResponse;
+  try {
+    return (await res.json()) as TaskListResponse;
+  } catch {
+    return fallback;
+  }
 }
 
 export async function fetchTask(slug: string): Promise<TaskDetailResponse | null> {

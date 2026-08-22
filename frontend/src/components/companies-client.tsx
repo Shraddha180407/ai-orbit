@@ -4,7 +4,8 @@ import React, { useEffect, useMemo, useState, useRef, useCallback } from "react"
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Company, CompanyType } from "@/lib/types";
-import { API_URL } from "@/lib/api";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { fetchAllCompanies, API_URL } from "@/lib/api";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
@@ -60,7 +61,7 @@ function formatValEmp(valuation: string | number | null | undefined, employeeCou
   if (ratio >= 1_000_000_000) return `$${(ratio / 1_000_000_000).toFixed(2)}B`;
   if (ratio >= 1_000_000) return `$${(ratio / 1_000_000).toFixed(2)}M`;
   if (ratio >= 1_000) return `$${(ratio / 1_000).toFixed(2)}K`;
-  return `$${ratio.toFixed(0)}`;
+  return `$${Math.round(ratio)}`;
 }
 
 function getValEmpNumeric(valuation: string | number | null | undefined, employeeCount: number | null | undefined): number {
@@ -80,55 +81,81 @@ function TypeBadge({ status }: { status: boolean | null }) {
 
 function matchesSubcategory(c: Company, slug: string): boolean {
   if (!slug || slug === "all") return true;
-  const slugLower = slug.toLowerCase().replace(/[-_]/g, " ");
-  const typeLower = (c.type || []).join(" ").toLowerCase().replace(/[-_]/g, " ");
+  const slugNorm = slug.toLowerCase().replace(/-/g, "_");
+  const types = Array.isArray(c.type) ? c.type : [];
+  const typeStrings = types.map((t) => String(t).toLowerCase());
+  const typeLower = (c.companyType || "").toLowerCase();
   const sectorLower = (c.sector || "").toLowerCase();
-  const nameLower = (c.name || "").toLowerCase();
   const descLower = (c.description || "").toLowerCase();
-  const modelsLower = (c.aiModels || []).map(m => m.name).join(" ").toLowerCase();
+  const nameLower = (c.name || "").toLowerCase();
+  const fullText = `${typeStrings.join(" ")} ${typeLower} ${sectorLower} ${descLower} ${nameLower}`;
 
-  const fullText = `${typeLower} ${sectorLower} ${nameLower} ${descLower} ${modelsLower}`;
+  const matchItem = COMPANY_TYPES.find(
+    (ct) =>
+      ct.slug === slug ||
+      ct.value.toLowerCase() === slug.toLowerCase() ||
+      ct.value.toLowerCase() === slugNorm ||
+      ct.slug === slug.toLowerCase().replace(/_/g, "-")
+  );
+  if (matchItem && matchItem.value !== "ALL") {
+    const enumValLower = matchItem.value.toLowerCase();
+    if (typeStrings.includes(enumValLower)) return true;
+  }
 
-  switch (slug) {
+  switch (slug.toLowerCase()) {
     case "ai-model-providers":
     case "model-companies":
-      return fullText.includes("model") || fullText.includes("provider") || (c.aiModels && c.aiModels.length > 0) || typeLower.includes("model");
+      return (
+        typeStrings.includes("ai_model_providers") ||
+        typeStrings.includes("model_companies") ||
+        typeLower.includes("model") ||
+        Boolean(c.modelsCount && c.modelsCount > 0) ||
+        (Array.isArray(c.aiModels) && c.aiModels.length > 0) ||
+        false
+      );
     case "infrastructure":
-      return fullText.includes("infra") || fullText.includes("cloud") || fullText.includes("compute") || fullText.includes("chip") || typeLower.includes("infra");
+      return typeStrings.includes("infrastructure") || sectorLower.includes("infra") || fullText.includes("hardware") || fullText.includes("compute") || fullText.includes("cloud");
     case "enterprise":
-      return fullText.includes("enterprise") || fullText.includes("b2b") || fullText.includes("business") || typeLower.includes("enterprise");
+      return typeStrings.includes("enterprise") || typeStrings.includes("enterprise_ai") || sectorLower.includes("enterprise") || fullText.includes("b2b") || fullText.includes("corporate");
     case "healthcare":
-      return fullText.includes("health") || fullText.includes("med") || fullText.includes("bio") || typeLower.includes("health");
+      return typeStrings.includes("healthcare") || sectorLower.includes("health") || fullText.includes("medical") || fullText.includes("biotech") || fullText.includes("clinical");
     case "generative-ai":
-      return fullText.includes("generative") || fullText.includes("genai") || fullText.includes("llm") || fullText.includes("gpt") || typeLower.includes("generative");
+      return typeStrings.includes("generative_ai") || sectorLower.includes("generative") || fullText.includes("genai") || fullText.includes("llm") || fullText.includes("creative");
     case "marketing":
-      return fullText.includes("market") || fullText.includes("seo") || fullText.includes("ad") || typeLower.includes("market");
+      return typeStrings.includes("marketing") || sectorLower.includes("marketing") || fullText.includes("advertising") || fullText.includes("seo") || fullText.includes("sales");
     case "developer-tools":
-      return fullText.includes("dev") || fullText.includes("code") || fullText.includes("git") || typeLower.includes("developer");
+      return typeStrings.includes("developer_tools") || sectorLower.includes("developer") || sectorLower.includes("dev") || fullText.includes("api") || fullText.includes("sdk") || fullText.includes("coding");
     case "robotics":
-      return fullText.includes("robot") || fullText.includes("hardware") || typeLower.includes("robot");
+      return typeStrings.includes("robotics") || sectorLower.includes("robot") || fullText.includes("autonomous") || fullText.includes("automation");
     case "education":
-      return fullText.includes("edu") || fullText.includes("learn") || typeLower.includes("education");
+      return typeStrings.includes("education") || sectorLower.includes("edu") || fullText.includes("learning") || fullText.includes("training") || fullText.includes("tutor");
     case "open-source":
-      return fullText.includes("open") || fullText.includes("source") || typeLower.includes("open");
+      return typeStrings.includes("open_source") || sectorLower.includes("open") || fullText.includes("oss") || fullText.includes("github") || fullText.includes("weights");
     case "finance":
-      return fullText.includes("fin") || fullText.includes("bank") || fullText.includes("trad") || typeLower.includes("finance");
+      return typeStrings.includes("finance") || sectorLower.includes("fin") || fullText.includes("fin") || fullText.includes("bank") || fullText.includes("trad");
     case "ai-native":
-      return typeLower.includes("native") || fullText.includes("ai native");
+      return typeStrings.includes("ai_native") || sectorLower.includes("native") || fullText.includes("native") || fullText.includes("ai native");
     case "unicorns":
-      return fullText.includes("unicorn") || (c.valuation && Number(c.valuation) >= 1_000_000_000);
+      return typeStrings.includes("unicorns") || fullText.includes("unicorn") || Boolean(c.valuation && Number(c.valuation) >= 1_000_000_000);
     default:
-      return fullText.includes(slugLower);
+      return fullText.includes(slugNorm) || fullText.includes(slug.toLowerCase());
   }
 }
 
 export function CompaniesClient({ defaultCategory }: { defaultCategory?: string }) {
   const { user } = useUser();
+  const queryClient = useQueryClient();
   const isAdmin = user?.role === 'ADMIN';
 
-  const [allCompanies, setAllCompanies] = useState<Company[]>([]);
+  const { data: companiesData, isLoading, isPlaceholderData } = useQuery<Company[]>({
+    queryKey: ["companies"],
+    queryFn: () => fetchAllCompanies(),
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const allCompanies = companiesData || [];
   const [visibleCount, setVisibleCount] = useState(30);
-  const [isLoading, setIsLoading] = useState(true);
   const searchParams = useSearchParams();
   const [query, setQuery] = useState((searchParams.get("q") || "").trim());
 
@@ -172,24 +199,9 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const [formData, setFormData] = useState({ name: '', slug: '', logoUrl: '' });
   const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch all companies ONCE for instant client-side filtering
-  const getAllCompanies = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/api/v1/companies`);
-      if (!res.ok) throw new Error('Failed to fetch');
-      const data = await res.json();
-      setAllCompanies(data || []);
-    } catch (e) {
-      console.error("Failed to fetch companies:", e);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    getAllCompanies();
-  }, [getAllCompanies]);
+  const getAllCompanies = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["companies"] });
+  }, [queryClient]);
 
   // Click outside to close country popover
   useEffect(() => {
@@ -434,7 +446,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
               </p>
             </div>
           ) : (
-            <div className="w-full rounded-xl border border-[#232326] bg-[#0A0A0C] overflow-hidden">
+            <div className={`w-full rounded-xl border border-[#232326] bg-[#0A0A0C] overflow-hidden transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
               <div className="overflow-x-auto">
                 {/* Table Header */}
                 <div className="grid grid-cols-[minmax(260px,2.2fr)_140px_120px_120px_90px_90px_150px_70px_70px] gap-3 items-center px-4 py-3 bg-[#131316] border-b border-[#232326] min-w-[1150px]">

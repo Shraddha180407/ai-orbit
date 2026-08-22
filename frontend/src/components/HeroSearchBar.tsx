@@ -55,7 +55,8 @@ export function HeroSearchBar({ defaultValue }: { defaultValue?: string }) {
   const [open, setOpen] = useState(false);
   const [searchName] = useState(() => "search-hero-input");
   const inputNameRef = useRef(searchName);
-
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const { suggestions, popular, featured, isLoading } = useHomeSearch(value);
   const { recent, addRecent, clearRecent } = useRecentSearches();

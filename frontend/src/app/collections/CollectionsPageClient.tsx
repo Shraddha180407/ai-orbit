@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { CollectionListItem, CollectionSubCategory } from "@/lib/types";
 import { fetchCollectionSubCategories } from "@/lib/collections";
 import { API_URL } from "@/lib/api";
-import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 // Import modular components
 import { CollectionToolbar } from "@/components/collections/CollectionToolbar";
@@ -147,18 +147,23 @@ export default function CollectionsPageClient({ initialItems, defaultSubCategory
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Use React Query to cache collections data across navigation
-  const { data: fetchedCollections, isLoading: queryLoading } = useQuery({
+  const { data: fetchedCollections, isLoading: queryLoading, isPlaceholderData } = useQuery({
     queryKey: ["collections", "list"],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/api/v1/collections?sort=recently_updated`);
-      if (!res.ok) throw new Error("Failed to fetch collections");
-      const data = await res.json();
-      if (data && Array.isArray(data.items)) return data.items as CollectionListItem[];
-      return [] as CollectionListItem[];
+      try {
+        const res = await fetch(`${API_URL}/api/v1/collections?sort=recently_updated`, { credentials: "include" });
+        if (!res.ok) return [] as CollectionListItem[];
+        const data = await res.json();
+        if (data && Array.isArray(data.items)) return data.items as CollectionListItem[];
+        return [] as CollectionListItem[];
+      } catch {
+        return [] as CollectionListItem[];
+      }
     },
     // If we got server-side initialItems, use them as the initial cache data
     initialData: initialItems && initialItems.length > 0 ? initialItems : undefined,
-    placeholderData: (prev) => prev, // Keep showing old data while refetching
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
   });
 
   const isLoading = queryLoading;
@@ -243,7 +248,7 @@ export default function CollectionsPageClient({ initialItems, defaultSubCategory
   }
 
   return (
-    <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
+    <main className={`w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
       {/* ── TOOLBAR ── */}
       <CollectionToolbar
         viewMode={viewMode}

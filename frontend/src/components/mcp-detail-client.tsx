@@ -164,7 +164,7 @@ interface RecommendationCardProps {
 }
 
 function RecommendationCard({ item }: RecommendationCardProps) {
-  const primaryCategoryName = item.categories?.[0]?.category?.name || item.categories?.[0]?.name || "Uncategorized";
+  const primaryCategoryName = (item.categories?.[0] as any)?.category?.name || item.categories?.[0]?.name || "Uncategorized";
 
   return (
     <Link
@@ -247,7 +247,7 @@ export function MCPDetailClient({ item, initialAlternatives }: MCPDetailClientPr
   );
 
   // Formatting helper for custom labels
-  const primaryCategoryName = item.categories?.[0]?.category?.name || item.categories?.[0]?.name || "Uncategorized";
+  const primaryCategoryName = (item.categories?.[0] as any)?.category?.name || item.categories?.[0]?.name || "Uncategorized";
   const formattedLanguageString = supportedLanguages.length > 0 ? supportedLanguages.join(", ") : "Multi-language";
 
   // Determine Also Used For data list based on priority

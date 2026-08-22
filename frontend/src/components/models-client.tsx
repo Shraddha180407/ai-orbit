@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/shadcn-button";
 import { toast } from "sonner";
 
+import { useInfiniteQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+
 const MODEL_SUBCATEGORIES: ModelSubCategory[] = [
   { id: "1", name: "LLM", slug: "llm" },
   { id: "2", name: "Image Generation", slug: "image-generation" },
@@ -34,26 +36,20 @@ const MODEL_SUBCATEGORIES: ModelSubCategory[] = [
 
 export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: string }) {
   const { user } = useUser();
+  const queryClient = useQueryClient();
   const isAdmin = user?.role === "ADMIN";
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [models, setModels] = useState<AIModel[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
-
-  const [subCategories, setSubCategories] = useState<ModelSubCategory[]>(MODEL_SUBCATEGORIES);
   const selectedSubCategorySlug = defaultSubCategory || searchParams.get("subCategory") || null;
-const rawSort = searchParams.get("sort") || "newest";
-const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
-  ? "alphabetical"
-  : rawSort === "oldest"
-  ? "oldest"
-  : rawSort === "rating"
-  ? "releaseDate"
-  : "newest";
+  const rawSort = searchParams.get("sort") || "newest";
+  const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
+    ? "alphabetical"
+    : rawSort === "oldest"
+    ? "oldest"
+    : rawSort === "rating"
+    ? "releaseDate"
+    : "newest";
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -71,15 +67,7 @@ const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  // Static subcategories list is used as the source of truth to match the prompt specifications
-
-  useEffect(() => {
-  setPage(1);
-  setModels([]);
-}, [selectedSort, selectedSubCategorySlug]);
-
   const handleSelectSubCategory = (slug: string | null) => {
-    setPage(1);
     if (slug) {
       router.push(`/models/${slug}`);
     } else {
@@ -87,33 +75,37 @@ const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
     }
   };
 
-  // Fetch page
-  useEffect(() => {
-    async function load() {
-      if (page === 1) setIsLoading(true);
-      else setIsFetchingMore(true);
-      try {
-        const data = await fetchModels({ page, subCategory: selectedSubCategorySlug || undefined, sort: selectedSort as any });
-        if (page === 1) setModels(data.items);
-        else setModels((prev) => [...prev, ...data.items]);
-        setTotalPages(data.pagination.totalPages || 1);
-      } catch (e) {
-        console.error("Failed to fetch models:", e);
-      } finally {
-        setIsLoading(false);
-        setIsFetchingMore(false);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isPlaceholderData,
+  } = useInfiniteQuery({
+    queryKey: ["models", { subCategory: selectedSubCategorySlug, sort: selectedSort }],
+    queryFn: async ({ pageParam = 1 }) => {
+      return fetchModels({ page: pageParam, subCategory: selectedSubCategorySlug || undefined, sort: selectedSort as any });
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      if (lastPage?.pagination?.hasMore) {
+        return (lastPage?.pagination?.page || 1) + 1;
       }
-    }
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, selectedSubCategorySlug, selectedSort]);
+      return undefined;
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const models = data?.pages.flatMap((p: any) => p.items || []) || [];
 
   // Infinite scroll
   useEffect(() => {
-    if (isLoading || isFetchingMore || page >= totalPages) return;
+    if (isLoading || isFetchingNextPage || !hasNextPage) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) setPage((p) => p + 1);
+        if (entries[0].isIntersecting) fetchNextPage();
       },
       { threshold: 0.1 }
     );
@@ -122,18 +114,10 @@ const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
     return () => {
       if (el) observer.unobserve(el);
     };
-  }, [isLoading, isFetchingMore, page, totalPages]);
+  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   const reloadFirstPage = async () => {
-    setIsLoading(true);
-    try {
-      const data = await fetchModels({ page: 1 });
-      setModels(data.items);
-      setPage(1);
-      setTotalPages(data.pagination.totalPages || 1);
-    } finally {
-      setIsLoading(false);
-    }
+    queryClient.invalidateQueries({ queryKey: ["models"] });
   };
 
   const handleSave = async () => {
@@ -206,7 +190,7 @@ const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
     <div className="flex-1 w-full flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       {/* Table — same container as homepage tools section */}
       <div className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2 flex-1">
-        <div className="mx-auto w-full max-w-[1600px] space-y-3">
+        <div className={`mx-auto w-full max-w-[1600px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
           {isAdmin && (
             <Button
               className="h-7 bg-white text-black hover:bg-neutral-200 text-xs"
@@ -217,7 +201,7 @@ const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
           )}
 
           {/* Subcategory Filter Chips */}
-          {subCategories.length > 0 && (
+          {MODEL_SUBCATEGORIES.length > 0 && (
             <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
               <button
                 onClick={() => handleSelectSubCategory(null)}
@@ -229,7 +213,7 @@ const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
               >
                 All
               </button>
-              {subCategories.map((sub) => (
+              {MODEL_SUBCATEGORIES.map((sub) => (
                 <button
                   key={sub.id}
                   onClick={() => handleSelectSubCategory(sub.slug)}
@@ -245,7 +229,7 @@ const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
             </div>
           )}
 
-          <ModelListView models={models} loading={isLoading && page === 1} />
+          <ModelListView models={models} loading={isLoading && models.length === 0} />
 
           {/* Admin quick-edit strip (kept out of row chrome) */}
           {isAdmin && !isLoading && models.length > 0 && (
@@ -284,7 +268,7 @@ const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
             </div>
           )}
 
-          {models.length > 0 && page < totalPages && (
+          {models.length > 0 && hasNextPage && (
             <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
             </div>
