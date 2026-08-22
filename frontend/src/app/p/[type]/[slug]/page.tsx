@@ -290,7 +290,15 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     );
   }
 
-  if (type === "tools" || type === "personal" || type === "creativity") return <ToolDetailClient />;
+  if (type === "tools" || type === "personal" || type === "creativity") return (
+    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+      <Header />
+      <div className="flex-1">
+        <ToolDetailClient />
+      </div>
+      <Footer />
+    </div>
+  );
   if (type === "mcp") {
     const item = await fetchMCPItemBySlug(slug);
     if (!item) return notFound();

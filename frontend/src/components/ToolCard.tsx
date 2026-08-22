@@ -49,7 +49,7 @@ export function ToolCard({
       )}
       <Link
         href={`/tools/${tool.slug}`}
-        className="group grid grid-cols-1 sm:grid-cols-[80px_1fr_180px_180px] gap-5 items-start sm:items-center justify-between sm:h-[154px] py-4 px-5 transition-all hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
+        className="group grid grid-cols-1 sm:grid-cols-[80px_1fr_180px_180px] gap-5 items-start sm:items-center justify-between sm:min-h-[80px] py-5 px-5 transition-all hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
       >
       {/* Column 1: Logo */}
       <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-white p-2.5">
@@ -88,7 +88,7 @@ export function ToolCard({
           <span>{tool._count.bookmarks} saves</span>
         </div>
 
-        <p className="text-xs text-[#A1A1AA] line-clamp-2 mt-2 max-w-2xl leading-relaxed">
+        <p className="text-xs text-[#A1A1AA] line-clamp-1 mt-2 max-w-2xl leading-relaxed">
           {tool.description}
         </p>
       </div>
