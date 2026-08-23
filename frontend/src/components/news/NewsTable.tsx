@@ -128,7 +128,7 @@ function NewsRow({ article, sources, isAdmin, isLoggedIn, onEdit, onDelete }: { 
       style={{ ["--row-accent" as string]: "var(--color-signal)" }}
     >
       {/* Column 1: Left accent line + Headline & Square Publisher logo */}
-      <td className="relative py-2.5 pl-3 pr-3">
+      <td className="relative py-2.5 pl-3 pr-3 overflow-hidden">
         <span className="absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
         <Link href={`/news/${article.id}`} className="flex items-center gap-3">
           {/* Square logo container */}
@@ -149,9 +149,9 @@ function NewsRow({ article, sources, isAdmin, isLoggedIn, onEdit, onDelete }: { 
       </td>
 
       {/* Column 3: Category */}
-      <td className="whitespace-nowrap px-3 py-2.5">
+      <td className="whitespace-nowrap px-3 py-2.5 overflow-hidden">
         {primaryTopic ? (
-          <span className="inline-flex items-center rounded-full border border-[#232326] bg-[#131316] px-2.5 py-0.5 font-mono text-[11.5px] font-medium text-white">
+          <span className="inline-flex items-center rounded-full border border-[#232326] bg-[#131316] px-2.5 py-0.5 font-mono text-[11.5px] font-medium text-white truncate max-w-full">
             {primaryTopic}
           </span>
         ) : (
@@ -160,19 +160,19 @@ function NewsRow({ article, sources, isAdmin, isLoggedIn, onEdit, onDelete }: { 
       </td>
 
       {/* Column 4: Publisher Channel */}
-      <td className="whitespace-nowrap px-3 py-2.5">
+      <td className="whitespace-nowrap px-3 py-2.5 overflow-hidden">
         <a
           href={article.articleUrl || "#"}
           target="_blank"
           rel="noopener noreferrer"
-          className="group/publisher inline-flex items-center gap-1.5"
+          className="group/publisher inline-flex items-center gap-1.5 max-w-full truncate"
         >
-          <span className="text-[13px] font-medium text-[#A1A1AA] transition-colors group-hover/publisher:text-[#F5A623]">
+          <span className="text-[13px] font-medium text-[#A1A1AA] transition-colors group-hover/publisher:text-[#F5A623] truncate">
             {source?.name || "AI Publisher"}
           </span>
           <ArrowUpRight
             size={12}
-            className="text-[#71717A] transition-all group-hover/publisher:translate-x-0.5 group-hover/publisher:-translate-y-0.5 group-hover/publisher:text-[#F5A623]"
+            className="text-[#71717A] shrink-0 transition-all group-hover/publisher:translate-x-0.5 group-hover/publisher:-translate-y-0.5 group-hover/publisher:text-[#F5A623]"
           />
         </a>
       </td>
@@ -211,22 +211,29 @@ export function NewsTable({ articles, sources, isAdmin, onEdit, onDelete }: News
 
   return (
     <div className="overflow-x-auto border border-[#232326]/70 rounded-xl bg-[#0d0d10] shadow-xl w-full">
-      <table className="w-full min-w-[680px] border-collapse">
+      <table className="w-full min-w-[760px] border-collapse table-fixed">
+        <colgroup>
+          <col className="w-[50%]" />
+          <col className="w-[90px]" />
+          <col className="w-[140px]" />
+          <col className="w-[180px]" />
+          <col className="w-[110px]" />
+        </colgroup>
         <thead>
           <tr className="border-b border-[#232326] bg-[#131316]/70">
-            <th className="select-none px-3 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-3 py-2.5 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               HEADLINE
             </th>
-            <th className="select-none px-3 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-3 py-2.5 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               POSTED
             </th>
-            <th className="select-none px-3 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-3 py-2.5 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               CATEGORY
             </th>
-            <th className="select-none px-3 py-2 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-3 py-2.5 text-left font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               PUBLISHER
             </th>
-            <th className="select-none px-3 py-2 text-right font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
+            <th className="select-none px-3 py-2.5 text-right font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
               ACTIONS
             </th>
           </tr>

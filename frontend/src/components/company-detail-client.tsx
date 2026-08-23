@@ -15,6 +15,7 @@ import {
   ChevronRight, Bell, MoreVertical, BarChart2, Globe
 } from 'lucide-react';
 import { Button } from "@/components/ui/shadcn-button";
+import { useQuery } from "@tanstack/react-query";
 
 function formatValuation(val: string | number | null | undefined): string {
   if (!val) return "—";
@@ -26,8 +27,6 @@ function formatValuation(val: string | number | null | undefined): string {
   if (num >= 1_000) return `$${(num / 1_000).toFixed(2)}K`;
   return `$${num}`;
 }
-
-import { useQuery } from "@tanstack/react-query";
 
 export function CompanyDetailClient() {
   const params = useParams();
