@@ -20,7 +20,7 @@ import { repositoriesIngestPayloadSchema } from "./repositories.ingest.schema.js
 import { RepositoriesIngestService } from "./repositories.ingest.service.js";
 import { mcpIngestPayloadSchema } from "./mcp.ingest.schema.js";
 import { MCPIngestService } from "./mcp.ingest.service.js";
-import { getPrisma } from "../../lib/prisma.js";
+import { getPrismaTx } from "../../lib/prisma.js";
 import { modelsIngestPayloadSchema } from "./models.ingest.schema.js";
 import { ModelsIngestService } from "./models.ingest.service.js";
 import { companiesIngestPayloadSchema } from "./companies.ingest.schema.js";
@@ -53,7 +53,7 @@ router.post("/tools", requireIngestionToken, async (c) => {
       }, 422);
     }
 
-    const prisma = getPrisma(c.env);
+    const prisma = getPrismaTx(c.env);
     const summary = await ToolsIngestService.ingestTools(prisma, parsed.data);
 
     return c.json(summary, 200);
@@ -79,7 +79,7 @@ router.post("/devices", requireIngestionToken, async (c) => {
       }, 422);
     }
 
-    const prisma = getPrisma(c.env);
+    const prisma = getPrismaTx(c.env);
     const summary = await DevicesIngestService.ingestDevices(prisma, parsed.data);
 
     return c.json(summary, 200);
@@ -100,7 +100,7 @@ router.post("/collections", requireCollectionsIngestionToken, async (c) => {
     if (!parsed.success) {
       return c.json({ error: "VALIDATION_FAILED", issues: parsed.error.issues }, 422);
     }
-    const prisma = getPrisma(c.env);
+    const prisma = getPrismaTx(c.env);
     const summary = await CollectionsIngestService.ingestCollections(prisma, parsed.data);
     return c.json(summary, 200);
   } catch (err: unknown) {
@@ -122,7 +122,7 @@ router.post("/news", requireIngestionToken, async (c) => {
       }, 422);
     }
 
-    const prisma = getPrisma(c.env);
+    const prisma = getPrismaTx(c.env);
     const summary = await NewsIngestService.ingestNews(prisma, parsed.data);
 
     return c.json(summary, 200);
@@ -148,7 +148,7 @@ router.post("/videos", requireIngestionToken, async (c) => {
       }, 422);
     }
 
-    const prisma = getPrisma(c.env);
+    const prisma = getPrismaTx(c.env);
     const summary = await VideosIngestService.ingestVideos(prisma, parsed.data);
 
     return c.json(summary, 200);
@@ -174,7 +174,7 @@ router.post("/models", requireIngestionToken, async (c) => {
       }, 422);
     }
 
-    const prisma = getPrisma(c.env);
+    const prisma = getPrismaTx(c.env);
     const summary = await ModelsIngestService.ingestModels(prisma, parsed.data);
 
     return c.json(summary, 200);
@@ -200,7 +200,7 @@ router.post("/robots", requireIngestionToken, async (c) => {
       }, 422);
     }
 
-    const prisma = getPrisma(c.env);
+    const prisma = getPrismaTx(c.env);
     const summary = await RobotsIngestService.ingestRobots(prisma, parsed.data);
 
     return c.json(summary, 200);
@@ -226,7 +226,7 @@ router.post("/repositories", requireIngestionToken, async (c) => {
       }, 422);
     }
 
-    const prisma = getPrisma(c.env);
+    const prisma = getPrismaTx(c.env);
     const summary = await RepositoriesIngestService.ingestRepositories(prisma, parsed.data);
 
     return c.json(summary, 200);
@@ -249,7 +249,7 @@ router.post("/mcp", requireIngestionToken, async (c) => {
       }, 422);
     }
 
-    const prisma = getPrisma(c.env);
+    const prisma = getPrismaTx(c.env);
     const summary = await MCPIngestService.ingestMCPItems(prisma, parsed.data);
 
     return c.json(summary, 200);
@@ -275,7 +275,7 @@ router.post("/companies", requireIngestionToken, async (c) => {
       }, 422);
     }
 
-    const prisma = getPrisma(c.env);
+    const prisma = getPrismaTx(c.env);
     const summary = await CompaniesIngestService.ingestCompanies(prisma, parsed.data);
     
     return c.json(summary, 200);

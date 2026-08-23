@@ -69,7 +69,7 @@ describe('HomepageController', () => {
       expect(c.jsonBody).toHaveProperty('error', 'DB failure');
     });
 
-    it('disconnects prisma even on error', async () => {
+    it('does not disconnect the shared prisma singleton, even on error', async () => {
       const mockDisconnect = vi.fn();
       vi.mocked(getPrisma).mockReturnValue({ $disconnect: mockDisconnect } as never);
       mockService.getHomepageData.mockRejectedValue(new Error('fail'));
@@ -77,7 +77,7 @@ describe('HomepageController', () => {
       const c = mockContext();
       await controller.getHomepageData(c as never);
 
-      expect(mockDisconnect).toHaveBeenCalled();
+      expect(mockDisconnect).not.toHaveBeenCalled();
     });
   });
 });

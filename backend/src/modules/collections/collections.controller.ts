@@ -17,7 +17,9 @@ export class CollectionsController {
     } catch (error: unknown) {
       return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
-      await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
@@ -35,7 +37,9 @@ export class CollectionsController {
     } catch (error: unknown) {
       return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
-      await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 }

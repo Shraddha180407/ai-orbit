@@ -22,7 +22,37 @@ import Trophy from 'lucide-react/dist/esm/icons/trophy';
 
 import { HeroFeatureChips } from "@/components/HeroFeatureChips";
 import { SortDropdown } from "@/components/SortDropdown";
+import { Logo } from "@/components/ui/Logo";
 import { ENTITY_META } from "@/lib/entityMeta";
+import { useHomeSearch } from "@/hooks/useHomeSearch";
+import type { RealSearchSuggestion } from "@/lib/api";
+
+/**
+ * Where a live suggestion should actually take you — its own detail page,
+ * not another search. Falls back to a search-results link only when the
+ * backend didn't give us a slug to route to.
+ */
+function getSuggestionHref(s: RealSearchSuggestion): string {
+  const meta = ENTITY_META[s.type];
+  if (!s.slug) return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
+
+  switch (s.type) {
+    case "tool":
+      return `/p/tools/${s.slug}`;
+    case "company":
+      return `/p/companies/${s.slug}`;
+    case "repository":
+      return `/p/repositories/${s.slug}`;
+    case "robot":
+      return `/p/robots/${s.slug}`;
+    case "device":
+      return `/p/devices/${s.slug}`;
+    case "model":
+      return `/models/${s.slug}`;
+    default:
+      return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
+  }
+}
 
 // Top-of-menu quick actions for the homepage hero search dropdown.
 const QUICK_LINKS = [
@@ -206,12 +236,14 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
   }, []);
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState(q);
   const searchContainerRef = useRef<HTMLFormElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const query = searchInputRef.current?.value || "";
+  const { suggestions, isLoading } = useHomeSearch(searchValue);
+  const showSuggestions = searchValue.trim().length > 0;
+
+  const runSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (query.trim()) {
       params.set("q", query);
@@ -220,6 +252,11 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     }
     setSearchOpen(false);
     router.push(`${searchAction}?${params.toString()}`);
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    runSearch(searchValue);
   };
 
   // Close the search dropdown on outside click or Escape.
@@ -295,7 +332,8 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                 ref={searchInputRef}
                 type="text"
                 name="q"
-                defaultValue={q}
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
                 placeholder="Search AI tools, models, companies…"
                 onFocus={() => setSearchOpen(true)}
                 className="w-full bg-transparent text-[12px] sm:text-[13px] text-white placeholder:text-[#71717A] focus:outline-none"
@@ -315,46 +353,100 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
 
             {searchOpen && (
               <div className="search-scope absolute left-0 right-0 top-[calc(100%+8px)] z-30 max-h-[70vh] overflow-y-auto rounded-xl border border-search-border bg-search-bg shadow-2xl shadow-black/40 text-left">
-                <div className="border-b border-search-border p-2">
-                  {QUICK_LINKS.map((link) => {
-                    const Icon = link.icon;
-                    return (
-                      <Link
-                        key={link.label}
-                        href={link.href}
-                        onClick={() => setSearchOpen(false)}
-                        className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
-                      >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
-                          <Icon size={14} />
-                        </span>
-                        {link.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-
-                <div className="p-2">
-                  <div className="px-2 py-2 text-center text-[11px] font-medium uppercase tracking-wide text-search-text-tertiary">
-                    Browse by type
+                {showSuggestions ? (
+                  <div className="p-2">
+                    {isLoading ? (
+                      <div className="space-y-2 p-2">
+                        {[0, 1, 2].map((i) => (
+                          <div key={i} className="h-9 w-full animate-pulse rounded-md bg-search-surface-active" />
+                        ))}
+                      </div>
+                    ) : suggestions.length === 0 ? (
+                      <div className="p-6 text-center text-sm text-search-text-secondary">
+                        No matches for &ldquo;{searchValue}&rdquo;.{" "}
+                        <button
+                          type="button"
+                          onClick={() => runSearch(searchValue)}
+                          className="text-search-accent hover:text-search-accent-hover"
+                        >
+                          Search anyway
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        {suggestions.map((s) => {
+                          const meta = ENTITY_META[s.type];
+                          return (
+                            <Link
+                              key={`${s.type}-${s.id}`}
+                              href={getSuggestionHref(s)}
+                              onClick={() => setSearchOpen(false)}
+                              className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm hover:bg-search-surface-hover"
+                            >
+                              <Logo
+                                src={s.logoUrl}
+                                name={s.title}
+                                size={28}
+                                className="shrink-0 rounded-md"
+                              />
+                              <span className="flex-1 truncate text-search-text-primary">{s.title}</span>
+                              <span className="shrink-0 text-xs text-search-text-tertiary">
+                                {meta.label} · {s.category}
+                              </span>
+                            </Link>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          onClick={() => runSearch(searchValue)}
+                          className="mt-1 flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-search-accent hover:bg-search-surface-hover"
+                        >
+                          See all results for &ldquo;{searchValue}&rdquo;
+                        </button>
+                      </>
+                    )}
                   </div>
-                  {BROWSE_BY_TYPE.map((link) => {
-                    const Icon = link.icon;
-                    return (
-                      <Link
-                        key={link.label}
-                        href={link.href}
-                        onClick={() => setSearchOpen(false)}
-                        className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
-                      >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
-                          <Icon size={14} />
-                        </span>
-                        {link.label}
-                      </Link>
-                    );
-                  })}
-                </div>
+                ) : (
+                  <>
+                    <div className="border-b border-search-border p-2">
+                      {QUICK_LINKS.map((link) => {
+                        const Icon = link.icon;
+                        return (
+                          <Link
+                            key={link.label}
+                            href={link.href}
+                            onClick={() => setSearchOpen(false)}
+                            className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
+                          >
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
+                              <Icon size={14} />
+                            </span>
+                            {link.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+
+                    <div className="p-2">
+                      {BROWSE_BY_TYPE.map((link) => {
+                        const Icon = link.icon;
+                        return (
+                          <Link
+                            key={link.label}
+                            href={link.href}
+                            onClick={() => setSearchOpen(false)}
+                            className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
+                          >
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
+                              <Icon size={14} />
+                            </span>
+                            {link.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </form>

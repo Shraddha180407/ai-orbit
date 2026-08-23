@@ -7,6 +7,35 @@ import { Search, Clock, TrendingUp, Trophy, X, Video, Newspaper } from "lucide-r
 import { useHomeSearch } from "@/hooks/useHomeSearch";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
 import { ENTITY_META } from "@/lib/entityMeta";
+import { Logo } from "@/components/ui/Logo";
+import type { RealSearchSuggestion } from "@/lib/api";
+
+/**
+ * Where a live suggestion should actually take you — its own detail page,
+ * not another search. Falls back to a search-results link only when the
+ * backend didn't give us a slug to route to.
+ */
+function getSuggestionHref(s: RealSearchSuggestion): string {
+  const meta = ENTITY_META[s.type];
+  if (!s.slug) return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
+
+  switch (s.type) {
+    case "tool":
+      return `/p/tools/${s.slug}`;
+    case "company":
+      return `/p/companies/${s.slug}`;
+    case "repository":
+      return `/p/repositories/${s.slug}`;
+    case "robot":
+      return `/p/robots/${s.slug}`;
+    case "device":
+      return `/p/devices/${s.slug}`;
+    case "model":
+      return `/models/${s.slug}`;
+    default:
+      return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
+  }
+}
 
 interface QuickLink {
   label: string;
@@ -185,20 +214,17 @@ export function HeroSearchBar({ defaultValue }: { defaultValue?: string }) {
                 <>
                   {suggestions.map((s) => {
                     const meta = ENTITY_META[s.type];
-                    const Icon = meta.icon;
                     return (
                       <Link
                         key={s.id}
-                        href={`${meta.basePath}?q=${encodeURIComponent(s.title)}`}
+                        href={getSuggestionHref(s)}
                         onClick={() => {
                           addRecent(s.title);
                           setOpen(false);
                         }}
                         className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm hover:bg-search-surface-hover"
                       >
-                        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${meta.tint}`}>
-                          <Icon size={14} />
-                        </span>
+                        <Logo src={s.logoUrl} name={s.title} size={28} className="shrink-0 rounded-md" />
                         <span className="flex-1 truncate text-search-text-primary">{s.title}</span>
                         <span className="shrink-0 text-xs text-search-text-tertiary">
                           {meta.label} · {s.category}
@@ -266,9 +292,6 @@ export function HeroSearchBar({ defaultValue }: { defaultValue?: string }) {
               )}
 
               <div className="border-b border-search-border p-2">
-                <div className="px-2 py-2 text-center text-[11px] font-medium uppercase tracking-wide text-search-text-tertiary">
-                  Browse by type
-                </div>
                 {BROWSE_BY_TYPE.map((link) => {
                   const Icon = link.icon;
                   return (
@@ -321,9 +344,7 @@ export function HeroSearchBar({ defaultValue }: { defaultValue?: string }) {
                       onClick={() => goToTool(tool.slug, tool.title)}
                       className="flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm hover:bg-search-surface-hover"
                     >
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-xs font-semibold text-search-text-secondary">
-                        {tool.title.charAt(0).toUpperCase()}
-                      </span>
+                      <Logo src={tool.logoUrl} name={tool.title} size={28} className="shrink-0 rounded-md" />
                       <span className="flex-1 truncate text-search-text-primary">{tool.title}</span>
                       <span className="shrink-0 rounded-full border border-search-border px-2 py-0.5 text-[10px] text-search-text-tertiary">
                         {tool.category}

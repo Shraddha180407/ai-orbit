@@ -77,7 +77,7 @@ describe('BookmarksController', () => {
       expect(c.jsonBody).toEqual(bookmarks);
     });
 
-    it('disconnects prisma even on error', async () => {
+    it('does not disconnect the shared prisma singleton, even on error', async () => {
       const mockDisconnect = vi.fn();
       vi.mocked(getPrisma).mockReturnValue({ $disconnect: mockDisconnect } as never);
       mockService.listBookmarks.mockRejectedValue(new Error('fail'));
@@ -86,7 +86,7 @@ describe('BookmarksController', () => {
       (c.get as ReturnType<typeof vi.fn>).mockReturnValue({ id: 'user-1' });
       await controller.listBookmarks(c as never).catch(() => {});
 
-      expect(mockDisconnect).toHaveBeenCalled();
+      expect(mockDisconnect).not.toHaveBeenCalled();
     });
   });
 
@@ -110,7 +110,7 @@ describe('BookmarksController', () => {
       await expect(controller.createBookmark(c as never)).rejects.toThrow('url is required');
     });
 
-    it('disconnects prisma even on error', async () => {
+    it('does not disconnect the shared prisma singleton, even on error', async () => {
       const mockDisconnect = vi.fn();
       vi.mocked(getPrisma).mockReturnValue({ $disconnect: mockDisconnect } as never);
       mockService.createBookmark.mockRejectedValue(new Error('fail'));
@@ -119,7 +119,7 @@ describe('BookmarksController', () => {
       (c.get as ReturnType<typeof vi.fn>).mockReturnValue({ id: 'user-1' });
       await controller.createBookmark(c as never).catch(() => {});
 
-      expect(mockDisconnect).toHaveBeenCalled();
+      expect(mockDisconnect).not.toHaveBeenCalled();
     });
   });
 
@@ -135,7 +135,7 @@ describe('BookmarksController', () => {
       expect(c.jsonBody).toEqual({ success: true });
     });
 
-    it('disconnects prisma even on error', async () => {
+    it('does not disconnect the shared prisma singleton, even on error', async () => {
       const mockDisconnect = vi.fn();
       vi.mocked(getPrisma).mockReturnValue({ $disconnect: mockDisconnect } as never);
       mockService.deleteBookmark.mockRejectedValue(new Error('fail'));
@@ -144,7 +144,7 @@ describe('BookmarksController', () => {
       (c.get as ReturnType<typeof vi.fn>).mockReturnValue({ id: 'user-1' });
       await controller.deleteBookmark(c as never).catch(() => {});
 
-      expect(mockDisconnect).toHaveBeenCalled();
+      expect(mockDisconnect).not.toHaveBeenCalled();
     });
   });
 });

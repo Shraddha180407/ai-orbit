@@ -9,7 +9,7 @@ export class DevicesController {
   }
 
   async listDevices(c: Context) {
-    const { prisma, service } = this.createService(c);
+    const { service } = this.createService(c);
 
     try {
       const devices = await service.listDevices();
@@ -17,12 +17,14 @@ export class DevicesController {
     } catch (error: unknown) {
       return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
-      await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
   async getDeviceById(c: Context) {
-    const { prisma, service } = this.createService(c);
+    const { service } = this.createService(c);
     const id = c.req.param('id');
 
     if (!id) {
@@ -40,12 +42,14 @@ export class DevicesController {
     } catch (error: unknown) {
       return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
-      await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
   async getDeviceBySlug(c: Context) {
-    const { prisma, service } = this.createService(c);
+    const { service } = this.createService(c);
     const slug = c.req.param('slug');
 
     if (!slug) {
@@ -63,12 +67,14 @@ export class DevicesController {
     } catch (error: unknown) {
       return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
-      await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
   async listDeviceSubCategories(c: Context) {
-    const { prisma, service } = this.createService(c);
+    const { service } = this.createService(c);
 
     try {
       const subCategories = await service.listDeviceSubCategories();
@@ -76,7 +82,9 @@ export class DevicesController {
     } catch (error: unknown) {
       return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
-      await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 }

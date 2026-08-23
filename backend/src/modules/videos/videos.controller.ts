@@ -46,7 +46,9 @@ export async function listVideos(c: Context) {
     logger.error("Videos API Controller Error:", error);
     return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
   } finally {
-    await prisma.$disconnect();
+    // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+    // it must stay connected across requests, so it is intentionally not
+    // disconnected here.
   }
 }
 
@@ -65,7 +67,9 @@ export async function getVideosCount(c: Context) {
     logger.error("Videos API Controller Error:", error);
     return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
   } finally {
-    await prisma.$disconnect();
+    // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+    // it must stay connected across requests, so it is intentionally not
+    // disconnected here.
   }
 }
 
@@ -86,7 +90,9 @@ export async function getVideoBySlug(c: Context) {
     logger.error("Videos API Controller Error:", error);
     return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
   } finally {
-    await prisma.$disconnect();
+    // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+    // it must stay connected across requests, so it is intentionally not
+    // disconnected here.
   }
 }
 
@@ -113,6 +119,8 @@ export async function getRelatedVideos(c: Context) {
     logger.error("Videos API Controller Error:", error);
     return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
   } finally {
-    await prisma.$disconnect();
+    // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+    // it must stay connected across requests, so it is intentionally not
+    // disconnected here.
   }
 }

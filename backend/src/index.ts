@@ -15,12 +15,12 @@ import { tasksRouter } from './modules/tasks/tasks.routes.js'
 import { modelsRouter } from './modules/models/models.routes.js'
 import { repositoriesRouter } from './modules/repositories/repositories.routes.js'
 import { robotsRouter } from './modules/robots/robots.routes.js'
-import { creativityRouter } from './modules/creativity/creativity.routes.js'
 
 import { homepageRouter } from './modules/homepage/homepage.routes.js'
 import { toolsRouter } from './modules/tools/tools.routes.js'
 import { userRouter } from './modules/user/user.routes.js'
 import { mcpRouter } from './modules/mcp/mcp.routes.js'
+import { searchRouter } from './modules/search/search.routes.js'
 import { getPrisma } from './lib/prisma.js'
 import { runIngestion } from './modules/ingestion/ingestion.service.js'
 import type { IngestionContext } from './modules/ingestion/pipeline.js'
@@ -85,8 +85,8 @@ app.route('/api/v1/homepage', homepageRouter)
 app.route('/api/v1/tools', toolsRouter)
 app.route('/api/user', userRouter)
 app.route('/api/bookmarks', bookmarksRouter)
-app.route('/api/v1/creativity', creativityRouter)
 app.route('/api/v1/mcps', mcpRouter)
+app.route('/api/v1/search', searchRouter)
 
 app.get('/', (c) => {
   return c.json({
@@ -95,7 +95,6 @@ app.get('/', (c) => {
       health: "/health",
       homepage: "/api/v1/homepage",
       tools: "/api/v1/tools",
-      creativity: "/api/v1/creativity",
       news: "/api/news"
     }
   })

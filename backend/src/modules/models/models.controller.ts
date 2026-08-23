@@ -15,7 +15,9 @@ export class ModelsController {
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
   } finally {
-    await prisma.$disconnect();
+    // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+    // it must stay connected across requests, so it is intentionally not
+    // disconnected here.
   }
 }
 
@@ -38,7 +40,9 @@ export class ModelsController {
     : 500;
   return c.json({ error: error.message }, status);
   }finally {
-    await prisma.$disconnect();
+    // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+    // it must stay connected across requests, so it is intentionally not
+    // disconnected here.
   }
 }
 
@@ -53,7 +57,9 @@ async listModelSubCategories(c: Context) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return c.json({ error: message }, 500);
   } finally {
-    await prisma.$disconnect();
+    // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+    // it must stay connected across requests, so it is intentionally not
+    // disconnected here.
   }
 }
   async listModels(c: Context) {
@@ -77,7 +83,9 @@ async listModelSubCategories(c: Context) {
         error instanceof Error ? error.message : 'Unknown error';
       return c.json({ error: message }, 500);
     } finally {
-      await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
@@ -104,7 +112,9 @@ async listModelSubCategories(c: Context) {
         error instanceof Error ? error.message : 'Unknown error';
       return c.json({ error: message }, 500);
     } finally {
-      await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 }

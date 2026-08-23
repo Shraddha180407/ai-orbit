@@ -69,7 +69,7 @@ describe('CompaniesController', () => {
       expect(c.jsonBody).toHaveProperty('error', 'DB failure');
     });
 
-    it('disconnects prisma even on error', async () => {
+    it('does not disconnect the shared prisma singleton, even on error', async () => {
       const mockDisconnect = vi.fn();
       vi.mocked(getPrisma).mockReturnValue({ $disconnect: mockDisconnect } as never);
       mockService.listCompanies.mockRejectedValue(new Error('fail'));
@@ -77,7 +77,7 @@ describe('CompaniesController', () => {
       const c = mockContext();
       await controller.listCompanies(c as never);
 
-      expect(mockDisconnect).toHaveBeenCalled();
+      expect(mockDisconnect).not.toHaveBeenCalled();
     });
   });
 
@@ -113,7 +113,7 @@ describe('CompaniesController', () => {
       expect(c.jsonBody).toHaveProperty('error', 'DB error');
     });
 
-    it('disconnects prisma even on error', async () => {
+    it('does not disconnect the shared prisma singleton, even on error', async () => {
       const mockDisconnect = vi.fn();
       vi.mocked(getPrisma).mockReturnValue({ $disconnect: mockDisconnect } as never);
       mockService.getCompanyDetails.mockRejectedValue(new Error('fail'));
@@ -121,7 +121,7 @@ describe('CompaniesController', () => {
       const c = mockContext({ slug: 'test' });
       await controller.getCompanyDetails(c as never);
 
-      expect(mockDisconnect).toHaveBeenCalled();
+      expect(mockDisconnect).not.toHaveBeenCalled();
     });
   });
 });
