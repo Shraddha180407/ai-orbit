@@ -124,11 +124,14 @@ export function FilterDropdown({
     if (!searchQuery) return entries;
     const query = searchQuery.toLowerCase();
     return entries.filter(([item]) => {
+      // Always match against the displayed label first
+      if (item.toLowerCase().includes(query)) return true;
+      // Then check precomputed search keys (owner slug, company slug, etc.)
       if (searchKeys) {
         const precomputed = searchKeys[item];
-        return precomputed ? precomputed.includes(query) : item.toLowerCase().includes(query);
+        if (precomputed && precomputed.includes(query)) return true;
       }
-      if (item.toLowerCase().includes(query)) return true;
+      // Finally check aliases
       const aliases = searchAliases?.[item];
       if (aliases && aliases.some((a) => a.toLowerCase().includes(query))) return true;
       return false;

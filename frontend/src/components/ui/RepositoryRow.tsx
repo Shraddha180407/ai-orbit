@@ -13,9 +13,10 @@ interface RepositoryRowProps {
 
 // Reusable subcomponents to reduce duplicated markup
 function RepositoryTitle({ name, className = "" }: { name: string; className?: string }) {
+  const displayName = name ? name.charAt(0).toUpperCase() + name.slice(1) : name;
   return (
     <h3 className={`font-medium text-white text-[13px] truncate ${className}`}>
-      {name}
+      {displayName}
       <span className="sr-only"> (opens in a new tab)</span>
     </h3>
   );
