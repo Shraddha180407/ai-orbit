@@ -76,7 +76,7 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
         const data = await fetchRepositoryOwners();
         const enriched = (data || []).map((o) => ({
           ...o,
-          searchText: `${o.displayName} ${o.owner} ${o.companySlug || ""}`.toLowerCase(),
+          searchText: `${o.displayName || ""} ${o.owner} ${o.companySlug || ""}`.toLowerCase().trim(),
         }));
         setOwners(enriched);
       } catch (e) {
@@ -180,6 +180,8 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
     const counts: Record<string, number> = {};
     owners.forEach((o) => {
       const name = o.displayName || o.owner;
+      // Skip purely numeric GitHub usernames (not real company names)
+      if (/^\d+$/.test(name)) return;
       counts[name] = o.repositoryCount ?? o.count ?? 0;
     });
     return counts;
@@ -189,6 +191,7 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
     const keys: Record<string, string> = {};
     owners.forEach((o) => {
       const name = o.displayName || o.owner;
+      if (/^\d+$/.test(name)) return;
       keys[name] = o.searchText || "";
     });
     return keys;
