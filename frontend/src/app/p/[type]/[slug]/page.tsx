@@ -42,7 +42,7 @@ const VALID_CATEGORIES: Record<string, Set<string>> = {
   robots: new Set(["humanoid-robots", "industrial", "service", "healthcare", "educational", "autonomous-mobile-robots", "drones", "companion", "agricultural", "research", "multi-agent", "task-specific", "autonomous-navigation", "reinforcement-learning", "surveillance"]),
   devices: new Set(["ai-pcs", "smartphones", "smart-home", "wearables", "ai-cameras", "audio", "ar-vr", "edge-ai", "robotics-hardware", "medical", "development-boards", "smart-sensors", "automotive-ai-devices"]),
   models: new Set(["llm", "image-generation", "video-generation", "speech", "multimodal", "code-generation", "embedding", "reasoning", "vision-models", "open-source-models", "testing", "e-commerce", "recruitment", "translation", "project-management"]),
-  repositories: new Set(["llm", "generative-ai", "ai-frameworks", "nlp", "frameworks", "robotics", "rag-systems", "deployment", "data-science", "prompt-engineering", "search-engines", "knowledge-graphs", "ai-agents", "cloud"])
+  repositories: new Set(["llms", "generative-ai", "ai-frameworks", "nlp", "frameworks", "robotics", "rag-systems", "deployment", "data-science", "prompt-engineering", "search-engines", "knowledge-graphs", "ai-agents", "cloud", "computer-vision"])
 };
 
 interface UnifiedEntityPageProps {
