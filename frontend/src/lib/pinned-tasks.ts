@@ -2,16 +2,6 @@ import type { Task } from "./tasks-api";
 
 export type PinnedTask = Task & { iconUrl?: string };
 
-/**
- * Pinned tasks shown at the top of /tasks, above whatever the backend
- * returns. These are client-side only — merged in at render time in
- * tasks-client.tsx — so they never interfere with pagination/infinite
- * scroll and require no backend changes.
- *
- * iconUrl reuses the real favicon of each task's most popular tool
- * (matches the "Most popular" chip shown on the task detail page) since
- * abstract task categories don't have their own brand logo.
- */
 export const PINNED_TASKS: PinnedTask[] = [
   {
     id: "pinned-image-generation",

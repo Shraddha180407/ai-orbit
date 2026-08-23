@@ -12,7 +12,7 @@ import type { Task } from "@/lib/tasks-api";
 import { getCategoryIcon } from "@/lib/category-icons";
 
 type TaskCardProps = {
-  task: Task;
+  task: Task & { iconUrl?: string };
 };
 
 function formatCount(value: number | null | undefined): string {
@@ -23,9 +23,6 @@ function formatCount(value: number | null | undefined): string {
 }
 
 export function TaskCard({ task }: TaskCardProps) {
-  // useMemo keeps the icon reference stable across re-renders — required
-  // by the react-hooks/static-components rule, since a dynamically-chosen
-  // component must not be recreated on every render.
   const CategoryIcon = useMemo(() => getCategoryIcon(task.category?.slug), [task.category?.slug]);
 
   return (
@@ -35,14 +32,24 @@ export function TaskCard({ task }: TaskCardProps) {
     >
       <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-[#6E56CF] scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-200" />
 
-      <div className="h-7 w-7 rounded-md bg-[#18181C] flex items-center justify-center border border-[#232326]/60 shrink-0 text-[#A78BFA]">
-        <CategoryIcon className="h-3.5 w-3.5" aria-hidden="true" />
+      <div className="h-7 w-7 rounded-md bg-[#18181C] flex items-center justify-center border border-[#232326]/60 shrink-0 text-[#A78BFA] overflow-hidden">
+        {task.iconUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={task.iconUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <CategoryIcon className="h-3.5 w-3.5" aria-hidden="true" />
+        )}
       </div>
 
       <div className="min-w-0">
         <span className="text-sm font-semibold text-white truncate block group-hover:text-[#A78BFA] transition-colors duration-200">
           {task.title}
         </span>
+        {task.description && (
+          <span className="text-xs text-[#71717A] truncate block mt-0.5">
+            {task.description}
+          </span>
+        )}
       </div>
 
       <span className="flex items-center justify-end gap-2 text-xs text-[#A1A1AA] font-mono tabular-nums">

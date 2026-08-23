@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import {
   fetchTasks,
@@ -11,6 +11,7 @@ import {
   type FilterOption,
   type TaskListResponse,
 } from "@/lib/tasks-api";
+import { PINNED_TASKS } from "@/lib/pinned-tasks";
 import { TaskCard } from "./TaskCard";
 import { TaskSkeleton } from "./TaskSkeleton";
 import { EmptyTasks } from "./EmptyTasks";
@@ -19,7 +20,6 @@ import { TaskAuthRequired } from "./TaskAuthRequired";
 
 type TasksClientProps = {
   initialData?: TaskListResponse;
-  defaultCategory?: string;
 };
 
 const COLUMN_LABELS = ["SUBSCRIBERS", "SAVES", "TOOLS", "MODELS", "ROBOTS", "DEVICES"];
@@ -43,113 +43,131 @@ const TASK_CATEGORIES = [
   { name: "Website Building", slug: "website-building" }
 ];
 
-import { useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
-
-export function TasksClient({ initialData, defaultCategory }: TasksClientProps) {
+export function TasksClient({ initialData }: TasksClientProps) {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<string>(() => {
-    return defaultCategory || searchParams.get("category") || "";
+    return searchParams.get("category") || "";
   });
 
-  useEffect(() => {
-    if (defaultCategory !== undefined) {
-      setActiveCategory(defaultCategory);
-    }
-  }, [defaultCategory]);
+  const [tasks, setTasks] = useState<Task[]>(initialData?.tasks ?? []);
+const [total, setTotal] = useState(initialData?.total ?? 0);
+const [page, setPage] = useState(initialData?.page ?? 1);
+const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
+
+  const [isFetching, setIsFetching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [authRequired, setAuthRequired] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const rawSort = searchParams.get("sort") ?? "newest";
-  const mappedSort: SortOption =
-    rawSort === "oldest" ? "oldest" :
-    rawSort === "name-asc" || rawSort === "name-desc" ? "alphabetical" :
-    rawSort === "rating" ? "popular" :
-    "newest";
+const mappedSort: SortOption =
+  rawSort === "oldest" ? "oldest" :
+  rawSort === "name-asc" || rawSort === "name-desc" ? "alphabetical" :
+  rawSort === "rating" ? "popular" :
+  "newest";
 
-  const queryParams = useMemo(
-    () => ({
-      sort: mappedSort as SortOption,
-      filter: "all" as FilterOption,
-      category: activeCategory || undefined,
-    }),
-    [activeCategory, mappedSort]
+const queryParams = useMemo(
+  () => ({
+    sort: mappedSort as SortOption,
+    filter: "all" as FilterOption,
+    category: activeCategory || undefined,
+  }),
+  [activeCategory, mappedSort]
+);
+
+  const loadPage = useCallback(
+    async (pageNum: number, append: boolean) => {
+      setIsFetching(true);
+      setError(null);
+      setAuthRequired(false);
+      try {
+        const data = await fetchTasks({ ...queryParams, page: pageNum });
+        setTasks((prev) => (append ? [...prev, ...data.tasks] : data.tasks));
+        setTotal(data.total);
+        setPage(data.page);
+        setTotalPages(data.totalPages);
+      } catch (e) {
+        if (e instanceof AuthRequiredError) {
+          setAuthRequired(true);
+          setTasks([]);
+          setTotal(0);
+        } else {
+          setError(e instanceof Error ? e.message : "Failed to load tasks.");
+        }
+      } finally {
+        setIsFetching(false);
+      }
+    },
+    [queryParams]
   );
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    isPlaceholderData,
-    error: queryError,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey: ["tasks", queryParams],
-    queryFn: async ({ pageParam = 1 }) => {
-      return fetchTasks({ ...queryParams, page: pageParam });
-    },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage: any) => {
-      const p = lastPage?.page || 1;
-      const totalPages = lastPage?.totalPages || 1;
-      return p < totalPages ? p + 1 : undefined;
-    },
-    initialData: initialData && initialData.tasks ? { pages: [initialData], pageParams: [1] } : undefined,
-    placeholderData: keepPreviousData,
-    staleTime: 10 * 60 * 1000,
-  });
+  const isFirstRender = useRef(true);
 
-  const tasks = data?.pages.flatMap((p: any) => p?.tasks || []) || [];
-  const total = data?.pages[0]?.total ?? 0;
-  const authRequired = queryError instanceof AuthRequiredError;
-  const error = queryError && !authRequired ? (queryError instanceof Error ? queryError.message : "Failed to load tasks.") : null;
-
-  // Infinite scroll
   useEffect(() => {
-    if (isLoading || isFetchingNextPage || !hasNextPage || authRequired) return;
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      if (initialData) return;
+    }
+    setTasks([]);
+    setPage(1);
+    setTotalPages(1);
+    loadPage(1, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryParams.category, queryParams.sort, queryParams.filter]);
+
+  const loadMore = useCallback(() => {
+    if (isFetching || page >= totalPages) return;
+    loadPage(page + 1, true);
+  }, [isFetching, page, totalPages, loadPage]);
+
+  useEffect(() => {
+    if (isFetching || page >= totalPages || authRequired) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) fetchNextPage();
+        if (entries[0].isIntersecting) loadMore();
       },
       { threshold: 0.1 }
     );
 
-    const el = sentinelRef.current;
-    if (el) observer.observe(el);
-    return () => {
-      if (el) observer.unobserve(el);
-    };
-  }, [isLoading, isFetchingNextPage, hasNextPage, authRequired, fetchNextPage]);
+    const currentSentinel = sentinelRef.current;
+    if (currentSentinel) observer.observe(currentSentinel);
 
-  const isInitialLoading = isLoading && tasks.length === 0 && !error && !authRequired;
+    return () => {
+      if (currentSentinel) observer.unobserve(currentSentinel);
+    };
+  }, [isFetching, page, totalPages, loadMore, authRequired]);
+
+  const isInitialLoading =
+  isFetching &&
+  tasks.length === 0 &&
+  !error &&
+  !authRequired;
+
+  const displayTasks = [...PINNED_TASKS, ...tasks];
 
   return (
-      <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2 flex-1 selection:bg-neutral-800 selection:text-white">
-        <div className="mx-auto w-full max-w-[1440px] space-y-3">
-          {/* Top Sliding Category Row */}
-          <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+      <main className="w-full px-6 lg:px-10 py-2 flex-1 selection:bg-neutral-800 selection:text-white">
+        <div className="mb-2 flex items-center justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
           {TASK_CATEGORIES.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
               <button
                 key={topic.name}
                 onClick={(e) => {
-                  setActiveCategory(topic.slug);
-                  if (topic.slug) {
-                    router.push(`/tasks/${topic.slug}`);
-                  } else {
-                    router.push(`/tasks`);
-                  }
-                  e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center"
-                  });
-                }}
-                className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+  setActiveCategory(topic.slug);
+  const params = new URLSearchParams(searchParams.toString());
+  if (topic.slug) params.set("category", topic.slug);
+  else params.delete("category");
+  window.history.pushState(null, "", `/tasks?${params.toString()}`);
+  e.currentTarget.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest",
+    inline: "center"
+  });
+}}
+                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
@@ -168,11 +186,11 @@ export function TasksClient({ initialData, defaultCategory }: TasksClientProps) 
             message="Sign in to see tasks you're following."
           />
         ) : error && tasks.length === 0 ? (
-          <TaskErrorState message={error} onRetry={() => refetch()} />
-        ) : tasks.length === 0 ? (
+          <TaskErrorState message={error} onRetry={() => loadPage(1, false)} />
+        ) : displayTasks.length === 0 ? (
           <EmptyTasks />
         ) : (
-          <div className={`relative w-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#131316]/60 to-[#0D0D10]/60 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_20px_60px_-30px_rgba(0,0,0,0.8)] ring-1 ring-[#232326]/70 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
+          <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#131316]/60 to-[#0D0D10]/60 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_20px_60px_-30px_rgba(0,0,0,0.8)] ring-1 ring-[#232326]/70">
             <div className="grid grid-cols-[48px_minmax(220px,1.6fr)_repeat(6,minmax(90px,1fr))] items-center gap-4 px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
               <span />
               <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A]">Task</span>
@@ -186,7 +204,7 @@ export function TasksClient({ initialData, defaultCategory }: TasksClientProps) 
               ))}
             </div>
 
-            {tasks.map((task) => (
+            {displayTasks.map((task) => (
               <TaskCard key={task.id} task={task} />
             ))}
 
@@ -196,14 +214,13 @@ export function TasksClient({ initialData, defaultCategory }: TasksClientProps) 
               </div>
             )}
 
-            {hasNextPage && (
+            {page < totalPages && (
               <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-[#A78BFA]" />
               </div>
             )}
           </div>
         )}
-      </div>
-    </main>
+      </main>
   );
 }

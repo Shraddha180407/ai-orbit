@@ -3,41 +3,92 @@
 import { useEffect, useState } from "react";
 import { useParams, notFound } from "next/navigation";
 import { fetchTask, fetchTasks, type Task } from "@/lib/tasks-api";
+import { PINNED_TASKS } from "@/lib/pinned-tasks";
 import { TaskDetail } from "@/components/TaskDetail";
-
-import { useQuery } from "@tanstack/react-query";
 
 export function TaskDetailClient() {
   const params = useParams();
   const slug = params.slug as string;
 
-  const { data: taskData, isLoading, isError } = useQuery({
-    queryKey: ["task-detail", slug],
-    queryFn: async () => {
-      const data = await fetchTask(slug);
-      if (!data) return null;
-      let related: Task[] = [];
-      if (data.task.category?.slug) {
-        try {
-          const relatedRes = await fetchTasks({ category: data.task.category.slug, page: 1 });
-          related = relatedRes.tasks.filter((t) => t.slug !== data.task.slug).slice(0, 5);
-        } catch {}
+  const [task, setTask] = useState<Task | null>(null);
+  const [relatedTasks, setRelatedTasks] = useState<Task[]>([]);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFoundState, setNotFoundState] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadTask() {
+      setIsLoading(true);
+      try {
+        // Pinned mock tasks don't exist on the real backend — fetching
+        // them there would always fail. Serve them directly instead.
+        const pinned = PINNED_TASKS.find((t) => t.slug === slug);
+
+        if (pinned) {
+          if (!cancelled) {
+            setTask(pinned);
+            setBookmarked(false);
+            setLiked(false);
+            setSubscribed(false);
+          }
+
+          if (pinned.category?.slug) {
+            try {
+              const related = await fetchTasks({ category: pinned.category.slug, page: 1 });
+              if (!cancelled) {
+                setRelatedTasks(related.tasks.filter((t) => t.slug !== pinned.slug).slice(0, 5));
+              }
+            } catch (relatedError) {
+              console.error("Failed to fetch related tasks for pinned task:", relatedError);
+              if (!cancelled) setRelatedTasks([]);
+            }
+          }
+
+          return;
+        }
+
+        const data = await fetchTask(slug);
+
+        if (!data) {
+          if (!cancelled) setNotFoundState(true);
+          return;
+        }
+        if (cancelled) return;
+
+        setTask(data.task);
+        setBookmarked(data.bookmarked);
+        setLiked(data.liked);
+        setSubscribed(data.subscribed);
+
+        if (data.task.category?.slug) {
+          try {
+            const related = await fetchTasks({ category: data.task.category.slug, page: 1 });
+            if (!cancelled) {
+              setRelatedTasks(related.tasks.filter((t) => t.slug !== data.task.slug).slice(0, 5));
+            }
+          } catch (relatedError) {
+            console.error("Failed to fetch related tasks:", relatedError);
+            if (!cancelled) setRelatedTasks([]);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch task:", error);
+        if (!cancelled) setNotFoundState(true);
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
-      return { ...data, relatedTasks: related };
-    },
-    staleTime: 10 * 60 * 1000,
-  });
+    }
 
-  const task = taskData?.task || null;
-  const relatedTasks = taskData?.relatedTasks || [];
-  const bookmarked = taskData?.bookmarked || false;
-  const liked = taskData?.liked || false;
-  const subscribed = taskData?.subscribed || false;
-  const notFoundState = isError || (!isLoading && !task);
+    loadTask();
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
 
-  // Same pattern as ToolDetailClient: set the document title client-side
-  // once data is in. The server-rendered <title> comes from
-  // UnifiedEntityPage's generateMetadata (see the "tasks" branch there).
   useEffect(() => {
     if (task) {
       document.title = `${task.title} | AI Orbit`;

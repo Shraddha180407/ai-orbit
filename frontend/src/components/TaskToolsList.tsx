@@ -6,11 +6,9 @@ import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right';
 import X from 'lucide-react/dist/esm/icons/x';
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left';
 import { getToolsByCategory, type ToolRecord } from "@/lib/tools-data";
-import type { Task } from "@/lib/tasks-api";
 
 type TaskToolsListProps = {
   tools: ToolRecord[];
-  relatedTasks?: Task[];
 };
 
 function faviconUrl(websiteUrl: string, size = 128): string {
@@ -65,7 +63,15 @@ export function TaskToolsList({ tools }: TaskToolsListProps) {
     };
   }, [selectedTool]);
 
-  if (!tools.length) return null;
+  if (!tools.length) {
+    return (
+      <div className="mb-6">
+        <div className="w-full rounded-2xl bg-[#0B0B0E] ring-1 ring-[#232326]/60 p-8 text-center text-sm text-[#71717A]">
+          No tools match this filter.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-6">
@@ -121,11 +127,6 @@ export function TaskToolsList({ tools }: TaskToolsListProps) {
   );
 }
 
-/**
- * Full-width overlay styled identically to TaskDetail's page layout
- * (same hero card, same list-row style for tools) so it reads as
- * "a page" even though it's a client-side overlay with no route change.
- */
 function ToolDetailOverlay({
   tool,
   onSelectTool,
@@ -177,6 +178,9 @@ function ToolDetailOverlay({
                   </span>
                   <span className={`px-2.5 py-1 rounded-md text-[11px] ring-1 font-mono ${pricingBadgeClasses(tool.pricing)}`}>
                     {tool.pricing}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-md text-[11px] ring-1 ring-[#232326]/70 bg-[#18181C] text-[#A1A1AA] font-mono">
+                    {tool.subcategory}
                   </span>
                 </div>
               </div>
