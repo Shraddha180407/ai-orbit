@@ -12,15 +12,47 @@ type SerializedTaskListRow = {
   pricingModel: PricingModel;
   isFeatured: boolean;
   category: { id: string; slug: string; name: string };
-  updatedAt: Date;
+  creator: { id: string; name: string | null; image: string | null } | null;
+  createdAt: Date;
+  toolCount: number;
+  modelCount: number;
+  robotCount: number;
+  deviceCount: number;
+  saveCount: number;
+  likeCount: number;
+  subscriberCount: number;
   _count: {
-    tools: number;
-    models: number;
-    robots: number;
-    devices: number;
-    bookmarks: number;
+    resources: number;
   };
 };
+
+const taskDetailSelect = {
+  id: true, slug: true, title: true, description: true, iconUrl: true,
+  difficulty: true, pricingModel: true, isFeatured: true, createdAt: true, updatedAt: true,
+  category: { select: { id: true, slug: true, name: true } },
+  creator: { select: { id: true, name: true, image: true } },
+  toolCount: true, modelCount: true, robotCount: true, deviceCount: true,
+  saveCount: true, likeCount: true, subscriberCount: true,
+  resources: {
+    select: { title: true, url: true, homepage: true, source: true, postedAt: true, stars: true, createdAt: true },
+    orderBy: { createdAt: 'desc' as const },
+    take: 20,
+  },
+  popularTools: {
+    select: {
+      slug: true, name: true, logoUrl: true, tagline: true,
+      pricingModel: true, rating: true, bookmarkCount: true, visitUrl: true,
+    },
+  },
+  popularModels: {
+    select: {
+      slug: true, name: true, provider: true, logoUrl: true,
+      modelType: true, pricingModel: true, benchmarkScore: true, websiteUrl: true,
+    },
+  },
+} satisfies Prisma.TaskSelect;
+
+type SerializedTaskDetailRow = Prisma.TaskGetPayload<{ select: typeof taskDetailSelect }>;
 
 export class TasksService {
   private prisma: PrismaClient;
@@ -78,7 +110,7 @@ export class TasksService {
       ];
 
       if (categoryIds.length === 0) {
-        return { tasks: [], total: 0, page: pageNum, totalPages: 1, sort: filters.sort || 'newest' };
+        return { tasks: [], total: 0, page: pageNum, totalPages: 1, sort: filters.sort || 'newest', categories: [] };
       }
 
       where.categoryId = { in: categoryIds };
@@ -98,6 +130,7 @@ switch (filters.sort) {
     break;
 
   case "name-asc":
+  case "alphabetical":
     orderBy = {
       title: "asc",
     };
@@ -110,10 +143,9 @@ switch (filters.sort) {
     break;
 
   case "rating":
+  case "popular":
     orderBy = {
-      likes: {
-        _count: "desc",
-      },
+      likeCount: "desc",
     };
     break;
 
@@ -128,13 +160,17 @@ switch (filters.sort) {
       id: true, slug: true, title: true, description: true, iconUrl: true,
       difficulty: true, pricingModel: true, isFeatured: true,
       category: { select: { id: true, slug: true, name: true } },
-      updatedAt: true,
-      _count: { select: { tools: true, models: true, robots: true, devices: true, bookmarks: true } },
+      creator: { select: { id: true, name: true, image: true } },
+      createdAt: true,
+      toolCount: true, modelCount: true, robotCount: true, deviceCount: true,
+      saveCount: true, likeCount: true, subscriberCount: true,
+      _count: { select: { resources: true } },
     };
 
-    const [tasks, total] = await Promise.all([
+    const [tasks, total, categories] = await Promise.all([
       this.prisma.task.findMany({ where, orderBy, skip, take: limit, select: selectFields }),
       this.prisma.task.count({ where }),
+      this.prisma.taskCategory.findMany({ select: { slug: true, name: true }, orderBy: { name: 'asc' } }),
     ]);
 
     return {
@@ -143,35 +179,14 @@ switch (filters.sort) {
       page: pageNum,
       totalPages: Math.max(1, Math.ceil(total / limit)),
       sort: filters.sort || 'newest',
+      categories,
     };
   }
 
   async getTaskDetails(slug: string, userId?: string) {
     const task = await this.prisma.task.findUnique({
       where: { slug },
-      select: {
-        id: true, slug: true, title: true, description: true, iconUrl: true,
-        difficulty: true, pricingModel: true, isFeatured: true, updatedAt: true,
-        category: { select: { id: true, slug: true, name: true } },
-        _count: { select: { tools: true, models: true, robots: true, devices: true, bookmarks: true, subscribers: true } },
-        resources: {
-          select: { title: true, url: true, homepage: true, source: true, postedAt: true, stars: true, createdAt: true },
-          orderBy: { createdAt: 'desc' },
-          take: 20,
-        },
-        popularTools: {
-          select: {
-            slug: true, name: true, logoUrl: true, tagline: true,
-            pricingModel: true, rating: true, bookmarkCount: true, visitUrl: true,
-          },
-        },
-        popularModels: {
-          select: {
-            slug: true, name: true, provider: true, logoUrl: true,
-            modelType: true, pricingModel: true, benchmarkScore: true, websiteUrl: true,
-          },
-        },
-      },
+      select: taskDetailSelect,
     });
 
     if (!task) return null;
@@ -205,46 +220,87 @@ switch (filters.sort) {
   async toggleBookmarkBySlug(slug: string, userId: string) {
     const task = await this.prisma.task.findUnique({ where: { slug }, select: { id: true } });
     if (!task) return null;
-    return this.toggleJoinRow(this.prisma.taskBookmark, task.id, userId);
+    return this.toggleWithCounter({
+      taskId: task.id,
+      userId,
+      counterField: 'saveCount',
+      findExisting: () =>
+        this.prisma.taskBookmark.findUnique({
+          where: { taskId_userId: { taskId: task.id, userId } },
+          select: { id: true },
+        }),
+      createRow: (tx) => tx.taskBookmark.create({ data: { taskId: task.id, userId } }),
+      deleteRow: (tx, existing) => tx.taskBookmark.delete({ where: { id: (existing as { id: string }).id } }),
+    });
   }
 
   async toggleLikeBySlug(slug: string, userId: string) {
     const task = await this.prisma.task.findUnique({ where: { slug }, select: { id: true } });
     if (!task) return null;
-    return this.toggleJoinRow(this.prisma.taskLike, task.id, userId, true);
+    return this.toggleWithCounter({
+      taskId: task.id,
+      userId,
+      counterField: 'likeCount',
+      findExisting: () =>
+        this.prisma.taskLike.findUnique({ where: { taskId_userId: { taskId: task.id, userId } } }),
+      createRow: (tx) => tx.taskLike.create({ data: { taskId: task.id, userId } }),
+      deleteRow: (tx) => tx.taskLike.delete({ where: { taskId_userId: { taskId: task.id, userId } } }),
+    });
   }
 
   async toggleSubscribeBySlug(slug: string, userId: string) {
     const task = await this.prisma.task.findUnique({ where: { slug }, select: { id: true } });
     if (!task) return null;
-    return this.toggleJoinRow(this.prisma.taskSubscriber, task.id, userId, true);
+    return this.toggleWithCounter({
+      taskId: task.id,
+      userId,
+      counterField: 'subscriberCount',
+      findExisting: () =>
+        this.prisma.taskSubscriber.findUnique({ where: { taskId_userId: { taskId: task.id, userId } } }),
+      createRow: (tx) => tx.taskSubscriber.create({ data: { taskId: task.id, userId } }),
+      deleteRow: (tx) => tx.taskSubscriber.delete({ where: { taskId_userId: { taskId: task.id, userId } } }),
+    });
   }
 
-  private async toggleJoinRow(model: unknown, taskId: string, userId: string, compositeKey = false) {
-    const m = model as {
-      findUnique: (args: { where: { taskId_userId: { taskId: string; userId: string } }; select?: { id: true } }) => Promise<{ id: string } | null>;
-      delete: (args: { where: { taskId_userId: { taskId: string; userId: string } } | { id: string } }) => Promise<unknown>;
-      create: (args: { data: { taskId: string; userId: string } }) => Promise<unknown>;
-    };
-    if (compositeKey) {
-      const existing = await m.findUnique({ where: { taskId_userId: { taskId, userId } } });
+  /**
+   * Toggles a user's join-table row (like/subscribe/bookmark) and keeps the
+   * matching literal counter column on Task in sync, atomically, so the
+   * counter never drifts from the actual number of join rows. The counter
+   * is decremented with a floor of 0 to guard against double-processed
+   * requests (e.g. a retried network call) ever pushing it negative.
+   */
+  private async toggleWithCounter(args: {
+    taskId: string;
+    userId: string;
+    counterField: 'likeCount' | 'subscriberCount' | 'saveCount';
+    findExisting: () => Promise<unknown>;
+    createRow: (tx: Prisma.TransactionClient) => Promise<unknown>;
+    deleteRow: (tx: Prisma.TransactionClient, existing: unknown) => Promise<unknown>;
+  }): Promise<boolean> {
+    const existing = await args.findExisting();
+
+    return this.prisma.$transaction(async (tx) => {
       if (existing) {
-        await m.delete({ where: { taskId_userId: { taskId, userId } } });
+        await args.deleteRow(tx, existing);
+        await tx.task.update({
+          where: { id: args.taskId },
+          data: { [args.counterField]: { decrement: 1 } },
+        });
+        // Clamp to 0 in case of any prior drift — never show a negative count.
+        await tx.task.updateMany({
+          where: { id: args.taskId, [args.counterField]: { lt: 0 } },
+          data: { [args.counterField]: 0 },
+        });
         return false;
       } else {
-        await m.create({ data: { taskId, userId } });
+        await args.createRow(tx);
+        await tx.task.update({
+          where: { id: args.taskId },
+          data: { [args.counterField]: { increment: 1 } },
+        });
         return true;
       }
-    } else {
-      const existing = await m.findUnique({ where: { taskId_userId: { taskId, userId } }, select: { id: true } });
-      if (existing) {
-        await m.delete({ where: { id: existing.id } });
-        return false;
-      } else {
-        await m.create({ data: { taskId, userId } });
-        return true;
-      }
-    }
+    });
   }
 
   // ---- Serialization ----
@@ -257,20 +313,25 @@ switch (filters.sort) {
       description: t.description,
       iconUrl: t.iconUrl,
       category: { id: t.category.id, name: t.category.name, slug: t.category.slug },
+      creator: t.creator
+        ? { id: t.creator.id, name: t.creator.name ?? '', avatarUrl: t.creator.image ?? undefined }
+        : null,
       difficulty: t.difficulty,
       pricingModel: t.pricingModel,
       isFeatured: t.isFeatured,
-      toolCount: t._count.tools,
-      modelCount: t._count.models,
-      robotCount: t._count.robots,
-      deviceCount: t._count.devices,
-      saveCount: t._count.bookmarks,
-      updatedAt: t.updatedAt.toISOString(),
+      createdAt: t.createdAt.toISOString(),
+      likes: t.likeCount,
+      subscribers: t.subscriberCount,
+      saves: t.saveCount,
+      resources: t._count.resources,
+      tools: t.toolCount,
+      models: t.modelCount,
+      robots: t.robotCount,
+      devices: t.deviceCount,
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private serializeTaskDetail(t: any) {
+  private serializeTaskDetail(t: SerializedTaskDetailRow) {
     return {
       id: t.id,
       title: t.title,
@@ -279,19 +340,23 @@ switch (filters.sort) {
       iconUrl: t.iconUrl,
       bannerUrl: null, // not yet supported — placeholder until asset pipeline exists
       category: { id: t.category.id, name: t.category.name, slug: t.category.slug },
+      creator: t.creator
+        ? { id: t.creator.id, name: t.creator.name ?? '', avatarUrl: t.creator.image ?? undefined }
+        : null,
       difficulty: t.difficulty,
       pricingModel: t.pricingModel,
       isFeatured: t.isFeatured,
-      toolCount: t._count.tools,
-      modelCount: t._count.models,
-      robotCount: t._count.robots,
-      deviceCount: t._count.devices,
-      saveCount: t._count.bookmarks,
-      subscriberCount: t._count.subscribers,
+      tools: t.toolCount,
+      models: t.modelCount,
+      robots: t.robotCount,
+      devices: t.deviceCount,
+      saves: t.saveCount,
+      likes: t.likeCount,
+      subscribers: t.subscriberCount,
       shareUrl: `${FRONTEND_BASE_URL}/tasks/${t.slug}`,
+      createdAt: t.createdAt.toISOString(),
       updatedAt: t.updatedAt.toISOString(),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      resources: t.resources.map((r: any) => ({
+      resources: t.resources.map((r) => ({
         title: r.title,
         url: r.url,
         homepage: r.homepage ?? null,
@@ -299,8 +364,7 @@ switch (filters.sort) {
         postedAt: r.postedAt?.toISOString?.() ?? null,
         stars: r.stars ?? null,
       })),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      popularTools: t.popularTools.map((pt: any) => ({
+      popularTools: t.popularTools.map((pt) => ({
         slug: pt.slug,
         name: pt.name,
         logoUrl: pt.logoUrl,
@@ -310,8 +374,7 @@ switch (filters.sort) {
         bookmarkCount: pt.bookmarkCount,
         visitUrl: pt.visitUrl,
       })),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      popularModels: t.popularModels.map((pm: any) => ({
+      popularModels: t.popularModels.map((pm) => ({
         slug: pm.slug,
         name: pm.name,
         provider: pm.provider,
