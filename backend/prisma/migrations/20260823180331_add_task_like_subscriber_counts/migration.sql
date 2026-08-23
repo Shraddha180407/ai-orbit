@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Task" ADD COLUMN     "likeCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "subscriberCount" INTEGER NOT NULL DEFAULT 0;

@@ -984,6 +984,8 @@ model Task {
   robotCount   Int            @default(0)
   deviceCount  Int            @default(0)
   saveCount    Int            @default(0)
+  likeCount    Int            @default(0)
+  subscriberCount Int         @default(0)
   shareUrl     String?
 
   bookmarks    TaskBookmark[]

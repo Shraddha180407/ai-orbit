@@ -12,7 +12,9 @@ export const GetTasksQuerySchema = z.object({
     "oldest",
     "rating",
     "name-asc",
-    "name-desc"
+    "name-desc",
+    "alphabetical",
+    "popular"
 ]).optional().default('newest'),
   page: z.string().optional().default('1'),
   filter: z.enum(['all', 'for-you', 'following']).optional().default('all'),
