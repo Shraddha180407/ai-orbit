@@ -66,60 +66,48 @@ function ShareButton({ slug, name }: { slug: string; name: string }) {
   );
 }
 
+export const MCP_SUBCATEGORIES: MCPSubCategory[] = [
+  { id: "1", name: "APIs", slug: "apis", description: "API integrations and service connectors" },
+  { id: "2", name: "Browser", slug: "browser", description: "Browser extensions and web-based tools" },
+  { id: "3", name: "Cloud", slug: "cloud", description: "Cloud service integrations and deployment tools" },
+  { id: "4", name: "Community", slug: "community", description: "Community-driven tools and open-source projects" },
+  { id: "5", name: "Databases", slug: "databases", description: "Database integrations for MCP" },
+  { id: "6", name: "Developer Tools", slug: "developer-tools", description: "Tools for developers to build and test MCP integrations" },
+  { id: "7", name: "File Systems", slug: "file-systems", description: "File system integrations and storage solutions" },
+  { id: "8", name: "MCP Servers", slug: "mcp-servers", description: "Model Context Protocol servers that provide tools and capabilities" },
+  { id: "9", name: "ML Platforms", slug: "ml-platforms", description: "Machine learning and AI platform integrations" },
+  { id: "10", name: "Productivity", slug: "productivity", description: "Productivity and workflow automation tools" },
+  { id: "11", name: "Core MCP Servers", slug: "core-mcp-servers", description: "Core MCP server implementations" },
+  { id: "12", name: "SDKs & Frameworks", slug: "sdks-frameworks", description: "Software development kits and frameworks" },
+  { id: "13", name: "Specialized MCP Servers", slug: "specialized-mcp-servers", description: "Specialized servers for specific domains" },
+  { id: "14", name: "Testing Tools", slug: "testing-tools", description: "Testing and debugging tools" },
+  { id: "15", name: "Version Control", slug: "version-control", description: "Version control and code management integrations" },
+  { id: "16", name: "Automation", slug: "automation", description: "Workflow automation and task scheduling tools" },
+  { id: "17", name: "Smart Devices", slug: "smart-devices", description: "IoT and smart device integrations" },
+  { id: "18", name: "Data Analytics", slug: "data-analytics", description: "Data analysis, visualization, and business intelligence tools" },
+  { id: "19", name: "MCP Clients", slug: "mcp-clients", description: "Client applications for connecting to MCP servers" },
+];
+
 export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { defaultCategory?: string; defaultSubCategory?: string }) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const q = searchParams.get("q") ?? "";
-  const initialCategory = searchParams.get("category") ?? "";
-  const initialSubCategory = searchParams.get("subCategory") ?? "";
+  const paramSubCategory = searchParams.get("subCategory") || searchParams.get("category") || "";
+  const selectedSubCategorySlug = defaultSubCategory || defaultCategory || paramSubCategory;
 
-  const [activeCategory, setActiveCategory] = useState<string>(defaultCategory || initialCategory);
-  const [activeSubCategory, setActiveSubCategory] = useState<string>(defaultSubCategory || initialSubCategory);
-
-  // Synchronize state when URL query parameters change (e.g. browser back/forward buttons)
-  useEffect(() => {
-    const categoryParam = searchParams.get("category") ?? "";
-    const subCategoryParam = searchParams.get("subCategory") ?? "";
-    setActiveCategory(defaultCategory || categoryParam);
-    setActiveSubCategory(defaultSubCategory || subCategoryParam);
-  }, [searchParams, defaultCategory, defaultSubCategory]);
-
-
-  // Helper to update URL search parameters without losing other queries (like search)
-  const updateUrl = (category: string, subCategory: string = "") => {
+  const handleSelectSubCategory = (slug: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("category");
     params.delete("subCategory");
-    
-    const slug = subCategory || category;
-    const targetPath = slug ? `/p/mcp/${slug}` : `/mcp`;
-    
     const queryString = params.toString();
-    const finalUrl = queryString ? `${targetPath}?${queryString}` : targetPath;
-    
-    router.replace(finalUrl);
+
+    if (!slug || slug === selectedSubCategorySlug) {
+      router.push(queryString ? `/mcp?${queryString}` : `/mcp`);
+    } else {
+      router.push(queryString ? `/p/mcp/${slug}?${queryString}` : `/p/mcp/${slug}`);
+    }
   };
-
-  // Fetch categories from API
-  const { data: categoriesData } = useQuery({
-    queryKey: ["mcpCategories"],
-    queryFn: fetchMCPCategories,
-    retry: false,
-    refetchOnWindowFocus: false,
-    staleTime: 10 * 60 * 1000,
-  });
-  const categories = categoriesData || [];
-
-  // Fetch subcategories based on active category
-  const { data: subCategoriesData } = useQuery({
-    queryKey: ["mcpSubCategories", activeCategory],
-    queryFn: () => fetchMCPSubCategories(activeCategory || undefined),
-    retry: false,
-    refetchOnWindowFocus: false,
-    staleTime: 10 * 60 * 1000,
-  });
-  const subCategories = subCategoriesData || [];
 
   // React Query fetch pattern with useInfiniteQuery
   const {
@@ -135,9 +123,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
       "mcpItems",
       {
         q,
-        category: activeCategory,
-        subCategory: activeSubCategory,
-        type: "SERVER",
+        subCategory: selectedSubCategorySlug,
       },
     ],
     queryFn: async ({ pageParam }) => {
@@ -145,9 +131,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
         page: pageParam as number,
         limit: 20,
         search: q || undefined,
-        category: activeCategory || undefined,
-        subCategory: activeSubCategory || undefined,
-        type: "SERVER",
+        subCategory: selectedSubCategorySlug || undefined,
       });
     },
     retry: false,
@@ -220,59 +204,41 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
         }
       `}</style>
       <div className="mx-auto w-full max-w-[1600px] space-y-4 animate-fade-in">
-        {/* Top Sliding Category + Subcategory Row */}
         {/* Single combined scrollable pill row — categories + subcategories */}
         <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
-          {[{ name: "All", slug: "" }, ...categories].map((topic) => {
-            const isSelected = activeCategory === topic.slug;
+          <button
+            onClick={() => handleSelectSubCategory(null)}
+            className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+              !selectedSubCategorySlug
+                ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+            }`}
+          >
+            All
+          </button>
+          {MCP_SUBCATEGORIES.map((sub) => {
+            const isSelected = selectedSubCategorySlug === sub.slug;
             return (
               <button
-                key={topic.slug || "all"}
+                key={sub.id}
                 onClick={(e) => {
-                  setActiveCategory(topic.slug);
-                  setActiveSubCategory("");
-                  updateUrl(topic.slug, "");
+                  handleSelectSubCategory(sub.slug);
                   e.currentTarget.scrollIntoView({
                     behavior: "smooth",
                     block: "nearest",
-                    inline: "center"
+                    inline: "center",
                   });
                 }}
-                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
                 }`}
               >
-                {topic.name}
+                {sub.name}
               </button>
             );
           })}
-          {subCategories.length > 0 && (
-            <>
-
-              {subCategories.map((sub) => {
-                const isActiveSub = activeSubCategory === sub.slug;
-                return (
-                  <button
-                    key={sub.id}
-                    onClick={() => {
-                      const next = isActiveSub ? "" : sub.slug;
-                      setActiveSubCategory(next);
-                      updateUrl(activeCategory, next);
-                    }}
-                    className={`whitespace-nowrap text-[10px] font-bold px-3 py-1 rounded-full border transition-all duration-200 cursor-pointer ${
-                      isActiveSub
-                        ? "bg-white text-black border-white shadow-lg shadow-white/5"
-                        : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                    }`}
-                  >
-                    {sub.name}
-                  </button>
-                );
-              })}
-            </>
-          )}
         </div>
 
         

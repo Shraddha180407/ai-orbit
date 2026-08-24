@@ -362,7 +362,7 @@ export type MCPSubCategory = {
   name: string;
   slug: string;
   description?: string | null;
-  categoryId: string;
+  categoryId?: string;
 };
 
 export type DeviceSubCategory = {
