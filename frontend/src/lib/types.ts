@@ -405,12 +405,6 @@ export type RobotListItem = {
   about: string;
   specs: string | null;
   mediaUrls: string[];
-  tasks: { id: string; title: string; slug: string }[];
-  createdAt?: string;
-  updatedAt?: string;
-};
-
-export type Robot = RobotListItem & {
   tasks: {
     id: string;
     slug: string;
@@ -418,7 +412,11 @@ export type Robot = RobotListItem & {
     description?: string;
     category?: { slug: string; name: string };
   }[];
+  createdAt?: string;
+  updatedAt?: string;
 };
+
+export type Robot = RobotListItem;
 
 export type Device = {
   id: string;

@@ -20,6 +20,7 @@ import { TaskAuthRequired } from "./TaskAuthRequired";
 
 type TasksClientProps = {
   initialData?: TaskListResponse;
+  defaultCategory?: string;
 };
 
 const COLUMN_LABELS = ["SUBSCRIBERS", "SAVES", "TOOLS", "MODELS", "ROBOTS", "DEVICES"];
@@ -43,10 +44,10 @@ const TASK_CATEGORIES = [
   { name: "Website Building", slug: "website-building" }
 ];
 
-export function TasksClient({ initialData }: TasksClientProps) {
+export function TasksClient({ initialData, defaultCategory = "" }: TasksClientProps) {
   const searchParams = useSearchParams();
   const [activeCategory, setActiveCategory] = useState<string>(() => {
-    return searchParams.get("category") || "";
+    return defaultCategory || searchParams.get("category") || "";
   });
 
   const [tasks, setTasks] = useState<Task[]>(initialData?.tasks ?? []);
