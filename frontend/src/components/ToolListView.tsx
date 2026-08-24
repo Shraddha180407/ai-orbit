@@ -35,6 +35,7 @@ type ListTool = ToolCardData & {
   openSource?: boolean;
   isTrending?: boolean;
   trending?: boolean;
+  launchDate?: string | null;
   hasApi?: boolean;
   isVerified?: boolean;
   isFeatured?: boolean;
@@ -347,7 +348,7 @@ function ToolRow({
 
       {/* Col 8: Released */}
       <div className="text-[10px] font-mono text-[#A1A1AA]">
-        {formatReleased(tool.releaseDate)}
+        {formatReleased(tool.releaseDate || tool.launchDate)}
       </div>
 
       {/* Col 9: Share */}

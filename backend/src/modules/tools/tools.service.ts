@@ -59,10 +59,23 @@ export class ToolsService {
       where.pricingModel = filters.pricing;
     }
 
-    let orderBy: Prisma.ToolOrderByWithRelationInput = { createdAt: 'desc' };
+    let orderBy: Prisma.ToolOrderByWithRelationInput | Prisma.ToolOrderByWithRelationInput[] = [
+      { ttasks: { _count: 'desc' } },
+      { createdAt: 'desc' }
+    ];
+
     switch (filters.sort) {
       case 'oldest':
-        orderBy = { createdAt: 'asc' };
+        orderBy = [
+          { ttasks: { _count: 'desc' } },
+          { createdAt: 'asc' }
+        ];
+        break;
+      case 'newest':
+        orderBy = [
+          { ttasks: { _count: 'desc' } },
+          { createdAt: 'desc' }
+        ];
         break;
       case 'name-asc':
         orderBy = { name: 'asc' };
@@ -71,7 +84,17 @@ export class ToolsService {
         orderBy = { name: 'desc' };
         break;
       case 'rating':
+      case 'top-rated':
         orderBy = { avgRating: 'desc' };
+        break;
+      case 'popular':
+        orderBy = { upvoteCount: 'desc' };
+        break;
+      case 'trending':
+        orderBy = [
+          { isTrending: 'desc' },
+          { createdAt: 'desc' }
+        ];
         break;
     }
 
