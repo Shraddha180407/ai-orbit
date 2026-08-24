@@ -190,8 +190,8 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
         break;
       case "MCP":
         queryClient.prefetchInfiniteQuery({
-          queryKey: ["mcpItems", { q: "", category: "all", subCategory: null, type: "SERVER" }],
-          queryFn: () => fetchMCPItems({ page: 1, limit: 20, type: "SERVER" }),
+          queryKey: ["mcpItems", { q: "", subCategory: "" }],
+          queryFn: () => fetchMCPItems({ page: 1, limit: 20 }),
           initialPageParam: 1,
           staleTime: 10 * 60 * 1000,
         }).catch(() => {});

@@ -116,7 +116,7 @@ function matchesSubcategory(c: Company, slug: string): boolean {
     case "ai-native":
       return typeLower.includes("native") || fullText.includes("ai native");
     case "unicorns":
-      return fullText.includes("unicorn") || (c.valuation && Number(c.valuation) >= 1_000_000_000);
+      return fullText.includes("unicorn") || Boolean(c.valuation && Number(c.valuation) >= 1_000_000_000);
     default:
       return fullText.includes(slugLower);
   }
