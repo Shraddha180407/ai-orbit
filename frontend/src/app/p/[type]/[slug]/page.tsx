@@ -33,6 +33,7 @@ const VALID_CATEGORIES: Record<string, Set<string>> = {
   tools: new Set(["writing", "image-generation", "video", "audio", "chatbots", "coding", "marketing", "productivity", "business", "education", "mcp"]),
   personal: new Set(["productivity", "chatbots", "writing", "audio", "customer-support", "video", "image-generation", "marketing"]),
   creativity: new Set(["image-generation", "writing", "software-development", "video-creation", "music", "graphic-design", "digital-art", "brainstorming", "3d-creation", "presentation-design", "storytelling", "content-creation", "branding", "motion-graphics", "game-creation"]),
+  agents: new Set(["content-creation", "research-assistance", "customer-support", "software-development", "business-automation", "data-analysis", "knowledge-management", "personal-productivity", "sales-automation", "workflow-automation", "autonomous-agents"]),
   mcp: new Set(["mcp-servers", "developer-tools", "databases", "file-systems", "productivity", "apis", "cloud", "ml-platforms", "browser", "community", "mcp-clients", "core-mcp-servers", "sdks-frameworks", "specialized-mcp-servers", "testing-tools", "version-control", "automation", "smart-devices", "data-analytics"]),
   collections: new Set(["research", "productivity", "creative", "developer", "business", "education", "industry", "open-source", "freelancer-toolkit", "recruiters", "analytics", "ecommerce", "no-code-ai", "healthcare", "finance"]),
   tasks: new Set(["content-creation", "image-creation", "video-creation", "audio", "coding", "data-analysis", "research", "productivity", "marketing", "customer-support", "translation", "presentation", "brainstorming", "prompting", "website-building"]),
@@ -133,7 +134,7 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   const resolvedParams = await params;
   const { type, slug } = resolvedParams;
   
-  if ((type === "tools" || type === "personal" || type === "creativity") && VALID_CATEGORIES[type]?.has(slug)) {
+  if ((type === "tools" || type === "personal" || type === "creativity" || type === "agents") && VALID_CATEGORIES[type]?.has(slug)) {
     return (
       <div className="min-h-screen flex flex-col bg-[#000000] text-white">
         <Header />
@@ -296,7 +297,7 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     );
   }
 
-  if (type === "tools" || type === "personal" || type === "creativity") return (
+  if (type === "tools" || type === "personal" || type === "creativity" || type === "agents") return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white">
       <Header />
       <div className="flex-1">

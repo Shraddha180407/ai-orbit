@@ -8,7 +8,7 @@ import { ToolListView } from "@/components/ToolListView";
 import { API_URL } from "@/lib/api";
 import type { SortOption } from "@/lib/types";
 
-type DirectoryMode = "tools" | "personal" | "creativity";
+type DirectoryMode = "tools" | "personal" | "creativity" | "agents";
 
 const CATEGORY_MAP = {
   tools: [
@@ -63,6 +63,20 @@ const CATEGORY_MAP = {
     { name: "Branding", slug: "branding" },
     { name: "Motion Graphics", slug: "motion-graphics" },
     { name: "Game Creation", slug: "game-creation" }
+  ],
+  agents: [
+    { name: "All", slug: "" },
+    { name: "Content Creation", slug: "content-creation" },
+    { name: "Research Assistance", slug: "research-assistance" },
+    { name: "Customer Support", slug: "customer-support" },
+    { name: "Software Development", slug: "software-development" },
+    { name: "Business Automation", slug: "business-automation" },
+    { name: "Data Analysis", slug: "data-analysis" },
+    { name: "Knowledge Management", slug: "knowledge-management" },
+    { name: "Personal Productivity", slug: "personal-productivity" },
+    { name: "Sales Automation", slug: "sales-automation" },
+    { name: "Workflow Automation", slug: "workflow-automation" },
+    { name: "Autonomous Agents", slug: "autonomous-agents" }
   ]
 } as const;
 
@@ -83,6 +97,7 @@ export function ToolsClient({
       const path = window.location.pathname;
       if (path.includes("personal")) return "personal";
       if (path.includes("creativity")) return "creativity";
+      if (path.includes("agents")) return "agents";
     }
     return "tools";
   });
@@ -94,6 +109,8 @@ export function ToolsClient({
       setMode("personal");
     } else if (path.includes("creativity")) {
       setMode("creativity");
+    } else if (path.includes("agents")) {
+      setMode("agents");
     } else {
       setMode("tools");
     }
@@ -121,8 +138,8 @@ export function ToolsClient({
     const pathParts = pathname.split("/").filter(Boolean);
     let categoryFromPath = "";
 
-    // Extract subcategory slug from /tools/[slug], /personal/[slug], /creativity/[slug]
-    const modeKeys = ["tools", "personal", "creativity"];
+    // Extract subcategory slug from /tools/[slug], /personal/[slug], /creativity/[slug], /agents/[slug]
+    const modeKeys = ["tools", "personal", "creativity", "agents"];
     const modeIdx = pathParts.findIndex(p => modeKeys.includes(p));
     if (modeIdx !== -1 && pathParts[modeIdx + 1]) {
       categoryFromPath = pathParts[modeIdx + 1];
@@ -218,7 +235,7 @@ export function ToolsClient({
                 key={topic.name}
                 onClick={(e) => {
                   setActiveCategory(topic.slug);
-                  const base = mode === "personal" ? "/personal" : mode === "creativity" ? "/creativity" : "/tools";
+                  const base = mode === "personal" ? "/personal" : mode === "creativity" ? "/creativity" : mode === "agents" ? "/agents" : "/tools";
                   const url = topic.slug ? `${base}/${topic.slug}` : base;
                   window.history.pushState(null, "", url);
                   e.currentTarget.scrollIntoView({

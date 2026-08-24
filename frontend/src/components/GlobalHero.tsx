@@ -74,6 +74,7 @@ import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
 const DIRECTORY_CARDS = [
   { name: "New", href: "/", description: "Discover the newest AI additions.", icon: Sparkles, color: "#6E56CF" },
   { name: "Tools", href: "/tools", description: "Browse the full AI tools directory, filter by category and pricing.", icon: Wrench, color: "#FFC53D" },
+  { name: "Agents", href: "/agents", description: "Discover autonomous AI agents for business, automation, and research.", icon: Bot, color: "#A855F7" },
   { name: "Tasks", href: "/tasks", description: "Find the right AI tool for a specific job to be done.", icon: ListChecks, color: "#FB923C" },
   { name: "Companies", href: "/companies", description: "Explore the labs and startups building the AI ecosystem.", icon: Building2, color: "#38BDF8" },
   { name: "News", href: "/news", description: "The latest announcements and coverage across the AI world.", icon: Newspaper, color: "#FF6B4A" },
@@ -477,6 +478,8 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                   ? pathname === "/"
                   : card.name === "Tools"
                   ? pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp") && !pathname?.startsWith("/tools/compare"))
+                  : card.name === "Agents"
+                  ? pathname === "/agents" || pathname?.startsWith("/agents")
                   : card.name === "Tasks"
                   ? pathname === "/tasks"
                   : card.name === "Personal"

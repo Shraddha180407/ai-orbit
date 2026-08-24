@@ -422,7 +422,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
   }, []);
 
   let basePath = "/tools";
-  if (pathname === "/personal" || pathname === "/creativity") basePath = pathname;
+  if (pathname === "/personal" || pathname === "/creativity" || pathname === "/agents") basePath = pathname;
 
   const toggleCompare = (tool: ListTool) => {
     setCompareSet((prev) => {
