@@ -17,12 +17,32 @@ import { RepositoryDetailPage } from "@/components/repository-detail/RepositoryD
 import { CompanyDetailClient } from "@/components/company-detail-client";
 import { RobotDetailClient } from "@/components/detail/RobotDetailClient";
 import { MCPDetailClient } from "@/components/mcp-detail-client";
+import { MCPClient } from "@/components/mcp-client";
+import CollectionsPageClient from "@/app/collections/CollectionsPageClient";
+import { TasksClient } from "@/components/tasks-client";
+import { CompaniesClient } from "@/components/companies-client";
+import { NewsListingClient } from "@/components/news/NewsListingClient";
+import { VideosPageClient } from "@/components/videos/VideosPageClient";
+import { RobotsClient } from "@/components/robots-client";
+import { DevicesClient } from "@/components/devices-client";
+import { ModelsClient } from "@/components/models-client";
+import { RepositoriesClient } from "@/components/repositories-client";
 import { SERVER_API_URL, fetchMCPItemBySlug, fetchMCPItemAlternatives } from "@/lib/api";
 
 const VALID_CATEGORIES: Record<string, Set<string>> = {
   tools: new Set(["writing", "image-generation", "video", "audio", "chatbots", "coding", "marketing", "productivity", "business", "education", "mcp"]),
   personal: new Set(["productivity", "chatbots", "writing", "audio", "customer-support", "video", "image-generation", "marketing"]),
-  creativity: new Set(["image-generation", "writing", "software-development", "video-creation", "music", "graphic-design", "digital-art", "brainstorming", "3d-creation", "presentation-design", "storytelling", "content-creation", "branding", "motion-graphics", "game-creation"])
+  creativity: new Set(["image-generation", "writing", "software-development", "video-creation", "music", "graphic-design", "digital-art", "brainstorming", "3d-creation", "presentation-design", "storytelling", "content-creation", "branding", "motion-graphics", "game-creation"]),
+  mcp: new Set(["mcp-servers", "developer-tools", "databases", "file-systems", "productivity", "apis", "cloud", "ml-platforms", "browser", "community", "mcp-clients", "core-mcp-servers", "sdks-frameworks", "specialized-mcp-servers", "testing-tools", "version-control", "automation", "smart-devices", "data-analytics"]),
+  collections: new Set(["research", "productivity", "creative", "developer", "business", "education", "industry", "open-source", "freelancer-toolkit", "recruiters", "analytics", "ecommerce", "no-code-ai", "healthcare", "finance"]),
+  tasks: new Set(["content-creation", "image-creation", "video-creation", "audio", "coding", "data-analysis", "research", "productivity", "marketing", "customer-support", "translation", "presentation", "brainstorming", "prompting", "website-building"]),
+  companies: new Set(["ai-model-providers", "infrastructure", "enterprise", "healthcare", "generative-ai", "marketing", "developer-tools", "robotics", "education", "open-source", "finance", "ai-native", "model-companies", "unicorns"]),
+  news: new Set(["ai-industry", "product-launches", "innovations", "company-updates", "open-source", "regulations", "interviews", "market-trends", "breakthroughs", "security", "agents", "llms", "developer-ecosystem", "consumer"]),
+  videos: new Set(["product-demos", "tutorials", "ai-news", "model-showcases", "podcasts", "tool-walkthroughs", "webinars", "conferences", "coding", "case-studies", "comparisons", "educational-content", "success-stories", "ai-trends", "prompting"]),
+  robots: new Set(["humanoid-robots", "industrial", "service", "healthcare", "educational", "autonomous-mobile-robots", "drones", "companion", "agricultural", "research", "multi-agent", "task-specific", "autonomous-navigation", "reinforcement-learning", "surveillance"]),
+  devices: new Set(["ai-pcs", "smartphones", "smart-home", "wearables", "ai-cameras", "audio", "ar-vr", "edge-ai", "robotics-hardware", "medical", "development-boards", "smart-sensors", "automotive-ai-devices"]),
+  models: new Set(["llm", "image-generation", "video-generation", "speech", "multimodal", "code-generation", "embedding", "reasoning", "vision-models", "open-source-models", "testing", "e-commerce", "recruitment", "translation", "project-management"]),
+  repositories: new Set(["llms", "generative-ai", "ai-frameworks", "nlp", "frameworks", "robotics", "rag-systems", "deployment", "data-science", "prompt-engineering", "search-engines", "knowledge-graphs", "ai-agents", "cloud", "computer-vision"])
 };
 
 interface UnifiedEntityPageProps {
@@ -32,18 +52,21 @@ interface UnifiedEntityPageProps {
 export async function generateMetadata({ params }: UnifiedEntityPageProps): Promise<Metadata> {
   const { type, slug } = await params;
 
-  if ((type === "tools" || type === "personal" || type === "creativity") && VALID_CATEGORIES[type]?.has(slug)) {
+  if (VALID_CATEGORIES[type]?.has(slug)) {
     const formattedSlug = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-    const formattedType = type.charAt(0).toUpperCase() + type.slice(1);
+    const formattedType = type === "mcp" ? "MCP Directory" : type === "collections" ? "Collections" : type.charAt(0).toUpperCase() + type.slice(1);
     return {
       title: `${formattedSlug} ${formattedType} | AI Orbit`,
-      description: `Browse the best AI tools for ${formattedSlug.toLowerCase()} in the ${formattedType.toLowerCase()} directory.`,
+      description: `Browse the best AI tools/servers for ${formattedSlug.toLowerCase()} in the ${formattedType.toLowerCase()} directory.`,
     };
   }
 
   if (type === "news") {
     try {
-      const res = await fetch(`${SERVER_API_URL}/api/news/${encodeURIComponent(slug)}`);
+      const res = await fetch(`${SERVER_API_URL}/api/news/${encodeURIComponent(slug)}`, {
+        next: { revalidate: 300 },
+        signal: AbortSignal.timeout(1500),
+      } as RequestInit);
       if (!res.ok) return {};
       const { article } = (await res.json()) as { article?: { headline: string; aiSummary: string; dek: string } };
       if (!article) return {};
@@ -62,7 +85,10 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
 
   if (type === "tasks") {
     try {
-      const res = await fetch(`${SERVER_API_URL}/api/v1/tasks/${encodeURIComponent(slug)}`);
+      const res = await fetch(`${SERVER_API_URL}/api/v1/tasks/${encodeURIComponent(slug)}`, {
+        next: { revalidate: 300 },
+        signal: AbortSignal.timeout(1500),
+      } as RequestInit);
       if (!res.ok) return { title: "Task Not Found | AI Orbit" };
       const data = (await res.json()) as { task?: { title: string; description: string } };
       if (!data.task) return { title: "Task Not Found | AI Orbit" };
@@ -129,8 +155,156 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
       </div>
     );
   }
+  if (type === "mcp" && VALID_CATEGORIES.mcp.has(slug)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        <Suspense fallback={
+          <main className="mx-auto max-w-container px-6 py-10 flex-1">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {[1,2,3,4,5,6,7,8].map((i) => (
+                <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
+              ))}
+            </div>
+          </main>
+        }>
+          <div className="flex-1">
+            <MCPClient defaultSubCategory={slug} />
+          </div>
+        </Suspense>
+        <Footer />
+      </div>
+    );
+  }
+  if (type === "collections" && VALID_CATEGORIES.collections.has(slug)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        <Suspense fallback={
+          <main className="mx-auto max-w-container px-6 py-10 flex-1">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {[1,2,3,4,5,6,7,8].map((i) => (
+                <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
+              ))}
+            </div>
+          </main>
+        }>
+          <div className="flex-1">
+            <CollectionsPageClient defaultSubCategory={slug} />
+          </div>
+        </Suspense>
+        <Footer />
+      </div>
+    );
+  }
+  if (type === "tasks" && VALID_CATEGORIES.tasks.has(slug)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        <div className="flex-1">
+          <TasksClient defaultCategory={slug} />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+  if (type === "companies" && VALID_CATEGORIES.companies.has(slug)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        <div className="flex-1">
+          <CompaniesClient defaultCategory={slug} />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+  if (type === "news" && VALID_CATEGORIES.news.has(slug)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        <div className="flex-1">
+          <NewsListingClient category={slug} />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+  if (type === "videos" && VALID_CATEGORIES.videos.has(slug)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        <div className="flex-1">
+          <VideosPageClient initialVideos={[]} initialTotal={0} pageSize={24} defaultCategory={slug} />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+  if (type === "robots" && VALID_CATEGORIES.robots.has(slug)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        <div className="flex-1">
+          <RobotsClient defaultCategory={slug} />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+  if (type === "devices" && VALID_CATEGORIES.devices.has(slug)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        <div className="flex-1">
+          <DevicesClient defaultCategory={slug} />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+  if (type === "models" && VALID_CATEGORIES.models.has(slug)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        <div className="flex-1">
+          <ModelsClient defaultSubCategory={slug} />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+  if (type === "repositories" && VALID_CATEGORIES.repositories.has(slug)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        <div className="flex-1">
+          <RepositoriesClient defaultCategory={slug} />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
-  if (type === "tools" || type === "personal" || type === "creativity") return <ToolDetailClient />;
+  if (type === "tools" || type === "personal" || type === "creativity") return (
+    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+      <Header />
+      <div className="flex-1">
+        <ToolDetailClient />
+      </div>
+      <Footer />
+    </div>
+  );
   if (type === "mcp") {
     const item = await fetchMCPItemBySlug(slug);
     if (!item) return notFound();

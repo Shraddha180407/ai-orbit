@@ -2,6 +2,8 @@
 
 import React from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { API_URL } from "@/lib/api";
 import LayoutGrid from 'lucide-react/dist/esm/icons/layout-grid';
 import List from 'lucide-react/dist/esm/icons/list';
 import SlidersHorizontal from 'lucide-react/dist/esm/icons/sliders-horizontal';
@@ -21,11 +23,57 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
 
   // Extract search params
   const currentSort = searchParams.get("sort") || "newest";
   const currentCategory = searchParams.get("category") || null;
   const currentPricing = searchParams.get("pricing") || null;
+
+  const prefetchTools = (overrides: Record<string, string | null>) => {
+    const q = searchParams.get("q") || undefined;
+    const category = overrides.category !== undefined ? (overrides.category || undefined) : (currentCategory || undefined);
+    const pricing = overrides.pricing !== undefined ? (overrides.pricing || undefined) : (currentPricing || undefined);
+    const sort = overrides.sort !== undefined ? (overrides.sort as any || undefined) : (currentSort as any || undefined);
+
+    queryClient.prefetchInfiniteQuery({
+      queryKey: ["home-tools", { q, category, pricing, sort }],
+      queryFn: async ({ pageParam = 1 }) => {
+        const query = new URLSearchParams();
+        if (q) query.set("q", q);
+        if (category) query.set("category", category);
+        if (pricing) query.set("pricing", pricing);
+        if (sort) query.set("sort", sort);
+        query.set("page", String(pageParam));
+        query.set("pageSize", String(pageParam === 1 ? 50 : 12));
+
+        const res = await fetch(`${API_URL}/api/v1/tools?${query.toString()}`);
+        if (!res.ok) return { tools: [], totalPages: 1, page: pageParam };
+        return res.json();
+      },
+      initialPageParam: 1,
+      staleTime: 10 * 60 * 1000,
+    }).catch(() => {});
+
+    queryClient.prefetchInfiniteQuery({
+      queryKey: ["tools", { q, category, pricing, sort }],
+      queryFn: async ({ pageParam = 1 }) => {
+        const query = new URLSearchParams();
+        if (q) query.set("q", q);
+        if (category) query.set("category", category);
+        if (pricing) query.set("pricing", pricing);
+        if (sort) query.set("sort", sort);
+        query.set("page", String(pageParam));
+        query.set("pageSize", String(pageParam === 1 ? 50 : 12));
+
+        const res = await fetch(`${API_URL}/api/v1/tools?${query.toString()}`);
+        if (!res.ok) return { tools: [], totalPages: 1, page: pageParam };
+        return res.json();
+      },
+      initialPageParam: 1,
+      staleTime: 10 * 60 * 1000,
+    }).catch(() => {});
+  };
 
   const updateParam = (overrides: Record<string, string | null>) => {
     const params = new URLSearchParams(Array.from(searchParams.entries()));
@@ -42,7 +90,7 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
     params.delete("page");
 
     const qs = params.toString();
-    router.push(`${pathname}${qs ? `?${qs}` : ""}`);
+    router.push(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
   };
 
   return (
@@ -52,8 +100,10 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
         {/* Left: small rounded pills */}
         <div className="flex flex-wrap items-center gap-2">
           <button
+            onPointerEnter={() => prefetchTools({ sort: "rating", pricing: null })}
+            onFocus={() => prefetchTools({ sort: "rating", pricing: null })}
             onClick={() => updateParam({ sort: "rating", pricing: null })}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 cursor-pointer ${
               currentSort === "rating" && !currentPricing
                 ? "bg-[#6E56CF] text-white border-transparent shadow-sm"
                 : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white"
@@ -62,8 +112,10 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
             Trending
           </button>
           <button
+            onPointerEnter={() => prefetchTools({ sort: "rating", pricing: null })}
+            onFocus={() => prefetchTools({ sort: "rating", pricing: null })}
             onClick={() => updateParam({ sort: "rating", pricing: null })}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 cursor-pointer ${
               currentSort === "rating" && !currentPricing
                 ? "bg-[#6E56CF] text-white border-transparent shadow-sm"
                 : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white"
@@ -72,8 +124,10 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
             Popular
           </button>
           <button
+            onPointerEnter={() => prefetchTools({ sort: "newest", pricing: null })}
+            onFocus={() => prefetchTools({ sort: "newest", pricing: null })}
             onClick={() => updateParam({ sort: "newest", pricing: null })}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 cursor-pointer ${
               currentSort === "newest" && !currentPricing
                 ? "bg-[#6E56CF] text-white border-transparent shadow-sm"
                 : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white"
@@ -82,8 +136,10 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
             Newest
           </button>
           <button
+            onPointerEnter={() => prefetchTools({ pricing: "FREE" })}
+            onFocus={() => prefetchTools({ pricing: "FREE" })}
             onClick={() => updateParam({ pricing: currentPricing === "FREE" ? null : "FREE" })}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 cursor-pointer ${
               currentPricing === "FREE"
                 ? "bg-[#6E56CF] text-white border-transparent shadow-sm"
                 : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white"
@@ -92,8 +148,10 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
             Free
           </button>
           <button
+            onPointerEnter={() => prefetchTools({ sort: "rating", pricing: null })}
+            onFocus={() => prefetchTools({ sort: "rating", pricing: null })}
             onClick={() => updateParam({ sort: "rating", pricing: null })}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 cursor-pointer ${
               currentSort === "rating" && !currentPricing
                 ? "bg-[#6E56CF] text-white border-transparent shadow-sm"
                 : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white"
@@ -153,8 +211,10 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
         <div className="flex flex-nowrap gap-3 overflow-x-auto scrollbar-none pb-2 w-full">
           {/* All category pill */}
           <button
+            onPointerEnter={() => prefetchTools({ category: null })}
+            onFocus={() => prefetchTools({ category: null })}
             onClick={() => updateParam({ category: null })}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all active:scale-95 whitespace-nowrap ${
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all active:scale-95 whitespace-nowrap cursor-pointer ${
               !currentCategory
                 ? "bg-white text-[#0B0B0E] border-transparent shadow-sm"
                 : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white"
@@ -169,8 +229,10 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
             return (
               <button
                 key={cat.slug}
+                onPointerEnter={() => prefetchTools({ category: isActive ? null : cat.slug })}
+                onFocus={() => prefetchTools({ category: isActive ? null : cat.slug })}
                 onClick={() => updateParam({ category: isActive ? null : cat.slug })}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all active:scale-95 whitespace-nowrap flex items-center gap-1.5 ${
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all active:scale-95 whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                   isActive
                     ? "bg-white text-[#0B0B0E] border-transparent shadow-sm"
                     : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white"

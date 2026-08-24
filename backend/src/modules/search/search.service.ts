@@ -8,6 +8,7 @@ export interface Suggestion {
   title: string;
   category: string;
   slug: string | null;
+  logoUrl: string | null;
 }
 
 const PER_TYPE_LIMIT = 4;
@@ -38,6 +39,7 @@ export class SearchService {
           id: true,
           slug: true,
           name: true,
+          logoUrl: true,
           categories: { take: 1, select: { category: { select: { name: true } } } },
         },
       }),
@@ -45,31 +47,37 @@ export class SearchService {
         where: { name: { contains: term, mode: 'insensitive' } },
         take: PER_TYPE_LIMIT,
         orderBy: { name: 'asc' },
-        select: { id: true, slug: true, name: true },
+        select: { id: true, slug: true, name: true, logoUrl: true },
       }),
       this.prisma.aIModel.findMany({
         where: { name: { contains: term, mode: 'insensitive' } },
         take: PER_TYPE_LIMIT,
         orderBy: { name: 'asc' },
-        select: { id: true, name: true, creator: true },
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          creator: true,
+          provider: { select: { logoUrl: true } },
+        },
       }),
       this.prisma.repository.findMany({
         where: { name: { contains: term, mode: 'insensitive' } },
         take: PER_TYPE_LIMIT,
         orderBy: { stars: 'desc' },
-        select: { id: true, name: true, language: true },
+        select: { id: true, slug: true, name: true, language: true, logoUrl: true },
       }),
       this.prisma.robot.findMany({
         where: { name: { contains: term, mode: 'insensitive' } },
         take: PER_TYPE_LIMIT,
         orderBy: { name: 'asc' },
-        select: { id: true, name: true, category: true },
+        select: { id: true, slug: true, name: true, category: true, logoUrl: true },
       }),
       this.prisma.device.findMany({
         where: { name: { contains: term, mode: 'insensitive' } },
         take: PER_TYPE_LIMIT,
         orderBy: { name: 'asc' },
-        select: { id: true, name: true, category: true },
+        select: { id: true, slug: true, name: true, category: true, imageUrl: true },
       }),
     ]);
 
@@ -80,6 +88,7 @@ export class SearchService {
         title: t.name,
         category: t.categories[0]?.category?.name ?? 'Tool',
         slug: t.slug,
+        logoUrl: t.logoUrl,
       })),
       ...companies.map((c) => ({
         id: c.id,
@@ -87,34 +96,39 @@ export class SearchService {
         title: c.name,
         category: 'Company',
         slug: c.slug,
+        logoUrl: c.logoUrl,
       })),
       ...models.map((m) => ({
         id: m.id,
         type: 'model' as const,
         title: m.name,
         category: m.creator || 'Model',
-        slug: null,
+        slug: m.slug,
+        logoUrl: m.provider?.logoUrl ?? null,
       })),
       ...repositories.map((r) => ({
         id: r.id,
         type: 'repository' as const,
         title: r.name,
         category: r.language || 'Repository',
-        slug: null,
+        slug: r.slug,
+        logoUrl: r.logoUrl,
       })),
       ...robots.map((r) => ({
         id: r.id,
         type: 'robot' as const,
         title: r.name,
         category: r.category || 'Robot',
-        slug: null,
+        slug: r.slug,
+        logoUrl: r.logoUrl,
       })),
       ...devices.map((d) => ({
         id: d.id,
         type: 'device' as const,
         title: d.name,
         category: d.category || 'Device',
-        slug: null,
+        slug: d.slug,
+        logoUrl: d.imageUrl,
       })),
     ];
 
@@ -158,6 +172,7 @@ export class SearchService {
       id: true,
       slug: true,
       name: true,
+      logoUrl: true,
       categories: { take: 1, select: { category: { select: { name: true } } } },
     } as const;
 
@@ -181,6 +196,7 @@ export class SearchService {
       title: t.name,
       category: t.categories[0]?.category?.name ?? 'Tool',
       slug: t.slug,
+      logoUrl: t.logoUrl,
     }));
   }
 }

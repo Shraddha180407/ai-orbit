@@ -51,11 +51,15 @@ export function VideoDetailsClient() {
         className="flex flex-col rounded-[22px] border border-white/[0.07] bg-[#0d0d10] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.7)]"
         style={{ width: "81vw" }}
       >
-        {/* Title bar */}
-        <div className="flex h-14 shrink-0 items-center justify-between gap-4 px-5 sm:px-7">
-          <p className="line-clamp-1 text-[15px] font-semibold text-white sm:text-[17px]">
-            {video.title}
-          </p>
+        {/*
+          Close-only bar. This used to also render the video title as text
+          here, but YouTube's own embed already shows the title natively
+          (on load, and again on pause/hover) — the two together read as a
+          duplicate title on screen. VideoPlayer.tsx's own design comment is
+          explicit about this: trust YouTube's native chrome for title
+          rather than recreating it. Only the close button stays here.
+        */}
+        <div className="flex h-14 shrink-0 items-center justify-end gap-4 px-5 sm:px-7">
           <Link
             href="/videos"
             aria-label="Close"
@@ -74,7 +78,7 @@ export function VideoDetailsClient() {
           </div>
         </div>
 
-        {/* Bottom bar — mirrors the title bar so the card reads as a closed, complete frame */}
+        {/* Bottom bar — channel + category. Neither duplicates YouTube's own chrome (it doesn't show category, and this channel link is clickable, not decorative), so this stays as-is. */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-4 px-5 sm:px-7">
           <a
             href={getChannelUrl(video.channelId, video.author.name)}

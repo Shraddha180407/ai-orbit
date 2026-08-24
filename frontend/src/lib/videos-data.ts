@@ -3,12 +3,19 @@ import type { Video } from "./video-types";
 export type { Video };
 export { BLUR_DATA_URL, formatDuration, formatViews, formatRelativeDate } from "./video-types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://ai-orbit.palamrendra-pm.workers.dev";
-/**
- * All data comes from the backend Worker (/api/videos) over HTTP.
- * `cache: "no-store"` because this is a fast-moving feed — Next's default
- * fetch caching would otherwise serve stale results across requests.
- */
+function resolveApiUrl(): string {
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  if (url && url.startsWith("http") && url !== "undefined") {
+    return url.replace(/\/$/, "");
+  }
+  if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+    return "http://localhost:8787";
+  }
+  return "https://ai-orbit.palamrendra-pm.workers.dev";
+}
+
+const API_URL = resolveApiUrl();
+
 async function fetchJson<T>(path: string): Promise<T | null> {
   try {
     const res = await fetch(`${API_URL}${path}`);
@@ -19,6 +26,9 @@ async function fetchJson<T>(path: string): Promise<T | null> {
     return null;
   }
 }
+
+export type VideoSortBy = "name" | "duration" | "posted" | "views";
+export type VideoSortDir = "asc" | "desc";
 
 export async function getTrendingVideos(limit = 4): Promise<Video[]> {
   return (await fetchJson<Video[]>(`/api/videos?sort=trending&limit=${limit}`)) ?? [];
@@ -32,12 +42,28 @@ export async function getAllVideos(): Promise<Video[]> {
   return (await fetchJson<Video[]>(`/api/videos?sort=latest`)) ?? [];
 }
 
-export async function getVideosPage(limit: number, offset: number): Promise<Video[]> {
-  return (await fetchJson<Video[]>(`/api/videos?sort=latest&limit=${limit}&offset=${offset}`)) ?? [];
+export async function getVideosPage(
+  limit: number,
+  offset: number,
+  category?: string,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): Promise<Video[]> {
+  // NOTE: `sort=latest` here is the existing feed-mode param (separate from
+  // sortBy/sortDir below, which is the per-column table sort — kept as a
+  // distinct param name specifically so it doesn't collide with this one).
+  const params = new URLSearchParams({ sort: "latest", limit: String(limit), offset: String(offset) });
+  if (category) params.set("category", category);
+  if (sortBy) params.set("sortBy", sortBy);
+  if (sortDir) params.set("sortDir", sortDir);
+  return (await fetchJson<Video[]>(`/api/videos?${params.toString()}`)) ?? [];
 }
 
-export async function getVideosCount(): Promise<number> {
-  const result = await fetchJson<{ total: number }>(`/api/videos/count`);
+export async function getVideosCount(category?: string): Promise<number> {
+  const params = new URLSearchParams();
+  if (category) params.set("category", category);
+  const qs = params.toString();
+  const result = await fetchJson<{ total: number }>(`/api/videos/count${qs ? `?${qs}` : ""}`);
   return result?.total ?? 0;
 }
 

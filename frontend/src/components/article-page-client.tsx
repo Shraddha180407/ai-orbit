@@ -8,6 +8,8 @@ import { API_URL } from "@/lib/api";
 import { getClientId } from "@/lib/clientId";
 import type { NewsArticle, NewsComment, NewsSource } from "@/types/news";
 
+import { useQuery } from "@tanstack/react-query";
+
 interface NewsDetailResponse {
   article: NewsArticle;
   related: NewsArticle[];
@@ -20,34 +22,19 @@ export function ArticlePageClient() {
   const params = useParams();
   const slug = params.slug as string;
 
-  const [data, setData] = useState<NewsDetailResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [notFoundState, setNotFoundState] = useState(false);
+  const { data = null, isLoading, isError } = useQuery<NewsDetailResponse | null>({
+    queryKey: ["news-article", slug],
+    queryFn: async () => {
+      const clientId = getClientId();
+      const url = `${API_URL}/api/news/${encodeURIComponent(slug)}${clientId ? `?clientId=${encodeURIComponent(clientId)}` : ""}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Article not found");
+      return res.json();
+    },
+    staleTime: 10 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    async function fetchArticle() {
-      setIsLoading(true);
-      try {
-        const clientId = getClientId();
-        const url = `${API_URL}/api/news/${encodeURIComponent(slug)}${clientId ? `?clientId=${encodeURIComponent(clientId)}` : ""}`;
-        const res = await fetch(url);
-        if (res.status === 404) {
-          setNotFoundState(true);
-          return;
-        }
-        if (!res.ok) throw new Error(`Failed to load article: ${res.status}`);
-        const json: NewsDetailResponse = await res.json();
-        setData(json);
-      } catch (e) {
-        console.error("Failed to fetch article:", e);
-        setNotFoundState(true);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchArticle();
-  }, [slug]);
+  const notFoundState = isError || (!isLoading && !data);
 
   // Update page title
   useEffect(() => {

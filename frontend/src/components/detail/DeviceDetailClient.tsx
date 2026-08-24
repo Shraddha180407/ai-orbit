@@ -2,6 +2,7 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { fetchAllDevices, fetchDeviceById } from "@/lib/api";
 import { Device } from "@/lib/types";
@@ -64,14 +65,11 @@ function mergeDevice(api: Device | null, slug: string): DeviceData | null {
 export function DeviceDetailClient() {
   const params = useParams();
   const slug = params.slug as string;
-  const [device, setDevice] = useState<DeviceData | null>(null);
-  const [similar, setSimilar] = useState<DeviceData[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
+  const { data: deviceDetailData, isLoading: loading } = useQuery({
+    queryKey: ["device-detail", slug],
+    queryFn: async () => {
       try {
-        // Try API first
         let apiData: Device | null = null;
         try {
           apiData = await fetchDeviceById(slug);
@@ -84,99 +82,58 @@ export function DeviceDetailClient() {
         }
 
         const merged = mergeDevice(apiData, slug);
-        setDevice(merged);
+        if (!merged) return { device: null, similar: [] };
 
-        if (merged) {
-          // Build similar from API data first, fall back to dummy
-          const allApiDevices = await fetchAllDevices().catch(() => []);
-          if (allApiDevices && allApiDevices.length > 0) {
-            const apiSimilar = allApiDevices
-              .filter((d: Device) => d.id !== merged.id && d.category === merged.category)
-              .slice(0, 4)
-              .map((api: Device) => {
-                const dummy = DEVICES_DATA.find((d) => d.id === api.id || d.slug === api.slug);
-                const mainTask = api.mainTask || dummy?.mainTask || "Device";
-                const slug = dummy?.slug || api.slug || api.id;
-                const manufacturer = api.manufacturer || dummy?.manufacturer || "—";
-                return {
-                  id: api.id,
-                  slug,
-                  name: api.name,
-                  manufacturer,
-                  manufacturerSlug: dummy?.manufacturerSlug || "",
-                  category: api.category || dummy?.category || "Other",
-                  availability: api.availability || dummy?.availability || "Announced",
-                  price: api.price || dummy?.price || null,
-                  year: api.year || dummy?.year || "—",
-                  month: dummy?.month || api.month || api.year || "—",
-                  description: api.description || dummy?.description || "",
-                  imageUrl: api.imageUrl || dummy?.imageUrl || "",
-                  manufacturerLogoUrl: dummy?.manufacturerLogoUrl || `https://www.google.com/s2/favicons?sz=64&domain=${manufacturer.toLowerCase().replace(/\s+/g, "")}.com`,
-                  mainTask,
-                  mainTaskColor: getMainTaskColor(mainTask),
-                  formFactor: api.formFactor || dummy?.formFactor || null,
-                  country: api.country || dummy?.country || null,
-                  ram: api.ram || dummy?.ram || null,
-                  aiFeatures: api.aiFeatures || dummy?.aiFeatures || [],
-                  primaryUseCases: api.primaryUseCases || dummy?.primaryUseCases || [],
-                  additionalInfo: api.additionalInfo || dummy?.additionalInfo || null,
-                  buyUrl: api.buyUrl || dummy?.buyUrl || null,
-                } as DeviceData;
-              });
-            // If not enough same-category devices, fill with other API devices
-            if (apiSimilar.length < 4) {
-              const others = allApiDevices
-                .filter((d: Device) => d.id !== merged.id && d.category !== merged.category)
-                .slice(0, 4 - apiSimilar.length)
-                .map((api: Device) => {
-                  const dummy = DEVICES_DATA.find((d) => d.id === api.id || d.slug === api.slug);
-                  const mainTask = api.mainTask || dummy?.mainTask || "Device";
-                  const slug = dummy?.slug || api.slug || api.id;
-                  const manufacturer = api.manufacturer || dummy?.manufacturer || "—";
-                  return {
-                    id: api.id,
-                    slug,
-                    name: api.name,
-                    manufacturer,
-                    manufacturerSlug: dummy?.manufacturerSlug || "",
-                    category: api.category || dummy?.category || "Other",
-                    availability: api.availability || dummy?.availability || "Announced",
-                    price: api.price || dummy?.price || null,
-                    year: api.year || dummy?.year || "—",
-                    month: dummy?.month || api.month || api.year || "—",
-                    description: api.description || dummy?.description || "",
-                    imageUrl: api.imageUrl || dummy?.imageUrl || "",
-                    manufacturerLogoUrl: dummy?.manufacturerLogoUrl || `https://www.google.com/s2/favicons?sz=64&domain=${manufacturer.toLowerCase().replace(/\s+/g, "")}.com`,
-                    mainTask,
-                    mainTaskColor: getMainTaskColor(mainTask),
-                    formFactor: api.formFactor || dummy?.formFactor || null,
-                    country: api.country || dummy?.country || null,
-                    ram: api.ram || dummy?.ram || null,
-                    aiFeatures: api.aiFeatures || dummy?.aiFeatures || [],
-                    primaryUseCases: api.primaryUseCases || dummy?.primaryUseCases || [],
-                    additionalInfo: api.additionalInfo || dummy?.additionalInfo || null,
-                    buyUrl: api.buyUrl || dummy?.buyUrl || null,
-                  } as DeviceData;
-                });
-              setSimilar([...apiSimilar, ...others]);
-            } else {
-              setSimilar(apiSimilar);
-            }
-          } else {
-            setSimilar(getSimilarDevices(merged));
-          }
+        const allApiDevices = await fetchAllDevices().catch(() => []);
+        let similarDevices: DeviceData[] = [];
+        if (allApiDevices && allApiDevices.length > 0) {
+          similarDevices = allApiDevices
+            .filter((d: Device) => d.id !== merged.id && d.category === merged.category)
+            .slice(0, 4)
+            .map((api: Device) => {
+              const dummy = DEVICES_DATA.find((d) => d.id === api.id || d.slug === api.slug);
+              const mainTask = api.mainTask || dummy?.mainTask || "Device";
+              const dSlug = dummy?.slug || api.slug || api.id;
+              const manufacturer = api.manufacturer || dummy?.manufacturer || "—";
+              return {
+                id: api.id,
+                slug: dSlug,
+                name: api.name,
+                manufacturer,
+                manufacturerSlug: dummy?.manufacturerSlug || "",
+                category: api.category || dummy?.category || "Other",
+                availability: api.availability || dummy?.availability || "Announced",
+                price: api.price || dummy?.price || null,
+                year: api.year || dummy?.year || "—",
+                month: dummy?.month || api.month || api.year || "—",
+                description: api.description || dummy?.description || "",
+                imageUrl: api.imageUrl || dummy?.imageUrl || "",
+                manufacturerLogoUrl: dummy?.manufacturerLogoUrl || getFaviconUrl(manufacturer, dSlug),
+                mainTask,
+                mainTaskColor: getMainTaskColor(mainTask),
+                formFactor: api.formFactor || dummy?.formFactor || null,
+                country: api.country || dummy?.country || null,
+                ram: api.ram || dummy?.ram || null,
+                aiFeatures: api.aiFeatures || dummy?.aiFeatures || [],
+                primaryUseCases: api.primaryUseCases || dummy?.primaryUseCases || [],
+                additionalInfo: api.additionalInfo || dummy?.additionalInfo || null,
+                buyUrl: api.buyUrl || dummy?.buyUrl || null,
+              } as DeviceData;
+            });
+        } else {
+          similarDevices = getSimilarDevices(merged);
         }
-      } catch (e) {
-        // fallback to dummy only
+        return { device: merged, similar: similarDevices };
+      } catch {
         const dummy = getDeviceBySlug(slug);
-        setDevice(dummy);
-        if (dummy) setSimilar(getSimilarDevices(dummy));
-      } finally {
-        setLoading(false);
+        return { device: dummy, similar: dummy ? getSimilarDevices(dummy) : [] };
       }
-    }
-    load();
-  }, [slug]);
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const device = deviceDetailData?.device || null;
+  const similar = deviceDetailData?.similar || [];
 
   if (loading) {
     return (
@@ -209,214 +166,303 @@ export function DeviceDetailClient() {
     );
   }
 
+  const accentColor = device.mainTaskColor || "#6E56CF";
+
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white">
       <Header />
-      <main className="mx-auto max-w-[1400px] px-4 md:px-6 py-10 flex-1 w-full">
+
+      {/* Hero accent bar */}
+      <div className="w-full h-px" style={{ background: `linear-gradient(90deg, transparent, ${accentColor}80, transparent)` }} />
+
+      <main className="mx-auto max-w-[1400px] px-4 md:px-6 py-8 flex-1 w-full">
 
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-[#52525B] mb-8 flex-wrap">
+        <nav className="flex items-center gap-1.5 text-xs text-[#52525B] mb-6 flex-wrap">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <span>›</span>
-          {device.manufacturer && <span className="hover:text-white transition-colors">{device.manufacturer}</span>}
-          {device.manufacturer && <span>›</span>}
+          <span className="text-[#333]">›</span>
           <Link href="/devices" className="hover:text-white transition-colors">Devices</Link>
-          <span>›</span>
-          <span className="text-white">{device.name}</span>
+          {device.manufacturer && <><span className="text-[#333]">›</span><span className="text-[#71717A]">{device.manufacturer}</span></>}
+          <span className="text-[#333]">›</span>
+          <span className="text-white font-medium">{device.name}</span>
         </nav>
 
-        {/* Top Section */}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-6 mb-8 items-start">
-          {/* Left: Gallery */}
+        {/* ── TOP GRID ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 mb-6 items-start">
+
+          {/* LEFT: Gallery */}
           <DeviceGallery
             name={device.name}
             imageUrl={device.imageUrl}
             images={device.images}
             videoUrl={device.videoUrl}
-            color={device.mainTaskColor}
+            color={accentColor}
           />
-          {/* Right: Info Card */}
-          <div className="rounded-xl border border-[#232326] bg-[#0D0D0F] p-4 md:p-6 flex flex-col gap-3">
 
-            {/* Category badge */}
-            <div>
-              <span className="text-xs bg-[#18181C] border border-[#232326] text-[#A1A1AA] px-2.5 py-1 rounded-full font-mono">
-                {device.category || "Device"}
-              </span>
-            </div>
+          {/* RIGHT: Info panel */}
+          <div className="flex flex-col gap-0 rounded-2xl border border-[#232326] bg-[#0A0A0C] overflow-hidden">
 
-            {/* Name + Actions */}
-            <div className="flex items-start justify-between gap-2">
-              <h1 className="text-2xl font-black text-white tracking-tight">{device.name}</h1>
-              <div className="flex items-center gap-1.5 shrink-0 mt-1">
-                <BookmarkButton slug={device.slug || device.id} name={device.name} />
-                <ShareButton slug={device.slug || device.id} name={device.name} />
-              </div>
-            </div>
+            {/* Top color band */}
+            <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${accentColor}, ${accentColor}44)` }} />
 
-            {/* By company */}
-            {device.manufacturer && (
-              <div className="flex items-center gap-1.5 text-sm text-[#71717A]">
-                {device.manufacturerLogoUrl && (
-                  <img src={device.manufacturerLogoUrl} alt={device.manufacturer} className="h-4 w-4 object-contain" />
-                )}
-                by {device.manufacturer}
-              </div>
-            )}
+            <div className="p-5 flex flex-col gap-4">
 
-            {/* Price + Availability */}
-            <div className="flex items-center gap-3">
-              <span className="text-xl font-bold text-white">
-                {device.price || "N/A"}
-              </span>
-              {device.availability && (
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${AVAILABILITY_STYLES[device.availability]}`}>
-                  {device.availability}
+              {/* Category + actions row */}
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-semibold tracking-widest uppercase px-2.5 py-1 rounded-full border"
+                  style={{ color: accentColor, borderColor: `${accentColor}40`, background: `${accentColor}12` }}>
+                  {device.category || "Device"}
                 </span>
-              )}
-            </div>
-
-            {/* Description */}
-            <p className="text-sm text-[#A1A1AA] leading-relaxed">{device.description}</p>
-
-            {/* Form factor + Release date */}
-            <div className="flex flex-col gap-2 pt-3 border-t border-[#232326]">
-              {device.formFactor && (
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="text-[#52525B] w-28 shrink-0 flex items-center gap-1.5">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                    Form factor
-                  </span>
-                  <span className="text-white">{device.formFactor}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-3 text-sm">
-                <span className="text-[#52525B] w-28 shrink-0 flex items-center gap-1.5">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                  Release date
-                </span>
-                <span className="text-white">{device.month || device.year || "—"}</span>
-              </div>
-            </div>
-
-            {/* Buy button */}
-            {device.buyUrl && (
-             <a 
-                href={device.buyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors w-fit"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                Learn More
-              </a>
-            )}
-          </div>
-        </div>
-
-        {/* Specifications */}
-        <div className="rounded-xl border border-[#232326] bg-[#0D0D0F] mb-6 overflow-hidden">
-          <div className="px-6 py-3 bg-[#131316] border-b border-[#232326]">
-            <h2 className="text-xs font-bold text-[#A1A1AA] uppercase tracking-widest">Specifications</h2>
-          </div>
-          <div className="divide-y divide-[#232326]">
-  {device.formFactor && <SpecRowDivider label="Form factor" value={device.formFactor} />}
-  {device.ram && <SpecRowDivider label="RAM" value={device.ram} />}
-  {device.country && <SpecRowDivider label="Made in" value={device.country} />}
-  <SpecRowDivider label="Release date" value={device.month || device.year || "—"} />
-            {device.aiFeatures && device.aiFeatures.length > 0 && (
-              <div className="flex items-start gap-4 px-6 py-4">
-                <span className="text-sm text-[#52525B] w-36 shrink-0">AI features</span>
-                <div className="flex flex-wrap gap-2">
-                  {device.aiFeatures.map((f) => (
-  <span key={f} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
-    {f}
-  </span>
-))}
+                <div className="flex items-center gap-1.5">
+                  <BookmarkButton slug={device.slug || device.id} name={device.name} />
+                  <ShareButton slug={device.slug || device.id} name={device.name} />
                 </div>
               </div>
-            )}
-            {device.primaryUseCases && device.primaryUseCases.length > 0 && (
-              <div className="flex items-start gap-4 px-6 py-4">
-                <span className="text-sm text-[#52525B] w-36 shrink-0">Primary use cases</span>
-                <div className="flex flex-wrap gap-2">
-                  {device.primaryUseCases.map((u) => (
-  <span key={u} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
-    {u}
-  </span>
-))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Additional Info */}
-        {device.additionalInfo && (
-          <div className="rounded-xl border border-[#232326] bg-[#0D0D0F] mb-8 overflow-hidden">
-            <div className="px-4 md:px-6 py-3 bg-[#131316] border-b border-[#232326]">
-              <h2 className="text-xs font-bold text-[#A1A1AA] uppercase tracking-widest">Additional Information</h2>
-            </div>
-            <div className="p-4 md:p-6">
-              <p className="text-sm text-[#A1A1AA] leading-relaxed">{device.additionalInfo}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Similar Devices */}
-        {similar.length > 0 && (
-          <div className="mt-8 rounded-xl border border-[#232326] bg-[#0D0D0F] overflow-hidden">
-            <div className="px-6 py-4 border-b border-[#232326] flex items-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-[#6E56CF]"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
-              <h2 className="text-xs font-bold text-[#A1A1AA] uppercase tracking-widest">Similar Devices</h2>
-            </div>
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {similar.map((d, idx) => (
-  <Link
-    key={d.id}
-    href={`/devices/${d.slug || d.id}`}
-    className="rounded-xl border border-[#232326] bg-[#0D0D0F] transition-all group overflow-hidden"
-    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = `${ROW_ACCENT_COLORS[idx % ROW_ACCENT_COLORS.length]}60`; }}
-    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}
-  >
-                  {/* Image with overlays */}
-                  <div className="relative h-52 bg-[#18181C] flex items-center justify-center overflow-hidden">
-                    <SimilarDeviceImage name={d.name} imageUrl={d.imageUrl} color={d.mainTaskColor} />
-                    {/* Name overlay bottom left */}
-                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                      <p className="text-xs font-bold text-white truncate group-hover:text-white transition-colors"
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = ROW_ACCENT_COLORS[idx % ROW_ACCENT_COLORS.length]; }}
-onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'white'; }}>
-                        {d.name}
-                      </p>
-                      <p className="text-[10px] text-[#A1A1AA]">{d.category} · {d.manufacturer}</p>
-                    </div>
-                    {/* Date badge top right */}
-                    {d.month && (
-                      <div className="absolute top-2 right-2 bg-black/70 text-[10px] text-white px-1.5 py-0.5 rounded">
-                        {d.month}
+              {/* Name */}
+              <div>
+                <h1 className="text-[26px] font-black text-white tracking-tight leading-tight">{device.name}</h1>
+                {device.manufacturer && (
+                  <div className="flex items-center gap-2 mt-2">
+                    {device.manufacturerLogoUrl && (
+                      <div className="h-5 w-5 rounded bg-white flex items-center justify-center overflow-hidden shrink-0">
+                        <img src={device.manufacturerLogoUrl} alt={device.manufacturer} className="h-4 w-4 object-contain" />
                       </div>
                     )}
+                    <span className="text-sm text-[#71717A]">by <span className="text-[#A1A1AA] font-medium">{device.manufacturer}</span></span>
                   </div>
+                )}
+              </div>
 
-                  {/* Below image */}
-                  <div className="p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      {d.availability ? (
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${AVAILABILITY_STYLES[d.availability] || "bg-[#232326] text-[#A1A1AA]"}`}>
-                          {d.availability}
-                        </span>
-                      ) : <span />}
-                      {d.price && (
-                        <span className="text-xs font-bold text-[#4ade80]">{d.price}</span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-[#52525B] line-clamp-2 leading-relaxed">
-                      {d.description}
-                    </p>
+              {/* Price + availability */}
+              <div className="flex items-center gap-3 py-3 border-y border-[#1a1a1e]">
+                <span className="text-2xl font-black text-white">{device.price || "N/A"}</span>
+                {device.availability && (
+                  <span className={`text-[11px] font-bold px-3 py-1 rounded-full ${AVAILABILITY_STYLES[device.availability]}`}>
+                    {device.availability}
+                  </span>
+                )}
+              </div>
+
+              {/* Description */}
+              <p className="text-sm text-[#A1A1AA] leading-relaxed">{device.description}</p>
+
+              {/* Quick stats: always 2-col grid */}
+              <div className="grid grid-cols-2 gap-2">
+                {device.formFactor && (
+                  <div className="flex flex-col gap-0.5 rounded-lg bg-[#111114] border border-[#1e1e22] px-3 py-2">
+                    <span className="text-[9px] font-mono text-[#52525B] uppercase tracking-wider">Form</span>
+                    <span className="text-[11px] font-semibold text-white">{device.formFactor}</span>
                   </div>
-                </Link>
-              ))}
+                )}
+                <div className="flex flex-col gap-0.5 rounded-lg bg-[#111114] border border-[#1e1e22] px-3 py-2">
+                  <span className="text-[9px] font-mono text-[#52525B] uppercase tracking-wider">Released</span>
+                  <span className="text-[11px] font-semibold text-white">{device.month || device.year || "—"}</span>
+                </div>
+                {device.country && (
+                  <div className="flex flex-col gap-0.5 rounded-lg bg-[#111114] border border-[#1e1e22] px-3 py-2">
+                    <span className="text-[9px] font-mono text-[#52525B] uppercase tracking-wider">Made in</span>
+                    <span className="text-[11px] font-semibold text-white">{device.country}</span>
+                  </div>
+                )}
+                {device.ram && (
+                  <div className="flex flex-col gap-0.5 rounded-lg bg-[#111114] border border-[#1e1e22] px-3 py-2">
+                    <span className="text-[9px] font-mono text-[#52525B] uppercase tracking-wider">RAM</span>
+                    <span className="text-[11px] font-semibold text-white">{device.ram}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Buy button */}
+              {device.buyUrl && (
+                <a
+                  href={device.buyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 text-white text-sm font-bold px-5 py-3 rounded-xl transition-all hover:opacity-90 active:scale-[0.98]"
+                  style={{ background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)` }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  Learn More
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── SPECS + ABOUT ── */}
+        <div className="flex flex-col gap-4 mb-6">
+
+          {/* Specifications */}
+          <div className="rounded-2xl border border-[#232326] bg-[#0A0A0C] overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-[#1a1a1e] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full" style={{ background: accentColor }} />
+                <h2 className="text-[10px] font-mono font-bold text-[#71717A] uppercase tracking-widest">Specifications</h2>
+              </div>
+              <span className="text-[9px] font-mono text-[#333] uppercase tracking-widest">{device.name}</span>
+            </div>
+            <div className="divide-y divide-[#0f0f12]">
+              {device.formFactor && (
+                <div className="flex items-center px-5 py-3 hover:bg-[#ffffff03] transition-colors">
+                  <span className="text-[11px] text-[#3D3D45] shrink-0 w-32 font-mono">Form factor</span>
+                  <span className="text-[12px] font-semibold text-[#E0E0E8]">{device.formFactor}</span>
+                </div>
+              )}
+              {device.ram && (
+                <div className="flex items-center px-5 py-3 hover:bg-[#ffffff03] transition-colors">
+                  <span className="text-[11px] text-[#3D3D45] shrink-0 w-32 font-mono">RAM</span>
+                  <span className="text-[12px] font-semibold text-[#E0E0E8]">{device.ram}</span>
+                </div>
+              )}
+              {device.country && (
+                <div className="flex items-center px-5 py-3 hover:bg-[#ffffff03] transition-colors">
+                  <span className="text-[11px] text-[#3D3D45] shrink-0 w-32 font-mono">Made in</span>
+                  <span className="text-[12px] font-semibold text-[#E0E0E8]">{device.country}</span>
+                </div>
+              )}
+              <div className="flex items-center px-5 py-3 hover:bg-[#ffffff03] transition-colors">
+                <span className="text-[11px] text-[#3D3D45] shrink-0 w-32 font-mono">Release date</span>
+                <span className="text-[12px] font-semibold text-[#E0E0E8]">{device.month || device.year || "—"}</span>
+              </div>
+              {device.aiFeatures && device.aiFeatures.length > 0 && (
+                <div className="flex items-start px-5 py-3 hover:bg-[#ffffff03] transition-colors">
+                  <span className="text-[11px] text-[#3D3D45] shrink-0 w-32 font-mono mt-0.5">AI features</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {device.aiFeatures.map((f) => (
+                      <span key={f} className="text-[10px] font-mono px-2 py-0.5 rounded-md border border-[#1e1e22] bg-[#111114] text-[#71717A] hover:text-white hover:border-[#333] transition-colors">
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {device.primaryUseCases && device.primaryUseCases.length > 0 && (
+                <div className="flex items-start px-5 py-3 hover:bg-[#ffffff03] transition-colors">
+                  <span className="text-[11px] text-[#3D3D45] shrink-0 w-32 font-mono mt-0.5">Use cases</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {device.primaryUseCases.map((u) => (
+                      <span key={u}
+                        className="text-[10px] font-mono px-2 py-0.5 rounded-md border transition-all duration-150 cursor-default"
+                        style={{ borderColor: `${accentColor}30`, color: `${accentColor}cc`, background: `${accentColor}0d` }}
+                        onMouseEnter={(e) => {
+                          const el = e.currentTarget as HTMLElement;
+                          el.style.borderColor = `${accentColor}70`;
+                          el.style.color = accentColor;
+                          el.style.background = `${accentColor}20`;
+                        }}
+                        onMouseLeave={(e) => {
+                          const el = e.currentTarget as HTMLElement;
+                          el.style.borderColor = `${accentColor}30`;
+                          el.style.color = `${accentColor}cc`;
+                          el.style.background = `${accentColor}0d`;
+                        }}>
+                        {u}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* About — polished full-width banner */}
+          {device.additionalInfo && (
+            <div className="rounded-2xl overflow-hidden relative order-first" style={{ border: `1px solid ${accentColor}25` }}>
+              {/* Gradient background */}
+              <div className="absolute inset-0" style={{ background: `linear-gradient(120deg, ${accentColor}0d 0%, #0A0A0C 60%)` }} />
+              {/* Top accent line */}
+              <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, ${accentColor}80, transparent)` }} />
+              {/* Left accent bar */}
+              <div className="absolute left-0 top-0 bottom-0 w-0.5" style={{ background: `linear-gradient(180deg, ${accentColor}, ${accentColor}00)` }} />
+
+              <div className="relative px-6 py-5 flex items-start gap-4">
+                {/* Icon */}
+                <div className="shrink-0 h-9 w-9 rounded-xl flex items-center justify-center mt-0.5" style={{ background: `${accentColor}18`, border: `1px solid ${accentColor}30` }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: accentColor }}>
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[9px] font-mono font-bold uppercase tracking-[0.15em] mb-2" style={{ color: `${accentColor}90` }}>About this device</p>
+                  <p className="text-[13px] text-[#B8B8C0] leading-relaxed">{device.additionalInfo}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── SIMILAR DEVICES ── */}
+        {similar.length > 0 && (
+          <div className="rounded-2xl border border-[#232326] bg-[#0A0A0C] overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-[#1a1a1e] flex items-center gap-2">
+              <div className="h-1.5 w-1.5 rounded-full" style={{ background: accentColor }} />
+              <h2 className="text-[10px] font-mono font-bold text-[#71717A] uppercase tracking-widest">Similar Devices</h2>
+            </div>
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {similar.map((d, idx) => {
+                const color = ROW_ACCENT_COLORS[idx % ROW_ACCENT_COLORS.length];
+                return (
+                  <Link
+                    key={d.id}
+                    href={`/devices/${d.slug || d.id}`}
+                    className="group flex gap-4 rounded-2xl bg-[#0D0D0F] p-3 transition-all duration-200 relative overflow-hidden"
+                    style={{ boxShadow: '0 0 0 1px #ffffff14' }}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget as HTMLElement;
+                      el.style.boxShadow = `0 0 0 1px ${color}30, 0 4px 24px ${color}10`;
+                      el.style.background = `${color}06`;
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget as HTMLElement;
+                      el.style.boxShadow = '0 0 0 1px #ffffff08';
+                      el.style.background = '';
+                    }}
+                  >
+                    {/* Subtle left accent */}
+                    <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      style={{ background: color }} />
+
+                    {/* Image */}
+                    <div className="h-[100px] w-[100px] shrink-0 rounded-xl overflow-hidden bg-white flex items-center justify-center shadow-sm">
+                      <img
+                        src={d.imageUrl}
+                        alt={d.name}
+                        className="w-full h-full object-contain p-1.5"
+                        onError={(e) => {
+                          const el = e.currentTarget as HTMLImageElement;
+                          el.style.display = 'none';
+                          const parent = el.parentElement!;
+                          parent.style.background = `${d.mainTaskColor}22`;
+                          parent.innerHTML = `<span style="color:${d.mainTaskColor};font-size:28px;font-weight:900;">${d.name.charAt(0)}</span>`;
+                        }}
+                      />
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      <div>
+                        <p className="text-[13px] font-bold text-white truncate leading-tight transition-colors duration-150"
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = color; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = ''; }}>
+                          {d.name}
+                        </p>
+                        <p className="text-[10px] text-[#3a3a3f] mt-0.5 truncate font-mono">{d.manufacturer} · {d.category}</p>
+                        <p className="text-[11px] text-[#52525B] mt-1.5 line-clamp-2 leading-snug">{d.description}</p>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2.5">
+                        {d.availability && (
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${AVAILABILITY_STYLES[d.availability] || "bg-[#232326] text-[#A1A1AA]"}`}>
+                            {d.availability}
+                          </span>
+                        )}
+                        {d.price && <span className="text-[10px] font-bold text-[#4ade80]">{d.price}</span>}
+                        {d.month && <span className="text-[9px] font-mono text-[#52525B] ml-auto">{d.month}</span>}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}
@@ -539,11 +585,11 @@ function DeviceGallery({
   return (
     <div className="self-start w-full">
       {/* Main display */}
-      <div className="relative rounded-xl border border-[#232326] bg-[#0D0D0F] overflow-hidden">
-        {active.type === 'video' ? (
+      <div className="relative rounded-xl border border-[#232326] bg-[#0D0D0F] overflow-hidden min-h-[420px] flex items-center justify-center">        {active.type === 'video' ? (
           <iframe
-            src={getYoutubeEmbedUrl(active.src)}
-            className="w-full aspect-video"
+  src={getYoutubeEmbedUrl(active.src)}
+  className="w-full"
+  style={{ minHeight: 420 }}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
@@ -553,12 +599,12 @@ function DeviceGallery({
           </div>
         ) : (
           <img
-            src={active.src}
-            alt={`${name} image ${activeIdx + 1}`}
-            className="w-full object-contain"
-            style={{ maxHeight: 420, background: '#fff' }}
-            onError={() => setImgFailed((prev) => ({ ...prev, [activeIdx]: true }))}
-          />
+  src={active.src}
+  alt={`${name} image ${activeIdx + 1}`}
+  className="w-full object-contain self-center"
+  style={{ minHeight: 420, maxHeight: 420, background: '#fff' }}
+  onError={() => setImgFailed((prev) => ({ ...prev, [activeIdx]: true }))}
+/>
         )}
 
         {/* Prev/Next arrows — only if more than 1 media */}

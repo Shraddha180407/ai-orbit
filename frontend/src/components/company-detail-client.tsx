@@ -2,23 +2,29 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
 import { fetchCompanyDetails } from "@/lib/api";
 import { Company } from '@/lib/types';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { ExternalLink, Twitter, Linkedin, Building, MapPin, Calendar, Briefcase, TrendingUp, DollarSign, Users, CheckCircle, Star, ArrowLeft } from 'lucide-react';
+import { useUser } from "@/hooks/use-user";
+import { toast } from "sonner";
+import {
+  ExternalLink, Twitter, Linkedin, Building, MapPin, Calendar, Briefcase,
+  TrendingUp, DollarSign, Users, CheckCircle, Star, ArrowLeft, Home,
+  ChevronRight, Bell, MoreVertical, BarChart2, Globe
+} from 'lucide-react';
 import { Button } from "@/components/ui/shadcn-button";
+import { useQuery } from "@tanstack/react-query";
 
-function formatValuation(val: string | null | undefined): string {
+function formatValuation(val: string | number | null | undefined): string {
   if (!val) return "—";
   const num = Number(val);
-  if (isNaN(num)) return val;
-  if (num >= 1_000_000_000_000) return `$${(num / 1_000_000_000_000).toFixed(1)}T`;
-  if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(1)}B`;
-  if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(1)}M`;
-  if (num >= 1_000) return `$${(num / 1_000).toFixed(1)}K`;
+  if (isNaN(num) || num <= 0) return typeof val === "string" ? val : "—";
+  if (num >= 1_000_000_000_000) return `$${(num / 1_000_000_000_000).toFixed(2)}T`;
+  if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(2)}B`;
+  if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(2)}M`;
+  if (num >= 1_000) return `$${(num / 1_000).toFixed(2)}K`;
   return `$${num}`;
 }
 
@@ -26,30 +32,48 @@ export function CompanyDetailClient() {
   const params = useParams();
   const router = useRouter();
   const slug = params.slug as string;
+  const { user } = useUser();
 
-  const [company, setCompany] = useState<Company | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: company = null, isLoading } = useQuery<Company | null>({
+    queryKey: ["company-detail", slug],
+    queryFn: () => fetchCompanyDetails(slug),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const [activeTab, setActiveTab] = useState<'tools' | 'models'>('tools');
+  const [isFollowing, setIsFollowing] = useState(false);
 
   useEffect(() => {
-    if (!slug) return;
-    setIsLoading(true);
-    fetchCompanyDetails(slug)
-      .then((data) => {
-        if (!data) {
-          router.replace('/companies');
-        } else {
-          setCompany(data);
-        }
-      })
-      .catch((e) => console.error(e))
-      .finally(() => setIsLoading(false));
-  }, [slug, router]);
+    if (!isLoading && !company && slug) {
+      router.replace('/companies');
+    }
+  }, [isLoading, company, slug, router]);
+
+  const handleFollowClick = () => {
+    if (!user) {
+      toast.error("Sign in required to follow companies", {
+        description: "Please sign in or create an account to follow companies.",
+        action: {
+          label: "Sign In",
+          onClick: () => router.push("/auth/signin"),
+        },
+        duration: 5000,
+      });
+      return;
+    }
+    setIsFollowing(!isFollowing);
+    if (!isFollowing) {
+      toast.success(`You are now following ${company?.name || 'this company'}`);
+    } else {
+      toast.info(`Unfollowed ${company?.name || 'this company'}`);
+    }
+  };
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-[#000000] text-white">
         <Header />
-        <main className="mx-auto max-w-[1070px] px-8 py-12 flex-1 w-full flex items-center justify-center">
+        <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 py-12 flex-1 flex items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
         </main>
         <Footer />
@@ -60,213 +84,299 @@ export function CompanyDetailClient() {
   if (!company) return null;
 
   const dash = "—";
+  const toolsCount = company.tools?.length || company._count?.tools || 0;
+  const modelsCount = company.aiModels?.length || company._count?.aiModels || 0;
+  const sectorName = company.sector || "Artificial Intelligence";
+  const typesList = (company.type || []) as string[];
+  const isAiNative = typesList.length > 0 ? typesList.includes('AI_NATIVE') : null;
+  const isProfitable = typesList.length > 0 ? typesList.includes('PROFITABLE') : null;
+  const mostPopularTool = company.tools && company.tools.length > 0 ? company.tools[0] : null;
+  const locationString = company.city && company.country ? `${company.city}, ${company.country}` : company.country || company.city || dash;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <Header />
-      <main className="mx-auto max-w-[1070px] px-8 py-12 flex-1 w-full">
-        <Button variant="ghost" className="mb-6 text-[#A1A1AA] hover:text-white pl-0" onClick={() => router.push('/companies')}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Companies
-        </Button>
 
-        {/* Hero Header */}
-        <div className="flex flex-col md:flex-row gap-6 md:items-start justify-between bg-[#0A0A0C] border border-[#1C1C1F] p-8 rounded-2xl mb-8">
-          <div className="flex items-start gap-6">
-            <div className="h-24 w-24 rounded-2xl bg-[#18181C] border border-[#232326] flex flex-col items-center justify-center shrink-0 overflow-hidden shadow-lg">
-              {company.logoUrl ? (
-                <img src={company.logoUrl} alt={company.name} className="object-contain w-full h-full p-2" />
-              ) : (
-                <span className="text-4xl font-black text-white">{company.name.charAt(0)}</span>
+      <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 py-6 flex-1">
+        {/* Top Breadcrumb Navigation */}
+        <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-2 text-xs font-medium text-[#71717A] flex-wrap">
+          <Link href="/" className="inline-flex items-center gap-1 hover:text-white transition-colors">
+            <Home size={14} />
+            <span>Home</span>
+          </Link>
+          <ChevronRight size={13} className="text-[#52525B]" />
+          <Link href="/companies" className="hover:text-white transition-colors flex items-center gap-1.5">
+            <span>Companies</span>
+          </Link>
+          {company.sector && (
+            <>
+              <ChevronRight size={13} className="text-[#52525B]" />
+              <Link href={`/companies?filter=${encodeURIComponent(company.sector.toLowerCase())}`} className="hover:text-white transition-colors flex items-center gap-1.5">
+                <span>{company.sector}</span>
+              </Link>
+            </>
+          )}
+          <ChevronRight size={13} className="text-[#52525B]" />
+          <div className="flex items-center gap-1.5 text-white font-semibold">
+            {company.logoUrl ? (
+              <img src={company.logoUrl} alt={company.name} className="w-4 h-4 object-contain rounded" />
+            ) : (
+              <span className="w-4 h-4 bg-[#232326] rounded text-[10px] flex items-center justify-center font-bold">{company.name.charAt(0)}</span>
+            )}
+            <span>{company.name}</span>
+            <span className="text-[10px] bg-[#1A1A1E] px-1.5 py-0.5 rounded text-[#A1A1AA]">{toolsCount}</span>
+          </div>
+        </nav>
+
+        {/* Demo-Matched Company Hero Profile Box */}
+        <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-6 sm:p-8 mb-8 shadow-xl">
+          {/* Top Industry Pill Badges (Clean separated styling) */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-2.5">
+              <span className="text-[#A1A1AA] text-xs font-semibold flex items-center gap-1.5">
+                <Home size={13} className="text-[#71717A]" /> Industries
+              </span>
+              <Link
+                href={`/companies?filter=${encodeURIComponent(sectorName.toLowerCase())}`}
+                className="text-white text-xs font-bold bg-[#1C1C20] border border-[#2B2B30] px-3 py-1 rounded-lg hover:border-[#F5A623] hover:text-[#F5A623] transition-colors no-underline"
+              >
+                {sectorName}
+              </Link>
+            </div>
+
+            {company.verified && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-lg">
+                  <CheckCircle size={12} /> Verified Company
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Company Title Header & Action Buttons */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 rounded-xl bg-[#141418] border border-[#26262B] flex items-center justify-center shrink-0 overflow-hidden p-2 shadow-md">
+                {company.logoUrl ? (
+                  <img src={company.logoUrl} alt={company.name} className="object-contain w-full h-full rounded" />
+                ) : (
+                  <span className="text-2xl font-black text-white">{company.name.charAt(0)}</span>
+                )}
+              </div>
+              <div>
+                <h1 className="text-3xl font-extrabold text-white tracking-tight">{company.name}</h1>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                onClick={handleFollowClick}
+                className={`h-9 px-4 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isFollowing
+                    ? "bg-[#232326] text-white border border-[#333338]"
+                    : "bg-white text-black hover:bg-neutral-200"
+                }`}
+              >
+                <Bell size={14} />
+                {isFollowing ? "Following" : "Follow"}
+              </Button>
+
+              {company.website && (
+                <a
+                  href={company.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="h-9 px-4 text-xs font-bold text-white bg-[#1A1A1E] hover:bg-[#25252B] border border-[#2C2C32] rounded-xl flex items-center gap-1.5 transition-all no-underline"
+                >
+                  <Globe size={14} />
+                  Visit website
+                </a>
               )}
             </div>
+          </div>
+
+          {/* Description Tagline */}
+          <p className="text-[#A1A1AA] text-sm leading-relaxed max-w-4xl mb-5">
+            {company.description || `${company.name} is a technology company specializing in artificial intelligence and machine learning solutions.`}
+          </p>
+
+          {/* Social Icons Row */}
+          <div className="flex items-center gap-4 text-[#71717A] text-sm mb-6">
+            {company.linkedinUrl && (
+              <a href={company.linkedinUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="LinkedIn">
+                <Linkedin size={16} />
+              </a>
+            )}
+            {company.twitterUrl && (
+              <a href={company.twitterUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="Twitter / X">
+                <Twitter size={16} />
+              </a>
+            )}
+          </div>
+
+          {/* Location */}
+          <div className="flex items-center gap-1.5 text-xs text-[#A1A1AA] mb-6">
+            <MapPin size={14} className="text-[#71717A]" />
+            <span>{locationString}</span>
+          </div>
+
+          {/* Metrics Grid Row (Authentic Data strictly from DB) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 pt-6 border-t border-[#1F1F24] text-xs">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-black text-white tracking-tight">{company.name}</h1>
-                {company.verified && (
-                  <span className="flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded-full">
-                    <CheckCircle className="w-3 h-3" /> Verified
-                  </span>
-                )}
-                {company.featured && (
-                  <span className="flex items-center gap-1 text-xs font-semibold text-[#6E56CF] bg-[#6E56CF]/10 border border-[#6E56CF]/20 px-2 py-0.5 rounded-full">
-                    <Star className="w-3 h-3 fill-current" /> Featured
-                  </span>
-                )}
-              </div>
-              <p className="text-[#A1A1AA] text-base leading-relaxed max-w-3xl mb-4">
-                {company.description || dash}
-              </p>
-              <div className="flex items-center gap-4 flex-wrap">
-                {company.website && (
-                  <a href={company.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm font-medium text-white hover:text-[#6E56CF] transition-colors bg-[#1C1C1F] hover:bg-[#232326] px-3 py-1.5 rounded-lg border border-[#2A2A2E]">
-                    <ExternalLink className="w-4 h-4" /> Website
-                  </a>
-                )}
-                {company.twitterUrl && (
-                  <a href={company.twitterUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm font-medium text-white hover:text-[#1DA1F2] transition-colors bg-[#1C1C1F] hover:bg-[#232326] px-3 py-1.5 rounded-lg border border-[#2A2A2E]">
-                    <Twitter className="w-4 h-4" /> Twitter
-                  </a>
-                )}
-                {company.linkedinUrl && (
-                  <a href={company.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm font-medium text-white hover:text-[#0A66C2] transition-colors bg-[#1C1C1F] hover:bg-[#232326] px-3 py-1.5 rounded-lg border border-[#2A2A2E]">
-                    <Linkedin className="w-4 h-4" /> LinkedIn
-                  </a>
-                )}
-              </div>
+              <div className="text-[#71717A] font-medium mb-1">AI Native</div>
+              <div className="font-bold text-white">{isAiNative === null ? dash : isAiNative ? "Yes" : "No"}</div>
             </div>
-          </div>
-
-          <div className="flex gap-4">
-             <div className="text-center px-4 py-2 bg-[#131316] border border-[#1C1C1F] rounded-xl min-w-[90px]">
-               <div className="text-xs text-[#71717A] uppercase tracking-wider font-semibold mb-1">Views</div>
-               <div className="text-xl font-bold text-white">{company.views || 0}</div>
-             </div>
-             <div className="text-center px-4 py-2 bg-[#131316] border border-[#1C1C1F] rounded-xl min-w-[90px]">
-               <div className="text-xs text-[#71717A] uppercase tracking-wider font-semibold mb-1">Upvotes</div>
-               <div className="text-xl font-bold text-white">{company.upvotes || 0}</div>
-             </div>
-          </div>
-        </div>
-
-        {/* Grid Details */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-          <div className="bg-[#0A0A0C] border border-[#1C1C1F] p-5 rounded-xl">
-            <div className="flex items-center gap-2 text-[#71717A] mb-2">
-              <Building className="w-4 h-4" />
-              <span className="text-xs uppercase tracking-wider font-semibold">Sector</span>
-            </div>
-            <div className="text-white font-medium">{company.sector || dash}</div>
-          </div>
-          <div className="bg-[#0A0A0C] border border-[#1C1C1F] p-5 rounded-xl">
-            <div className="flex items-center gap-2 text-[#71717A] mb-2">
-              <MapPin className="w-4 h-4" />
-              <span className="text-xs uppercase tracking-wider font-semibold">Location</span>
-            </div>
-            <div className="text-white font-medium">
-              {company.city && company.country ? `${company.city}, ${company.country}` : company.country || company.city || dash}
-            </div>
-          </div>
-          <div className="bg-[#0A0A0C] border border-[#1C1C1F] p-5 rounded-xl">
-            <div className="flex items-center gap-2 text-[#71717A] mb-2">
-              <Calendar className="w-4 h-4" />
-              <span className="text-xs uppercase tracking-wider font-semibold">Founded</span>
-            </div>
-            <div className="text-white font-medium">{company.foundedYear || dash}</div>
-          </div>
-          <div className="bg-[#0A0A0C] border border-[#1C1C1F] p-5 rounded-xl">
-            <div className="flex items-center gap-2 text-[#71717A] mb-2">
-              <Users className="w-4 h-4" />
-              <span className="text-xs uppercase tracking-wider font-semibold">Employees</span>
-            </div>
-            <div className="text-white font-medium">{company.employeeCount ? `${company.employeeCount.toLocaleString()}+` : dash}</div>
-          </div>
-          
-          <div className="bg-[#0A0A0C] border border-[#1C1C1F] p-5 rounded-xl">
-            <div className="flex items-center gap-2 text-[#71717A] mb-2">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-xs uppercase tracking-wider font-semibold">Valuation</span>
-            </div>
-            <div className="text-white font-medium text-lg">{company.valuation ? formatValuation(company.valuation) : dash}</div>
-          </div>
-          <div className="bg-[#0A0A0C] border border-[#1C1C1F] p-5 rounded-xl">
-            <div className="flex items-center gap-2 text-[#71717A] mb-2">
-              <DollarSign className="w-4 h-4" />
-              <span className="text-xs uppercase tracking-wider font-semibold">Funding Raised</span>
-            </div>
-            <div className="text-white font-medium text-lg">{company.fundingRaised ? formatValuation(company.fundingRaised) : dash}</div>
-          </div>
-          <div className="bg-[#0A0A0C] border border-[#1C1C1F] p-5 rounded-xl col-span-2">
-            <div className="flex items-center gap-2 text-[#71717A] mb-2">
-              <Briefcase className="w-4 h-4" />
-              <span className="text-xs uppercase tracking-wider font-semibold">Latest Round</span>
-            </div>
-            <div className="text-white font-medium">{company.latestFundingRound || dash}</div>
-          </div>
-        </div>
-
-        <div className="mb-12">
-          <h2 className="text-lg font-bold text-white mb-4">Company Profile</h2>
-          <div className="flex flex-wrap gap-2">
-             {company.type && company.type.length > 0 ? company.type.map(t => (
-               <span key={t} className="px-3 py-1 bg-[#1A1A1E] border border-[#2A2A2E] rounded-full text-xs font-semibold text-[#A1A1AA]">
-                 {t.replace('_', ' ')}
-               </span>
-             )) : (
-               <span className="text-[#A1A1AA]">{dash}</span>
-             )}
-          </div>
-        </div>
-
-        {/* Tabs / Sections for Models and Tools */}
-        <div className="space-y-12">
-          {company.aiModels && company.aiModels.length > 0 && (
             <div>
-              <div className="flex items-center justify-between border-b border-[#232326] pb-4 mb-6">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  AI Models <span className="bg-[#1C1C1F] text-[#A1A1AA] text-xs px-2 py-0.5 rounded-full">{company.aiModels.length}</span>
-                </h2>
+              <div className="text-[#71717A] font-medium mb-1">Number of tools</div>
+              <div className="font-bold text-white">{toolsCount}</div>
+            </div>
+            <div>
+              <div className="text-[#71717A] font-medium mb-1">Number of models</div>
+              <div className="font-bold text-white">{modelsCount}</div>
+            </div>
+            <div>
+              <div className="text-[#71717A] font-medium mb-1">Number of employees</div>
+              <div className="font-bold text-white">{company.employeeCount ? `${company.employeeCount.toLocaleString()}` : dash}</div>
+            </div>
+            <div>
+              <div className="text-[#71717A] font-medium mb-1">Profitable</div>
+              <div className="font-bold">
+                {isProfitable === null ? (
+                  <span className="text-[#A1A1AA]">{dash}</span>
+                ) : isProfitable ? (
+                  <span className="text-emerald-400">Yes</span>
+                ) : (
+                  <span className="text-red-400">No</span>
+                )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {company.aiModels.map(model => (
-                  <Link key={model.id} href={`/models/${model.slug}`} className="block group">
-                    <div className="bg-[#0A0A0C] border border-[#1C1C1F] rounded-xl p-5 hover:border-[#6E56CF]/50 hover:bg-[#111114] transition-all h-full flex flex-col">
-                      <h3 className="text-base font-bold text-white group-hover:text-[#6E56CF] transition-colors mb-2">{model.name}</h3>
-                      <p className="text-sm text-[#8A8F98] mb-4 line-clamp-2 flex-1">{model.description || dash}</p>
-                      <div className="flex items-center gap-2 mt-auto">
-                         {model.modality && (
-                           <span className="text-[10px] uppercase font-semibold tracking-wider text-[#A1A1AA] bg-[#1A1A1E] px-2 py-1 rounded">
-                             {model.modality.split(',')[0]}
-                           </span>
-                         )}
-                         {model.parameterSize && (
-                           <span className="text-[10px] uppercase font-semibold tracking-wider text-[#A1A1AA] bg-[#1A1A1E] px-2 py-1 rounded">
-                             {model.parameterSize}
-                           </span>
-                         )}
+            </div>
+            <div>
+              <div className="text-[#71717A] font-medium mb-1">Valuation</div>
+              <div className="font-bold text-white">{formatValuation(company.valuation)}</div>
+            </div>
+            <div>
+              <div className="text-[#71717A] font-medium mb-1">Raised</div>
+              <div className="font-bold text-white">{formatValuation(company.fundingRaised)}</div>
+            </div>
+            <div>
+              <div className="text-[#71717A] font-medium mb-1">Most popular AI tool</div>
+              {mostPopularTool ? (
+                <div className="inline-flex items-center gap-1.5 bg-[#1C1C20] border border-[#2B2B30] rounded-full px-2.5 py-0.5 text-white font-semibold text-xs truncate max-w-full">
+                  {mostPopularTool.logoUrl && <img src={mostPopularTool.logoUrl} alt="" className="w-3.5 h-3.5 object-cover rounded-full shrink-0" />}
+                  <span className="truncate">{mostPopularTool.name}</span>
+                </div>
+              ) : (
+                <div className="font-bold text-[#A1A1AA]">{dash}</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Subcategory Tabs Bar */}
+        <div className="flex items-center justify-center gap-2 overflow-x-auto scrollbar-none pb-6 mb-4">
+          <button
+            type="button"
+            onClick={() => setActiveTab('tools')}
+            className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
+              activeTab === 'tools'
+                ? "bg-white text-black border-white shadow-md"
+                : "bg-[#131316] text-[#A1A1AA] border-[#232326] hover:text-white hover:border-[#333]"
+            }`}
+          >
+            Tools {toolsCount}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('models')}
+            className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
+              activeTab === 'models'
+                ? "bg-white text-black border-white shadow-md"
+                : "bg-[#131316] text-[#A1A1AA] border-[#232326] hover:text-white hover:border-[#333]"
+            }`}
+          >
+            Models {modelsCount}
+          </button>
+        </div>
+
+        {/* Tab Content Display */}
+        <div className="space-y-6">
+          {activeTab === 'tools' && (
+            <div>
+              <h2 className="text-2xl font-extrabold text-white mb-6">Tools</h2>
+              {company.tools && company.tools.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {company.tools.map((tool) => (
+                    <Link key={tool.id} href={`/p/tools/${tool.slug}`} className="block group no-underline">
+                      <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-5 hover:border-[#F5A623]/50 hover:bg-[#131316] transition-all h-full flex flex-col">
+                        <div className="flex items-center gap-3.5 mb-3">
+                          <div className="w-12 h-12 rounded-xl bg-[#18181C] border border-[#26262B] flex items-center justify-center overflow-hidden shrink-0 p-1">
+                            {tool.logoUrl ? (
+                              <img src={tool.logoUrl} alt={tool.name} className="object-cover w-full h-full rounded-lg" />
+                            ) : (
+                              <span className="text-white font-black text-lg">{tool.name.charAt(0)}</span>
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="text-base font-bold text-white group-hover:text-[#F5A623] transition-colors">{tool.name}</h3>
+                            <span className="text-[11px] text-[#A1A1AA] bg-[#1A1A1E] px-2 py-0.5 rounded border border-[#28282E]">
+                              {tool.pricingModel || "Freemium"}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-[#8A8F98] leading-relaxed mb-4 line-clamp-3 flex-1">
+                          {tool.description || "Leading AI solution for enterprise & personal workflows."}
+                        </p>
                       </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-12 text-center text-[#71717A] text-sm">
+                  No public tools listed yet for this company.
+                </div>
+              )}
             </div>
           )}
 
-          {company.tools && company.tools.length > 0 && (
+          {activeTab === 'models' && (
             <div>
-              <div className="flex items-center justify-between border-b border-[#232326] pb-4 mb-6">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  AI Tools <span className="bg-[#1C1C1F] text-[#A1A1AA] text-xs px-2 py-0.5 rounded-full">{company.tools.length}</span>
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {company.tools.map(tool => (
-                  <Link key={tool.id} href={`/p/tools/${tool.slug}`} className="block group">
-                    <div className="bg-[#0A0A0C] border border-[#1C1C1F] rounded-xl p-5 hover:border-white/20 hover:bg-[#111114] transition-all h-full flex flex-col">
-                      <div className="flex items-center gap-3 mb-3">
-                         <div className="w-10 h-10 rounded-lg bg-[#18181C] border border-[#232326] flex items-center justify-center overflow-hidden shrink-0">
-                           {tool.logoUrl ? (
-                             <img src={tool.logoUrl} alt={tool.name} className="object-cover w-full h-full" />
-                           ) : (
-                             <span className="text-white font-bold">{tool.name.charAt(0)}</span>
-                           )}
-                         </div>
-                         <h3 className="text-base font-bold text-white group-hover:text-white transition-colors">{tool.name}</h3>
+              <h2 className="text-2xl font-extrabold text-white mb-6">Models</h2>
+              {company.aiModels && company.aiModels.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {company.aiModels.map((model) => (
+                    <Link key={model.id} href={`/models/${model.slug}`} className="block group no-underline">
+                      <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-5 hover:border-[#F5A623]/50 hover:bg-[#131316] transition-all h-full flex flex-col">
+                        <h3 className="text-base font-bold text-white group-hover:text-[#F5A623] transition-colors mb-2">{model.name}</h3>
+                        <p className="text-xs text-[#8A8F98] leading-relaxed mb-4 line-clamp-3 flex-1">
+                          {model.description || "State-of-the-art foundation model optimized for reasoning & performance."}
+                        </p>
+                        <div className="flex items-center gap-2 mt-auto pt-3 border-t border-[#1F1F24]">
+                          {model.modality && (
+                            <span className="text-[10px] font-semibold text-[#A1A1AA] bg-[#1A1A1E] px-2 py-0.5 rounded border border-[#28282E]">
+                              {model.modality}
+                            </span>
+                          )}
+                          {model.parameterSize && (
+                            <span className="text-[10px] font-semibold text-[#A1A1AA] bg-[#1A1A1E] px-2 py-0.5 rounded border border-[#28282E]">
+                              {model.parameterSize}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-[#8A8F98] mb-4 line-clamp-2 flex-1">{tool.description || dash}</p>
-                      <div className="mt-auto flex items-center justify-between">
-                         <span className="text-[10px] uppercase font-semibold tracking-wider text-[#A1A1AA] bg-[#1A1A1E] px-2 py-1 rounded">
-                           {tool.pricingModel || dash}
-                         </span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-12 text-center text-[#71717A] text-sm">
+                  No AI models listed yet for this company.
+                </div>
+              )}
             </div>
           )}
         </div>
-
       </main>
+
       <Footer />
     </div>
   );

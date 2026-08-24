@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, notFound } from "next/navigation";
 import { fetchTask, fetchTasks, type Task } from "@/lib/tasks-api";
+import { PINNED_TASKS } from "@/lib/pinned-tasks";
 import { TaskDetail } from "@/components/TaskDetail";
 
 export function TaskDetailClient() {
@@ -23,6 +24,33 @@ export function TaskDetailClient() {
     async function loadTask() {
       setIsLoading(true);
       try {
+        // Pinned mock tasks don't exist on the real backend — fetching
+        // them there would always fail. Serve them directly instead.
+        const pinned = PINNED_TASKS.find((t) => t.slug === slug);
+
+        if (pinned) {
+          if (!cancelled) {
+            setTask(pinned);
+            setBookmarked(false);
+            setLiked(false);
+            setSubscribed(false);
+          }
+
+          if (pinned.category?.slug) {
+            try {
+              const related = await fetchTasks({ category: pinned.category.slug, page: 1 });
+              if (!cancelled) {
+                setRelatedTasks(related.tasks.filter((t) => t.slug !== pinned.slug).slice(0, 5));
+              }
+            } catch (relatedError) {
+              console.error("Failed to fetch related tasks for pinned task:", relatedError);
+              if (!cancelled) setRelatedTasks([]);
+            }
+          }
+
+          return;
+        }
+
         const data = await fetchTask(slug);
 
         if (!data) {
@@ -36,9 +64,6 @@ export function TaskDetailClient() {
         setLiked(data.liked);
         setSubscribed(data.subscribed);
 
-        // Related tasks: same category, excluding the current task.
-        // The detail endpoint doesn't return these, so derive them from
-        // the list endpoint — same approach the dedicated route used.
         if (data.task.category?.slug) {
           try {
             const related = await fetchTasks({ category: data.task.category.slug, page: 1 });
@@ -64,9 +89,6 @@ export function TaskDetailClient() {
     };
   }, [slug]);
 
-  // Same pattern as ToolDetailClient: set the document title client-side
-  // once data is in. The server-rendered <title> comes from
-  // UnifiedEntityPage's generateMetadata (see the "tasks" branch there).
   useEffect(() => {
     if (task) {
       document.title = `${task.title} | AI Orbit`;

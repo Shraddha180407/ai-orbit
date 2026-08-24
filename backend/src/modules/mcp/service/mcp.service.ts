@@ -269,13 +269,26 @@ export class MCPService {
     }
 
     if (subCategory) {
-      where.subCategories = {
-        some: {
-          subCategory: {
-            slug: subCategory,
+      where.OR = [
+        {
+          subCategories: {
+            some: {
+              subCategory: {
+                slug: subCategory,
+              },
+            },
           },
         },
-      };
+        {
+          categories: {
+            some: {
+              category: {
+                slug: subCategory,
+              },
+            },
+          },
+        },
+      ];
     }
 
     // Build orderBy clause based on sortBy parameter

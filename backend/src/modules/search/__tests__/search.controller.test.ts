@@ -79,14 +79,14 @@ describe('SearchController', () => {
       expect(c.json).toHaveBeenCalledWith({ error: 'DB error' }, 500);
     });
 
-    it('always disconnects prisma', async () => {
+    it('does not disconnect the shared prisma singleton', async () => {
       mockService.autocomplete.mockResolvedValue([]);
       const c = createContext({ q: 'test' });
       await controller.autocomplete(c as never);
 
       const { getPrisma } = await import('../../../lib/prisma.js');
       const prisma = (getPrisma as ReturnType<typeof vi.fn>).mock.results[0].value;
-      expect(prisma.$disconnect).toHaveBeenCalled();
+      expect(prisma.$disconnect).not.toHaveBeenCalled();
     });
   });
 
@@ -109,14 +109,14 @@ describe('SearchController', () => {
       expect(c.json).toHaveBeenCalledWith({ error: 'fail' }, 500);
     });
 
-    it('always disconnects prisma', async () => {
+    it('does not disconnect the shared prisma singleton', async () => {
       mockService.popular.mockResolvedValue([]);
       const c = createContext();
       await controller.popular(c as never);
 
       const { getPrisma } = await import('../../../lib/prisma.js');
       const prisma = (getPrisma as ReturnType<typeof vi.fn>).mock.results[0].value;
-      expect(prisma.$disconnect).toHaveBeenCalled();
+      expect(prisma.$disconnect).not.toHaveBeenCalled();
     });
   });
 
@@ -143,14 +143,14 @@ describe('SearchController', () => {
       expect(c.json).toHaveBeenCalledWith({ error: 'oops' }, 500);
     });
 
-    it('always disconnects prisma', async () => {
+    it('does not disconnect the shared prisma singleton', async () => {
       mockService.featured.mockResolvedValue([]);
       const c = createContext();
       await controller.featured(c as never);
 
       const { getPrisma } = await import('../../../lib/prisma.js');
       const prisma = (getPrisma as ReturnType<typeof vi.fn>).mock.results[0].value;
-      expect(prisma.$disconnect).toHaveBeenCalled();
+      expect(prisma.$disconnect).not.toHaveBeenCalled();
     });
   });
 });

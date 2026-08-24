@@ -22,7 +22,37 @@ import Trophy from 'lucide-react/dist/esm/icons/trophy';
 
 import { HeroFeatureChips } from "@/components/HeroFeatureChips";
 import { SortDropdown } from "@/components/SortDropdown";
+import { Logo } from "@/components/ui/Logo";
 import { ENTITY_META } from "@/lib/entityMeta";
+import { useHomeSearch } from "@/hooks/useHomeSearch";
+import type { RealSearchSuggestion } from "@/lib/api";
+
+/**
+ * Where a live suggestion should actually take you — its own detail page,
+ * not another search. Falls back to a search-results link only when the
+ * backend didn't give us a slug to route to.
+ */
+function getSuggestionHref(s: RealSearchSuggestion): string {
+  const meta = ENTITY_META[s.type];
+  if (!s.slug) return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
+
+  switch (s.type) {
+    case "tool":
+      return `/p/tools/${s.slug}`;
+    case "company":
+      return `/p/companies/${s.slug}`;
+    case "repository":
+      return `/p/repositories/${s.slug}`;
+    case "robot":
+      return `/p/robots/${s.slug}`;
+    case "device":
+      return `/p/devices/${s.slug}`;
+    case "model":
+      return `/models/${s.slug}`;
+    default:
+      return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
+  }
+}
 
 // Top-of-menu quick actions for the homepage hero search dropdown.
 const QUICK_LINKS = [
@@ -55,22 +85,165 @@ const DIRECTORY_CARDS = [
   { name: "MCP", href: "/mcp", description: "Model Context Protocol servers and integrations.", icon: Plug, color: "#818CF8" },
   { name: "Collections", href: "/collections", description: "Curated bundles of tools grouped by use case.", icon: FolderHeart, color: "#34D399" },
   { name: "Personal", href: "/personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
-  { name: "Creativity", href: "/creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
+  { name: "Creativity", href: "/creativity/image-generation", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
+
+import { useQueryClient } from "@tanstack/react-query";
+import { API_URL, fetchAllCompanies, fetchAllRobots, fetchAllDevices, fetchModels, fetchRepositories, fetchMCPItems } from "@/lib/api";
+import { fetchTasks as fetchTasksApi } from "@/lib/tasks-api";
 
 export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string } = {}) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const q = searchParams.get("q") || "";
+  const hoverTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
+
+  const prefetchCategory = (cardName: string, href: string) => {
+    switch (cardName) {
+      case "New":
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ["home-tools", { q: undefined, category: undefined, pricing: undefined, sort: undefined }],
+          queryFn: async () => {
+            const res = await fetch(`${API_URL}/api/v1/tools?page=1&pageSize=50`);
+            return res.ok ? res.json() : { tools: [], totalPages: 1, page: 1 };
+          },
+          initialPageParam: 1,
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Tools":
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ["tools", { q: undefined, category: undefined, pricing: undefined, sort: undefined }],
+          queryFn: async () => {
+            const res = await fetch(`${API_URL}/api/v1/tools?page=1&pageSize=50`);
+            return res.ok ? res.json() : { tools: [], totalPages: 1, page: 1 };
+          },
+          initialPageParam: 1,
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Personal":
+      case "Creativity":
+        queryClient.prefetchQuery({
+          queryKey: ["tools", cardName.toLowerCase()],
+          queryFn: async () => {
+            const res = await fetch(`${API_URL}/api/v1/tools?limit=100`);
+            return res.ok ? res.json() : { tools: [] };
+          },
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Companies":
+        queryClient.prefetchQuery({ queryKey: ["companies"], queryFn: fetchAllCompanies, staleTime: 10 * 60 * 1000 }).catch(() => {});
+        break;
+      case "Robots":
+        queryClient.prefetchQuery({ queryKey: ["robots"], queryFn: fetchAllRobots, staleTime: 10 * 60 * 1000 }).catch(() => {});
+        break;
+      case "Devices":
+        queryClient.prefetchQuery({ queryKey: ["devices"], queryFn: () => fetchAllDevices({}), staleTime: 10 * 60 * 1000 }).catch(() => {});
+        break;
+      case "Models":
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ["models", { subCategory: null, sort: "newest" }],
+          queryFn: () => fetchModels({ page: 1, sort: "newest" as any }),
+          initialPageParam: 1,
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "News":
+        queryClient.prefetchQuery({
+          queryKey: ["news-list", "all", undefined],
+          queryFn: async () => {
+            const res = await fetch(`${API_URL}/api/news?page=1&perPage=50`);
+            return res.ok ? res.json() : null;
+          },
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Videos":
+        queryClient.prefetchQuery({
+          queryKey: ["videos", { sort: "latest", page: 1 }],
+          queryFn: async () => {
+            const res = await fetch(`${API_URL}/api/videos?sort=latest&limit=24&offset=0`);
+            return res.ok ? res.json() : [];
+          },
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Tasks":
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ["tasks", { sort: "newest", filter: "all", category: undefined }],
+          queryFn: () => fetchTasksApi({ sort: "newest", filter: "all", page: 1 }),
+          initialPageParam: 1,
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Repositories":
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ["repositories", { q: "", sort: "stars", order: "desc", topic: undefined, owner: undefined, subCategory: undefined }],
+          queryFn: () => fetchRepositories({ sort: "stars_desc", limit: 15 }),
+          initialPageParam: null,
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "MCP":
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ["mcpItems", { q: "", category: "all", subCategory: null, type: "SERVER" }],
+          queryFn: () => fetchMCPItems({ page: 1, limit: 20, type: "SERVER" }),
+          initialPageParam: 1,
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+      case "Collections":
+        queryClient.prefetchQuery({
+          queryKey: ["collections", "list"],
+          queryFn: async () => {
+            const res = await fetch(`${API_URL}/api/v1/collections?sort=recently_updated`);
+            const data = res.ok ? await res.json() : null;
+            return data?.items || [];
+          },
+          staleTime: 10 * 60 * 1000,
+        }).catch(() => {});
+        break;
+    }
+  };
+
+  const handlePointerEnter = (cardName: string, href: string) => {
+    try { router.prefetch(href); } catch {}
+    if (hoverTimeoutRef.current[cardName]) clearTimeout(hoverTimeoutRef.current[cardName]);
+    hoverTimeoutRef.current[cardName] = setTimeout(() => {
+      prefetchCategory(cardName, href);
+    }, 75);
+  };
+
+  const handlePointerLeave = (cardName: string) => {
+    if (hoverTimeoutRef.current[cardName]) {
+      clearTimeout(hoverTimeoutRef.current[cardName]);
+      delete hoverTimeoutRef.current[cardName];
+    }
+  };
+
+  // Idle background prefetch for top categories
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      prefetchCategory("Tools", "/tools");
+      prefetchCategory("Companies", "/companies");
+      prefetchCategory("Models", "/models");
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState(q);
   const searchContainerRef = useRef<HTMLFormElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const query = searchInputRef.current?.value || "";
+  const { suggestions, isLoading } = useHomeSearch(searchValue);
+  const showSuggestions = searchValue.trim().length > 0;
+
+  const runSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (query.trim()) {
       params.set("q", query);
@@ -79,6 +252,11 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     }
     setSearchOpen(false);
     router.push(`${searchAction}?${params.toString()}`);
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    runSearch(searchValue);
   };
 
   // Close the search dropdown on outside click or Escape.
@@ -120,7 +298,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     <>
       {/* Hero Section */}
       <section
-        className="relative w-full flex flex-col items-center pt-4 pb-6 px-6"
+        className="relative z-20 w-full flex flex-col items-center pt-4 pb-6 px-6"
         style={{
           backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
@@ -154,7 +332,8 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                 ref={searchInputRef}
                 type="text"
                 name="q"
-                defaultValue={q}
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
                 placeholder="Search AI tools, models, companies…"
                 onFocus={() => setSearchOpen(true)}
                 className="w-full bg-transparent text-[12px] sm:text-[13px] text-white placeholder:text-[#71717A] focus:outline-none"
@@ -174,46 +353,100 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
 
             {searchOpen && (
               <div className="search-scope absolute left-0 right-0 top-[calc(100%+8px)] z-30 max-h-[70vh] overflow-y-auto rounded-xl border border-search-border bg-search-bg shadow-2xl shadow-black/40 text-left">
-                <div className="border-b border-search-border p-2">
-                  {QUICK_LINKS.map((link) => {
-                    const Icon = link.icon;
-                    return (
-                      <Link
-                        key={link.label}
-                        href={link.href}
-                        onClick={() => setSearchOpen(false)}
-                        className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
-                      >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
-                          <Icon size={14} />
-                        </span>
-                        {link.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-
-                <div className="p-2">
-                  <div className="px-2 py-2 text-center text-[11px] font-medium uppercase tracking-wide text-search-text-tertiary">
-                    Browse by type
+                {showSuggestions ? (
+                  <div className="p-2">
+                    {isLoading ? (
+                      <div className="space-y-2 p-2">
+                        {[0, 1, 2].map((i) => (
+                          <div key={i} className="h-9 w-full animate-pulse rounded-md bg-search-surface-active" />
+                        ))}
+                      </div>
+                    ) : suggestions.length === 0 ? (
+                      <div className="p-6 text-center text-sm text-search-text-secondary">
+                        No matches for &ldquo;{searchValue}&rdquo;.{" "}
+                        <button
+                          type="button"
+                          onClick={() => runSearch(searchValue)}
+                          className="text-search-accent hover:text-search-accent-hover"
+                        >
+                          Search anyway
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        {suggestions.map((s) => {
+                          const meta = ENTITY_META[s.type];
+                          return (
+                            <Link
+                              key={`${s.type}-${s.id}`}
+                              href={getSuggestionHref(s)}
+                              onClick={() => setSearchOpen(false)}
+                              className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm hover:bg-search-surface-hover"
+                            >
+                              <Logo
+                                src={s.logoUrl}
+                                name={s.title}
+                                size={28}
+                                className="shrink-0 rounded-md"
+                              />
+                              <span className="flex-1 truncate text-search-text-primary">{s.title}</span>
+                              <span className="shrink-0 text-xs text-search-text-tertiary">
+                                {meta.label} · {s.category}
+                              </span>
+                            </Link>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          onClick={() => runSearch(searchValue)}
+                          className="mt-1 flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-search-accent hover:bg-search-surface-hover"
+                        >
+                          See all results for &ldquo;{searchValue}&rdquo;
+                        </button>
+                      </>
+                    )}
                   </div>
-                  {BROWSE_BY_TYPE.map((link) => {
-                    const Icon = link.icon;
-                    return (
-                      <Link
-                        key={link.label}
-                        href={link.href}
-                        onClick={() => setSearchOpen(false)}
-                        className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
-                      >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
-                          <Icon size={14} />
-                        </span>
-                        {link.label}
-                      </Link>
-                    );
-                  })}
-                </div>
+                ) : (
+                  <>
+                    <div className="border-b border-search-border p-2">
+                      {QUICK_LINKS.map((link) => {
+                        const Icon = link.icon;
+                        return (
+                          <Link
+                            key={link.label}
+                            href={link.href}
+                            onClick={() => setSearchOpen(false)}
+                            className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
+                          >
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
+                              <Icon size={14} />
+                            </span>
+                            {link.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+
+                    <div className="p-2">
+                      {BROWSE_BY_TYPE.map((link) => {
+                        const Icon = link.icon;
+                        return (
+                          <Link
+                            key={link.label}
+                            href={link.href}
+                            onClick={() => setSearchOpen(false)}
+                            className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
+                          >
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
+                              <Icon size={14} />
+                            </span>
+                            {link.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </form>
@@ -236,32 +469,44 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
       {/* Directory nav strip */}
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
         <div className="mx-auto w-full max-w-[1600px]">
-          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto">
+          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none">
             {DIRECTORY_CARDS.map((card) => {
               const Icon = card.icon;
-              const isSelected = card.href === "/" 
-                ? pathname === "/" 
-                : card.name === "Tools"
-                  ? (pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp")))
+              const isSelected =
+                card.href === "/"
+                  ? pathname === "/"
+                  : card.name === "Tools"
+                  ? pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp") && !pathname?.startsWith("/tools/compare"))
+                  : card.name === "Tasks"
+                  ? pathname === "/tasks"
+                  : card.name === "Personal"
+                  ? pathname === "/tasks/personal" || pathname === "/personal"
+                  : card.name === "Creativity"
+                  ? pathname === "/tasks/creativity" || pathname?.startsWith("/creativity")
                   : pathname?.startsWith(card.href);
               const isNew = card.name === "New";
-              
+
               return (
                 <Link
                   key={card.name}
                   href={card.href}
                   className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${
-                    (isNew && isSelected) ? 'border-transparent' : 'border-[#232326]/60 bg-[#0d0d10]'
+                    isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
                   }`}
-                  onMouseEnter={(e) => {
+                  onPointerEnter={(e) => {
+                    handlePointerEnter(card.name, card.href);
                     if (!(isNew && isSelected)) e.currentTarget.style.borderColor = card.color;
                     e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
                   }}
-                  onMouseLeave={(e) => {
+                  onPointerLeave={(e) => {
+                    handlePointerLeave(card.name);
                     if (!isSelected) {
                       e.currentTarget.style.borderColor = "";
                       e.currentTarget.style.boxShadow = "";
                     }
+                  }}
+                  onFocus={() => {
+                    handlePointerEnter(card.name, card.href);
                   }}
                   style={
                     isSelected && !isNew

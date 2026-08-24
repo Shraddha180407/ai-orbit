@@ -13,7 +13,9 @@ export class BookmarksController {
       return c.json(bookmarks);
 
     } finally {
-      await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
@@ -30,7 +32,9 @@ export class BookmarksController {
       return c.json(bookmark);
 
     } finally {
-      await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
@@ -47,7 +51,9 @@ export class BookmarksController {
       return c.json({ success: true });
 
     } finally {
-      await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 }

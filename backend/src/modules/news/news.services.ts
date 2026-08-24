@@ -68,7 +68,7 @@ export class NewsService {
     return rows.map((a) => ({
       id: a.slug,
       headline: a.title,
-      dek: a.dek,
+      dek: a.dek ? this.truncateDescription(a.dek, 35) : a.dek,
       aiSummary: a.aiSummary,
       articleUrl: a.articleUrl,
       category: a.category,
@@ -81,6 +81,14 @@ export class NewsService {
       score: scoreById.get(a.id) ?? 0,
       bookmarked: bookmarkedIds.has(a.id),
     }));
+  }
+
+  private truncateDescription(text: string, maxLength: number): string {
+    if (!text || text.length <= maxLength) return text;
+    // Find the last space before maxLength to avoid cutting words
+    const truncated = text.substring(0, maxLength);
+    const lastSpace = truncated.lastIndexOf(' ');
+    return lastSpace > 0 ? truncated.substring(0, lastSpace) : truncated;
   }
 
   /** Single query for however many article ids need a bookmark check — empty Set when clientId is absent, never queries for nothing. */

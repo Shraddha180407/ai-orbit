@@ -5,19 +5,26 @@ export function articleSourceUrl(article: Pick<NewsArticleRecord, "articleUrl">)
   return article.articleUrl;
 }
 
-export function sortArticles(list: NewsArticle[], sort: SortState, sources: Record<string, NewsSource>): NewsArticle[] {
-  const dir = sort.dir === "asc" ? 1 : -1;
+export function sortArticles(list: NewsArticle[], sortVal: string, sources: Record<string, NewsSource>): NewsArticle[] {
   const l = list.slice();
-  const comparators: Record<SortState["key"], (a: NewsArticle, b: NewsArticle) => number> = {
-    title: (a, b) => a.headline.localeCompare(b.headline),
-    topics: (a, b) => (a.topics[0] || "").localeCompare(b.topics[0] || ""),
-    date: (a, b) => b.hours - a.hours, // asc = oldest first
-    source: (a, b) => sources[a.source].name.localeCompare(sources[b.source].name),
-    trending: (a, b) => a.score - b.score,
-  };
-  const cmp = comparators[sort.key] ?? ((a, b) => b.hours - a.hours);
-  l.sort((a, b) => cmp(a, b) * dir);
-  return l;
+  switch (sortVal) {
+    case "oldest":
+      // Oldest first: largest hours ago first
+      return l.sort((a, b) => b.hours - a.hours);
+    case "rating":
+      // Top rated: highest score / up votes first
+      return l.sort((a, b) => (b.up ?? b.score ?? 0) - (a.up ?? a.score ?? 0));
+    case "name-asc":
+      // Headline A-Z
+      return l.sort((a, b) => (a.headline || "").localeCompare(b.headline || ""));
+    case "name-desc":
+      // Headline Z-A
+      return l.sort((a, b) => (b.headline || "").localeCompare(a.headline || ""));
+    case "newest":
+    default:
+      // Newest first: smallest hours ago first
+      return l.sort((a, b) => a.hours - b.hours);
+  }
 }
 
 export function applySearch(list: NewsArticle[], query: string, sources: Record<string, NewsSource>): NewsArticle[] {
@@ -27,8 +34,9 @@ export function applySearch(list: NewsArticle[], query: string, sources: Record<
     (a) =>
       a.headline.toLowerCase().includes(q) ||
       a.dek.toLowerCase().includes(q) ||
+      (a.aiSummary || "").toLowerCase().includes(q) ||
       a.topics.some((t) => t.toLowerCase().includes(q)) ||
-      sources[a.source].name.toLowerCase().includes(q)
+      (sources[a.source]?.name || a.source).toLowerCase().includes(q)
   );
 }
 
@@ -55,6 +63,6 @@ export function buildSourceOptions(articles: NewsArticle[], sources: Record<stri
   const counts: Record<string, number> = {};
   articles.forEach((a) => (counts[a.source] = (counts[a.source] || 0) + 1));
   return Object.keys(counts)
-    .sort((x, y) => sources[x].name.localeCompare(sources[y].name))
-    .map((s) => ({ value: s, label: sources[s].name, count: counts[s] }));
+    .sort((x, y) => (sources[x]?.name || x).localeCompare(sources[y]?.name || y))
+    .map((s) => ({ value: s, label: sources[s]?.name || s, count: counts[s] }));
 }

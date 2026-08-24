@@ -69,7 +69,7 @@ describe('DevicesController', () => {
       expect(c.jsonBody).toHaveProperty('error', 'DB failure');
     });
 
-    it('disconnects prisma even on error', async () => {
+    it('does not disconnect the shared prisma singleton, even on error', async () => {
       const mockDisconnect = vi.fn();
       vi.mocked(getPrisma).mockReturnValue({ $disconnect: mockDisconnect } as never);
       mockService.listDevices.mockRejectedValue(new Error('fail'));
@@ -77,7 +77,7 @@ describe('DevicesController', () => {
       const c = mockContext();
       await controller.listDevices(c as never);
 
-      expect(mockDisconnect).toHaveBeenCalled();
+      expect(mockDisconnect).not.toHaveBeenCalled();
     });
   });
 
@@ -121,7 +121,7 @@ describe('DevicesController', () => {
       expect(c.jsonBody).toHaveProperty('error', 'DB error');
     });
 
-    it('disconnects prisma even on error', async () => {
+    it('does not disconnect the shared prisma singleton, even on error', async () => {
       const mockDisconnect = vi.fn();
       vi.mocked(getPrisma).mockReturnValue({ $disconnect: mockDisconnect } as never);
       mockService.getDeviceById.mockRejectedValue(new Error('fail'));
@@ -129,7 +129,7 @@ describe('DevicesController', () => {
       const c = mockContext({ id: 'dev-1' });
       await controller.getDeviceById(c as never);
 
-      expect(mockDisconnect).toHaveBeenCalled();
+      expect(mockDisconnect).not.toHaveBeenCalled();
     });
   });
 
@@ -173,7 +173,7 @@ describe('DevicesController', () => {
       expect(c.jsonBody).toHaveProperty('error', 'DB error');
     });
 
-    it('disconnects prisma even on error', async () => {
+    it('does not disconnect the shared prisma singleton, even on error', async () => {
       const mockDisconnect = vi.fn();
       vi.mocked(getPrisma).mockReturnValue({ $disconnect: mockDisconnect } as never);
       mockService.getDeviceBySlug.mockRejectedValue(new Error('fail'));
@@ -181,7 +181,7 @@ describe('DevicesController', () => {
       const c = mockContext({ slug: 'test-device' });
       await controller.getDeviceBySlug(c as never);
 
-      expect(mockDisconnect).toHaveBeenCalled();
+      expect(mockDisconnect).not.toHaveBeenCalled();
     });
   });
 });

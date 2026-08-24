@@ -20,6 +20,7 @@ import { homepageRouter } from './modules/homepage/homepage.routes.js'
 import { toolsRouter } from './modules/tools/tools.routes.js'
 import { userRouter } from './modules/user/user.routes.js'
 import { mcpRouter } from './modules/mcp/mcp.routes.js'
+import { searchRouter } from './modules/search/search.routes.js'
 import { getPrisma } from './lib/prisma.js'
 import { runIngestion } from './modules/ingestion/ingestion.service.js'
 import type { IngestionContext } from './modules/ingestion/pipeline.js'
@@ -32,10 +33,12 @@ type Bindings = {
   CLOUDINARY_API_KEY: string
   CLOUDINARY_API_SECRET: string
   INGESTION_TOKEN: string
+  INGESTION_TOKEN_COLLECTIONS: string
   GITHUB_TOKEN: string
 }
 
 import { errorHandler } from './middleware/error.js'
+import { cacheMiddleware } from './middleware/cache.js'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -57,6 +60,9 @@ app.use('*', cors({
   },
   credentials: true,
 }))
+
+// High-speed in-memory response cache for GET endpoints (120s TTL)
+app.use('*', cacheMiddleware(120))
 
 app.route('/api/videos', videosRouter)
 app.route('/api/news', newsRouter)
@@ -80,6 +86,7 @@ app.route('/api/v1/tools', toolsRouter)
 app.route('/api/user', userRouter)
 app.route('/api/bookmarks', bookmarksRouter)
 app.route('/api/v1/mcps', mcpRouter)
+app.route('/api/v1/search', searchRouter)
 
 app.get('/', (c) => {
   return c.json({

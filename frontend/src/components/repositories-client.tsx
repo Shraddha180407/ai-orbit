@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
 import { Repository, RepositoryOwnerListItem, RepositorySubCategory } from "@/lib/types";
 import { fetchRepositories, fetchRepositoryOwners, fetchRepositorySubCategories } from "@/lib/api";
 
@@ -17,13 +17,20 @@ const getBackendSortValue = (field: string | null, order: "asc" | "desc"): strin
   return undefined;
 };
 
-export function RepositoriesClient() {
+export function RepositoriesClient({ defaultCategory }: { defaultCategory?: string }) {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const router = useRouter();
   
   const [sortField, setSortField] = useState<"stars" | "forks" | "size" | "updated" | null>("stars");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  useEffect(() => {
+  const s = searchParams.get("sort") ?? "newest";
+  if (s === "name-asc")       { setSortField("updated"); setSortOrder("asc");  }
+  else if (s === "name-desc") { setSortField("updated"); setSortOrder("desc"); }
+  else if (s === "oldest")    { setSortField("updated"); setSortOrder("asc");  }
+  else                        { setSortField("updated"); setSortOrder("desc"); }
+}, [searchParams]);
   const [selectedLicense, setSelectedLicense] = useState<string | null>(null);
   const [isLicenseDropdownOpen, setIsLicenseDropdownOpen] = useState(false);
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
@@ -31,11 +38,28 @@ export function RepositoriesClient() {
   const [activeRepoSearch, setActiveRepoSearch] = useState(initialQuery);
   const [isRepoFilterOpen, setIsRepoFilterOpen] = useState(false);
   const [owners, setOwners] = useState<RepositoryOwnerListItem[]>([]);
-  const [subCategories, setSubCategories] = useState<RepositorySubCategory[]>([]);
+  
+  const REPO_SUBCATEGORIES: RepositorySubCategory[] = [
+    { id: "1", name: "LLMs", slug: "llms" },
+    { id: "2", name: "Generative AI", slug: "generative-ai" },
+    { id: "3", name: "AI Frameworks", slug: "ai-frameworks" },
+    { id: "4", name: "NLP", slug: "nlp" },
+    { id: "5", name: "Frameworks", slug: "frameworks" },
+    { id: "6", name: "Robotics", slug: "robotics" },
+    { id: "7", name: "RAG Systems", slug: "rag-systems" },
+    { id: "8", name: "Deployment", slug: "deployment" },
+    { id: "9", name: "Data Science", slug: "data-science" },
+    { id: "10", name: "Prompt Engineering", slug: "prompt-engineering" },
+    { id: "11", name: "Search Engines", slug: "search-engines" },
+    { id: "12", name: "Knowledge Graphs", slug: "knowledge-graphs" },
+    { id: "13", name: "AI Agents", slug: "ai-agents" },
+    { id: "14", name: "Cloud", slug: "cloud" },
+  ];
+  const [subCategories, setSubCategories] = useState<RepositorySubCategory[]>(REPO_SUBCATEGORIES);
 
   const selectedTopic = searchParams.get("topic") || null;
   const selectedOwnerSlug = searchParams.get("owner") || null;
-  const selectedSubCategorySlug = searchParams.get("subCategory") || null;
+  const selectedSubCategorySlug = defaultCategory || searchParams.get("subCategory") || null;
 
   // Derive selectedCompany from URL query parameter
   const selectedCompany = React.useMemo(() => {
@@ -52,7 +76,7 @@ export function RepositoriesClient() {
         const data = await fetchRepositoryOwners();
         const enriched = (data || []).map((o) => ({
           ...o,
-          searchText: `${o.displayName} ${o.owner} ${o.companySlug || ""}`.toLowerCase(),
+          searchText: `${o.displayName || ""} ${o.owner} ${o.companySlug || ""}`.toLowerCase().trim(),
         }));
         setOwners(enriched);
       } catch (e) {
@@ -62,18 +86,7 @@ export function RepositoriesClient() {
     loadOwners();
   }, []);
 
-  // Fetch subcategories once on mount
-  useEffect(() => {
-    async function loadSubCategories() {
-      try {
-        const data = await fetchRepositorySubCategories();
-        setSubCategories(data || []);
-      } catch (e) {
-        console.error("Failed to fetch repository subcategories:", e);
-      }
-    }
-    loadSubCategories();
-  }, []);
+  // Static subcategories list is used as the source of truth to match the prompt specifications
 
   const {
     data,
@@ -81,6 +94,7 @@ export function RepositoriesClient() {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isPlaceholderData,
   } = useInfiniteQuery({
     queryKey: [
       "repositories",
@@ -107,7 +121,8 @@ export function RepositoriesClient() {
     },
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor || null,
-    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
   });
 
   const repos = React.useMemo(() => {
@@ -164,7 +179,10 @@ export function RepositoriesClient() {
   const companyCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
     owners.forEach((o) => {
-      counts[o.displayName] = o.repositoryCount;
+      const name = o.displayName || o.owner;
+      // Skip purely numeric GitHub usernames (not real company names)
+      if (/^\d+$/.test(name)) return;
+      counts[name] = o.repositoryCount ?? o.count ?? 0;
     });
     return counts;
   }, [owners]);
@@ -172,7 +190,9 @@ export function RepositoriesClient() {
   const companySearchKeys = React.useMemo(() => {
     const keys: Record<string, string> = {};
     owners.forEach((o) => {
-      keys[o.displayName] = o.searchText || "";
+      const name = o.displayName || o.owner;
+      if (/^\d+$/.test(name)) return;
+      keys[name] = o.searchText || "";
     });
     return keys;
   }, [owners]);
@@ -234,13 +254,11 @@ export function RepositoriesClient() {
   }
 
   const handleSelectSubCategory = (slug: string | null) => {
-    const params = new URLSearchParams(window.location.search);
     if (slug) {
-      params.set("subCategory", slug);
+      router.push(`/p/repositories/${slug}`);
     } else {
-      params.delete("subCategory");
+      router.push(`/repositories`);
     }
-    router.push(`/repositories?${params.toString()}`);
   };
 
   const handleSelectCompany = (displayName: string | null) => {
@@ -263,7 +281,8 @@ export function RepositoriesClient() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      <main className="mx-auto max-w-[1440px] px-8 py-12 flex-1 w-full">
+      <main className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-12 flex-1">
+        <div className={`mx-auto w-full max-w-[1440px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
         {/* Active Topic Filter Chip */}
         {selectedTopic && (
           <div className="flex items-center gap-2 mb-6 bg-white/[0.02] border border-white/[0.08] px-3.5 py-2 rounded-lg w-fit shadow-md animate-fade-in">
@@ -282,13 +301,13 @@ export function RepositoriesClient() {
 
         {/* Subcategory Filter Chips */}
         {subCategories.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
             <button
               onClick={() => handleSelectSubCategory(null)}
-              className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+              className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
                 !selectedSubCategorySlug
-                  ? "border-[#6E56CF] bg-[#6E56CF] text-white"
-                  : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
               }`}
             >
               All
@@ -297,10 +316,10 @@ export function RepositoriesClient() {
               <button
                 key={sub.id}
                 onClick={() => handleSelectSubCategory(sub.slug)}
-                className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
                   selectedSubCategorySlug === sub.slug
-                    ? "border-[#6E56CF] bg-[#6E56CF] text-white"
-                    : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                    ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                    : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
                 }`}
               >
                 {sub.name}
@@ -416,8 +435,9 @@ export function RepositoriesClient() {
             )}
           </RepositoryTable>
         )}
-      </main>
-      <ScrollToTopButton />
-    </div>
+      </div>
+    </main>
+    <ScrollToTopButton />
+  </div>
   );
 }

@@ -132,15 +132,19 @@ export type CollectionListItem = {
   id: string;
   slug: string;
   name?: string;
-  title: string;
+  title?: string;
   description: string;
-  curatedBy: string;
-  category: string;
-  featured: boolean;
+  curatedBy?: string;
+  creatorType?: string;
+  creator?: { id: string; name: string; image?: string | null } | null;
+  category?: string;
+  categories?: { categoryName?: string; name?: string; slug?: string }[];
+  _count?: { relatedModels?: number; relatedCompanies?: number; tools?: number; aiModels?: number };
+  featured?: boolean;
   isFeatured?: boolean;
   updatedAt: string;
   toolCount: number;
-  previewTools: { logoUrl: string | null; name: string }[];
+  previewTools?: { logoUrl: string | null; name: string }[];
 };
 
 export type CollectionDetailData = {
@@ -156,13 +160,14 @@ export type CollectionDetailData = {
   tools: ToolCardData[]; // reuses Module 3's existing ToolCardData shape
 };
 
-export type CompanyType = 'AI_NATIVE' | 'MODEL_COMPANIES' | 'UNICORNS' | 'AI_MODEL_PROVIDERS' | 'INFRASTRUCTURE' | 'ENTERPRISE' | 'HEALTHCARE' | 'GENERATIVE_AI' | 'MARKETING' | 'DEVELOPER_TOOLS' | 'ROBOTICS' | 'EDUCATION' | 'OPEN_SOURCE' | 'FINANCE';
+export type CompanyType = 'AI_NATIVE' | 'MODEL_COMPANIES' | 'UNICORNS' | 'AI_MODEL_PROVIDERS' | 'INFRASTRUCTURE' | 'ENTERPRISE' | 'HEALTHCARE' | 'GENERATIVE_AI' | 'MARKETING' | 'DEVELOPER_TOOLS' | 'ROBOTICS' | 'EDUCATION' | 'OPEN_SOURCE' | 'FINANCE' | 'PROFITABLE' | 'RESEARCH_LABS' | 'BOOTSTRAPPED' | 'ENTERPRISE_AI';
 
 export type Company = {
   id: string;
   slug: string;
   name: string;
   logoUrl: string | null;
+  createdAt?: string;
   description?: string | null;
   website?: string | null;
   websiteUrl?: string | null;
@@ -171,6 +176,8 @@ export type Company = {
   foundedYear?: number | string | null;
   headquarters?: string | null;
   type?: CompanyType[];
+  companyType?: string;
+  modelsCount?: number;
   sector?: string | null;
   verified?: boolean;
   featured?: boolean;
@@ -226,6 +233,53 @@ export type AIModel = {
   parameterSize: string;
   contextWindow: string;
   releaseDate: string;
+  slug?: string;
+  provider?: AIModelProvider | null;
+  type?: string;
+  primaryTask?: string;
+  openSource?: boolean;
+  benchmarks?: { name: string; score: number | string }[];
+  tags?: string[];
+  similarModels?: AIModel[];
+  tasks?: { task: { id: string; title: string; slug: string } }[];
+  relatedModels?: AIModel[];
+  updatedAt?: string;
+};
+
+export type ModelDetail = AIModel;
+
+export type ModelsSortOption =
+  | "alphabetical"
+  | "newest"
+  | "oldest"
+  | "releaseDate"
+  | "downloads"
+  | "contextWindow"
+  | "parameterSize";
+
+export type ModelsListResponse = {
+  items: AIModel[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+  filters: {
+    providers: any[];
+    modalities: string[];
+  };
+};
+
+export type RepositoryOwnerListItem = {
+  owner: string;
+  count: number;
+  avatarUrl?: string;
+  displayName?: string;
+  companySlug?: string;
+  repositoryCount?: number;
+  searchText?: string;
 };
 
 export type News = {
@@ -326,6 +380,10 @@ export type Video = {
   duration: string;
   views: string;
   publishedAt: string;
+  youtubeId?: string;
+  authorName?: string;
+  toolCategory?: string;
+  description?: string;
 };
 
 export type RobotListItem = {
@@ -461,6 +519,8 @@ export type MCPItem = {
   installationGuides?: InstallationGuide[];
   technicalSpecs?: TechnicalSpec[];
   features?: MCPFeature[];
+  reviews?: { id: string; rating: number; comment?: string; user?: { name?: string } }[];
+  pricingPlans?: { billingCycle?: string; price?: number; planName?: string }[];
 };
 
 export type MCPUseCase = {

@@ -39,7 +39,9 @@ export class RepositoriesController {
       logger.error('Error listing repositories:', error);
       return c.json({ error: 'Failed to fetch repositories' }, 500);
     } finally {
-      try { await prisma.$disconnect(); } catch { /* ignore disconnect errors */ }
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
@@ -58,7 +60,9 @@ export class RepositoriesController {
       logger.error('Error fetching repository:', error);
       return c.json({ error: 'Failed to fetch repository' }, 500);
     } finally {
-      try { await prisma.$disconnect(); } catch { /* ignore disconnect errors */ }
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
@@ -73,7 +77,9 @@ export class RepositoriesController {
       logger.error('Error listing repository owners:', error);
       return c.json({ error: 'Failed to fetch repository owners' }, 500);
     } finally {
-      try { await prisma.$disconnect(); } catch { /* ignore disconnect errors */ }
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
@@ -88,7 +94,9 @@ export class RepositoriesController {
       logger.error('Error listing repository subcategories:', error);
       return c.json({ error: 'Failed to fetch repository subcategories' }, 500);
     } finally {
-      try { await prisma.$disconnect(); } catch { /* ignore disconnect errors */ }
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 }

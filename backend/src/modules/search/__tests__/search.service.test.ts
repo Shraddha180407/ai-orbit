@@ -58,7 +58,7 @@ describe('SearchService', () => {
         { id: 'c1', name: 'TestingCo', slug: 'testing-co' },
       ]);
       mockPrisma.aIModel.findMany.mockResolvedValue([
-        { id: 'm1', name: 'testModel', creator: 'OpenAI' },
+        { id: 'm1', name: 'testModel', slug: 'test-model', creator: 'OpenAI' },
       ]);
       mockPrisma.repository.findMany.mockResolvedValue([]);
       mockPrisma.robot.findMany.mockResolvedValue([]);
@@ -74,7 +74,7 @@ describe('SearchService', () => {
       expect(result[1].type).toBe('company');
       expect(result[2].title).toBe('testModel');
       expect(result[2].type).toBe('model');
-      expect(result[2].slug).toBeNull();
+      expect(result[2].slug).toBe('test-model');
     });
 
     it('sorts prefix matches before contains matches, then by length', async () => {

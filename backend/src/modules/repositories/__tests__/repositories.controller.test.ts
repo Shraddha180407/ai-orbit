@@ -112,7 +112,7 @@ describe('RepositoriesController', () => {
       expect(logger.error).toHaveBeenCalledWith('Error listing repositories:', err);
     });
 
-    it('disconnects prisma even on error', async () => {
+    it('does not disconnect the shared prisma singleton, even on error', async () => {
       const mockDisconnect = vi.fn();
       vi.mocked(getPrisma).mockReturnValue({ $disconnect: mockDisconnect } as never);
       mockService.listRepositories.mockRejectedValue(new Error('fail'));
@@ -120,7 +120,7 @@ describe('RepositoriesController', () => {
       const c = mockContext();
       await controller.listRepositories(c as never);
 
-      expect(mockDisconnect).toHaveBeenCalled();
+      expect(mockDisconnect).not.toHaveBeenCalled();
     });
 
     it('does not pass empty query params as empty strings', async () => {
@@ -205,7 +205,7 @@ describe('RepositoriesController', () => {
       expect(logger.error).toHaveBeenCalledWith('Error fetching repository:', err);
     });
 
-    it('disconnects prisma even on error', async () => {
+    it('does not disconnect the shared prisma singleton, even on error', async () => {
       const mockDisconnect = vi.fn();
       vi.mocked(getPrisma).mockReturnValue({ $disconnect: mockDisconnect } as never);
       mockService.getRepositoryBySlug.mockRejectedValue(new Error('fail'));
@@ -213,7 +213,7 @@ describe('RepositoriesController', () => {
       const c = mockContext({}, { slug: 'test' });
       await controller.getRepositoryBySlug(c as never);
 
-      expect(mockDisconnect).toHaveBeenCalled();
+      expect(mockDisconnect).not.toHaveBeenCalled();
     });
 
     it('defaults slug to empty string when missing', async () => {
@@ -248,7 +248,7 @@ describe('RepositoriesController', () => {
       expect(c.jsonBody).toHaveProperty('error', 'Failed to fetch repository owners');
     });
 
-    it('disconnects prisma even on error', async () => {
+    it('does not disconnect the shared prisma singleton, even on error', async () => {
       const mockDisconnect = vi.fn();
       vi.mocked(getPrisma).mockReturnValue({ $disconnect: mockDisconnect } as never);
       mockService.listRepositoryOwners.mockRejectedValue(new Error('fail'));
@@ -256,7 +256,7 @@ describe('RepositoriesController', () => {
       const c = mockContext();
       await controller.listRepositoryOwners(c as never);
 
-      expect(mockDisconnect).toHaveBeenCalled();
+      expect(mockDisconnect).not.toHaveBeenCalled();
     });
   });
 });

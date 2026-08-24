@@ -60,14 +60,14 @@ describe('RobotsController', () => {
       expect(c.json).toHaveBeenCalledWith({ error: 'DB error' }, 500);
     });
 
-    it('always disconnects prisma', async () => {
+    it('does not disconnect the shared prisma singleton', async () => {
       mockService.listRobots.mockResolvedValue([]);
       const c = createContext();
       await controller.listRobots(c as never);
 
       const { getPrisma } = await import('../../../lib/prisma.js');
       const prisma = (getPrisma as ReturnType<typeof vi.fn>).mock.results[0].value;
-      expect(prisma.$disconnect).toHaveBeenCalled();
+      expect(prisma.$disconnect).not.toHaveBeenCalled();
     });
   });
 });

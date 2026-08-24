@@ -41,23 +41,14 @@ function AvailabilityBadge({ status }: { status: string }) {
   );
 }
 
-export function RobotDetailClient({ id }: RobotDetailClientProps) {
-  const [robot, setRobot] = useState<Robot | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+import { useQuery } from "@tanstack/react-query";
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await fetchRobotById(id);
-        setRobot(data);
-      } catch {
-        setRobot(null);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    load();
-  }, [id]);
+export function RobotDetailClient({ id }: RobotDetailClientProps) {
+  const { data: robot = null, isLoading } = useQuery<Robot | null>({
+    queryKey: ["robot-detail", id],
+    queryFn: () => fetchRobotById(id),
+    staleTime: 10 * 60 * 1000,
+  });
 
   if (isLoading) {
     return (

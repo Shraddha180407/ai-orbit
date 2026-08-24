@@ -14,11 +14,24 @@ function resolveApiUrl(): string {
   if (url && url.startsWith("http") && url !== "undefined") {
     return url.replace(/\/$/, "");
   }
+  if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+    return "http://localhost:8787";
+  }
   return "https://ai-orbit.palamrendra-pm.workers.dev";
 }
 
 /** Used by the client components (CommentBox, PublisherIcon, SaveButton, VoteButtons) — unchanged. */
 export const API_URL = resolveApiUrl();
+
+async function fetchJsonSafe<T>(url: string | URL, fallback: T): Promise<T> {
+  try {
+    const res = await fetch(url.toString());
+    if (!res.ok) return fallback;
+    return (await res.json()) as T;
+  } catch {
+    return fallback;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Leaderboard API helpers
@@ -27,38 +40,34 @@ export const API_URL = resolveApiUrl();
 export async function fetchLeaderboardTools(category?: string): Promise<any[]> {
   const url = new URL(`${API_URL}/api/v1/leaderboard/tools`);
   if (category && category !== "All Categories") url.searchParams.set("category", category);
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  return fetchJsonSafe(url, []);
 }
 
 export async function fetchLeaderboardModels(category?: string): Promise<any[]> {
   const url = new URL(`${API_URL}/api/v1/leaderboard/models`);
   if (category && category !== "All Categories") url.searchParams.set("category", category);
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  return fetchJsonSafe(url, []);
 }
 
 export async function fetchLeaderboardCompanies(): Promise<any[]> {
-  const url = `${API_URL}/api/v1/leaderboard/companies`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  return fetchJsonSafe(`${API_URL}/api/v1/leaderboard/companies`, []);
 }
 
 export async function fetchAllCompanies(): Promise<any[]> {
-  const url = `${API_URL}/api/v1/companies`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(`${API_URL}/api/v1/companies`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.companies)) return data.companies;
+    return [];
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchCompanyDetails(slug: string): Promise<any> {
-  const url = `${API_URL}/api/v1/companies/${slug}`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return null;
-  return res.json();
+  return fetchJsonSafe(`${API_URL}/api/v1/companies/${slug}`, null);
 }
 
 import type { AIModel, ModelsListResponse, ModelsSortOption } from "./types";
@@ -97,25 +106,29 @@ export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListR
     filters: { providers: [], modalities: [] },
   };
 
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return empty;
-
-  const data = await res.json();
-  // Tolerate legacy array responses during rollout.
-  if (Array.isArray(data)) {
-    return {
-      items: data as AIModel[],
-      pagination: {
-        page: 1,
-        limit: data.length,
-        total: data.length,
-        totalPages: 1,
-        hasMore: false,
-      },
-      filters: { providers: [], modalities: [] },
-    };
+  try {
+    const res = await fetch(url.toString());
+    if (!res.ok) return empty;
+    const data = await res.json();
+    if (!data) return empty;
+    // Tolerate legacy array responses during rollout.
+    if (Array.isArray(data)) {
+      return {
+        items: data as AIModel[],
+        pagination: {
+          page: 1,
+          limit: data.length,
+          total: data.length,
+          totalPages: 1,
+          hasMore: false,
+        },
+        filters: { providers: [], modalities: [] },
+      };
+    }
+    return data as ModelsListResponse;
+  } catch {
+    return empty;
   }
-  return data as ModelsListResponse;
 }
 
 /** @deprecated Prefer fetchModels — kept for callers that only need the first page's items. */
@@ -126,19 +139,11 @@ export async function fetchAllModels(): Promise<AIModel[]> {
 
 export async function fetchModelById(id: string): Promise<import("./types").ModelDetail | null> {
   const url = `${API_URL}/api/v1/models/${encodeURIComponent(id)}`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    throw new Error(`Failed to load model (${res.status})`);
-  }
-  return res.json();
+  return fetchJsonSafe(url, null);
 }
 
 export async function fetchAllNews(): Promise<any[]> {
-  const url = `${API_URL}/api/v1/news`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  return fetchJsonSafe(`${API_URL}/api/v1/news`, []);
 }
 
 import { Repository, RepositoryListResponse, RepositoryDetailResponse, RepositoryOwnerListItem, RepositorySubCategory } from "./types";
@@ -168,8 +173,13 @@ export async function fetchRepositories(options: FetchRepositoriesOptions = {}):
   if (owner) url.searchParams.set("owner", owner);
   if (subCategory) url.searchParams.set("subCategory", subCategory);
 
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) {
+  try {
+    const res = await fetch(url.toString());
+    if (!res.ok) {
+      return { items: [], nextCursor: null, hasMore: false, total: 0 };
+    }
+    return await res.json();
+  } catch {
     return {
       items: [],
       nextCursor: null,
@@ -177,23 +187,16 @@ export async function fetchRepositories(options: FetchRepositoriesOptions = {}):
       total: 0
     };
   }
-  return res.json();
 }
 
 export async function fetchRepositoryBySlug(slug: string): Promise<RepositoryDetailResponse | null> {
-  const url = `${API_URL}/api/v1/repositories/${slug}`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return null;
-  return res.json();
+  return fetchJsonSafe(`${API_URL}/api/v1/repositories/${slug}`, null);
 }
 
 export async function fetchAllRepos(): Promise<Repository[]> {
   try {
     const data = await fetchRepositories();
-    // Defensive: fetchRepositories() should always resolve to
-    // { items: [...] }, but guard against a malformed/unexpected response
-    // shape so this can never crash repos.forEach() downstream again.
-    return Array.isArray(data.items) ? data.items : [];
+    return Array.isArray(data?.items) ? data.items : [];
   } catch (e) {
     console.error("Failed to fetch repositories:", e);
     return [];
@@ -201,87 +204,49 @@ export async function fetchAllRepos(): Promise<Repository[]> {
 }
 
 export async function fetchRepositorySubCategories(): Promise<RepositorySubCategory[]> {
-  const url = `${API_URL}/api/v1/repositories/subcategories`;
-  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  return fetchJsonSafe(`${API_URL}/api/v1/repositories/subcategories`, []);
 }
 
 export async function fetchModelSubCategories(): Promise<ModelSubCategory[]> {
-  const url = `${API_URL}/api/v1/models/subcategories`;
-  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  return fetchJsonSafe(`${API_URL}/api/v1/models/subcategories`, []);
 }
 
 export async function fetchMCPCategories(): Promise<import("./types").MCPCategory[]> {
-  try {
-    const url = `${API_URL}/api/v1/mcps/categories`;
-    const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (err: any) {
-    console.warn("Failed to fetch MCP categories:", err?.message || err);
-    return [];
-  }
+  return fetchJsonSafe(`${API_URL}/api/v1/mcps/categories`, []);
 }
 
 export async function fetchMCPSubCategories(categorySlug?: string): Promise<import("./types").MCPSubCategory[]> {
-  try {
-    const url = new URL(`${API_URL}/api/v1/mcps/subcategories`);
-    if (categorySlug) url.searchParams.set("category", categorySlug);
-    const res = await fetch(url.toString(), { next: { revalidate: 300 } } as RequestInit);
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (err: any) {
-    console.warn("Failed to fetch MCP subcategories:", err?.message || err);
-    return [];
-  }
+  const url = new URL(`${API_URL}/api/v1/mcps/subcategories`);
+  if (categorySlug) url.searchParams.set("category", categorySlug);
+  return fetchJsonSafe(url, []);
 }
 
 export async function fetchDeviceSubCategories(): Promise<import("./types").DeviceSubCategory[]> {
-  const url = `${API_URL}/api/v1/devices/subcategories`;
-  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  return fetchJsonSafe(`${API_URL}/api/v1/devices/subcategories`, []);
 }
 
 // MCP Items fetch helpers are defined below at the end of the file.
 
 export async function fetchAllVideos(): Promise<any[]> {
-  const url = `${API_URL}/api/v1/videos`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  return fetchJsonSafe(`${API_URL}/api/v1/videos`, []);
 }
 
 export async function fetchAllRobots(): Promise<any[]> {
-  const url = `${API_URL}/api/v1/robots`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  return fetchJsonSafe(`${API_URL}/api/v1/robots`, []);
 }
 
 export async function fetchRobotById(idOrSlug: string): Promise<any | null> {
-  const url = `${API_URL}/api/v1/robots/${idOrSlug}`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return null;
-  return res.json();
+  return fetchJsonSafe(`${API_URL}/api/v1/robots/${idOrSlug}`, null);
 }
 
 export async function fetchAllDevices(options: { subCategory?: string } = {}): Promise<any[]> {
   const url = new URL(`${API_URL}/api/v1/devices`);
   if (options.subCategory) url.searchParams.set("subCategory", options.subCategory);
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  return fetchJsonSafe(url, []);
 }
 
 export async function fetchDeviceById(id: string): Promise<any | null> {
-  const url = `${API_URL}/api/v1/devices/${id}`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return null;
-  return res.json();
+  return fetchJsonSafe(`${API_URL}/api/v1/devices/${id}`, null);
 }
 
 // ---------------------------------------------------------------------------

@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { ToolListView } from "@/components/ToolListView";
 import { API_URL } from "@/lib/api";
@@ -47,7 +48,6 @@ const CATEGORY_MAP = {
     { name: "Insurance Advisor", slug: "insurance-advisor" }
   ],
   creativity: [
-    { name: "All", slug: "" },
     { name: "Image Generation", slug: "image-generation" },
     { name: "Writing", slug: "writing" },
     { name: "Software Development", slug: "software-development" },
@@ -75,6 +75,7 @@ export function ToolsClient({
 }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const router = useRouter();
 
   const [mode, setMode] = useState<DirectoryMode>(() => {
     if (defaultMode) return defaultMode;
@@ -99,104 +100,117 @@ export function ToolsClient({
   }, [defaultMode, pathname]);
 
   const [activeCategory, setActiveCategory] = useState<string>(() => {
-    return defaultCategory || searchParams.get("category") || "";
+    const explicitCategory = defaultCategory || searchParams.get("category");
+    if (explicitCategory) return explicitCategory;
+    // Creativity always defaults to image-generation
+    if (defaultMode === "creativity" || (typeof window !== "undefined" && window.location.pathname.includes("creativity"))) {
+      return "image-generation";
+    }
+    return "";
   });
 
-  const [tools, setTools] = useState<any[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Build params object from URL search params
-  const params = {
-    q: searchParams.get("q") || undefined,
-    category: activeCategory || undefined,
-    pricing: searchParams.get("pricing") || undefined,
-    sort: (searchParams.get("sort") || undefined) as SortOption | undefined,
-  };
-
-  const filterKey = `${params.q || ''}-${params.category || ''}-${params.pricing || ''}-${params.sort || ''}`;
-
-  // Reset page and tools when filters change
+  // Auto-select image-generation when switching into creativity mode
   useEffect(() => {
-    setTools([]);
-    setPage(1);
-    setTotalPages(1);
-  }, [filterKey]);
+    if (mode === "creativity" && !activeCategory) {
+      setActiveCategory("image-generation");
+    }
+  }, [mode]);
 
+  // Synchronize state when URL path or query parameters change
   useEffect(() => {
-    async function fetchData() {
-      if (page === 1) {
-        setIsLoading(true);
-      } else {
-        setIsFetchingMore(true);
-      }
-      try {
-        const query = new URLSearchParams();
-        if (params.q) query.set("q", params.q);
-        // Do not add category to query string if we are using the path parameter
-        if (params.pricing) query.set("pricing", params.pricing);
-        if (params.sort) query.set("sort", params.sort);
-        query.set("page", page.toString());
+    const pathParts = pathname.split("/").filter(Boolean);
+    let categoryFromPath = "";
 
-        const endpoint = params.category 
-          ? `${API_URL}/api/v1/tools/category/${params.category}` 
-          : `${API_URL}/api/v1/tools`;
-
-        const toolsRes = await fetch(`${endpoint}?${query.toString()}`);
-
-        if (toolsRes.ok) {
-          const toolsData = await toolsRes.json();
-          if (page === 1) {
-            setTools(toolsData.tools || []);
-          } else {
-            setTools(prev => [...prev, ...(toolsData.tools || [])]);
-          }
-          setTotalPages(toolsData.totalPages || 1);
-        }
-      } catch (error) {
-        console.error("Failed to fetch tools data:", error);
-      } finally {
-        setIsLoading(false);
-        setIsFetchingMore(false);
-      }
+    // Extract subcategory slug from /tools/[slug], /personal/[slug], /creativity/[slug]
+    const modeKeys = ["tools", "personal", "creativity"];
+    const modeIdx = pathParts.findIndex(p => modeKeys.includes(p));
+    if (modeIdx !== -1 && pathParts[modeIdx + 1]) {
+      categoryFromPath = pathParts[modeIdx + 1];
     }
 
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterKey, page]);
+    const queryCategory = searchParams.get("category") || "";
+    const resolvedCategory = categoryFromPath || queryCategory || defaultCategory;
+
+    if (resolvedCategory) {
+      setActiveCategory(resolvedCategory);
+    } else {
+      setActiveCategory(mode === "creativity" ? "image-generation" : "");
+    }
+  }, [pathname, searchParams, defaultCategory, mode]);
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Build query params
+  const q = searchParams.get("q") || undefined;
+  const pricing = searchParams.get("pricing") || undefined;
+  const sort = (searchParams.get("sort") || undefined) as SortOption | undefined;
+
+  const queryKey = ["tools", mode, activeCategory, q, pricing, sort];
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isPlaceholderData,
+  } = useInfiniteQuery({
+    queryKey,
+    queryFn: async ({ pageParam = 1 }) => {
+      const query = new URLSearchParams();
+      if (q) query.set("q", q);
+      if (pricing) query.set("pricing", pricing);
+      if (sort) query.set("sort", sort);
+      query.set("page", String(pageParam));
+
+      const endpoint = activeCategory
+        ? `${API_URL}/api/v1/tools/category/${activeCategory}`
+        : `${API_URL}/api/v1/tools`;
+
+      try {
+        const res = await fetch(`${endpoint}?${query.toString()}`);
+        if (!res.ok) return { tools: [], totalPages: 1, page: pageParam };
+        return await res.json();
+      } catch {
+        return { tools: [], totalPages: 1, page: pageParam };
+      }
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      if (lastPage?.page < lastPage?.totalPages) return lastPage.page + 1;
+      return undefined;
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Flatten all fetched pages into a single list
+  const tools = data?.pages.flatMap((p: any) => p.tools || []) || [];
+  const totalPages = data?.pages[data.pages.length - 1]?.totalPages || 1;
+  const currentPage = data?.pages.length || 1;
 
   // IntersectionObserver for endless scrolling
   useEffect(() => {
-    if (isLoading || isFetchingMore || page >= totalPages) return;
+    if (isLoading || isFetchingNextPage || !hasNextPage) return;
 
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
-        setPage(prev => prev + 1);
+        fetchNextPage();
       }
     }, { threshold: 0.1 });
 
     const currentSentinel = sentinelRef.current;
-    if (currentSentinel) {
-      observer.observe(currentSentinel);
-    }
-
-    return () => {
-      if (currentSentinel) {
-        observer.unobserve(currentSentinel);
-      }
-    };
-  }, [isLoading, isFetchingMore, page, totalPages]);
+    if (currentSentinel) observer.observe(currentSentinel);
+    return () => { if (currentSentinel) observer.unobserve(currentSentinel); };
+  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   const categories = CATEGORY_MAP[mode] || CATEGORY_MAP.tools;
 
   return (
     <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
-      <div className="mx-auto w-full max-w-[1600px] space-y-3">
+      <div className={`mx-auto w-full max-w-[1600px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
         {/* Top Sliding Category Row */}
-        <div className="mb-2 flex items-center justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+        <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
@@ -204,15 +218,16 @@ export function ToolsClient({
                 key={topic.name}
                 onClick={(e) => {
                   setActiveCategory(topic.slug);
-                  const targetPath = topic.slug ? `/${mode}/${topic.slug}` : `/${mode}`;
-                  window.history.pushState(null, "", targetPath);
+                  const base = mode === "personal" ? "/personal" : mode === "creativity" ? "/creativity" : "/tools";
+                  const url = topic.slug ? `${base}/${topic.slug}` : base;
+                  window.history.pushState(null, "", url);
                   e.currentTarget.scrollIntoView({
                     behavior: "smooth",
                     block: "nearest",
                     inline: "center"
                   });
                 }}
-                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
@@ -226,11 +241,11 @@ export function ToolsClient({
 
         <ToolListView
           tools={tools}
-          loading={isLoading && page === 1}
+          loading={isLoading && currentPage === 1}
         />
 
         {/* Sentinel for infinite scroll */}
-        {tools.length > 0 && page < totalPages && (
+        {hasNextPage && (
           <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
           </div>

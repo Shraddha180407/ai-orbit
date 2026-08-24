@@ -160,7 +160,23 @@ enum ToolCategoryEnum {
   NO_CODE_AI_BUILDERS
   WORKFLOW_AUTOMATION
 }
-
+enum CreativityCategory {
+  IMAGE_GENERATION
+  WRITING
+  SOFTWARE_DEVELOPMENT
+  VIDEO_CREATION
+  MUSIC
+  GRAPHIC_DESIGN
+  DIGITAL_ART
+  BRAINSTORMING
+  THREE_D_CREATION
+  PRESENTATION_DESIGN
+  STORYTELLING
+  CONTENT_CREATION
+  BRANDING
+  MOTION_GRAPHICS
+  GAME_CREATION
+}
 // ---- Module 3: AI Tools ----
 
 model Tool {
@@ -193,14 +209,27 @@ model Tool {
   apiDocsUrl String?
 
   performanceScore Float?
+  longDescription String?
+  videoUrl        String?
+  releasedBy      String?
+  country         String?
+  launchDate      String?
+  views           Int              @default(0)
+  useCases        String[]         @default([])
+  pricingTiers    Json?
+  verdict         String?
+  linkedInUrl     String?
+  twitterUrl      String?
+  githubUrl       String?
+  alternativeIds  String[]         @default([])
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
 
   categories     ToolCategory[]
   toolCategories ToolCategoryEnum[] @default([])
-  tags         ToolTag[]
-  integrations ToolIntegration[]
+  tags           ToolTag[]
+  integrations   ToolIntegration[]
 
   reviews   Review[]
   bookmarks Bookmark[]
@@ -211,8 +240,6 @@ model Tool {
   alternativeOf Tool[]     @relation("ToolAlternatives")
   ttasks        TaskTool[]
 
-  // Denormalized for fast listing-page sort/display. Recomputed by the
-  // reviews API on every create/update/delete — see lib/reviews.ts.
   avgRating   Float @default(0)
   reviewCount Int   @default(0)
 
@@ -224,6 +251,8 @@ model Tool {
 
   collectionTools CollectionTool[]
 
+  creativityCategories CreativityCategory[] @default([])
+
   @@index([companyId])
   @@index([pricingModel])
   @@index([createdAt])
@@ -231,6 +260,7 @@ model Tool {
   @@index([releaseDate])
   @@index([isTrending])
   @@index([verified])
+  @@index([creativityCategories])
 }
 
 model Category {
@@ -239,7 +269,6 @@ model Category {
   name String
 
   tools ToolCategory[]
-  tasks Task[]
 }
 
 model Tag {
@@ -569,12 +598,18 @@ model Video {
   tags            String[] @default([])
   accent          String
 
+  // false once confirmed private/deleted/members-only via YouTube's oEmbed
+  // check (see checkVideoAvailability in videos.services.ts). Defaults to
+  // true so existing rows aren't affected until the backfill script runs.
+  available       Boolean  @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   @@index([toolCategory])
   @@index([publishedAt])
   @@index([views])
+  @@index([available])
 }
 
 enum RobotCategory {
@@ -927,33 +962,57 @@ model Task {
   slug         String         @unique
   title        String
   description  String
+
+  iconUrl      String?
+  bannerUrl    String?
+
   difficulty   TaskDifficulty @default(EASY)
   pricingModel PricingModel   @default(FREE)
   isFeatured   Boolean        @default(false)
 
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId   String
+  category     TaskCategory   @relation(fields: [categoryId], references: [id])
 
-  creatorId String?
-  creator   User?   @relation("TaskCreator", fields: [creatorId], references: [id])
+  creatorId    String?
+  creator      User?          @relation("TaskCreator", fields: [creatorId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
-  bookmarks   TaskBookmark[]
-  likes       TaskLike[]
-  subscribers TaskSubscriber[]
-  tools       TaskTool[]
-  models      TaskModel[]
-  robots      TaskRobot[]
-  devices     TaskDevice[]
-  resources   TaskResource[]
+  toolCount    Int            @default(0)
+  modelCount   Int            @default(0)
+  robotCount   Int            @default(0)
+  deviceCount  Int            @default(0)
+  saveCount    Int            @default(0)
+  likeCount    Int            @default(0)
+  subscriberCount Int         @default(0)
+  shareUrl     String?
+
+  bookmarks    TaskBookmark[]
+  likes        TaskLike[]
+  subscribers  TaskSubscriber[]
+  tools        TaskTool[]
+  models       TaskModel[]
+  robots       TaskRobot[]
+  devices      TaskDevice[]
+  resources    TaskResource[]
+
+  popularTools  TaskPopularTool[]
+  popularModels TaskPopularModel[]
 
   @@index([categoryId])
   @@index([difficulty])
   @@index([pricingModel])
   @@index([isFeatured])
   @@index([creatorId])
+}
+
+model TaskCategory {
+  id    String @id @default(cuid())
+  name  String
+  slug  String @unique
+
+  tasks Task[]
 }
 
 model TaskLike {
@@ -1014,15 +1073,60 @@ model TaskDevice {
 }
 
 model TaskResource {
+  id String @id @default(cuid())
+
+  taskId String
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  title String
+  url   String
+
+  homepage String?
+  source   String?
+  postedAt DateTime?
+  stars    Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+}
+
+model TaskPopularTool {
   id        String   @id @default(cuid())
   taskId    String
-  title     String
-  url       String
+  slug      String
+  name      String
+  logoUrl   String?
+  tagline   String
+  pricingModel String
+  rating    Float?
+  bookmarkCount Int @default(0)
+  visitUrl  String?
   createdAt DateTime @default(now())
 
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
+  @@unique([taskId, slug])
+}
+
+model TaskPopularModel {
+  id        String   @id @default(cuid())
+  taskId    String
+  slug      String
+  name      String
+  provider  String
+  logoUrl   String?
+  modelType String
+  pricingModel String
+  benchmarkScore Float?
+  websiteUrl String?
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@unique([taskId, slug])
 }
 
 model TaskTool {

@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-
+import { useSearchParams } from "next/navigation";
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import { RobotListItem } from "@/lib/types";
 import { fetchAllRobots } from "@/lib/api";
@@ -118,29 +118,77 @@ function RobotTableSkeleton({ rows = 8 }: { rows?: number }) {
   );
 }
 
-export function RobotsClient() {
-  const [robots, setRobots] = useState<RobotListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+import { useRouter } from "next/navigation";
+
+const ROBOT_SLUGS: Record<string, string> = {
+  "humanoid-robots": "Humanoid Robots",
+  "industrial": "Industrial",
+  "service": "Service",
+  "healthcare": "Healthcare",
+  "educational": "Educational",
+  "autonomous-mobile-robots": "Autonomous Mobile Robots",
+  "drones": "Drones",
+  "companion": "Companion",
+  "agricultural": "Agricultural",
+  "research": "Research",
+  "multi-agent": "Multi-Agent",
+  "task-specific": "Task-Specific",
+  "autonomous-navigation": "Autonomous Navigation",
+  "reinforcement-learning": "Reinforcement Learning",
+  "surveillance": "Surveillance"
+};
+
+const ROBOT_TO_SLUG: Record<string, string> = {
+  "Humanoid Robots": "humanoid-robots",
+  "Industrial": "industrial",
+  "Service": "service",
+  "Healthcare": "healthcare",
+  "Educational": "educational",
+  "Autonomous Mobile Robots": "autonomous-mobile-robots",
+  "Drones": "drones",
+  "Companion": "companion",
+  "Agricultural": "agricultural",
+  "Research": "research",
+  "Multi-Agent": "multi-agent",
+  "Task-Specific": "task-specific",
+  "Autonomous Navigation": "autonomous-navigation",
+  "Reinforcement Learning": "reinforcement-learning",
+  "Surveillance": "surveillance"
+};
+
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+
+export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCategory, setActiveCategory] = useState(() => {
+    if (defaultCategory && ROBOT_SLUGS[defaultCategory]) {
+      return ROBOT_SLUGS[defaultCategory];
+    }
+    return "All";
+  });
+
+  const { data: fetchedRobots, isLoading, isPlaceholderData } = useQuery<RobotListItem[]>({
+    queryKey: ["robots"],
+    queryFn: async () => {
+      const data = await fetchAllRobots();
+      return data && data.length > 0 ? data : FALLBACK_ROBOTS;
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const robots = fetchedRobots || FALLBACK_ROBOTS;
+
+  useEffect(() => {
+    if (defaultCategory !== undefined) {
+      setActiveCategory(defaultCategory && ROBOT_SLUGS[defaultCategory] ? ROBOT_SLUGS[defaultCategory] : "All");
+    }
+  }, [defaultCategory]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    async function getRobots() {
-      try {
-        const data = await fetchAllRobots();
-        setRobots(data && data.length > 0 ? data : FALLBACK_ROBOTS);
-      } catch (e) {
-        console.error("Failed to fetch robots:", e);
-        setRobots(FALLBACK_ROBOTS);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    getRobots();
-  }, []);
 
   const ROBOT_CATEGORIES = [
     "All",
@@ -161,10 +209,16 @@ export function RobotsClient() {
     "Surveillance"
   ];
 
+  const rawSort = searchParams.get("sort") ?? "newest";
+
   const filtered = useMemo(() => {
     let list = robots;
     if (activeCategory !== "All") {
-      list = list.filter((r) => r.category === activeCategory);
+      const activeNorm = activeCategory.toLowerCase().replace(/[\s-_]+/g, "");
+      list = list.filter((r) => {
+        const catNorm = (r.category || "").toLowerCase().replace(/[\s-_]+/g, "");
+        return catNorm === activeNorm || catNorm.includes(activeNorm) || activeNorm.includes(catNorm);
+      });
     }
     if (query.trim()) {
       const q = query.toLowerCase();
@@ -177,8 +231,14 @@ export function RobotsClient() {
           (r.country || "").toLowerCase().includes(q)
       );
     }
+    list = list.slice().sort((a, b) => {
+      if (rawSort === "name-asc")  return a.name.localeCompare(b.name);
+      if (rawSort === "name-desc") return b.name.localeCompare(a.name);
+      if (rawSort === "oldest")    return (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "");
+      return (b.releaseDate ?? "").localeCompare(a.releaseDate ?? "");
+    });
     return list;
-  }, [robots, query, activeCategory]);
+  }, [robots, query, activeCategory, rawSort]);
 
   const visibleRobots = filtered.slice(0, visibleCount);
 
@@ -206,30 +266,41 @@ export function RobotsClient() {
   }, [isLoading, visibleCount, filtered.length]);
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
-      <div className="mx-auto w-full max-w-[1600px] space-y-2">
-        {/* Page header */}
-        <header className="text-center flex flex-col items-center">
-
-
-          {/* Category filter chips */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-            {ROBOT_CATEGORIES.map((cat) => (
+    <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2 flex-1">
+      <div className="mx-auto w-full max-w-[1440px] space-y-3">
+        {/* Top Sliding Category Row */}
+        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+          {ROBOT_CATEGORIES.map((cat) => {
+            const isSelected = activeCategory === cat;
+            const slug = ROBOT_TO_SLUG[cat];
+            return (
               <button
                 key={cat}
                 type="button"
-                onClick={() => setActiveCategory(cat)}
-                className={`inline-flex items-center rounded-md border px-2 py-1 text-[9.5px] font-bold tracking-tight transition-colors duration-200 ${
-                  activeCategory === cat
-                    ? "border-[#2DD4BF] bg-[#2DD4BF]/10 text-[#2DD4BF] shadow-[0_0_0_1px_#2DD4BF]"
-                    : "border-[#232326]/60 bg-[#0d0d10] text-white hover:border-[#2DD4BF]/40 hover:shadow-[0_0_0_1px_#2DD4BF40]"
+                onClick={(e) => {
+                  setActiveCategory(cat);
+                  if (cat === "All") {
+                    router.push(`/robots`);
+                  } else {
+                    router.push(`/robots/${slug}`);
+                  }
+                  e.currentTarget.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "center"
+                  });
+                }}
+                className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                  isSelected
+                    ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                    : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
                 }`}
               >
                 {cat}
               </button>
-            ))}
-          </div>
-        </header>
+            );
+          })}
+        </div>
 
         {/* Table */}
         {isLoading ? (
@@ -245,8 +316,8 @@ export function RobotsClient() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className={`flex flex-col rounded-lg overflow-hidden transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
+            <div className="overflow-x-auto scrollbar-none">
               {/* Column headers */}
               <div className="border-b border-[#232326]/60 bg-[#131316]/40">
                 <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2`}>
@@ -277,6 +348,6 @@ export function RobotsClient() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }

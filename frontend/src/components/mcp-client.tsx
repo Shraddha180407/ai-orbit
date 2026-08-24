@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
 
 // Lucide icons
 import ArrowUp from 'lucide-react/dist/esm/icons/arrow-up';
@@ -66,7 +66,7 @@ function ShareButton({ slug, name }: { slug: string; name: string }) {
   );
 }
 
-export function MCPClient() {
+export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { defaultCategory?: string; defaultSubCategory?: string }) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -74,41 +74,40 @@ export function MCPClient() {
   const initialCategory = searchParams.get("category") ?? "";
   const initialSubCategory = searchParams.get("subCategory") ?? "";
 
-  const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
-  const [activeSubCategory, setActiveSubCategory] = useState<string>(initialSubCategory);
+  const [activeCategory, setActiveCategory] = useState<string>(defaultCategory || initialCategory);
+  const [activeSubCategory, setActiveSubCategory] = useState<string>(defaultSubCategory || initialSubCategory);
 
   // Synchronize state when URL query parameters change (e.g. browser back/forward buttons)
   useEffect(() => {
     const categoryParam = searchParams.get("category") ?? "";
     const subCategoryParam = searchParams.get("subCategory") ?? "";
-    setActiveCategory(categoryParam);
-    setActiveSubCategory(subCategoryParam);
-  }, [searchParams]);
+    setActiveCategory(defaultCategory || categoryParam);
+    setActiveSubCategory(defaultSubCategory || subCategoryParam);
+  }, [searchParams, defaultCategory, defaultSubCategory]);
 
 
   // Helper to update URL search parameters without losing other queries (like search)
   const updateUrl = (category: string, subCategory: string = "") => {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete("category");
+    params.delete("subCategory");
     
-    if (category) {
-      params.set("category", category);
-    } else {
-      params.delete("category");
-    }
-
-    if (subCategory) {
-      params.set("subCategory", subCategory);
-    } else {
-      params.delete("subCategory");
-    }
+    const slug = subCategory || category;
+    const targetPath = slug ? `/p/mcp/${slug}` : `/mcp`;
     
-    router.replace(`/mcp?${params.toString()}`);
+    const queryString = params.toString();
+    const finalUrl = queryString ? `${targetPath}?${queryString}` : targetPath;
+    
+    router.replace(finalUrl);
   };
 
   // Fetch categories from API
   const { data: categoriesData } = useQuery({
     queryKey: ["mcpCategories"],
     queryFn: fetchMCPCategories,
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 10 * 60 * 1000,
   });
   const categories = categoriesData || [];
 
@@ -116,6 +115,9 @@ export function MCPClient() {
   const { data: subCategoriesData } = useQuery({
     queryKey: ["mcpSubCategories", activeCategory],
     queryFn: () => fetchMCPSubCategories(activeCategory || undefined),
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 10 * 60 * 1000,
   });
   const subCategories = subCategoriesData || [];
 
@@ -126,6 +128,7 @@ export function MCPClient() {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isPlaceholderData,
     error,
   } = useInfiniteQuery({
     queryKey: [
@@ -147,10 +150,14 @@ export function MCPClient() {
         type: "SERVER",
       });
     },
+    retry: false,
+    refetchOnWindowFocus: false,
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       return lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined;
     },
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
   });
 
   const items = React.useMemo(() => {
@@ -213,19 +220,9 @@ export function MCPClient() {
         }
       `}</style>
       <div className="mx-auto w-full max-w-[1600px] space-y-4 animate-fade-in">
-        {/* Breadcrumb Navigation */}
-        <div className="flex justify-start">
-          <Breadcrumb
-            items={[
-              { label: "Home", href: "/" },
-              { label: "MCP", href: "/mcp" },
-              { label: "MCP Servers" }
-            ]}
-          />
-        </div>
-
         {/* Top Sliding Category + Subcategory Row */}
-        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+        {/* Single combined scrollable pill row — categories + subcategories */}
+        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           {[{ name: "All", slug: "" }, ...categories].map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
@@ -233,7 +230,8 @@ export function MCPClient() {
                 key={topic.slug || "all"}
                 onClick={(e) => {
                   setActiveCategory(topic.slug);
-                  updateUrl(topic.slug, activeSubCategory);
+                  setActiveSubCategory("");
+                  updateUrl(topic.slug, "");
                   e.currentTarget.scrollIntoView({
                     behavior: "smooth",
                     block: "nearest",
@@ -250,38 +248,34 @@ export function MCPClient() {
               </button>
             );
           })}
-          {subCategories.length > 0 && !activeSubCategory && subCategories.map((sub) => (
-            <button
-              key={sub.id}
-              onClick={() => {
-                setActiveSubCategory(sub.slug);
-                updateUrl(activeCategory, sub.slug);
-              }}
-              className="whitespace-nowrap text-[11px] font-semibold px-3 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white transition-all cursor-pointer"
-            >
-              {sub.name}
-            </button>
-          ))}
+          {subCategories.length > 0 && (
+            <>
+
+              {subCategories.map((sub) => {
+                const isActiveSub = activeSubCategory === sub.slug;
+                return (
+                  <button
+                    key={sub.id}
+                    onClick={() => {
+                      const next = isActiveSub ? "" : sub.slug;
+                      setActiveSubCategory(next);
+                      updateUrl(activeCategory, next);
+                    }}
+                    className={`whitespace-nowrap text-[10px] font-bold px-3 py-1 rounded-full border transition-all duration-200 cursor-pointer ${
+                      isActiveSub
+                        ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                        : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+                    }`}
+                  >
+                    {sub.name}
+                  </button>
+                );
+              })}
+            </>
+          )}
         </div>
 
-        {/* Active Subcategory Filter Chip */}
-        {activeSubCategory && (
-          <div className="flex items-center gap-2 mb-2 bg-white/[0.02] border border-white/[0.08] px-3.5 py-2 rounded-lg w-fit shadow-md animate-fade-in">
-            <span className="text-xs text-white/50">Subcategory:</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white/[0.08] text-white">
-              {subCategories.find(s => s.slug === activeSubCategory)?.name || activeSubCategory}
-            </span>
-            <button
-              onClick={() => {
-                setActiveSubCategory("");
-                updateUrl(activeCategory, "");
-              }}
-              className="text-xs text-red-400 hover:text-red-300 transition-colors ml-2 cursor-pointer font-medium"
-            >
-              Clear
-            </button>
-          </div>
-        )}
+        
         {/* Dynamic content rendering based on loading/error/data states */}
         <div className="pt-0">
           {isLoading && items.length === 0 ? (
@@ -328,7 +322,7 @@ export function MCPClient() {
               </div>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10">
+            <div className={`overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
               <div className="flex flex-col">
                 {/* Column Headers */}
                 <div className="border-b border-[#232326]/60 bg-[#131316]/40">

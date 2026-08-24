@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { CollectionListItem, CollectionSubCategory } from "@/lib/types";
 import { fetchCollectionSubCategories } from "@/lib/collections";
 import { API_URL } from "@/lib/api";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 // Import modular components
 import { CollectionToolbar } from "@/components/collections/CollectionToolbar";
@@ -29,6 +31,7 @@ interface NormalizedCollection {
   updatedAt: string;
   category: string;
   categoriesList: string[];
+  subCategorySlugs: string[];
   imageUrl: string;
   color: string;
 }
@@ -63,6 +66,11 @@ function normalizeCollection(item: any): NormalizedCollection {
   }
   const category = categoriesList.length > 0 ? categoriesList[0] : "General";
 
+  let subCategorySlugs: string[] = [];
+  if (Array.isArray(item.subCategories)) {
+    subCategorySlugs = item.subCategories.map((sc: any) => sc.subCategory?.slug || "").filter(Boolean);
+  }
+
   const color = item.color || CREATOR_COLORS[creatorType] || "#6E56CF";
 
   return {
@@ -79,21 +87,41 @@ function normalizeCollection(item: any): NormalizedCollection {
     updatedAt: item.updatedAt || item.updated_at || "",
     category,
     categoriesList,
+    subCategorySlugs,
     imageUrl: item.imageUrl || item.image || "",
     color,
   };
 }
+
+const COLLECTION_SUBCATEGORIES: CollectionSubCategory[] = [
+  { id: "1", name: "Research", slug: "research", description: "Research-focused AI collections" },
+  { id: "2", name: "Productivity", slug: "productivity", description: "Collections focused on productivity, office tools" },
+  { id: "3", name: "Creative", slug: "creative", description: "AI tools for image generation, video creation, design, writing" },
+  { id: "4", name: "Developer", slug: "developer", description: "Collections of coding assistants, APIs, developer tools" },
+  { id: "5", name: "Business", slug: "business", description: "AI solutions for marketing, sales, finance, customer support" },
+  { id: "6", name: "Education", slug: "education", description: "AI tools for learning, tutoring, academic productivity" },
+  { id: "7", name: "Industry", slug: "industry", description: "Collections organized by industries" },
+  { id: "8", name: "Open Source", slug: "open-source", description: "Curated sets of open-source AI models and frameworks" },
+  { id: "9", name: "Freelancer Toolkit", slug: "freelancer-toolkit", description: "AI tools for freelancers and consultants" },
+  { id: "10", name: "Recruiters", slug: "recruiters", description: "HR and recruitment AI collections" },
+  { id: "11", name: "Analytics", slug: "analytics", description: "Analytics and BI tools" },
+  { id: "12", name: "Ecommerce", slug: "ecommerce", description: "E-commerce AI solutions" },
+  { id: "13", name: "No-Code AI", slug: "no-code-ai", description: "No-code AI solutions" },
+  { id: "14", name: "Healthcare", slug: "healthcare", description: "Medical AI collections" },
+  { id: "15", name: "Finance", slug: "finance", description: "Finance and accounting collections" },
+];
 
 const PAGE_SIZE = 20;
 
 interface Props {
   initialItems?: CollectionListItem[];
   initialNextCursor?: string | null;
+  defaultSubCategory?: string;
 }
 
-export default function CollectionsPageClient({ initialItems }: Props) {
+export default function CollectionsPageClient({ initialItems, defaultSubCategory = "" }: Props) {
+  const router = useRouter();
   const [collections, setCollections] = useState<NormalizedCollection[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -105,8 +133,12 @@ export default function CollectionsPageClient({ initialItems }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("updated");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [activePill, setActivePill] = useState<string | null>(null);
-  const [subCategories, setSubCategories] = useState<CollectionSubCategory[]>([]);
-  const [selectedSubCategorySlug, setSelectedSubCategorySlug] = useState<string | null>(null);
+  const [subCategories] = useState<CollectionSubCategory[]>(COLLECTION_SUBCATEGORIES);
+  const [selectedSubCategorySlug, setSelectedSubCategorySlug] = useState<string | null>(defaultSubCategory || null);
+
+  useEffect(() => {
+    setSelectedSubCategorySlug(defaultSubCategory || null);
+  }, [defaultSubCategory]);
 
   const [toolsMin, setToolsMin] = useState(0);
   const [toolsMax, setToolsMax] = useState(100);
@@ -114,23 +146,33 @@ export default function CollectionsPageClient({ initialItems }: Props) {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Use React Query to cache collections data across navigation
+  const { data: fetchedCollections, isLoading: queryLoading, isPlaceholderData } = useQuery({
+    queryKey: ["collections", "list"],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/v1/collections?sort=recently_updated`, { credentials: "include" });
+        if (!res.ok) return [] as CollectionListItem[];
+        const data = await res.json();
+        if (data && Array.isArray(data.items)) return data.items as CollectionListItem[];
+        return [] as CollectionListItem[];
+      } catch {
+        return [] as CollectionListItem[];
+      }
+    },
+    // If we got server-side initialItems, use them as the initial cache data
+    initialData: initialItems && initialItems.length > 0 ? initialItems : undefined,
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const isLoading = queryLoading;
+
   useEffect(() => {
-    if (initialItems && initialItems.length > 0) {
-      setCollections(initialItems.map(normalizeCollection));
-      setIsLoading(false);
-    } else {
-      setIsLoading(true);
-      fetch(`${API_URL}/api/v1/collections?sort=recently_updated`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && Array.isArray(data.items)) {
-            setCollections(data.items.map(normalizeCollection));
-          }
-        })
-        .catch(err => console.error("Error loading collections", err))
-        .finally(() => setIsLoading(false));
+    if (fetchedCollections) {
+      setCollections(fetchedCollections.map(normalizeCollection));
     }
-  }, [initialItems]);
+  }, [fetchedCollections]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -140,10 +182,6 @@ export default function CollectionsPageClient({ initialItems }: Props) {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    fetchCollectionSubCategories().then(setSubCategories).catch(() => {});
   }, []);
 
   const hasActiveFilters = nameSearch || selectedCategory !== ALL_CATEGORIES || selectedCreatorType !== "All" || activeToolsFilter || activePill || selectedSubCategorySlug;
@@ -178,7 +216,7 @@ export default function CollectionsPageClient({ initialItems }: Props) {
     }
     if (selectedCategory !== ALL_CATEGORIES) list = list.filter((d) => d.category === selectedCategory);
     if (selectedCreatorType !== "All") list = list.filter((d) => d.creatorType === selectedCreatorType);
-    if (selectedSubCategorySlug) list = list.filter((d) => (d as any).subCategorySlugs?.includes(selectedSubCategorySlug));
+    if (selectedSubCategorySlug) list = list.filter((d) => d.subCategorySlugs?.includes(selectedSubCategorySlug));
     if (activeToolsFilter) {
       list = list.filter((d) => d.toolCount >= toolsMin && d.toolCount <= toolsMax);
     }
@@ -210,7 +248,7 @@ export default function CollectionsPageClient({ initialItems }: Props) {
   }
 
   return (
-    <main className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
+    <main className={`w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
       {/* ── TOOLBAR ── */}
       <CollectionToolbar
         viewMode={viewMode}
@@ -221,13 +259,17 @@ export default function CollectionsPageClient({ initialItems }: Props) {
 
       {/* ── SUBCATEGORY FILTER CHIPS ── */}
       {subCategories.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-4 mt-2">
+        <div className="-mt-4 mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           <button
-            onClick={() => { setSelectedSubCategorySlug(null); setCurrentPage(1); }}
-            className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+            onClick={() => {
+              setSelectedSubCategorySlug(null);
+              setCurrentPage(1);
+              router.replace("/collections");
+            }}
+            className={`text-[10px] font-bold px-3 py-1 rounded-full border transition-all duration-200 cursor-pointer whitespace-nowrap ${
               !selectedSubCategorySlug
-                ? "border-[#6E56CF] bg-[#6E56CF] text-white"
-                : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
             }`}
           >
             All
@@ -235,11 +277,15 @@ export default function CollectionsPageClient({ initialItems }: Props) {
           {subCategories.map((sub) => (
             <button
               key={sub.id}
-              onClick={() => { setSelectedSubCategorySlug(sub.slug); setCurrentPage(1); }}
-              className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+              onClick={() => {
+                setSelectedSubCategorySlug(sub.slug);
+                setCurrentPage(1);
+                router.replace(`/p/collections/${sub.slug}`);
+              }}
+              className={`text-[10px] font-bold px-3 py-1 rounded-full border transition-all duration-200 cursor-pointer whitespace-nowrap ${
                 selectedSubCategorySlug === sub.slug
-                  ? "border-[#6E56CF] bg-[#6E56CF] text-white"
-                  : "border-white/[0.08] bg-white/[0.02] text-white/60 hover:bg-white/[0.08] hover:text-white"
+                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
               }`}
             >
               {sub.name}

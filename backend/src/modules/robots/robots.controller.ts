@@ -39,7 +39,9 @@ export class RobotsController {
     } catch (error: unknown) {
       return c.json({ error: (error as { message: string }).message }, 500);
     } finally {
-      await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
@@ -61,7 +63,9 @@ export class RobotsController {
     } catch (error: unknown) {
       return c.json({ error: (error as { message: string }).message }, 500);
     } finally {
-      await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 }

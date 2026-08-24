@@ -51,7 +51,9 @@ export class TasksController {
       logger.error('listTasks error:', error);
       return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
     } finally {
-      if (prisma) await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
@@ -82,7 +84,9 @@ export class TasksController {
       logger.error('getTaskDetails error:', error);
       return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
     } finally {
-      if (prisma) await prisma.$disconnect();
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
@@ -102,7 +106,9 @@ export class TasksController {
     logger.error('toggleBookmark error:', error);
     return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
   } finally {
-    if (prisma) await prisma.$disconnect();
+    // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+    // it must stay connected across requests, so it is intentionally not
+    // disconnected here.
   }
 }
 
@@ -122,7 +128,9 @@ async toggleLike(c: Context) {
     logger.error('toggleLike error:', error);
     return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
   } finally {
-    if (prisma) await prisma.$disconnect();
+    // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+    // it must stay connected across requests, so it is intentionally not
+    // disconnected here.
   }
 }
 
@@ -142,7 +150,9 @@ async toggleSubscribe(c: Context) {
     logger.error('toggleSubscribe error:', error);
     return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
   } finally {
-    if (prisma) await prisma.$disconnect();
+    // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+    // it must stay connected across requests, so it is intentionally not
+    // disconnected here.
   }
 }
 }

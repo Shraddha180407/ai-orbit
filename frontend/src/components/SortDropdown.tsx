@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { buildToolsUrl } from "@/lib/utils";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down';
 
 const SORT_OPTIONS = [
@@ -15,6 +14,7 @@ const SORT_OPTIONS = [
 export function SortDropdown() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const current = Object.fromEntries(searchParams.entries());
 
   return (
@@ -27,8 +27,9 @@ export function SortDropdown() {
           id="sort-select"
           value={current.sort ?? "newest"}
           onChange={(e) => {
-            const url = buildToolsUrl(current, { sort: e.target.value, page: null });
-            router.push(url);
+            const params = new URLSearchParams({ ...current, sort: e.target.value });
+            params.delete("page");
+            router.push(`${pathname}?${params.toString()}`);
           }}
           className="appearance-none rounded-lg border border-[#232326] bg-[#131316] pl-3 pr-8 py-1 text-xs font-semibold text-white hover:border-neutral-500 focus:outline-none transition-all cursor-pointer h-7"
         >
