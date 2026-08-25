@@ -90,7 +90,7 @@ const DIRECTORY_CARDS = [
 ] as const;
 
 import { useQueryClient } from "@tanstack/react-query";
-import { API_URL, fetchAllCompanies, fetchAllRobots, fetchAllDevices, fetchModels, fetchRepositories, fetchMCPItems } from "@/lib/api";
+import { API_URL, fetchAllCompanies, fetchAllRobots, fetchAllDevices, fetchModels, fetchRepositories, fetchMCPItems, prefetchUrl } from "@/lib/api";
 import { fetchTasks as fetchTasksApi } from "@/lib/tasks-api";
 
 export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string } = {}) {
@@ -381,6 +381,16 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                             <Link
                               key={`${s.type}-${s.id}`}
                               href={getSuggestionHref(s)}
+                              onPointerEnter={() => {
+                                if (s.slug) {
+                                  if (s.type === "tool") prefetchUrl(`${API_URL}/api/v1/tools/${s.slug}`);
+                                  else if (s.type === "company") prefetchUrl(`${API_URL}/api/v1/companies/${s.slug}`);
+                                  else if (s.type === "model") prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(s.slug)}`);
+                                  else if (s.type === "robot") prefetchUrl(`${API_URL}/api/v1/robots/${s.slug}`);
+                                  else if (s.type === "device") prefetchUrl(`${API_URL}/api/v1/devices/${s.slug}`);
+                                  else if (s.type === "repository") prefetchUrl(`${API_URL}/api/v1/repositories/${s.slug}`);
+                                }
+                              }}
                               onClick={() => setSearchOpen(false)}
                               className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm hover:bg-search-surface-hover"
                             >

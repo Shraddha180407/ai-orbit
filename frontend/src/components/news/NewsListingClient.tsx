@@ -9,6 +9,7 @@ import { NewsTable, NewsTableEmpty, NewsTableSkeleton } from "./NewsTable";
 import { LoadingSkeleton } from "./LoadingSkeleton";
 import { ErrorState } from "./ErrorState";
 import { API_URL } from "@/lib/api";
+import { cachedFetchJson, getFromCache } from "@/lib/api-cache";
 import { getClientId } from "@/lib/clientId";
 import { applySearch, sortArticles } from "@/lib/news/news";
 import type { NewsArticle, NewsCategory, NewsFilterChip, NewsSource } from "@/types/news";
@@ -151,9 +152,9 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     setLoadMoreError(false);
     try {
       const clientId = getClientId();
-      const res = await fetch(`${API_URL}/api/news${clientId ? `?clientId=${encodeURIComponent(clientId)}` : ""}`);
-      if (!res.ok) throw new Error(String(res.status));
-      const json: NewsListingResponse = await res.json();
+      const url = `${API_URL}/api/news${clientId ? `?clientId=${encodeURIComponent(clientId)}` : ""}`;
+      const json = await cachedFetchJson<NewsListingResponse | null>(url, null, { ttlMs: 10 * 60 * 1000 });
+      if (!json) throw new Error("Failed to load news");
       setArticles(json.articles || []);
       setSources(json.sources || {});
       setCategories(json.categories || []);
@@ -175,9 +176,9 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     }
     try {
       const clientId = getClientId();
-      const res = await fetch(`${API_URL}/api/news?page=${page}&perPage=${PAGE_SIZE}${clientId ? `&clientId=${encodeURIComponent(clientId)}` : ""}`);
-      if (!res.ok) throw new Error(String(res.status));
-      const json: NewsListingResponse = await res.json();
+      const url = `${API_URL}/api/news?page=${page}&perPage=${PAGE_SIZE}${clientId ? `&clientId=${encodeURIComponent(clientId)}` : ""}`;
+      const json = await cachedFetchJson<NewsListingResponse | null>(url, null, { ttlMs: 10 * 60 * 1000 });
+      if (!json) throw new Error("Failed to load news page");
       setArticles((prev) => (append ? [...prev, ...json.articles] : json.articles));
       setSources(json.sources || {});
       setCategories(json.categories || []);

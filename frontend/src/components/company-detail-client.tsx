@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from "next/navigation";
-import { fetchCompanyDetails } from "@/lib/api";
+import { fetchCompanyDetails, API_URL, prefetchUrl } from "@/lib/api";
 import { Company } from '@/lib/types';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -307,7 +307,13 @@ export function CompanyDetailClient() {
               {company.tools && company.tools.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {company.tools.map((tool) => (
-                    <Link key={tool.id} href={`/p/tools/${tool.slug}`} className="block group no-underline">
+                    <Link
+                      key={tool.id}
+                      href={`/p/tools/${tool.slug}`}
+                      onMouseEnter={() => prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`)}
+                      onTouchStart={() => prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`)}
+                      className="block group no-underline"
+                    >
                       <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-5 hover:border-[#F5A623]/50 hover:bg-[#131316] transition-all h-full flex flex-col">
                         <div className="flex items-center gap-3.5 mb-3">
                           <div className="w-12 h-12 rounded-xl bg-[#18181C] border border-[#26262B] flex items-center justify-center overflow-hidden shrink-0 p-1">
@@ -345,7 +351,13 @@ export function CompanyDetailClient() {
               {company.aiModels && company.aiModels.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {company.aiModels.map((model) => (
-                    <Link key={model.id} href={`/models/${model.slug}`} className="block group no-underline">
+                    <Link
+                      key={model.id}
+                      href={`/models/${model.slug || model.id}`}
+                      onMouseEnter={() => prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(model.id)}`)}
+                      onTouchStart={() => prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(model.id)}`)}
+                      className="block group no-underline"
+                    >
                       <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-5 hover:border-[#F5A623]/50 hover:bg-[#131316] transition-all h-full flex flex-col">
                         <h3 className="text-base font-bold text-white group-hover:text-[#F5A623] transition-colors mb-2">{model.name}</h3>
                         <p className="text-xs text-[#8A8F98] leading-relaxed mb-4 line-clamp-3 flex-1">
