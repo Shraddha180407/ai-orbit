@@ -131,10 +131,10 @@ function MediaGallery({ screenshots, videoUrl, name }: {
 // ── Stat pill ─────────────────────────────────────────────────────────────────
 function StatPill({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-[#232326] bg-[#111114] px-4 py-4 w-full hover:border-[#6E56CF]/30 transition-colors">
-      <Icon size={16} className="text-[#6E56CF]" />
-      <span className="text-base font-black text-white leading-none">{value}</span>
-      <span className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest">{label}</span>
+    <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border border-[#232326] bg-[#111114] px-2 py-3 w-full hover:border-[#6E56CF]/30 transition-colors">
+      <Icon size={14} className="text-[#6E56CF]" />
+      <span className="text-sm font-black text-white leading-none">{value}</span>
+      <span className="text-[9px] font-mono font-bold text-[#52525B] uppercase tracking-widest">{label}</span>
     </div>
   );
 }
@@ -209,7 +209,7 @@ function AltCard({ tool, index = 0 }: { tool: ToolCardData; index?: number }) {
         if (nameEl) nameEl.style.color = "";
       }}
     >
-      <div data-altlogo="true" className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-[#232326] bg-white flex items-center justify-center p-2 transition-all duration-200">
+      <div data-altlogo="true" className="relative h-12 w-12 md:h-16 md:w-16 shrink-0 overflow-hidden rounded-xl border border-[#232326] bg-white flex items-center justify-center p-1.5 md:p-2 transition-all duration-200">
         {tool.logoUrl && !logoFailed ? (
           <Image src={tool.logoUrl} alt={tool.name} fill className="object-contain p-1"
             onError={() => setLogoFailed(true)} />
@@ -383,16 +383,16 @@ export function ToolDetailClient() {
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/60 to-transparent" />
         <div className="absolute right-0 top-0 w-80 h-80 bg-[#6E56CF]/5 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+                <div className="relative flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           {/* Left: logo + info */}
-          <div className="flex gap-5 items-start">
-            <div className="relative flex h-28 w-28 md:h-45 md:w-45 shrink-0 self-center items-center justify-center overflow-hidden rounded-2xl border border-[#232326] bg-white p-3 shadow-xl shadow-black/25">
+          <div className="flex flex-col md:flex-row gap-4 items-center md:items-start">
+            <div className="relative flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#232326] bg-white p-2 md:p-3 shadow-xl shadow-black/25">
               <ToolLogo logoUrl={tool.logoUrl} name={tool.name} />
             </div>
 
-            <div className="space-y-2 min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
+            <div className="space-y-2 min-w-0 w-full text-center md:text-left">
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                <h1 className="text-xl md:text-3xl font-black tracking-tight text-white">
                   {tool.name}
                 </h1>
                 {tool.verified && (
@@ -406,7 +406,7 @@ export function ToolDetailClient() {
               </div>
 
               {/* Category + rating row */}
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
                 {tool.pricingModel ? (
   <PricingBadge pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} billingFrequency={tool.billingFrequency} />
 ) : (
@@ -430,7 +430,7 @@ export function ToolDetailClient() {
               {/* Best for + Works on */}
               <div className="flex flex-col gap-1.5 pt-1">
                 {tool.targetUsers?.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 text-xs">
                     <span className="text-[#52525B] font-bold">Best for:</span>
                     {tool.targetUsers.map((p) => (
                       <span key={p} className="rounded-md border border-[#232326] bg-[#131316] px-2 py-0.5 font-bold text-white/80 text-[10px]">
@@ -440,7 +440,7 @@ export function ToolDetailClient() {
                   </div>
                 )}
                 {tool.compatibility?.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 text-xs">
                     <span className="text-[#52525B] font-bold">Works on:</span>
                     {tool.compatibility.map((c) => (
                       <span key={c} className="rounded-md border border-[#232326] bg-[#131316] px-2 py-0.5 font-bold text-[#A1A1AA] text-[10px]">
@@ -453,8 +453,8 @@ export function ToolDetailClient() {
 
               {/* Tags */}
               {tool.tags?.length > 0 && (
-  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-    {tool.tags.slice(0, 6).map(({ tag }) => (
+  <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 pt-1 max-w-full">
+    {tool.tags.slice(0, 4).map(({ tag }) => (
       <Link key={tag.slug} href={`/tools?tag=${tag.slug}`}
         className="inline-flex items-center gap-1 rounded-full border border-[#6E56CF]/30 bg-[#6E56CF]/10 px-3 py-1 text-[10px] font-mono font-bold text-[#A78BFA] hover:bg-[#6E56CF]/20 hover:text-white hover:border-[#6E56CF]/50 transition-all">
         <span className="text-[#6E56CF]">#</span>{tag.name}
@@ -466,7 +466,7 @@ export function ToolDetailClient() {
           </div>
 
           {/* Right: action buttons */}
-          <div className="flex flex-col gap-2.5 w-full md:w-64 shrink-0">
+          <div className="flex flex-col gap-2 w-full md:w-56 shrink-0">
             <a href={tool.websiteUrl} target="_blank" rel="noopener noreferrer nofollow"
               className="inline-flex w-full justify-center items-center gap-2 rounded-xl bg-[#6E56CF] px-4 py-3 text-sm font-extrabold text-white shadow-lg shadow-[#6E56CF]/20 hover:bg-[#7C66DF] hover:-translate-y-0.5 transition-all active:scale-95">
               Visit Website <ArrowUpRight size={15} strokeWidth={2.5} />
@@ -503,7 +503,7 @@ export function ToolDetailClient() {
         </div>
 
         {/* Stats row */}
-        <div className="relative grid grid-cols-5 gap-2 mt-6 pt-5 border-t border-[#1a1a1e] w-full">
+        <div className="relative grid grid-cols-3 sm:grid-cols-5 gap-2 mt-5 pt-4 border-t border-[#1a1a1e] w-full">
   {tool.views > 0 && <StatPill icon={BarChart2} label="Views" value={formatNum(tool.views)} />}
   {tool.saves > 0 && <StatPill icon={Bookmark} label="Saves" value={formatNum(tool.saves)} />}
   {upvoteCount > 0 && <StatPill icon={ThumbsUp} label="Upvotes" value={formatNum(upvoteCount)} />}
@@ -527,7 +527,7 @@ export function ToolDetailClient() {
 
       {/* ── OVERVIEW TAB ─────────────────────────────────────────────────────── */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
 
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-5">
@@ -573,7 +573,7 @@ export function ToolDetailClient() {
                   </span>
                   <h2 className="text-sm font-bold text-white uppercase tracking-wider">Key Features</h2>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {tool.features.map((feature, i) => {
                     const parsed = parseFeature(feature);
                     return (
@@ -642,8 +642,8 @@ export function ToolDetailClient() {
               <ROICalculator pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} name={tool.name} />
             </section>
 
-            {/* Alternatives sidebar list */}
-            {similarTools.length > 0 && (
+            {/* Alternatives sidebar list — only show if media gallery is present */}
+            {similarTools.length > 0 && (tool.screenshots?.length > 0 || tool.videoUrl) && (
               <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-[#232326]/60 pb-3">
                   <h3 className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest flex items-center gap-2">
@@ -675,8 +675,8 @@ export function ToolDetailClient() {
               </section>
             )}
 
-            {/* Company card */}
-            {tool.company && (
+            {/* Company card — only show if media gallery is present */}
+            {tool.company && (tool.screenshots?.length > 0 || tool.videoUrl) && (
               <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-3">
                 <h3 className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest border-b border-[#232326]/60 pb-3 flex items-center gap-2">
                   <Building size={12} className="text-[#6E56CF]" /> About the Company
@@ -732,7 +732,7 @@ export function ToolDetailClient() {
         <div className="space-y-6">
           {tool.pricingTiers && tool.pricingTiers.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {tool.pricingTiers.map((tier) => (
                   <PricingCard key={tier.name} tier={tier} />
                 ))}
@@ -792,7 +792,7 @@ export function ToolDetailClient() {
               View all <ArrowRight size={12} />
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {similarTools.map((s, i) => <AltCard key={s.id} tool={s} index={i} />)}
           </div>
         </section>
@@ -811,7 +811,7 @@ export function ToolDetailClient() {
           <div className="flex flex-wrap gap-2">
             {tool.categories.map(({ category }) => (
               <Link key={category.slug} href={`/tools/${category.slug}`}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#232326] bg-[#131316] px-4 py-1.5 text-xs font-semibold text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white hover:bg-[#6E56CF]/10 transition-all">
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#232326] bg-[#131316] px-3 py-1 text-[11px] font-semibold text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white hover:bg-[#6E56CF]/10 transition-all">
                 <Layers size={10} className="text-[#6E56CF]" /> {category.name}
               </Link>
             ))}

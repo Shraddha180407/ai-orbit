@@ -227,13 +227,13 @@ export function ToolsClient({
     <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
       <div className={`mx-auto w-full max-w-[1600px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
         {/* Top Sliding Category Row */}
-        <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+                <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 w-full px-4 md:px-0 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
               <button
                 key={topic.name}
-                onClick={(e) => {
+                                onClick={(e) => {
                   setActiveCategory(topic.slug);
                   const base = mode === "personal" ? "/personal" : mode === "creativity" ? "/creativity" : mode === "agents" ? "/agents" : "/tools";
                   const url = topic.slug ? `${base}/${topic.slug}` : base;
