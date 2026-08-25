@@ -1,4 +1,5 @@
 import type { Video } from "./video-types";
+import { cachedFetchJson } from "./api-cache";
 
 export type { Video };
 export { BLUR_DATA_URL, formatDuration, formatViews, formatRelativeDate } from "./video-types";
@@ -17,14 +18,7 @@ function resolveApiUrl(): string {
 const API_URL = resolveApiUrl();
 
 async function fetchJson<T>(path: string): Promise<T | null> {
-  try {
-    const res = await fetch(`${API_URL}${path}`);
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch (err) {
-    console.error(`[videos-data] failed to fetch ${path}:`, err);
-    return null;
-  }
+  return cachedFetchJson<T | null>(`${API_URL}${path}`, null, { ttlMs: 15 * 60 * 1000 });
 }
 
 export type VideoSortBy = "name" | "duration" | "posted" | "views";
@@ -49,9 +43,6 @@ export async function getVideosPage(
   sortBy?: VideoSortBy,
   sortDir?: VideoSortDir
 ): Promise<Video[]> {
-  // NOTE: `sort=latest` here is the existing feed-mode param (separate from
-  // sortBy/sortDir below, which is the per-column table sort — kept as a
-  // distinct param name specifically so it doesn't collide with this one).
   const params = new URLSearchParams({ sort: "latest", limit: String(limit), offset: String(offset) });
   if (category) params.set("category", category);
   if (sortBy) params.set("sortBy", sortBy);

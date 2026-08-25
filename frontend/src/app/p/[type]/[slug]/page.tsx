@@ -16,6 +16,7 @@ import { TaskDetailClient } from "@/components/detail/TaskDetailClient";
 import { RepositoryDetailPage } from "@/components/repository-detail/RepositoryDetailPage";
 import { CompanyDetailClient } from "@/components/company-detail-client";
 import { RobotDetailClient } from "@/components/detail/RobotDetailClient";
+import { ModelDetailClient } from "@/components/detail/ModelDetailClient";
 import { MCPDetailClient } from "@/components/mcp-detail-client";
 import { MCPClient } from "@/components/mcp-client";
 import CollectionsPageClient from "@/app/collections/CollectionsPageClient";
@@ -52,10 +53,10 @@ interface UnifiedEntityPageProps {
 
 export async function generateMetadata({ params }: UnifiedEntityPageProps): Promise<Metadata> {
   const { type, slug } = await params;
+  const formattedSlug = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  const formattedType = type === "mcp" ? "MCP Directory" : type === "collections" ? "Collections" : type.charAt(0).toUpperCase() + type.slice(1);
 
   if (VALID_CATEGORIES[type]?.has(slug)) {
-    const formattedSlug = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-    const formattedType = type === "mcp" ? "MCP Directory" : type === "collections" ? "Collections" : type.charAt(0).toUpperCase() + type.slice(1);
     return {
       title: `${formattedSlug} ${formattedType} | AI Orbit`,
       description: `Browse the best AI tools/servers for ${formattedSlug.toLowerCase()} in the ${formattedType.toLowerCase()} directory.`,
@@ -66,68 +67,98 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
     try {
       const res = await fetch(`${SERVER_API_URL}/api/news/${encodeURIComponent(slug)}`, {
         next: { revalidate: 300 },
-        signal: AbortSignal.timeout(1500),
+        signal: AbortSignal.timeout(300),
       } as RequestInit);
-      if (!res.ok) return {};
-      const { article } = (await res.json()) as { article?: { headline: string; aiSummary: string; dek: string } };
-      if (!article) return {};
-
-      const description = article.aiSummary || article.dek;
-      return {
-        title: article.headline,
-        description,
-        openGraph: { title: article.headline, description, type: "article" },
-        twitter: { card: "summary_large_image", title: article.headline, description },
-      };
-    } catch {
-      return {};
-    }
+      if (res.ok) {
+        const { article } = (await res.json()) as { article?: { headline: string; aiSummary: string; dek: string } };
+        if (article) {
+          const description = article.aiSummary || article.dek;
+          return {
+            title: article.headline,
+            description,
+            openGraph: { title: article.headline, description, type: "article" },
+            twitter: { card: "summary_large_image", title: article.headline, description },
+          };
+        }
+      }
+    } catch {}
+    return {
+      title: `${formattedSlug} — News | AI Orbit`,
+      description: `Read the latest AI news and updates about ${formattedSlug}.`,
+    };
   }
 
   if (type === "tasks") {
     try {
       const res = await fetch(`${SERVER_API_URL}/api/v1/tasks/${encodeURIComponent(slug)}`, {
         next: { revalidate: 300 },
-        signal: AbortSignal.timeout(1500),
+        signal: AbortSignal.timeout(300),
       } as RequestInit);
-      if (!res.ok) return { title: "Task Not Found | AI Orbit" };
-      const data = (await res.json()) as { task?: { title: string; description: string } };
-      if (!data.task) return { title: "Task Not Found | AI Orbit" };
-
-      return {
-        title: `${data.task.title} | AI Orbit`,
-        description: data.task.description,
-      };
-    } catch {
-      return { title: "Tasks | AI Orbit" };
-    }
+      if (res.ok) {
+        const data = (await res.json()) as { task?: { title: string; description: string } };
+        if (data?.task) {
+          return {
+            title: `${data.task.title} | AI Orbit`,
+            description: data.task.description,
+          };
+        }
+      }
+    } catch {}
+    return { title: `${formattedSlug} Tasks | AI Orbit` };
   }
 
   if (type === "robots") {
-    const title = slug
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-
     return {
-      title: `${title} — Robots — The AI Signal`,
-      description: `Details and specifications for ${title}.`,
+      title: `${formattedSlug} — Robots — AI Orbit`,
+      description: `Details and specifications for ${formattedSlug}.`,
     };
   }
   
   if (type === "mcp") {
     try {
       const item = await fetchMCPItemBySlug(slug);
-      if (!item) return { title: "MCP Item Not Found | AI Orbit" };
-      return {
-        title: `${item.name} — Model Context Protocol (MCP) | AI Orbit`,
-        description: item.shortDescription,
-      };
-    } catch {
-      return { title: "MCP Directory | AI Orbit" };
-    }
+      if (item) {
+        return {
+          title: `${item.name} — Model Context Protocol (MCP) | AI Orbit`,
+          description: item.shortDescription,
+        };
+      }
+    } catch {}
+    return { title: `${formattedSlug} — MCP Directory | AI Orbit` };
   }
 
-  return {};
+  if (type === "tools" || type === "personal" || type === "creativity" || type === "agents") {
+    return {
+      title: `${formattedSlug} — AI Tool Details, Pricing & Reviews | AI Orbit`,
+      description: `Comprehensive details, features, reviews and pricing for ${formattedSlug}.`,
+    };
+  }
+
+  if (type === "companies") {
+    return {
+      title: `${formattedSlug} — AI Company Profile & Overview | AI Orbit`,
+      description: `Profile, tools, models and team details for ${formattedSlug}.`,
+    };
+  }
+
+  if (type === "devices") {
+    return {
+      title: `${formattedSlug} — AI Hardware & Device Specifications | AI Orbit`,
+      description: `Specs, features and availability for ${formattedSlug}.`,
+    };
+  }
+
+  if (type === "models") {
+    return {
+      title: `${formattedSlug} — AI Model Architecture & Benchmarks | AI Orbit`,
+      description: `Technical specs, context window, and benchmark data for ${formattedSlug}.`,
+    };
+  }
+
+  return {
+    title: `${formattedSlug} ${formattedType} | AI Orbit`,
+    description: `Explore ${formattedSlug} in the ${formattedType} section of AI Orbit.`,
+  };
 }
 
 export default async function UnifiedEntityPage({ params }: UnifiedEntityPageProps) {
@@ -332,6 +363,15 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   if (type === "tasks") return <TaskDetailClient />;
   if (type === "repositories") return <RepositoryDetailPage slug={slug} />;
   if (type === "companies") return <CompanyDetailClient />;
+  if (type === "models") {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <ModelDetailClient />
+        <Footer />
+      </div>
+    );
+  }
 
   if (type === "robots") {
     return (

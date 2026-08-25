@@ -1,11 +1,12 @@
 import type { CollectionsApiResponse, CollectionFilterParams, CollectionSubCategory } from "@/lib/types";
 import { API_URL } from "@/lib/api";
+import { cachedFetchJson } from "./api-cache";
 
 const API_BASE = `${API_URL}/api/v1`;
 
 export async function fetchCollections(
   params: CollectionFilterParams,
-  signal?: AbortSignal
+  _signal?: AbortSignal
 ): Promise<CollectionsApiResponse> {
   const query = new URLSearchParams();
 
@@ -19,37 +20,19 @@ export async function fetchCollections(
   if (params.sort) query.set("sort", params.sort);
   if (params.cursor) query.set("cursor", params.cursor);
 
-  // Backend reads categories via c.req.queries('category'), so append each separately
   if (params.category?.length) {
     for (const cat of params.category) {
       query.append("category", cat);
     }
   }
 
-  const res = await fetch(`${API_BASE}/collections?${query.toString()}`, {
-    signal,
-    headers: { Accept: "application/json" },
-  });
-
-  const data: CollectionsApiResponse = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || `Request failed with status ${res.status}`);
-  }
-
-  return data;
+  const fallback: CollectionsApiResponse = { items: [], nextCursor: null, total: 0 };
+  return cachedFetchJson(`${API_BASE}/collections?${query.toString()}`, fallback, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function getCollectionDetail(slug: string) {
-  const res = await fetch(`${API_BASE}/collections/${slug}`, {
-    headers: { Accept: "application/json" },
-  });
-
-  if (!res.ok) {
-    return null;
-  }
-
-  const data = await res.json();
+  const data = await cachedFetchJson<any>(`${API_BASE}/collections/${slug}`, null, { ttlMs: 15 * 60 * 1000 });
+  if (!data || !data.collection) return null;
   return { collection: data.collection, related: data.related ?? [] };
 }
 
@@ -72,10 +55,5 @@ export async function toggleBookmark(
 }
 
 export async function fetchCollectionSubCategories(): Promise<CollectionSubCategory[]> {
-  const res = await fetch(`${API_BASE}/collections/subcategories`, {
-    headers: { Accept: "application/json" },
-    next: { revalidate: 300 },
-  } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  return cachedFetchJson(`${API_BASE}/collections/subcategories`, [], { ttlMs: 30 * 60 * 1000 });
 }

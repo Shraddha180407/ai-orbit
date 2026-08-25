@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 import { useQuery } from "@tanstack/react-query";
-import { API_URL } from "@/lib/api";
+import { API_URL, prefetchUrl } from "@/lib/api";
 import type { ToolDetailData, ToolCardData, ReviewData } from "@/lib/types";
 import type { ToolDetailDataExtended, PricingTier } from "@/data/tools";
 import { getSampleTool, getSampleSimilarTools } from "@/data/tools";
@@ -191,6 +191,7 @@ function AltCard({ tool, index = 0 }: { tool: ToolCardData; index?: number }) {
     <Link href={`/tools/${tool.slug}`}
       className="group flex gap-3 rounded-xl border border-[#232326] bg-[#0d0d10] p-4 transition-all duration-200 relative overflow-hidden"
       onMouseEnter={(e) => {
+        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
         const el = e.currentTarget;
         el.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
         el.style.backgroundColor = `${accentColor}08`;
@@ -198,6 +199,12 @@ function AltCard({ tool, index = 0 }: { tool: ToolCardData; index?: number }) {
         if (logoEl) { logoEl.style.borderColor = accentColor; logoEl.style.boxShadow = `0 0 8px ${accentColor}55`; }
         const nameEl = el.querySelector<HTMLElement>('[data-altname="true"]');
         if (nameEl) nameEl.style.color = accentColor;
+      }}
+      onTouchStart={() => {
+        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
+      }}
+      onFocus={() => {
+        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget;

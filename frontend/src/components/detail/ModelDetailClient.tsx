@@ -59,7 +59,7 @@ function RelatedCard({ model }: { model: AIModel }) {
 
 export function ModelDetailClient() {
   const params = useParams();
-  const id = params?.id as string;
+  const id = (params?.id || params?.slug) as string;
 
   const [model, setModel] = useState<ModelDetail | null>(null);
   const [loading, setLoading] = useState(true);

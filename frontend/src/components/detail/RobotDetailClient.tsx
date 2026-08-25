@@ -15,7 +15,7 @@ import Zap from "lucide-react/dist/esm/icons/zap";
 import ExternalLink from "lucide-react/dist/esm/icons/external-link";
 import Target from "lucide-react/dist/esm/icons/target";
 import { Robot } from "@/lib/types";
-import { fetchRobotById } from "@/lib/api";
+import { fetchRobotById, API_URL, prefetchUrl } from "@/lib/api";
 import { CategoryChip } from "@/components/CategoryChip";
 
 interface RobotDetailClientProps {
@@ -270,6 +270,8 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
                 <Link
                   key={task.slug}
                   href={`/tasks/${task.slug}`}
+                  onMouseEnter={() => prefetchUrl(`${API_URL}/api/v1/tasks/${task.slug}`)}
+                  onTouchStart={() => prefetchUrl(`${API_URL}/api/v1/tasks/${task.slug}`)}
                   className="group flex flex-col gap-1.5 rounded-lg border border-[#232326]/60 bg-[#131316]/10 p-4 transition-colors hover:bg-[#18181C]/40"
                 >
                   <div className="flex items-center gap-2">
