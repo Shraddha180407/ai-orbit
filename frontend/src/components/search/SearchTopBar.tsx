@@ -51,14 +51,14 @@ export function SearchTopBar() {
               menuClassName="absolute left-0 mt-2 w-[280px] rounded-lg border border-search-border bg-search-surface p-2 shadow-2xl z-50 text-white"
             />
             <Link
-              href="/search/results?types=collection"
+              href="/search/results?types=tool"
               className="flex items-center gap-1.5 rounded-full border border-search-border px-3 py-1.5 text-sm text-search-text-secondary transition-colors hover:border-search-border-hover hover:text-search-text-primary"
             >
               <Tag size={14} />
               Prompts
             </Link>
             <Link
-              href="/search/results?types=collection"
+              href="/search/results?types=tool"
               className="flex items-center gap-1.5 rounded-full border border-search-border px-3 py-1.5 text-sm text-search-text-secondary transition-colors hover:border-search-border-hover hover:text-search-text-primary"
             >
               <Percent size={14} />

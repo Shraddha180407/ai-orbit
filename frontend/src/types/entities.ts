@@ -5,7 +5,6 @@ export type EntityType =
   | "news"
   | "video"
   | "repository"
-  | "collection"
   | "task"
   | "country"
   | "fundraise"

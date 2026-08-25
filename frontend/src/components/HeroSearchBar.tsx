@@ -67,7 +67,6 @@ const BROWSE_BY_TYPE: QuickLink[] = [
 // reference design don't exist here, so only real pages are listed.
 const MORE_TO_EXPLORE: QuickLink[] = [
   { label: ENTITY_META.tool.label, href: ENTITY_META.tool.basePath, icon: ENTITY_META.tool.icon },
-  { label: ENTITY_META.collection.label, href: ENTITY_META.collection.basePath, icon: ENTITY_META.collection.icon },
   { label: "Videos", href: "/videos", icon: Video },
   { label: "News", href: "/news", icon: Newspaper },
 ];

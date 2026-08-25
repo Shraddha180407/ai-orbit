@@ -7,7 +7,6 @@ import { ResultsTable } from "@/components/search/ResultsTable";
 import { TrendingList } from "@/components/search/TrendingList";
 import { MiniToolsList } from "@/components/search/MiniToolsList";
 import { FeaturedList } from "@/components/search/FeaturedList";
-import { CollectionsTable } from "@/components/search/CollectionsTable";
 import { CharactersGrid } from "@/components/search/CharactersGrid";
 import { NewReleasesList } from "@/components/search/NewReleasesList";
 import { RankingsBoard } from "@/components/search/RankingsBoard";
@@ -54,7 +53,6 @@ export function SectionPageContent({ slug }: { slug: string }) {
   const [retryToken, setRetryToken] = useState(0);
 
   const isGallery = config?.layout === "gallery";
-  const isCollections = config?.layout === "collections";
   const isNewReleases = config?.layout === "new";
   const isRankings = config?.layout === "rankings";
   const isAgents = config?.layout === "agents";
@@ -62,11 +60,7 @@ export function SectionPageContent({ slug }: { slug: string }) {
   const isTasksTable = config?.layout === "tasksTable";
   const effectiveSort = isGallery
     ? gallerySort
-    : isCollections
-      ? collectionsFilter === "new"
-        ? "newest"
-        : "popular"
-      : config?.sort ?? "relevance";
+    : config?.sort ?? "relevance";
   const effectiveQuery = isGallery ? galleryQuery : "";
 
   // Refetch the full result set whenever the section, sort, or query changes.
@@ -220,13 +214,6 @@ export function SectionPageContent({ slug }: { slug: string }) {
               <MiniToolsList items={data.items} />
             ) : config.layout === "featured" ? (
               <FeaturedList items={data.items} />
-            ) : config.layout === "collections" ? (
-              <CollectionsTable
-                items={data.items}
-                total={data.total}
-                filter={collectionsFilter}
-                onFilterChange={setCollectionsFilter}
-              />
             ) : config.layout === "characters" ? (
               <CharactersGrid items={data.items} />
             ) : config.layout === "new" ? (

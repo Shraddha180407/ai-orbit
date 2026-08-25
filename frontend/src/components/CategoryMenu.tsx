@@ -133,7 +133,7 @@ export function CategoryMenu({ categoryCounts }: { categoryCounts: Record<string
                     return (
                       <Link
                         key={item.label}
-                        href={`/collections?category=${encodeURIComponent(item.category)}`}
+                        href={`/tools?category=${encodeURIComponent(item.category)}`}
                         onClick={() => setOpenKey(null)}
                         className="group/item flex items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-surface-raised"
                       >
@@ -154,11 +154,11 @@ export function CategoryMenu({ categoryCounts }: { categoryCounts: Record<string
                 </div>
 
                 <Link
-                  href="/collections"
+                  href="/tools"
                   onClick={() => setOpenKey(null)}
                   className="flex items-center justify-between border-t border-border px-4 py-3 text-xs font-medium text-foreground-muted transition-colors hover:text-accent"
                 >
-                  Browse all collections
+                  Browse all tools
                   <ArrowRight size={12} />
                 </Link>
               </div>
