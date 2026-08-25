@@ -9,10 +9,12 @@ import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Plus, ChevronDown, ArrowUpDown, X, Filter } from "lucide-react";
+import { Plus, ChevronDown, ChevronLeft, ChevronRight, ArrowUpDown, X, Filter } from "lucide-react";
 import { Button } from "@/components/ui/shadcn-button";
 import { cn } from "@/lib/utils";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
+
+const PAGE_SIZE = 100;
 
 const COMPANY_TYPES: { label: string; value: string; slug: string }[] = [
   { label: "All", value: "ALL", slug: "all" },
@@ -34,6 +36,32 @@ const COMPANY_TYPES: { label: string; value: string; slug: string }[] = [
 
 type SortField = 'name' | 'country' | 'valuation' | 'valEmp' | 'aiNative' | 'profitable' | 'sector' | 'modelsCount' | 'toolsCount';
 type SortDir = 'asc' | 'desc';
+
+function formatCompanyName(name: string): string {
+  if (!name) return "";
+  const cleaned = name.replace(/^!\[+/, '').replace(/\]\(.*?\)/g, '').replace(/[\!\[\]]/g, '').trim();
+  return cleaned || name;
+}
+
+function cleanCompanySlug(slug: string): string {
+  if (!slug) return "";
+  return slug.replace(/^!\[+/, '').replace(/[\]\(\)]/g, '').trim();
+}
+
+function getCompanyLogo(company: Company): string | null {
+  if (company.logoUrl && company.logoUrl.trim() && !company.logoUrl.startsWith('![')) return company.logoUrl.trim();
+  if (company.tools && company.tools.length > 0) {
+    const firstWithLogo = company.tools.find(t => t.logoUrl && t.logoUrl.trim() && !t.logoUrl.startsWith('!['));
+    if (firstWithLogo?.logoUrl) return firstWithLogo.logoUrl.trim();
+  }
+  if (company.website) {
+    try {
+      const hostname = new URL(company.website.startsWith('http') ? company.website : `https://${company.website}`).hostname;
+      if (hostname) return `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`;
+    } catch {}
+  }
+  return null;
+}
 
 function formatValuation(val: string | number | null | undefined): string {
   if (!val) return "—";
@@ -135,7 +163,6 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   });
 
   const allCompanies = companiesData || [];
-  const [visibleCount, setVisibleCount] = useState(30);
   const searchParams = useSearchParams();
   const [query, setQuery] = useState((searchParams.get("q") || "").trim());
 
@@ -153,6 +180,8 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
 
   const [sortField, setSortField] = useState<SortField>('valuation');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
 
   // React to top-right header SortDropdown URL parameter changes
   useEffect(() => {
@@ -170,8 +199,6 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
       setActiveCategorySlug(urlFilterParam);
     }
   }, [urlFilterParam]);
-
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Admin Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -275,26 +302,25 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     return list;
   }, [allCompanies, activeCategorySlug, selectedCountry, query, sortField, sortDir]);
 
+  // Reset page to 1 whenever filters or search query change
   useEffect(() => {
-    setVisibleCount(30);
-  }, [query, activeCategorySlug, selectedCountry]);
+    setCurrentPage(1);
+  }, [query, activeCategorySlug, selectedCountry, sortField, sortDir]);
 
-  // IntersectionObserver for client-side endless scroll
-  useEffect(() => {
-    if (isLoading || visibleCount >= filteredAndSorted.length) return;
+  const totalPages = Math.ceil(filteredAndSorted.length / PAGE_SIZE) || 1;
+  const paginatedCompanies = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredAndSorted.slice(start, start + PAGE_SIZE);
+  }, [filteredAndSorted, currentPage]);
 
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        setVisibleCount(prev => prev + 30);
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      if (tableContainerRef.current) {
+        tableContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-    }, { threshold: 0.1 });
-
-    const currentSentinel = sentinelRef.current;
-    if (currentSentinel) observer.observe(currentSentinel);
-    return () => { if (currentSentinel) observer.unobserve(currentSentinel); };
-  }, [isLoading, visibleCount, filteredAndSorted.length]);
-
-  const visibleCompanies = filteredAndSorted.slice(0, visibleCount);
+    }
+  };
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -345,8 +371,8 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   return (
     <>
       <main className="w-full px-2 sm:px-4 py-3 flex-1 flex flex-col selection:bg-neutral-800 selection:text-white">
-        <div className="w-full space-y-4">
-          {/* Clean Subcategories Horizontal Scrollbar */}
+        <div className="w-full space-y-4" ref={tableContainerRef}>
+          {/* Subcategories Horizontal Scrollbar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1 w-full">
               {COMPANY_TYPES.map((ct) => {
@@ -357,7 +383,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                     type="button"
                     onClick={() => handleSubcategoryClick(ct.slug)}
                     className={cn(
-                      "rounded-full px-3 py-1 text-[12px] font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer",
+                      "rounded-full px-2.5 sm:px-3 py-1 text-[11px] sm:text-[12px] font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer",
                       isSelected
                         ? "bg-white text-black border-transparent font-bold shadow-sm"
                         : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#F5A623]/50 hover:text-white"
@@ -391,7 +417,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
             </div>
           )}
 
-          {/* Companies Table (Fixed Table Layout to Prevent Column Shifting) */}
+          {/* Companies Table Container */}
           {isLoading ? (
             <div className="w-full space-y-2">
               {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -406,27 +432,29 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
             </div>
           ) : (
             <div className="w-full rounded-xl border border-[#232326] bg-[#0A0A0C] overflow-hidden shadow-xl">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1150px] border-collapse table-fixed">
+              <div className="overflow-x-auto relative touch-pan-x">
+                <table className="w-full min-w-[950px] sm:min-w-[1100px] border-collapse table-fixed">
                   <colgroup>
-                    <col className="w-[280px]" />
-                    <col className="w-[140px]" />
-                    <col className="w-[120px]" />
-                    <col className="w-[120px]" />
-                    <col className="w-[90px]" />
-                    <col className="w-[90px]" />
-                    <col className="w-[150px]" />
+                    {/* Compact 1st sticky column on mobile (160px) to prevent screen takeover */}
+                    <col className="w-[160px] sm:w-[220px] md:w-[270px]" />
+                    <col className="w-[110px]" />
+                    <col className="w-[100px]" />
+                    <col className="w-[100px]" />
+                    <col className="w-[85px]" />
+                    <col className="w-[85px]" />
+                    <col className="w-[110px]" />
                     <col className="w-[80px]" />
                     <col className="w-[80px]" />
                   </colgroup>
                   <thead>
                     <tr className="bg-[#131316] border-b border-[#232326]">
-                      <th className="px-4 py-3 text-left">
+                      {/* Sticky 1st Column (Company Name & Logo) on Mobile/Tablet */}
+                      <th className="px-2.5 sm:px-4 py-3 text-left sticky left-0 z-30 bg-[#131316] shadow-[2px_0_6px_rgba(0,0,0,0.6)] border-r border-[#232326]">
                         <SortableHeader label="Company" field="name" />
                       </th>
 
                       {/* Country Header with Searchable Popover Dropdown matching theresanaiforthat */}
-                      <th className="px-4 py-3 text-left">
+                      <th className="px-3 sm:px-4 py-3 text-left">
                         <div className="relative" ref={countryPopoverRef}>
                           <button
                             type="button"
@@ -442,7 +470,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
 
                           {/* Country Search & Filter Popover */}
                           {isCountryPopoverOpen && (
-                            <div className="absolute left-0 top-full mt-2 w-64 rounded-xl border border-[#232326] bg-[#131316] p-3 shadow-2xl z-50">
+                            <div className="absolute left-0 top-full mt-2 w-60 sm:w-64 rounded-xl border border-[#232326] bg-[#131316] p-3 shadow-2xl z-50">
                               <div className="relative mb-2.5">
                                 <input
                                   type="text"
@@ -503,115 +531,127 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                         </div>
                       </th>
 
-                      <th className="px-4 py-3 text-left">
+                      <th className="px-3 sm:px-4 py-3 text-left">
                         <SortableHeader label="Valuation" field="valuation" />
                       </th>
-                      <th className="px-4 py-3 text-left">
+                      <th className="px-3 sm:px-4 py-3 text-left">
                         <SortableHeader label="Val/Emp" field="valEmp" />
                       </th>
-                      <th className="px-4 py-3 text-left">
+                      <th className="px-3 sm:px-4 py-3 text-left">
                         <SortableHeader label="AI Native" field="aiNative" />
                       </th>
-                      <th className="px-4 py-3 text-left">
+                      <th className="px-3 sm:px-4 py-3 text-left">
                         <SortableHeader label="Profitable" field="profitable" />
                       </th>
-                      <th className="px-4 py-3 text-left">
+                      <th className="px-3 sm:px-4 py-3 text-left">
                         <SortableHeader label="Sector" field="sector" />
                       </th>
-                      <th className="px-4 py-3 text-right">
-                        <SortableHeader label="Models" field="modelsCount" className="justify-end" />
+                      <th className="px-3 sm:px-4 py-3 text-left">
+                        <SortableHeader label="Models" field="modelsCount" />
                       </th>
-                      <th className="px-4 py-3 text-right">
-                        <SortableHeader label="Tools" field="toolsCount" className="justify-end" />
+                      <th className="px-3 sm:px-4 py-3 text-left">
+                        <SortableHeader label="Tools" field="toolsCount" />
                       </th>
                     </tr>
                   </thead>
 
                   <tbody>
-                    {visibleCompanies.map((company) => {
+                    {paginatedCompanies.map((company) => {
                       const authenticModels = company.aiModels || [];
                       const typesList = company.type || [];
                       const hasAiNative = typesList.length > 0 ? typesList.includes('AI_NATIVE') : null;
                       const hasProfitable = typesList.length > 0 ? typesList.includes('PROFITABLE') : null;
+                      const logoSrc = getCompanyLogo(company);
+
+                      const cleanName = formatCompanyName(company.name);
+                      const safeSlug = cleanCompanySlug(company.slug);
 
                       return (
                         <tr
                           key={company.id}
-                          className="border-b border-[#1C1C1F] last:border-b-0 hover:bg-[#131316]/70 transition-colors"
+                          className="group border-b border-[#1C1C1F] last:border-b-0 hover:bg-[#131316]/70 transition-colors"
                         >
-                          {/* Company Name + Separate Small Logo Box + Authentic Models/Tags */}
-                          <td className="px-4 py-3">
-                            <Link href={`/companies/${company.slug}`} className="flex items-center gap-3 min-w-0 group">
+                          {/* Sticky 1st Column (Company Name & Logo) on Mobile/Tablet */}
+                          <td className="px-2.5 sm:px-4 py-3 sticky left-0 z-20 bg-[#0A0A0C] group-hover:bg-[#131316] shadow-[2px_0_6px_rgba(0,0,0,0.6)] border-r border-[#232326]">
+                            <Link href={`/companies/${safeSlug}`} className="flex items-center gap-2 sm:gap-3 min-w-0">
                               {/* Separate small square logo box matching Tools */}
-                              <div className="h-10 w-10 shrink-0 rounded-lg bg-[#141418] border border-[#26262B] p-1.5 flex items-center justify-center shadow-sm overflow-hidden">
-                                {company.logoUrl ? (
-                                  <img src={company.logoUrl} alt={company.name} className="object-contain w-full h-full rounded" />
+                              <div className="h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-lg bg-gradient-to-br from-[#1A1A1E] to-[#141418] border border-[#26262B] p-1 flex items-center justify-center shadow-sm overflow-hidden">
+                                {logoSrc ? (
+                                  <img
+                                    src={logoSrc}
+                                    alt={cleanName}
+                                    className="object-contain w-full h-full rounded"
+                                    onError={(e) => {
+                                      // Hide broken image link and display fallback initial avatar
+                                      (e.target as HTMLElement).style.display = 'none';
+                                    }}
+                                  />
                                 ) : (
-                                  <span className="text-sm font-black text-white">{company.name.charAt(0)}</span>
+                                  <span className="text-xs sm:text-sm font-black text-white">{cleanName.charAt(0)}</span>
                                 )}
                               </div>
 
                               <div className="min-w-0 flex-1">
-                                <h3 className="font-semibold text-sm text-white truncate group-hover:text-[#F5A623] transition-colors">{company.name}</h3>
+                                <h3 className="font-semibold text-xs sm:text-sm text-white truncate group-hover:text-[#F5A623] transition-colors">{cleanName}</h3>
                                 {/* Authentic Models / Tags strictly from DB */}
                                 {authenticModels.length > 0 ? (
-                                  <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                                  <div className="hidden sm:flex items-center gap-1 mt-0.5 flex-wrap">
                                     {authenticModels.slice(0, 3).map((m) => (
                                       <span
                                         key={m.id}
-                                        className="text-[10px] text-[#A1A1AA] bg-[#1A1A1E] border border-[#2A2A2E] rounded px-1.5 py-0.5 truncate max-w-[110px]"
+                                        className="text-[9px] sm:text-[10px] text-[#A1A1AA] bg-[#1A1A1E] border border-[#2A2A2E] rounded px-1.5 py-0.5 truncate max-w-[90px] sm:max-w-[110px]"
                                       >
                                         {m.name}
                                       </span>
                                     ))}
                                     {authenticModels.length > 3 && (
-                                      <span className="text-[10px] text-[#71717A]">+{authenticModels.length - 3}</span>
+                                      <span className="text-[9px] sm:text-[10px] text-[#71717A]">+{authenticModels.length - 3}</span>
                                     )}
                                   </div>
                                 ) : (
-                                  <div className="text-[10px] text-[#52525B]">—</div>
+                                  <div className="text-[9px] sm:text-[10px] text-[#52525B] truncate sm:block hidden">—</div>
                                 )}
                               </div>
                             </Link>
                           </td>
 
                           {/* Country */}
-                          <td className="px-4 py-3 text-xs text-[#A1A1AA] truncate">
+                          <td className="px-3 sm:px-4 py-3 text-xs text-[#A1A1AA] truncate">
                             {company.country || "—"}
                           </td>
 
                           {/* Valuation */}
-                          <td className="px-4 py-3 text-xs text-white font-medium">
+                          <td className="px-3 sm:px-4 py-3 text-xs text-white font-medium">
                             {formatValuation(company.valuation)}
                           </td>
 
                           {/* Val/Emp */}
-                          <td className="px-4 py-3 text-xs text-white font-medium">
+                          <td className="px-3 sm:px-4 py-3 text-xs text-white font-medium">
                             {formatValEmp(company.valuation, company.employeeCount)}
                           </td>
 
                           {/* AI Native */}
-                          <td className="px-4 py-3">
+                          <td className="px-3 sm:px-4 py-3">
                             <TypeBadge status={hasAiNative} />
                           </td>
 
                           {/* Profitable */}
-                          <td className="px-4 py-3">
+                          <td className="px-3 sm:px-4 py-3">
                             <TypeBadge status={hasProfitable} />
                           </td>
 
                           {/* Sector */}
-                          <td className="px-4 py-3 text-xs text-[#A1A1AA] truncate">
+                          <td className="px-3 sm:px-4 py-3 text-xs text-[#A1A1AA] truncate">
                             {company.sector || "—"}
                           </td>
 
                           {/* Models count */}
-                          <td className="px-4 py-3 text-xs text-white font-medium text-right">
+                          <td className="px-3 sm:px-4 py-3 text-xs text-white font-medium text-left">
                             {company._count?.aiModels || company.aiModels?.length || 0}
                           </td>
 
                           {/* Tools count */}
-                          <td className="px-4 py-3 text-xs text-white font-medium text-right">
+                          <td className="px-3 sm:px-4 py-3 text-xs text-white font-medium text-left">
                             {company._count?.tools || company.tools?.length || 0}
                           </td>
                         </tr>
@@ -619,14 +659,67 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                     })}
                   </tbody>
                 </table>
-
-                {/* Sentinel for infinite scroll */}
-                {filteredAndSorted.length > 0 && visibleCount < filteredAndSorted.length && (
-                  <div ref={sentinelRef} className="h-16 flex items-center justify-center">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                  </div>
-                )}
               </div>
+
+              {/* 100 Rows per Page Pagination Bar */}
+              {totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-[#131316] border-t border-[#232326] text-xs text-[#A1A1AA]">
+                  <div>
+                    Showing <span className="font-bold text-white">{(currentPage - 1) * PAGE_SIZE + 1}</span>–<span className="font-bold text-white">{Math.min(currentPage * PAGE_SIZE, filteredAndSorted.length)}</span> of <span className="font-bold text-white">{filteredAndSorted.length.toLocaleString()}</span> companies
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="h-8 px-2.5 text-xs font-semibold border-[#232326] bg-[#0A0A0C] hover:bg-[#1A1A1E] text-white disabled:opacity-40"
+                    >
+                      <ChevronLeft size={14} className="mr-1" /> Prev
+                    </Button>
+
+                    <div className="flex items-center gap-1 px-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum = currentPage;
+                        if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        if (pageNum < 1 || pageNum > totalPages) return null;
+
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            className={cn(
+                              "h-8 w-8 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center cursor-pointer",
+                              currentPage === pageNum
+                                ? "bg-white text-black font-bold shadow-sm"
+                                : "bg-[#0A0A0C] text-[#A1A1AA] hover:text-white hover:bg-[#1A1A1E] border border-[#232326]"
+                            )}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="h-8 px-2.5 text-xs font-semibold border-[#232326] bg-[#0A0A0C] hover:bg-[#1A1A1E] text-white disabled:opacity-40"
+                    >
+                      Next <ChevronRight size={14} className="ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

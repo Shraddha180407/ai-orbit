@@ -44,15 +44,32 @@ export async function fetchLeaderboardCompanies(): Promise<any[]> {
 }
 
 export async function fetchAllCompanies(): Promise<any[]> {
-  const url = `${API_URL}/api/v1/companies`;
-  const raw = await cachedFetchJson<any>(url, [], { ttlMs: 15 * 60 * 1000 });
-  if (Array.isArray(raw)) return raw;
-  if (raw && Array.isArray(raw.companies)) return raw.companies;
-  return [];
+  const primaryUrl = `${API_URL}/api/v1/companies`;
+  const raw = await cachedFetchJson<any>(primaryUrl, null, { ttlMs: 15 * 60 * 1000 });
+  
+  let list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.companies)) ? raw.companies : [];
+  
+  if ((!list || list.length === 0) && API_URL !== "https://ai-orbit.palamrendra-pm.workers.dev") {
+    const fallbackRaw = await cachedFetchJson<any>("https://ai-orbit.palamrendra-pm.workers.dev/api/v1/companies", [], { ttlMs: 15 * 60 * 1000 });
+    list = Array.isArray(fallbackRaw) ? fallbackRaw : (fallbackRaw && Array.isArray(fallbackRaw.companies)) ? fallbackRaw.companies : [];
+  }
+  
+  return list;
 }
 
 export async function fetchCompanyDetails(slug: string): Promise<any> {
-  return cachedFetchJson(`${API_URL}/api/v1/companies/${slug}`, null, { ttlMs: 15 * 60 * 1000 });
+  if (!slug) return null;
+  const safeSlug = encodeURIComponent(slug.replace(/^!\[+/, '').replace(/[\]\(\)]/g, '').trim());
+  if (!safeSlug) return null;
+
+  const primaryUrl = `${API_URL}/api/v1/companies/${safeSlug}`;
+  const res = await cachedFetchJson(primaryUrl, null, { ttlMs: 15 * 60 * 1000 });
+  if (res && !res.error) return res;
+  
+  if (API_URL !== "https://ai-orbit.palamrendra-pm.workers.dev") {
+    return cachedFetchJson(`https://ai-orbit.palamrendra-pm.workers.dev/api/v1/companies/${safeSlug}`, null, { ttlMs: 15 * 60 * 1000 });
+  }
+  return res;
 }
 
 import type { AIModel, ModelsListResponse, ModelsSortOption } from "./types";
