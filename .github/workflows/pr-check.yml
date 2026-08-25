@@ -8,7 +8,6 @@ on:
         required: true
         type: string
 
-        
 jobs:
   backend-check:
     name: Check Backend Syntax
