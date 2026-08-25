@@ -1,3 +1,5 @@
+import { cachedFetchJson } from "./api-cache";
+
 function resolveApiUrl(): string {
   const url = process.env.NEXT_PUBLIC_API_URL;
   if (url && url.startsWith("http") && url !== "undefined") {
@@ -119,8 +121,7 @@ async function parseAuthError(res: Response): Promise<AuthRequiredError | null> 
       return new AuthRequiredError(body?.error || "You need to be logged in to see this.");
     }
   } catch {
-    // Body wasn't JSON or didn't match the expected shape — fall through
-    // to a generic 401 auth error, since the status code is authoritative.
+    // Fall through
   }
   return new AuthRequiredError();
 }
@@ -137,64 +138,40 @@ export async function fetchTasks(params: FetchTasksParams = {}): Promise<TaskLis
     sort: params.sort || "newest",
   };
 
-  let res: Response;
-  try {
-    res = await fetch(url, { credentials: "include" });
-  } catch {
-    return fallback;
+  // If user filtering ("for-you" or "following"), fetch with auth credentials directly
+  if (params.filter && params.filter !== "all") {
+    try {
+      const res = await fetch(url, { credentials: "include" });
+      const authError = await parseAuthError(res);
+      if (authError) throw authError;
+      if (!res.ok) return fallback;
+      return (await res.json()) as TaskListResponse;
+    } catch (e) {
+      if (e instanceof AuthRequiredError) throw e;
+      return fallback;
+    }
   }
 
-  const authError = await parseAuthError(res);
-  if (authError) throw authError;
-
-  if (!res.ok) {
-    return fallback;
-  }
-
-  try {
-    return (await res.json()) as TaskListResponse;
-  } catch {
-    return fallback;
-  }
+  return cachedFetchJson<TaskListResponse>(url, fallback, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchTask(slug: string): Promise<TaskDetailResponse | null> {
   const url = `${BASE_URL}/api/v1/tasks/${encodeURIComponent(slug)}`;
-
-  let res: Response;
-  try {
-    res = await fetch(url, { cache: "no-store", credentials: "include" });
-  } catch {
-    throw new TasksApiError("Network error while fetching task detail.");
-  }
-
-  if (res.status === 404) {
-    return null;
-  }
-
-  const authError = await parseAuthError(res);
-  if (authError) throw authError;
-
-  if (!res.ok) {
-    throw new TasksApiError(`Failed to fetch task "${slug}" (status ${res.status}).`, res.status);
-  }
-
-  return (await res.json()) as TaskDetailResponse;
+  return cachedFetchJson<TaskDetailResponse | null>(url, null, { ttlMs: 15 * 60 * 1000 });
 }
 
-export async function toggleBookmark(slug: string, taskId: string): Promise<BookmarkResponse> {
-  const url = `${BASE_URL}/api/v1/tasks/${encodeURIComponent(slug)}/bookmark`;
+export async function fetchCategories(): Promise<Category[]> {
+  const url = `${BASE_URL}/api/v1/tasks/categories`;
+  return cachedFetchJson<Category[]>(url, [], { ttlMs: 30 * 60 * 1000 });
+}
 
+export async function toggleTaskBookmark(slug: string, _taskId?: string): Promise<BookmarkResponse> {
+  const url = `${BASE_URL}/api/v1/tasks/${encodeURIComponent(slug)}/bookmark`;
   let res: Response;
   try {
-    res = await fetch(url, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ taskId }),
-    });
+    res = await fetch(url, { method: "POST", credentials: "include" });
   } catch {
-    throw new TasksApiError("Network error while toggling bookmark.");
+    throw new TasksApiError("Network error while bookmarking task.");
   }
 
   const authError = await parseAuthError(res);
@@ -207,14 +184,13 @@ export async function toggleBookmark(slug: string, taskId: string): Promise<Book
   return (await res.json()) as BookmarkResponse;
 }
 
-export async function toggleLike(slug: string): Promise<LikeResponse> {
+export async function toggleTaskLike(slug: string): Promise<LikeResponse> {
   const url = `${BASE_URL}/api/v1/tasks/${encodeURIComponent(slug)}/like`;
-
   let res: Response;
   try {
     res = await fetch(url, { method: "POST", credentials: "include" });
   } catch {
-    throw new TasksApiError("Network error while toggling like.");
+    throw new TasksApiError("Network error while liking task.");
   }
 
   const authError = await parseAuthError(res);
@@ -227,22 +203,25 @@ export async function toggleLike(slug: string): Promise<LikeResponse> {
   return (await res.json()) as LikeResponse;
 }
 
-export async function toggleSubscribe(slug: string): Promise<SubscribeResponse> {
+export async function toggleTaskSubscription(slug: string): Promise<SubscribeResponse> {
   const url = `${BASE_URL}/api/v1/tasks/${encodeURIComponent(slug)}/subscribe`;
-
   let res: Response;
   try {
     res = await fetch(url, { method: "POST", credentials: "include" });
   } catch {
-    throw new TasksApiError("Network error while toggling subscribe.");
+    throw new TasksApiError("Network error while subscribing to task.");
   }
 
   const authError = await parseAuthError(res);
   if (authError) throw authError;
 
   if (!res.ok) {
-    throw new TasksApiError(`Failed to toggle subscribe (status ${res.status}).`, res.status);
+    throw new TasksApiError(`Failed to toggle subscription (status ${res.status}).`, res.status);
   }
 
   return (await res.json()) as SubscribeResponse;
 }
+
+export const toggleBookmark = toggleTaskBookmark;
+export const toggleLike = toggleTaskLike;
+export const toggleSubscribe = toggleTaskSubscription;

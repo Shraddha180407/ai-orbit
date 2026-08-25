@@ -10,6 +10,7 @@ import Check from 'lucide-react/dist/esm/icons/check';
 import X from 'lucide-react/dist/esm/icons/x';
 import { CategoryChip } from "@/components/CategoryChip";
 import type { AIModel } from "@/lib/types";
+import { API_URL, prefetchUrl } from "@/lib/api";
 
 const MAX_COMPARE = 2;
 
@@ -100,6 +101,15 @@ function ModelRow({
   return (
     <Link
       href={`/models/${model.id}`}
+      onMouseEnter={() => {
+        prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(model.id)}`);
+      }}
+      onTouchStart={() => {
+        prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(model.id)}`);
+      }}
+      onFocus={() => {
+        prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(model.id)}`);
+      }}
       className={`group relative grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none`}
     >
       <span className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal,#6E56CF)] transition-all duration-200 group-hover:h-[70%]" />

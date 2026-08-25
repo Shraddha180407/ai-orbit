@@ -58,6 +58,8 @@ export const taskSchema = z.object({
   robotCount: z.number().int().default(0),
   deviceCount: z.number().int().default(0),
   saveCount: z.number().int().default(0),
+  likeCount: z.number().int().default(0),
+  subscriberCount: z.number().int().default(0),
 
   updatedAt: z.string().optional(),
   shareUrl: z.string().optional().nullable(),

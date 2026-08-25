@@ -1,13 +1,9 @@
+import { cachedFetchJson, prefetchUrl, setInCache, getFromCache } from "./api-cache";
+export { prefetchUrl, setInCache, getFromCache };
+
 /**
  * The Hono/Workers backend's origin — every real data fetch and mutation
  * goes here, never direct DB access from this app.
- *
- * Falls back to the production API, same as frontend/src/app/page.tsx's
- * own API_URL — that fallback is what's kept the homepage working
- * whether or not NEXT_PUBLIC_API_URL is actually configured in Cloudflare
- * Pages' dashboard. This was the only code path in the app that didn't
- * have it, and was throwing at module load on every /news request in
- * production as a result.
  */
 function resolveApiUrl(): string {
   const url = process.env.NEXT_PUBLIC_API_URL;
@@ -20,17 +16,11 @@ function resolveApiUrl(): string {
   return "https://ai-orbit.palamrendra-pm.workers.dev";
 }
 
-/** Used by the client components (CommentBox, PublisherIcon, SaveButton, VoteButtons) — unchanged. */
+/** Used by the client components (CommentBox, PublisherIcon, SaveButton, VoteButtons). */
 export const API_URL = resolveApiUrl();
 
-async function fetchJsonSafe<T>(url: string | URL, fallback: T): Promise<T> {
-  try {
-    const res = await fetch(url.toString());
-    if (!res.ok) return fallback;
-    return (await res.json()) as T;
-  } catch {
-    return fallback;
-  }
+export async function fetchJsonSafe<T>(url: string | URL, fallback: T): Promise<T> {
+  return cachedFetchJson<T>(url, fallback, { ttlMs: 15 * 60 * 1000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -40,34 +30,46 @@ async function fetchJsonSafe<T>(url: string | URL, fallback: T): Promise<T> {
 export async function fetchLeaderboardTools(category?: string): Promise<any[]> {
   const url = new URL(`${API_URL}/api/v1/leaderboard/tools`);
   if (category && category !== "All Categories") url.searchParams.set("category", category);
-  return fetchJsonSafe(url, []);
+  return cachedFetchJson<any[]>(url.toString(), [], { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchLeaderboardModels(category?: string): Promise<any[]> {
   const url = new URL(`${API_URL}/api/v1/leaderboard/models`);
   if (category && category !== "All Categories") url.searchParams.set("category", category);
-  return fetchJsonSafe(url, []);
+  return cachedFetchJson<any[]>(url.toString(), [], { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchLeaderboardCompanies(): Promise<any[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/leaderboard/companies`, []);
+  return cachedFetchJson<any[]>(`${API_URL}/api/v1/leaderboard/companies`, [], { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchAllCompanies(): Promise<any[]> {
-  try {
-    const res = await fetch(`${API_URL}/api/v1/companies`);
-    if (!res.ok) return [];
-    const data = await res.json();
-    if (Array.isArray(data)) return data;
-    if (data && Array.isArray(data.companies)) return data.companies;
-    return [];
-  } catch {
-    return [];
+  const primaryUrl = `${API_URL}/api/v1/companies`;
+  const raw = await cachedFetchJson<any>(primaryUrl, null, { ttlMs: 15 * 60 * 1000 });
+  
+  let list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.companies)) ? raw.companies : [];
+  
+  if ((!list || list.length === 0) && API_URL !== "https://ai-orbit.palamrendra-pm.workers.dev") {
+    const fallbackRaw = await cachedFetchJson<any>("https://ai-orbit.palamrendra-pm.workers.dev/api/v1/companies", [], { ttlMs: 15 * 60 * 1000 });
+    list = Array.isArray(fallbackRaw) ? fallbackRaw : (fallbackRaw && Array.isArray(fallbackRaw.companies)) ? fallbackRaw.companies : [];
   }
+  
+  return list;
 }
 
 export async function fetchCompanyDetails(slug: string): Promise<any> {
-  return fetchJsonSafe(`${API_URL}/api/v1/companies/${slug}`, null);
+  if (!slug) return null;
+  const safeSlug = encodeURIComponent(slug.replace(/^!\[+/, '').replace(/[\]\(\)]/g, '').trim());
+  if (!safeSlug) return null;
+
+  const primaryUrl = `${API_URL}/api/v1/companies/${safeSlug}`;
+  const res = await cachedFetchJson(primaryUrl, null, { ttlMs: 15 * 60 * 1000 });
+  if (res && !res.error) return res;
+  
+  if (API_URL !== "https://ai-orbit.palamrendra-pm.workers.dev") {
+    return cachedFetchJson(`https://ai-orbit.palamrendra-pm.workers.dev/api/v1/companies/${safeSlug}`, null, { ttlMs: 15 * 60 * 1000 });
+  }
+  return res;
 }
 
 import type { AIModel, ModelsListResponse, ModelsSortOption } from "./types";
@@ -106,29 +108,22 @@ export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListR
     filters: { providers: [], modalities: [] },
   };
 
-  try {
-    const res = await fetch(url.toString());
-    if (!res.ok) return empty;
-    const data = await res.json();
-    if (!data) return empty;
-    // Tolerate legacy array responses during rollout.
-    if (Array.isArray(data)) {
-      return {
-        items: data as AIModel[],
-        pagination: {
-          page: 1,
-          limit: data.length,
-          total: data.length,
-          totalPages: 1,
-          hasMore: false,
-        },
-        filters: { providers: [], modalities: [] },
-      };
-    }
-    return data as ModelsListResponse;
-  } catch {
-    return empty;
+  const data = await cachedFetchJson<any>(url.toString(), empty, { ttlMs: 15 * 60 * 1000 });
+  if (!data) return empty;
+  if (Array.isArray(data)) {
+    return {
+      items: data as AIModel[],
+      pagination: {
+        page: 1,
+        limit: data.length,
+        total: data.length,
+        totalPages: 1,
+        hasMore: false,
+      },
+      filters: { providers: [], modalities: [] },
+    };
   }
+  return data as ModelsListResponse;
 }
 
 /** @deprecated Prefer fetchModels — kept for callers that only need the first page's items. */
@@ -139,11 +134,11 @@ export async function fetchAllModels(): Promise<AIModel[]> {
 
 export async function fetchModelById(id: string): Promise<import("./types").ModelDetail | null> {
   const url = `${API_URL}/api/v1/models/${encodeURIComponent(id)}`;
-  return fetchJsonSafe(url, null);
+  return cachedFetchJson(url, null, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchAllNews(): Promise<any[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/news`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/news`, [], { ttlMs: 10 * 60 * 1000 });
 }
 
 import { Repository, RepositoryListResponse, RepositoryDetailResponse, RepositoryOwnerListItem, RepositorySubCategory } from "./types";
@@ -173,80 +168,65 @@ export async function fetchRepositories(options: FetchRepositoriesOptions = {}):
   if (owner) url.searchParams.set("owner", owner);
   if (subCategory) url.searchParams.set("subCategory", subCategory);
 
-  try {
-    const res = await fetch(url.toString());
-    if (!res.ok) {
-      return { items: [], nextCursor: null, hasMore: false, total: 0 };
-    }
-    return await res.json();
-  } catch {
-    return {
-      items: [],
-      nextCursor: null,
-      hasMore: false,
-      total: 0
-    };
-  }
+  const fallback: RepositoryListResponse = { items: [], nextCursor: null, hasMore: false, total: 0 };
+  return cachedFetchJson(url.toString(), fallback, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchRepositoryBySlug(slug: string): Promise<RepositoryDetailResponse | null> {
-  return fetchJsonSafe(`${API_URL}/api/v1/repositories/${slug}`, null);
+  return cachedFetchJson(`${API_URL}/api/v1/repositories/${slug}`, null, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchAllRepos(): Promise<Repository[]> {
   try {
     const data = await fetchRepositories();
     return Array.isArray(data?.items) ? data.items : [];
-  } catch (e) {
-    console.error("Failed to fetch repositories:", e);
+  } catch {
     return [];
   }
 }
 
 export async function fetchRepositorySubCategories(): Promise<RepositorySubCategory[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/repositories/subcategories`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/repositories/subcategories`, [], { ttlMs: 30 * 60 * 1000 });
 }
 
 export async function fetchModelSubCategories(): Promise<ModelSubCategory[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/models/subcategories`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/models/subcategories`, [], { ttlMs: 30 * 60 * 1000 });
 }
 
 export async function fetchMCPCategories(): Promise<import("./types").MCPCategory[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/mcps/categories`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/mcps/categories`, [], { ttlMs: 30 * 60 * 1000 });
 }
 
 export async function fetchMCPSubCategories(categorySlug?: string): Promise<import("./types").MCPSubCategory[]> {
   const url = new URL(`${API_URL}/api/v1/mcps/subcategories`);
   if (categorySlug) url.searchParams.set("category", categorySlug);
-  return fetchJsonSafe(url, []);
+  return cachedFetchJson(url.toString(), [], { ttlMs: 30 * 60 * 1000 });
 }
 
 export async function fetchDeviceSubCategories(): Promise<import("./types").DeviceSubCategory[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/devices/subcategories`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/devices/subcategories`, [], { ttlMs: 30 * 60 * 1000 });
 }
 
-// MCP Items fetch helpers are defined below at the end of the file.
-
 export async function fetchAllVideos(): Promise<any[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/videos`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/videos`, [], { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchAllRobots(): Promise<any[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/robots`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/robots`, [], { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchRobotById(idOrSlug: string): Promise<any | null> {
-  return fetchJsonSafe(`${API_URL}/api/v1/robots/${idOrSlug}`, null);
+  return cachedFetchJson(`${API_URL}/api/v1/robots/${idOrSlug}`, null, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchAllDevices(options: { subCategory?: string } = {}): Promise<any[]> {
   const url = new URL(`${API_URL}/api/v1/devices`);
   if (options.subCategory) url.searchParams.set("subCategory", options.subCategory);
-  return fetchJsonSafe(url, []);
+  return cachedFetchJson(url.toString(), [], { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchDeviceById(id: string): Promise<any | null> {
-  return fetchJsonSafe(`${API_URL}/api/v1/devices/${id}`, null);
+  return cachedFetchJson(`${API_URL}/api/v1/devices/${id}`, null, { ttlMs: 15 * 60 * 1000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -266,49 +246,29 @@ export async function fetchSearchAutocomplete(q: string): Promise<RealSearchSugg
   const trimmed = q.trim();
   if (!trimmed) return [];
   const url = `${API_URL}/api/v1/search/autocomplete?q=${encodeURIComponent(trimmed)}`;
-  const res = await fetch(url);
-  if (!res.ok) return [];
-  const data = await res.json();
+  const data = await cachedFetchJson<{ suggestions?: RealSearchSuggestion[] }>(url, { suggestions: [] }, { ttlMs: 10 * 60 * 1000 });
   return data.suggestions ?? [];
 }
 
 export async function fetchPopularSearches(): Promise<string[]> {
   const url = `${API_URL}/api/v1/search/popular`;
-  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
-  if (!res.ok) return [];
-  const data = await res.json();
+  const data = await cachedFetchJson<{ popular?: string[] }>(url, { popular: [] }, { ttlMs: 30 * 60 * 1000 });
   return data.popular ?? [];
 }
 
 /** Featured tools for the search dropdown's empty-query "Featured" section. */
 export async function fetchFeaturedTools(): Promise<RealSearchSuggestion[]> {
   const url = `${API_URL}/api/v1/search/featured`;
-  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
-  if (!res.ok) return [];
-  const data = await res.json();
+  const data = await cachedFetchJson<{ featured?: RealSearchSuggestion[] }>(url, { featured: [] }, { ttlMs: 30 * 60 * 1000 });
   return data.featured ?? [];
 }
 
-/**
- * Server-side-only origin, for the two News page.tsx server components.
- * api.aiorbit.club is a Cloudflare-proxied custom domain; a Pages Function
- * (this app's server-side render) fetching another Cloudflare-proxied zone
- * on the same account hits Cloudflare's same-account loop-prevention and
- * fails — confirmed via the news module's own build succeeding while every
- * server-side render of it failed in production. The Worker's own
- * `*.workers.dev` subdomain bypasses that proxy layer entirely (same
- * pattern already proven working in GraphOne's production app). Client-side
- * calls (API_URL above) are unaffected — a real browser request, not a
- * same-account Cloudflare-to-Cloudflare hop — so they're left untouched.
- */
 function resolveServerApiUrl(): string {
   const raw = process.env.NEWS_SERVER_API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (raw && raw !== "undefined") {
     const withScheme = /^https?:\/\//.test(raw) ? raw : (raw.includes("localhost") || raw.includes("127.0.0.1") ? `http://${raw}` : `https://${raw}`);
     return withScheme.replace(/\/$/, "");
   }
-  
-  // Hardcoded fallback that bypasses the proxy (legacy)
   return "https://ai-orbit.palamrendra-pm.workers.dev";
 }
 
@@ -318,15 +278,7 @@ export const SERVER_API_URL = resolveServerApiUrl();
 export async function fetchTasks(category?: string): Promise<any> {
   const url = new URL(`${API_URL}/api/v1/tasks`);
   if (category) url.searchParams.set("category", category);
-  
-  try {
-    const res = await fetch(url.toString());
-    if (!res.ok) return { tasks: [], total: 0 };
-    return await res.json();
-  } catch (err) {
-    console.error("Failed to fetch tasks:", err);
-    return { tasks: [], total: 0 };
-  }
+  return cachedFetchJson(url.toString(), { tasks: [], total: 0 }, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function toggleTaskSubscription(slug: string): Promise<boolean> {
@@ -336,17 +288,14 @@ export async function toggleTaskSubscription(slug: string): Promise<boolean> {
       headers: { "Content-Type": "application/json" }
     });
     return res.ok;
-  } catch (err) {
-    console.error("Failed to subscribe to task:", err);
+  } catch {
     return false;
   }
 }
 
 export async function fetchRepositoryOwners(): Promise<RepositoryOwnerListItem[]> {
   const url = `${API_URL}/api/v1/repositories/owners`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  return cachedFetchJson(url, [], { ttlMs: 30 * 60 * 1000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -381,47 +330,27 @@ export async function fetchMCPItems(params: MCPQuery = {}): Promise<MCPListRespo
     totalPages: 1,
   };
 
-  try {
-    const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
-    if (!res.ok) return empty;
-    const responseJson = await res.json();
-    if (responseJson && responseJson.success && responseJson.data) {
-      return responseJson.data;
-    }
-    return empty;
-  } catch (err: any) {
-    console.warn("Failed to fetch MCP items:", err?.message || err);
-    return empty;
+  const responseJson = await cachedFetchJson<any>(url.toString(), null, { ttlMs: 15 * 60 * 1000 });
+  if (responseJson && responseJson.success && responseJson.data) {
+    return responseJson.data;
   }
+  return empty;
 }
 
 export async function fetchMCPItemBySlug(slug: string): Promise<MCPItem | null> {
-  try {
-    const res = await fetch(`${SERVER_API_URL}/api/v1/mcps/${encodeURIComponent(slug)}`);
-    if (!res.ok) return null;
-    const responseJson = await res.json();
-    if (responseJson && responseJson.success && responseJson.data) {
-      return responseJson.data;
-    }
-    return null;
-  } catch (err: any) {
-    console.warn(`Failed to fetch MCP item ${slug}:`, err?.message || err);
-    return null;
+  const url = `${API_URL}/api/v1/mcps/${encodeURIComponent(slug)}`;
+  const responseJson = await cachedFetchJson<any>(url, null, { ttlMs: 15 * 60 * 1000 });
+  if (responseJson && responseJson.success && responseJson.data) {
+    return responseJson.data;
   }
+  return null;
 }
 
 export async function fetchMCPItemAlternatives(slug: string): Promise<MCPItem[]> {
-  try {
-    const res = await fetch(`${SERVER_API_URL}/api/v1/mcps/${encodeURIComponent(slug)}/alternatives`);
-    if (!res.ok) return [];
-    const responseJson = await res.json();
-    if (responseJson && responseJson.success && responseJson.data) {
-      return responseJson.data;
-    }
-    return [];
-  } catch (err: any) {
-    console.warn(`Failed to fetch alternatives for ${slug}:`, err?.message || err);
-    return [];
+  const url = `${API_URL}/api/v1/mcps/${encodeURIComponent(slug)}/alternatives`;
+  const responseJson = await cachedFetchJson<any>(url, null, { ttlMs: 15 * 60 * 1000 });
+  if (responseJson && responseJson.success && responseJson.data) {
+    return responseJson.data;
   }
+  return [];
 }
-

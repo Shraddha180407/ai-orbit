@@ -118,6 +118,8 @@ export class TasksIngestService {
                 robotCount: taskData.robotCount,
                 deviceCount: taskData.deviceCount,
                 saveCount: taskData.saveCount,
+                likeCount: taskData.likeCount,
+                subscriberCount: taskData.subscriberCount,
 
                 categoryId: category.id,
               },
@@ -138,6 +140,8 @@ export class TasksIngestService {
                 robotCount: taskData.robotCount,
                 deviceCount: taskData.deviceCount,
                 saveCount: taskData.saveCount,
+                likeCount: taskData.likeCount,
+                subscriberCount: taskData.subscriberCount,
 
                 categoryId: category.id,
               },

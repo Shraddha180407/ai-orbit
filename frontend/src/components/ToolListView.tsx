@@ -18,7 +18,7 @@ import { CategoryChip } from "@/components/CategoryChip";
 import type { ToolCardData } from "@/lib/types";
 import { useUser } from "@/hooks/use-user";
 import { toggleBookmark } from "@/lib/actions";
-import { API_URL } from "@/lib/api";
+import { API_URL, prefetchUrl } from "@/lib/api";
 
 const MAX_COMPARE = 2;
 
@@ -223,12 +223,19 @@ function ToolRow({
       role="listitem"
       className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
       onMouseEnter={(e) => {
+        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
         const el = e.currentTarget;
         el.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
         const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
         if (logoEl) { logoEl.style.borderColor = accentColor; logoEl.style.boxShadow = `0 0 8px ${accentColor}55`; }
         const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
         if (nameEl) nameEl.style.color = accentColor;
+      }}
+      onTouchStart={() => {
+        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
+      }}
+      onFocus={() => {
+        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget;

@@ -175,7 +175,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     }
     try {
       const clientId = getClientId();
-      const res = await fetch(`${API_URL}/api/news?page=${page}&perPage=${PAGE_SIZE}${clientId ? `&clientId=${encodeURIComponent(clientId)}` : ""}`);
+      const res = await fetch(`${API_URL}/api/news?page=${page}&perPage=${PAGE_SIZE}${clientId ? `?clientId=${encodeURIComponent(clientId)}` : ""}`);
       if (!res.ok) throw new Error(String(res.status));
       const json: NewsListingResponse = await res.json();
       setArticles((prev) => (append ? [...prev, ...json.articles] : json.articles));
