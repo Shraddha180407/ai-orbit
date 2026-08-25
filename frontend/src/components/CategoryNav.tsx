@@ -15,7 +15,6 @@ export function CategoryNav() {
     { name: "Companies", href: "/companies", isPageLink: true },
     { name: "Repositories", href: "/repositories", isPageLink: true },
     { name: "News", href: "/news", isPageLink: true },
-    { name: "Collections", href: "/collections", isPageLink: true },
     { name: "Videos", href: "/videos", isPageLink: true },
     { name: "Agents", href: "/tools?category=agents", isPageLink: true },
   ];

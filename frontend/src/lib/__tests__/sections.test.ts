@@ -34,12 +34,6 @@ describe("SECTIONS", () => {
     expect(trending?.view).toBe("trending");
   });
 
-  it("includes collections section", () => {
-    const collections = SECTIONS.find((s) => s.key === "collections");
-    expect(collections).toBeDefined();
-    expect(collections?.types).toContain("collection");
-  });
-
   it("includes tasks section", () => {
     const tasks = SECTIONS.find((s) => s.key === "tasks");
     expect(tasks).toBeDefined();

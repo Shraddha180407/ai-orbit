@@ -56,7 +56,6 @@ const LINK_GROUPS = [
       { label: "AI Videos", href: "/videos" },
       { label: "AI Trends", href: "/trends" },
       { label: "AI Comparisons", href: "/tools/compare" },
-      { label: "Collections", href: "/collections" },
       { label: "Leaderboard", href: "/leaderboard" },
     ]
   },

@@ -77,14 +77,6 @@ export const ENTITY_META: Record<
     tint: "bg-emerald-500/10 text-emerald-300",
     solidColor: "#059669",
   },
-  collection: {
-    label: "Collection",
-    plural: "Collections",
-    icon: Layers,
-    basePath: "/collections",
-    tint: "bg-lime-500/10 text-lime-300",
-    solidColor: "#65A30D",
-  },
   task: {
     label: "Task",
     plural: "Tasks",
@@ -142,7 +134,6 @@ export const ALL_ENTITY_TYPES: EntityType[] = [
   "news",
   "video",
   "repository",
-  "collection",
   "task",
   "country",
   "fundraise",
