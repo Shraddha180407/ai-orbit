@@ -67,7 +67,6 @@ const LINK_GROUPS = [
     heading: "EXPLORE",
     icon: Compass,
     links: [
-      { label: "New", href: "/tools?sort=new" },
       { label: "Tools", href: "/tools" },
       { label: "Agents", href: "/agents" },
       { label: "Tasks", href: "/tasks" },
@@ -87,10 +86,6 @@ const LINK_GROUPS = [
     heading: "DISCOVER",
     icon: Star,
     links: [
-      { label: "Trending", href: "/tools?sort=popular" },
-      { label: "Popular", href: "/tools?sort=popular" },
-      { label: "New", href: "/tools?sort=new" },
-      { label: "Free", href: "/tools?pricing=free" },
       { label: "Top Rated", href: "/tools?sort=rating" },
       { label: "Search AI", href: "/search" },
       { label: "Compare AI Tools", href: "/tools/compare" },
@@ -110,7 +105,6 @@ const LINK_GROUPS = [
     heading: "AI ORBIT",
     icon: Compass,
     links: [
-      { label: "Business AI", href: "#" },
       { label: "Leaderboard", href: "/leaderboard" },
       { label: "Resources", href: "#" },
       { label: "Newsletter", href: "#" },
