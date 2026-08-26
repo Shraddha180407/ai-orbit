@@ -1,14 +1,14 @@
 import { Context } from 'hono';
-import { CompaniesService } from './companies.service';
-import { getPrisma } from '../../lib/prisma';
+import { CompaniesService } from './companies.service.js';
+import { getPrisma } from '../../lib/prisma.js';
 
 export class CompaniesController {
-  async getCompanies(c: Context) {
+  async listCompanies(c: Context) {
     const prisma = getPrisma(c.env);
     const service = new CompaniesService(prisma);
 
     try {
-      const companies = await service.getCompanies();
+      const companies = await service.listCompanies();
       return c.json(companies);
     } catch (error: unknown) {
       return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
@@ -17,6 +17,10 @@ export class CompaniesController {
       // it must stay connected across requests, so it is intentionally not
       // disconnected here.
     }
+  }
+
+  async getCompanies(c: Context) {
+    return this.listCompanies(c);
   }
 
   async getCompanyDetails(c: Context) {
