@@ -39,7 +39,6 @@ vi.mock("@/lib/entityMeta", () => ({
     robot: { label: "Robots", basePath: "/robots", icon: () => null, tint: "" },
     repository: { label: "Repositories", basePath: "/repositories", icon: () => null, tint: "" },
     device: { label: "Devices", basePath: "/devices", icon: () => null, tint: "" },
-    collection: { label: "Collections", basePath: "/collections", icon: () => null, tint: "" },
   },
 }));
 

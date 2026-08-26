@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from "react";
-import { fetchRepositoryBySlug } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { fetchRepositoryBySlug, API_URL, getFromCache } from "@/lib/api";
 import { RepositoryDetailResponse } from "@/lib/types";
 import { RepositoryBreadcrumb } from "./RepositoryBreadcrumb";
 import { RepositoryHeroCard } from "./RepositoryHeroCard";
@@ -16,28 +17,16 @@ interface RepositoryDetailPageProps {
 }
 
 export function RepositoryDetailPage({ slug }: RepositoryDetailPageProps) {
-  const [repo, setRepo] = useState<RepositoryDetailResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function getRepo() {
-      try {
-        const data = await fetchRepositoryBySlug(slug);
-        if (data) {
-          setRepo(data);
-        } else {
-          setError("Repository not found");
-        }
-      } catch (e) {
-        console.error("Failed to fetch repository:", e);
-        setError("An error occurred while loading the repository");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    getRepo();
-  }, [slug]);
+  const { data: repo = null, isLoading, isError } = useQuery<RepositoryDetailResponse | null>({
+    queryKey: ["repository-detail", slug],
+    queryFn: () => fetchRepositoryBySlug(slug),
+    initialData: () => {
+      if (!slug) return undefined;
+      return getFromCache<RepositoryDetailResponse>(`${API_URL}/api/v1/repositories/${encodeURIComponent(slug)}`) || undefined;
+    },
+    staleTime: 15 * 60 * 1000,
+    enabled: Boolean(slug),
+  });
 
   const wrapLayout = (content: React.ReactNode) => (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
@@ -49,12 +38,12 @@ export function RepositoryDetailPage({ slug }: RepositoryDetailPageProps) {
     </div>
   );
 
-  if (isLoading) {
-    return wrapLayout(<RepositoryLoadingSkeleton />);
+  if (isError && !repo) {
+    return wrapLayout(<RepositoryErrorState message="Repository not found" />);
   }
 
-  if (error || !repo) {
-    return wrapLayout(<RepositoryErrorState message={error || "Repository not found"} />);
+  if (isLoading && !repo) {
+    return wrapLayout(<RepositoryLoadingSkeleton />);
   }
 
   return wrapLayout(

@@ -15,7 +15,7 @@ export class SearchController {
     }
 
     try {
-      const limit = Number.parseInt(parsed.data.limit, 10) || 8;
+      const limit = Number.parseInt(parsed.data.limit, 10) || 44;
       const suggestions = await service.autocomplete(parsed.data.q, limit);
       return c.json({ suggestions });
     } catch (error: unknown) {

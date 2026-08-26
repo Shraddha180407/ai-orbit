@@ -148,6 +148,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
               suggestions={filteredSuggestions}
               query={value}
               onSelectTerm={(term) => submit(term, activeType)}
+              onSelectType={setActiveType}
             />
           ) : (
             <>
@@ -261,16 +262,21 @@ function TermRow({
   );
 }
 
+/** Max rows shown per entity-type group before collapsing behind "View N more". */
+const MAX_ROWS_PER_GROUP = 4;
+
 function SuggestionResults({
   isLoading,
   suggestions,
   query,
   onSelectTerm,
+  onSelectType,
 }: {
   isLoading: boolean;
   suggestions: { id: string; type: EntityType; title: string; category: string }[];
   query: string;
   onSelectTerm: (term: string) => void;
+  onSelectType: (type: EntityType) => void;
 }) {
   if (isLoading) {
     return (
@@ -296,9 +302,66 @@ function SuggestionResults({
     );
   }
 
+  // Group suggestions by entity type, preserving the order types first
+  // appear in the (already relevance-sorted) suggestions list — this keeps
+  // the most relevant category on top instead of a fixed alphabetical order.
+  const groups = new Map<EntityType, typeof suggestions>();
+  for (const s of suggestions) {
+    const bucket = groups.get(s.type);
+    if (bucket) {
+      bucket.push(s);
+    } else {
+      groups.set(s.type, [s]);
+    }
+  }
+
   return (
     <div className="p-2">
-      {suggestions.map((s) => {
+      {Array.from(groups.entries()).map(([type, items]) => (
+        <SuggestionGroup
+          key={type}
+          type={type}
+          items={items}
+          onSelectTerm={onSelectTerm}
+          onSelectType={onSelectType}
+        />
+      ))}
+      <button
+        onClick={() => onSelectTerm(query)}
+        className="mt-1 flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-search-accent hover:bg-search-surface-hover"
+      >
+        See all results for &ldquo;{query}&rdquo;
+      </button>
+    </div>
+  );
+}
+
+function SuggestionGroup({
+  type,
+  items,
+  onSelectTerm,
+  onSelectType,
+}: {
+  type: EntityType;
+  items: { id: string; type: EntityType; title: string; category: string }[];
+  onSelectTerm: (term: string) => void;
+  onSelectType: (type: EntityType) => void;
+}) {
+  const meta = ENTITY_META[type];
+  const GroupIcon = meta.icon;
+  const visible = items.slice(0, MAX_ROWS_PER_GROUP);
+  const remaining = items.length - visible.length;
+
+  return (
+    <div className="mb-1 last:mb-0">
+      {/* Section header — mirrors the "Tasks (10)" grouped-category header */}
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-search-text-tertiary">
+        <GroupIcon size={13} />
+        {meta.plural}
+        <span className="text-search-text-tertiary/70">({items.length})</span>
+      </div>
+
+      {visible.map((s) => {
         const Icon = ENTITY_META[s.type].icon;
         return (
           <Link
@@ -311,18 +374,19 @@ function SuggestionResults({
               <Icon size={14} />
             </span>
             <span className="flex-1 truncate text-search-text-primary">{s.title}</span>
-            <span className="shrink-0 text-xs text-search-text-tertiary">
-              {ENTITY_META[s.type].label} · {s.category}
-            </span>
+            <span className="shrink-0 text-xs text-search-text-tertiary">{s.category}</span>
           </Link>
         );
       })}
-      <button
-        onClick={() => onSelectTerm(query)}
-        className="mt-1 flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-search-accent hover:bg-search-surface-hover"
-      >
-        See all results for &ldquo;{query}&rdquo;
-      </button>
+
+      {remaining > 0 && (
+        <button
+          onClick={() => onSelectType(type)}
+          className="flex w-full items-center justify-center rounded-md px-2.5 py-1.5 text-xs text-search-text-tertiary hover:bg-search-surface-hover hover:text-search-text-primary"
+        >
+          View {remaining} more
+        </button>
+      )}
     </div>
   );
 }

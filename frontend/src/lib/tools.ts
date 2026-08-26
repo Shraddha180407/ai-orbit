@@ -1,6 +1,6 @@
 import type { ToolsSearchParams } from "@/lib/types";
-
 import { API_URL } from "@/lib/api";
+import { cachedFetchJson } from "@/lib/api-cache";
 
 export async function getTools(rawParams: ToolsSearchParams) {
   const query = new URLSearchParams();
@@ -10,46 +10,26 @@ export async function getTools(rawParams: ToolsSearchParams) {
   if (rawParams.sort) query.set('sort', rawParams.sort);
   if (rawParams.page) query.set('page', rawParams.page);
 
-  try {
-    const res = await fetch(`${API_URL}/api/v1/tools?${query.toString()}`, {
-      cache: 'no-store'
-    });
-    if (!res.ok) throw new Error(`API returned status ${res.status}`);
-    return await res.json();
-  } catch (error) {
-    console.error('getTools fetch error:', error);
-    return {
-      tools: [],
-      total: 0,
-      page: Number(rawParams.page ?? "1") || 1,
-      totalPages: 1,
-      sort: rawParams.sort || 'newest',
-      categories: []
-    };
-  }
+  const fallback = {
+    tools: [],
+    total: 0,
+    page: Number(rawParams.page ?? "1") || 1,
+    totalPages: 1,
+    sort: rawParams.sort || 'newest',
+    categories: []
+  };
+
+  return cachedFetchJson(`${API_URL}/api/v1/tools?${query.toString()}`, fallback, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function getAllCategories() {
-  try {
-    const res = await fetch(`${API_URL}/api/v1/tools`, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`API returned status ${res.status}`);
-    const data = await res.json();
-    return data.categories || [];
-  } catch (error) {
-    console.error('getAllCategories fetch error:', error);
-    return [];
-  }
+  const data = await cachedFetchJson<any>(`${API_URL}/api/v1/tools`, { categories: [] }, { ttlMs: 30 * 60 * 1000 });
+  return data?.categories || [];
 }
 
 export async function getToolDetails(slug: string) {
-  try {
-    const res = await fetch(`${API_URL}/api/v1/tools/${slug}`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (error) {
-    console.error('getToolDetails fetch error:', error);
-    return null;
-  }
+  if (!slug) return null;
+  return cachedFetchJson<any>(`${API_URL}/api/v1/tools/${encodeURIComponent(slug)}`, null, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function getToolBySlug(slug: string) {

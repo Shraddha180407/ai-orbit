@@ -53,7 +53,7 @@ describe('CompaniesController', () => {
       mockService.listCompanies.mockResolvedValue(companies);
 
       const c = mockContext();
-      await controller.listCompanies(c as never);
+      await controller.getCompanies(c as never);
 
       expect(c.status).toBe(200);
       expect(c.jsonBody).toEqual(companies);
@@ -63,7 +63,7 @@ describe('CompaniesController', () => {
       mockService.listCompanies.mockRejectedValue(new Error('DB failure'));
 
       const c = mockContext();
-      await controller.listCompanies(c as never);
+      await controller.getCompanies(c as never);
 
       expect(c.status).toBe(500);
       expect(c.jsonBody).toHaveProperty('error', 'DB failure');
@@ -75,7 +75,7 @@ describe('CompaniesController', () => {
       mockService.listCompanies.mockRejectedValue(new Error('fail'));
 
       const c = mockContext();
-      await controller.listCompanies(c as never);
+      await controller.getCompanies(c as never);
 
       expect(mockDisconnect).not.toHaveBeenCalled();
     });

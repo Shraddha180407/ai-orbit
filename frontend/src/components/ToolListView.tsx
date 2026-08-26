@@ -20,6 +20,13 @@ import { useUser } from "@/hooks/use-user";
 import { toggleBookmark } from "@/lib/actions";
 import { API_URL, prefetchUrl } from "@/lib/api";
 
+function trimNoDots(text: string, maxLength = 85) {
+  if (!text) return "—";
+  if (text.length <= maxLength) return text;
+  const sliced = text.slice(0, maxLength);
+  const lastSpace = sliced.lastIndexOf(" ");
+  return sliced.slice(0, lastSpace > 0 ? lastSpace : maxLength);
+}
 const MAX_COMPARE = 2;
 
 const ROW_ACCENT_COLORS = [
@@ -28,6 +35,7 @@ const ROW_ACCENT_COLORS = [
 ];
 
 type ListTool = ToolCardData & {
+  entityType?: string;
   createdAt?: string | null;
   releaseDate?: string | null;
   isOpenSource?: boolean;
@@ -49,11 +57,10 @@ type ToolListViewProps = {
   skeletonRows?: number;
 };
 
-// ── Column layout (matches devices-client exactly) ──────────────────────────
 // logo | name+desc | task | pricing | api | open-source | compatibility | released | share | bookmark | compare
 const COL_TEMPLATE =
-  "grid-cols-[44px_minmax(200px,2.5fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(100px,1fr)_44px_44px_44px]";
-const COL_MIN_WIDTH = "min-w-[1100px]";
+  "grid-cols-[44px_minmax(280px,3.5fr)_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_minmax(80px,0.7fr)_44px_44px_44px]";
+const COL_MIN_WIDTH = "min-w-[1150px]";
 
 // ── Formatters ───────────────────────────────────────────────────────────────
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -117,7 +124,20 @@ function ShareButton({ tool }: { tool: ListTool }) {
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const url = `${window.location.origin}/tools/${tool.slug}`;
+    let targetPath = '/tools';
+    let identifier = tool.slug;
+    if (tool.entityType === 'COMPANY') targetPath = '/companies';
+    if (tool.entityType === 'VIDEO') targetPath = '/videos';
+    if (tool.entityType === 'NEWS') targetPath = '/news';
+    if (tool.entityType === 'ROBOT') targetPath = '/robots';
+    if (tool.entityType === 'DEVICE') targetPath = '/devices';
+    if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
+    
+    if (tool.entityType === 'MODEL') {
+      targetPath = '/models';
+      identifier = tool.id;
+    }
+    const url = `${window.location.origin}${targetPath}/${identifier}`;
     const shareData = {
       title: tool.name,
       text: tool.description ?? "",
@@ -197,7 +217,6 @@ function BookmarkBtn({ tool }: { tool: ListTool }) {
   );
 }
 
-// ── Single row ────────────────────────────────────────────────────────────────
 function ToolRow({
   tool,
   index,
@@ -213,17 +232,73 @@ function ToolRow({
   onToggleCompare: (t: ListTool) => void;
   basePath?: string;
 }) {
+  const router = useRouter();
   const accentColor = ROW_ACCENT_COLORS[index % ROW_ACCENT_COLORS.length];
   const isOpenSource = isTruthy(tool.isOpenSource, tool.openSource);
   const hasApi = isTruthy(tool.hasApi);
 
+  let targetPath = basePath;
+  let identifier = tool.slug;
+  if (tool.entityType === 'COMPANY') targetPath = '/companies';
+  else if (tool.entityType === 'VIDEO') targetPath = '/videos';
+  else if (tool.entityType === 'NEWS') targetPath = '/news';
+  else if (tool.entityType === 'ROBOT') targetPath = '/robots';
+  else if (tool.entityType === 'DEVICE') targetPath = '/devices';
+  else if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
+  else if (tool.entityType === 'MODEL') {
+    targetPath = '/models';
+    identifier = tool.id;
+  } else if (tool.entityType === 'TOOL') {
+    targetPath = '/tools';
+  }
+  const targetUrl = `${targetPath}/${identifier}`;
+
+  const prefetchRow = () => {
+    try { router.prefetch(targetUrl); } catch {}
+    if (tool.entityType === 'MODEL') {
+      prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(tool.id)}`);
+    } else if (tool.entityType === 'COMPANY') {
+      prefetchUrl(`${API_URL}/api/v1/companies/${tool.slug}`);
+    } else if (tool.entityType === 'REPOSITORY') {
+      prefetchUrl(`${API_URL}/api/v1/repositories/${tool.slug}`);
+    } else if (tool.entityType === 'NEWS') {
+      prefetchUrl(`${API_URL}/api/news/${encodeURIComponent(tool.slug)}`);
+    } else if (tool.entityType === 'DEVICE') {
+      prefetchUrl(`${API_URL}/api/v1/devices/${tool.id || tool.slug}`);
+    } else if (tool.entityType === 'ROBOT') {
+      prefetchUrl(`${API_URL}/api/v1/robots/${tool.slug || tool.id}`);
+    } else if (tool.entityType === 'VIDEO') {
+      prefetchUrl(`${API_URL}/api/videos/${tool.slug || tool.id}`);
+    } else {
+      prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
+    }
+  };
+
   return (
-    <Link
-      href={`${basePath}/${tool.slug}`}
+    <div
+      onClick={() => {
+        let targetPath = basePath;
+        let identifier = tool.slug; // Default to slug
+
+        if (tool.entityType === 'COMPANY') targetPath = '/companies';
+        if (tool.entityType === 'VIDEO') targetPath = '/videos';
+        if (tool.entityType === 'NEWS') targetPath = '/news';
+        if (tool.entityType === 'ROBOT') targetPath = '/robots';
+        if (tool.entityType === 'DEVICE') targetPath = '/devices';
+        if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
+        if (tool.entityType === 'MODEL') {
+          targetPath = '/models';
+          identifier = tool.id; 
+        }
+        
+        if (tool.entityType === 'TOOL') targetPath = '/tools';
+        
+        router.push(`${targetPath}/${identifier}`);
+      }}
       role="listitem"
-      className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
+      className={`cursor-pointer group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
       onMouseEnter={(e) => {
-        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
+        prefetchRow();
         const el = e.currentTarget;
         el.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
         const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
@@ -231,12 +306,8 @@ function ToolRow({
         const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
         if (nameEl) nameEl.style.color = accentColor;
       }}
-      onTouchStart={() => {
-        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
-      }}
-      onFocus={() => {
-        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
-      }}
+      onTouchStart={prefetchRow}
+      onFocus={prefetchRow}
       onMouseLeave={(e) => {
         const el = e.currentTarget;
         el.style.boxShadow = "";
@@ -284,15 +355,15 @@ function ToolRow({
             <span className="text-[#71717A] opacity-30 shrink-0"><ExternalLink size={13} /></span>
           )}
         </div>
-        <p className="mt-0.5 line-clamp-1 text-[11px] text-[#A1A1AA] leading-snug pr-2">
-          {tool.description}
+        <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-clip">
+          {trimNoDots(tool.description || "")}
         </p>
       </div>
 
       {/* Col 3: Task */}
       <div className="min-w-0">
         {tool.ttasks && tool.ttasks.length > 0 ? (
-          <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] max-w-full truncate block">
+          <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] whitespace-normal break-words text-center leading-tight">
             {tool.ttasks[0].task.title}
           </span>
         ) : (
@@ -375,7 +446,7 @@ function ToolRow({
           <GitCompare size={14} />
         </button>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -446,9 +517,25 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
       );
     }
     list.sort((a, b) => {
+      // 1. PRIORITY OVERRIDE: Quality Scoring
+      const getScore = (t: ListTool) => {
+        if (t.ttasks && t.ttasks.length > 0) return 3; // Tier 1: Has a Task
+        if (t.logoUrl && t.description && t.description.trim() !== "") return 2; // Tier 2: Logo + Description
+        return 1; // Tier 3: Missing Logo or Description
+      };
+
+      const scoreA = getScore(a);
+      const scoreB = getScore(b);
+
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA; // Higher tier always comes first
+      }
+
+      // 2. NORMAL SORTING: Fall back to Release Date or Name only if they are in the same tier
       let cmp = 0;
       if (sortKey === "name") cmp = a.name.localeCompare(b.name);
       else cmp = ((b as any).releaseDate || b.createdAt || "").localeCompare((a as any).releaseDate || a.createdAt || "");
+      
       return sortDir === "asc" ? cmp : -cmp;
     });
     return list;

@@ -1,8 +1,7 @@
 import { Context } from 'hono';
-import { getPrisma } from '../../lib/prisma.js';
 import { CompaniesService } from './companies.service.js';
+import { getPrisma } from '../../lib/prisma.js';
 import { CompanyType } from '@prisma/client';
-
 export class CompaniesController {
   async listCompanies(c: Context) {
     const prisma = getPrisma(c.env);
@@ -11,7 +10,7 @@ export class CompaniesController {
     const validTypeFilter = typeFilter && typeFilter in CompanyType ? typeFilter as CompanyType : undefined;
 
     try {
-      const companies = await service.listCompanies(validTypeFilter);
+      const companies = await service.listCompanies();
       return c.json(companies);
     } catch (error: unknown) {
       return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
@@ -20,6 +19,10 @@ export class CompaniesController {
       // it must stay connected across requests, so it is intentionally not
       // disconnected here.
     }
+  }
+
+  async getCompanies(c: Context) {
+    return this.listCompanies(c);
   }
 
   async getCompanyDetails(c: Context) {

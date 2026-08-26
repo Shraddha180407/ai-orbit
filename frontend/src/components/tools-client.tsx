@@ -48,6 +48,7 @@ const CATEGORY_MAP = {
     { name: "Insurance Advisor", slug: "insurance-advisor" }
   ],
   creativity: [
+    { name: "All", slug: "" },
     { name: "Image Generation", slug: "image-generation" },
     { name: "Writing", slug: "writing" },
     { name: "Software Development", slug: "software-development" },
@@ -119,19 +120,8 @@ export function ToolsClient({
   const [activeCategory, setActiveCategory] = useState<string>(() => {
     const explicitCategory = defaultCategory || searchParams.get("category");
     if (explicitCategory) return explicitCategory;
-    // Creativity always defaults to image-generation
-    if (defaultMode === "creativity" || (typeof window !== "undefined" && window.location.pathname.includes("creativity"))) {
-      return "image-generation";
-    }
     return "";
   });
-
-  // Auto-select image-generation when switching into creativity mode
-  useEffect(() => {
-    if (mode === "creativity" && !activeCategory) {
-      setActiveCategory("image-generation");
-    }
-  }, [mode]);
 
   // Synchronize state when URL path or query parameters change
   useEffect(() => {
@@ -151,7 +141,7 @@ export function ToolsClient({
     if (resolvedCategory) {
       setActiveCategory(resolvedCategory);
     } else {
-      setActiveCategory(mode === "creativity" ? "image-generation" : "");
+      setActiveCategory("");
     }
   }, [pathname, searchParams, defaultCategory, mode]);
 

@@ -15,7 +15,7 @@ import Zap from "lucide-react/dist/esm/icons/zap";
 import ExternalLink from "lucide-react/dist/esm/icons/external-link";
 import Target from "lucide-react/dist/esm/icons/target";
 import { Robot } from "@/lib/types";
-import { fetchRobotById, API_URL, prefetchUrl } from "@/lib/api";
+import { fetchRobotById, API_URL, prefetchUrl, getFromCache } from "@/lib/api";
 import { CategoryChip } from "@/components/CategoryChip";
 
 interface RobotDetailClientProps {
@@ -23,20 +23,19 @@ interface RobotDetailClientProps {
 }
 
 function AvailabilityBadge({ status }: { status: string }) {
-  const s = status.toLowerCase();
-  let colorClass = "border-[#232326] bg-[#18181C] text-[#A1A1AA]";
-  if (s.includes("available") || s.includes("commercial")) {
-    colorClass = "border-emerald-500/40 bg-emerald-500/10 text-emerald-400";
-  } else if (s.includes("development") || s.includes("pilot")) {
-    colorClass = "border-amber-500/40 bg-amber-500/10 text-amber-400";
-  } else if (s.includes("discontinued")) {
-    colorClass = "border-red-500/40 bg-red-500/10 text-red-400";
-  } else if (s.includes("pre") || s.includes("order")) {
-    colorClass = "border-blue-500/40 bg-blue-500/10 text-blue-400";
-  }
+  const map: Record<string, { bg: string; text: string; label: string }> = {
+    AVAILABLE: { bg: "bg-[#064E3B] text-[#34D399] border-[#059669]/30", text: "Available", label: "Available" },
+    WAITLIST: { bg: "bg-[#78350F] text-[#FBBF24] border-[#D97706]/30", text: "Waitlist", label: "Waitlist" },
+    COMING_SOON: { bg: "bg-[#1E1B4B] text-[#818CF8] border-[#4F46E5]/30", text: "Coming Soon", label: "Coming Soon" },
+    PROTOTYPE: { bg: "bg-[#701A75] text-[#F472B6] border-[#DB2777]/30", text: "Prototype", label: "Prototype" },
+    RESEARCH: { bg: "bg-[#1E293B] text-[#94A3B8] border-[#475569]/30", text: "Research", label: "Research" },
+  };
+
+  const current = map[status] || { bg: "bg-[#18181C] text-[#A1A1AA] border-[#232326]", text: status, label: status };
+
   return (
-    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold tracking-wide ${colorClass}`}>
-      {status}
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${current.bg}`}>
+      {current.label}
     </span>
   );
 }
@@ -47,10 +46,15 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
   const { data: robot = null, isLoading } = useQuery<Robot | null>({
     queryKey: ["robot-detail", id],
     queryFn: () => fetchRobotById(id),
-    staleTime: 10 * 60 * 1000,
+    initialData: () => {
+      if (!id) return undefined;
+      return getFromCache<Robot>(`${API_URL}/api/v1/robots/${encodeURIComponent(id)}`) || undefined;
+    },
+    staleTime: 15 * 60 * 1000,
+    enabled: Boolean(id),
   });
 
-  if (isLoading) {
+  if (isLoading && !robot) {
     return (
       <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-10">
         <div className="mx-auto max-w-[1070px] space-y-6">

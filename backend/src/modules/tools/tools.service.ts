@@ -59,44 +59,25 @@ export class ToolsService {
       where.pricingModel = filters.pricing;
     }
 
-    let orderBy: Prisma.ToolOrderByWithRelationInput | Prisma.ToolOrderByWithRelationInput[] = [
-      { ttasks: { _count: 'desc' } },
-      { createdAt: 'desc' }
-    ];
+    // 🔥 1. Define the normal sort from the UI dropdown
+    let userSort: Prisma.ToolOrderByWithRelationInput = { createdAt: 'desc' };
 
     switch (filters.sort) {
-      case 'oldest':
-        orderBy = [
-          { ttasks: { _count: 'desc' } },
-          { createdAt: 'asc' }
-        ];
-        break;
-      case 'newest':
-        orderBy = [
-          { ttasks: { _count: 'desc' } },
-          { createdAt: 'desc' }
-        ];
-        break;
-      case 'name-asc':
-        orderBy = { name: 'asc' };
-        break;
-      case 'name-desc':
-        orderBy = { name: 'desc' };
-        break;
+      case 'oldest': userSort = { createdAt: 'asc' }; break;
+      case 'newest': userSort = { createdAt: 'desc' }; break;
+      case 'name-asc': userSort = { name: 'asc' }; break;
+      case 'name-desc': userSort = { name: 'desc' }; break;
       case 'rating':
-      case 'top-rated':
-        orderBy = { avgRating: 'desc' };
-        break;
-      case 'popular':
-        orderBy = { upvoteCount: 'desc' };
-        break;
-      case 'trending':
-        orderBy = [
-          { isTrending: 'desc' },
-          { createdAt: 'desc' }
-        ];
-        break;
+      case 'top-rated': userSort = { avgRating: 'desc' }; break;
+      case 'popular': userSort = { upvoteCount: 'desc' }; break;
+      case 'trending': userSort = { isTrending: 'desc' }; break;
     }
+
+    // 🔥 2. Force Prisma to prioritize tools with tasks first!
+    const orderBy: Prisma.ToolOrderByWithRelationInput[] = [
+      { ttasks: { _count: 'desc' } }, // Priority 1: Highest task count goes to the top
+      userSort                        // Priority 2: Then apply the dropdown sort (Newest, Popular, etc.)
+    ];
 
     const selectFields = {
       id: true,
@@ -189,7 +170,6 @@ export class ToolsService {
         performanceScore: true,
         createdAt: true,
 
-        // --- NEW FIELDS SELECTED FOR API ---
         longDescription: true,
         videoUrl: true,
         releasedBy: true,
@@ -215,7 +195,6 @@ export class ToolsService {
 
     if (!tool) return null;
 
-    // Fetch similar tools
     const withRelations = await this.prisma.tool.findUnique({
       where: { id: tool.id },
       select: {

@@ -19,6 +19,7 @@ import UserCircle from 'lucide-react/dist/esm/icons/user-circle';
 import Palette from 'lucide-react/dist/esm/icons/palette';
 import TrendingUp from 'lucide-react/dist/esm/icons/trending-up';
 import Trophy from 'lucide-react/dist/esm/icons/trophy';
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
 
 import { HeroFeatureChips } from "@/components/HeroFeatureChips";
 import { SortDropdown } from "@/components/SortDropdown";
@@ -26,50 +27,63 @@ import { Logo } from "@/components/ui/Logo";
 import { ENTITY_META } from "@/lib/entityMeta";
 import { useHomeSearch } from "@/hooks/useHomeSearch";
 import type { RealSearchSuggestion } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { API_URL, fetchAllCompanies, fetchAllRobots, fetchAllDevices, fetchModels, fetchRepositories, fetchMCPItems, prefetchUrl } from "@/lib/api";
+import { fetchTasks as fetchTasksApi } from "@/lib/tasks-api";
 
-/**
- * Where a live suggestion should actually take you — its own detail page,
- * not another search. Falls back to a search-results link only when the
- * backend didn't give us a slug to route to.
- */
+// NEW: Import the unified filter dropdown
+import { UnifiedFilterDropdown } from "@/components/UnifiedFilterDropdown"; 
+
 function getSuggestionHref(s: RealSearchSuggestion): string {
   const meta = ENTITY_META[s.type];
   if (!s.slug) return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
 
   switch (s.type) {
-    case "tool":
-      return `/p/tools/${s.slug}`;
-    case "company":
-      return `/p/companies/${s.slug}`;
-    case "repository":
-      return `/p/repositories/${s.slug}`;
-    case "robot":
-      return `/p/robots/${s.slug}`;
-    case "device":
-      return `/p/devices/${s.slug}`;
-    case "model":
-      return `/models/${s.slug}`;
-    default:
-      return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
+case "tool": return `/p/tools/${s.slug}`;
+    case "company": return `/p/companies/${s.slug}`;
+    case "repository": return `/p/repositories/${s.slug}`;
+    case "robot": return `/p/robots/${s.slug}`;
+    case "device": return `/p/devices/${s.slug}`;
+    case "model": return `/models/${s.slug}`;
+    case "news": return `/p/news/${s.slug}`;
+    case "video": return `/p/videos/${s.slug}`;
+    case "task": return `/p/tasks/${s.slug}`;
+    case "mcp": return `/p/mcp/${s.slug}`;
+    default: return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
   }
 }
 
-// Top-of-menu quick actions for the homepage hero search dropdown.
 const QUICK_LINKS = [
-  { label: "Trending", href: "/search/trending", icon: TrendingUp },
-  { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
+  { label: "Trending", href: "/search/trending", icon: TrendingUp, color: "#34D399" },
+  { label: "Leaderboard", href: "/leaderboard", icon: Trophy, color: "#FBBF24" },
 ];
+
+/** Max rows shown per entity-type group before collapsing behind "View N more". */
+const MAX_ROWS_PER_GROUP = 4;
+
+/**
+ * Groups flat autocomplete suggestions into per-entity-type buckets,
+ * preserving the order types first appear in (suggestions already arrive
+ * relevance-sorted from the backend), so the most relevant category leads.
+ */
+function groupSuggestionsByType(
+  suggestions: RealSearchSuggestion[]
+): [RealSearchSuggestion["type"], RealSearchSuggestion[]][] {
+  const groups = new Map<RealSearchSuggestion["type"], RealSearchSuggestion[]>();
+  for (const s of suggestions) {
+    const bucket = groups.get(s.type);
+    if (bucket) {
+      bucket.push(s);
+    } else {
+      groups.set(s.type, [s]);
+    }
+  }
+  return Array.from(groups.entries());
+}
 
 // "Browse by type" — mirrors the entity types the backend indexes.
-const BROWSE_BY_TYPE = [
-  { label: ENTITY_META.company.label, href: ENTITY_META.company.basePath, icon: ENTITY_META.company.icon },
-  { label: ENTITY_META.model.label, href: ENTITY_META.model.basePath, icon: ENTITY_META.model.icon },
-  { label: ENTITY_META.robot.label, href: ENTITY_META.robot.basePath, icon: ENTITY_META.robot.icon },
-  { label: ENTITY_META.repository.label, href: ENTITY_META.repository.basePath, icon: ENTITY_META.repository.icon },
-  { label: ENTITY_META.device.label, href: ENTITY_META.device.basePath, icon: ENTITY_META.device.icon },
-];
-
-import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
+// "Browse by type" section in the empty-query dropdown reuses DIRECTORY_CARDS
+// directly (defined below) so its icons/colors always match the nav strip.
 
 const DIRECTORY_CARDS = [
   { name: "New", href: "/", description: "Discover the newest AI additions.", icon: Sparkles, color: "#6E56CF" },
@@ -84,15 +98,13 @@ const DIRECTORY_CARDS = [
   { name: "Models", href: "/models", description: "Compare context windows, pricing, and benchmarks across AI models.", icon: Cpu, color: "#A78BFA" },
   { name: "Repositories", href: "/repositories", description: "Trending open-source AI repositories on GitHub.", icon: GitBranch, color: "#22D3EE" },
   { name: "MCP", href: "/mcp", description: "Model Context Protocol servers and integrations.", icon: Plug, color: "#818CF8" },
-  { name: "Collections", href: "/collections", description: "Curated bundles of tools grouped by use case.", icon: FolderHeart, color: "#34D399" },
   { name: "Personal", href: "/personal", description: "AI tools for personal productivity and everyday life.", icon: UserCircle, color: "#FBBF24" },
-  { name: "Creativity", href: "/creativity/image-generation", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
+  { name: "Creativity", href: "/creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
 
-import { useQueryClient } from "@tanstack/react-query";
-import { API_URL, fetchAllCompanies, fetchAllRobots, fetchAllDevices, fetchModels, fetchRepositories, fetchMCPItems, prefetchUrl } from "@/lib/api";
-import { fetchTasks as fetchTasksApi } from "@/lib/tasks-api";
-
+const DIRECTORY_CARD_BY_NAME: Record<string, (typeof DIRECTORY_CARDS)[number]> = Object.fromEntries(
+  DIRECTORY_CARDS.map((c) => [c.name, c])
+);
 export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string } = {}) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -102,6 +114,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
   const hoverTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   const prefetchCategory = (cardName: string, href: string) => {
+    // ... [Prefetch logic remains identical]
     switch (cardName) {
       case "New":
         queryClient.prefetchInfiniteQuery({
@@ -115,25 +128,17 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
         }).catch(() => {});
         break;
       case "Tools":
+      case "Agents":
+      case "Personal":
+      case "Creativity":
         queryClient.prefetchInfiniteQuery({
-          queryKey: ["tools", { q: undefined, category: undefined, pricing: undefined, sort: undefined }],
+          queryKey: ["tools", cardName.toLowerCase(), "", undefined, undefined, undefined],
           queryFn: async () => {
-            const res = await fetch(`${API_URL}/api/v1/tools?page=1&pageSize=50`);
+            const res = await fetch(`${API_URL}/api/v1/tools?page=1`);
             return res.ok ? res.json() : { tools: [], totalPages: 1, page: 1 };
           },
           initialPageParam: 1,
-          staleTime: 10 * 60 * 1000,
-        }).catch(() => {});
-        break;
-      case "Personal":
-      case "Creativity":
-        queryClient.prefetchQuery({
-          queryKey: ["tools", cardName.toLowerCase()],
-          queryFn: async () => {
-            const res = await fetch(`${API_URL}/api/v1/tools?limit=100`);
-            return res.ok ? res.json() : { tools: [] };
-          },
-          staleTime: 10 * 60 * 1000,
+          staleTime: 15 * 60 * 1000,
         }).catch(() => {});
         break;
       case "Companies":
@@ -197,17 +202,6 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
           staleTime: 10 * 60 * 1000,
         }).catch(() => {});
         break;
-      case "Collections":
-        queryClient.prefetchQuery({
-          queryKey: ["collections", "list"],
-          queryFn: async () => {
-            const res = await fetch(`${API_URL}/api/v1/collections?sort=recently_updated`);
-            const data = res.ok ? await res.json() : null;
-            return data?.items || [];
-          },
-          staleTime: 10 * 60 * 1000,
-        }).catch(() => {});
-        break;
     }
   };
 
@@ -226,7 +220,6 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     }
   };
 
-  // Idle background prefetch for top categories
   useEffect(() => {
     const timer = setTimeout(() => {
       prefetchCategory("Tools", "/tools");
@@ -241,16 +234,15 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
   const searchContainerRef = useRef<HTMLFormElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const { suggestions, isLoading } = useHomeSearch(searchValue);
+  const { suggestions: rawSuggestions, isLoading } = useHomeSearch(searchValue);
+  // Collections aren't surfaced in the search dropdown.
+  const suggestions = rawSuggestions.filter((s) => s.type !== "collection");
   const showSuggestions = searchValue.trim().length > 0;
 
   const runSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (query.trim()) {
-      params.set("q", query);
-    } else {
-      params.delete("q");
-    }
+    if (query.trim()) params.set("q", query);
+    else params.delete("q");
     setSearchOpen(false);
     router.push(`${searchAction}?${params.toString()}`);
   };
@@ -260,7 +252,6 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     runSearch(searchValue);
   };
 
-  // Close the search dropdown on outside click or Escape.
   useEffect(() => {
     if (!searchOpen) return;
     function handleClick(e: MouseEvent) {
@@ -282,7 +273,6 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     };
   }, [searchOpen]);
 
-  // ⌘K / Ctrl+K opens the homepage search dropdown.
   useEffect(() => {
     function handleShortcut(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -295,9 +285,75 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     return () => document.removeEventListener("keydown", handleShortcut);
   }, []);
 
+  // Helper to render the actual pill card UI
+  const renderCard = (card: typeof DIRECTORY_CARDS[number]) => {
+    const Icon = card.icon;
+    const isSelected =
+      card.href === "/"
+        ? pathname === "/"
+        : card.name === "Tools"
+        ? pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp") && !pathname?.startsWith("/tools/compare"))
+        : card.name === "Agents"
+        ? pathname === "/agents" || pathname?.startsWith("/agents")
+        : card.name === "Tasks"
+        ? pathname === "/tasks"
+        : card.name === "Personal"
+        ? pathname === "/tasks/personal" || pathname === "/personal"
+        : card.name === "Creativity"
+        ? pathname === "/tasks/creativity" || pathname?.startsWith("/creativity")
+        : pathname?.startsWith(card.href);
+    const isNew = card.name === "New";
+
+    return (
+      <Link
+        key={card.name}
+        href={card.href}
+        className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${
+          isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
+        }`}
+        onPointerEnter={(e) => {
+          handlePointerEnter(card.name, card.href);
+          if (!(isNew && isSelected)) e.currentTarget.style.borderColor = card.color;
+          e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
+        }}
+        onPointerLeave={(e) => {
+          handlePointerLeave(card.name);
+          if (!isSelected) {
+            e.currentTarget.style.borderColor = "";
+            e.currentTarget.style.boxShadow = "";
+          }
+        }}
+        onFocus={() => handlePointerEnter(card.name, card.href)}
+        style={
+          isSelected && !isNew
+            ? { borderColor: card.color, boxShadow: `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55` }
+            : undefined
+        }
+      >
+        {isNew && isSelected && (
+          <>
+            <div 
+              className="absolute inset-[-100%] animate-[spin_3s_linear_infinite] opacity-70"
+              style={{ background: `conic-gradient(from 0deg at 50% 50%, transparent 0%, transparent 60%, ${card.color} 100%)` }} 
+            />
+            <div className="absolute inset-[1px] rounded-[7px] bg-[#0d0d10]" />
+          </>
+        )}
+        <div
+          className="relative z-10 flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border transition-colors"
+          style={{ backgroundColor: `${card.color}1a`, borderColor: `${card.color}40` }}
+        >
+          <Icon size={10} strokeWidth={1.75} style={{ color: card.color }} />
+        </div>
+        <span className="relative z-10 text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
+          {card.name}
+        </span>
+      </Link>
+    );
+  };
+
   return (
     <>
-      {/* Hero Section */}
       <section
         className="relative z-20 w-full flex flex-col items-center pt-4 pb-6 px-6"
         style={{
@@ -333,6 +389,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                 ref={searchInputRef}
                 type="text"
                 name="q"
+                autoComplete="off"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
                 placeholder="Search AI tools, models, companies…"
@@ -353,7 +410,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
             `}</style>
 
             {searchOpen && (
-              <div className="search-scope absolute left-0 right-0 top-[calc(100%+8px)] z-30 max-h-[70vh] overflow-y-auto rounded-xl border border-search-border bg-search-bg shadow-2xl shadow-black/40 text-left">
+              <div className="search-scope absolute left-0 right-0 top-[calc(100%+8px)] z-30 max-h-[300px] overflow-y-auto rounded-xl border border-search-border bg-search-bg shadow-2xl shadow-black/40 text-left">
                 {showSuggestions ? (
                   <div className="p-2">
                     {isLoading ? (
@@ -375,36 +432,67 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                       </div>
                     ) : (
                       <>
-                        {suggestions.map((s) => {
-                          const meta = ENTITY_META[s.type];
+                        {groupSuggestionsByType(suggestions).map(([type, items]) => {
+                          const meta = ENTITY_META[type];
+                          const dirCard = DIRECTORY_CARD_BY_NAME[meta.plural];
+                          const GroupIcon = dirCard?.icon ?? meta.icon;
+                          const groupColor = dirCard?.color ?? meta.solidColor;
+                          const visible = items.slice(0, MAX_ROWS_PER_GROUP);
+                          const remaining = items.length - visible.length;
                           return (
-                            <Link
-                              key={`${s.type}-${s.id}`}
-                              href={getSuggestionHref(s)}
-                              onPointerEnter={() => {
-                                if (s.slug) {
-                                  if (s.type === "tool") prefetchUrl(`${API_URL}/api/v1/tools/${s.slug}`);
-                                  else if (s.type === "company") prefetchUrl(`${API_URL}/api/v1/companies/${s.slug}`);
-                                  else if (s.type === "model") prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(s.slug)}`);
-                                  else if (s.type === "robot") prefetchUrl(`${API_URL}/api/v1/robots/${s.slug}`);
-                                  else if (s.type === "device") prefetchUrl(`${API_URL}/api/v1/devices/${s.slug}`);
-                                  else if (s.type === "repository") prefetchUrl(`${API_URL}/api/v1/repositories/${s.slug}`);
-                                }
-                              }}
-                              onClick={() => setSearchOpen(false)}
-                              className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm hover:bg-search-surface-hover"
-                            >
-                              <Logo
-                                src={s.logoUrl}
-                                name={s.title}
-                                size={28}
-                                className="shrink-0 rounded-md"
-                              />
-                              <span className="flex-1 truncate text-search-text-primary">{s.title}</span>
-                              <span className="shrink-0 text-xs text-search-text-tertiary">
-                                {meta.label} · {s.category}
-                              </span>
-                            </Link>
+<div key={type} className="mb-1 last:mb-0">
+                              {/* Section header, e.g. "Companies" — icon + badge match the nav strip (DIRECTORY_CARDS) exactly */}
+                              <div className="sticky top-0 z-10 mb-1 flex items-center gap-2 rounded-md border-y border-search-border/60 bg-search-surface-active px-2.5 py-2 text-[11px] font-bold uppercase tracking-wider text-search-text-secondary">
+                                <span
+                                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border"
+                                  style={{ backgroundColor: `${groupColor}1a`, borderColor: `${groupColor}40` }}
+                                >
+                                  <GroupIcon size={14} style={{ color: groupColor }} aria-hidden="true" />
+                                </span>
+                                {meta.plural}
+                              </div>
+                              {visible.map((s) => (
+                                <Link
+                                  key={`${s.type}-${s.id}`}
+                                  href={getSuggestionHref(s)}
+                                  // 👇 OUR PREFETCH LOGIC MERGED INTO THE NEW UI
+                                  onPointerEnter={() => {
+                                    if (s.slug) {
+                                      if (s.type === "tool") prefetchUrl(`${API_URL}/api/v1/tools/${s.slug}`);
+                                      else if (s.type === "company") prefetchUrl(`${API_URL}/api/v1/companies/${s.slug}`);
+                                      else if (s.type === "model") prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(s.slug)}`);
+                                      else if (s.type === "robot") prefetchUrl(`${API_URL}/api/v1/robots/${s.slug}`);
+                                      else if (s.type === "device") prefetchUrl(`${API_URL}/api/v1/devices/${s.slug}`);
+                                      else if (s.type === "repository") prefetchUrl(`${API_URL}/api/v1/repositories/${s.slug}`);
+                                    }
+                                  }}
+                                  onClick={() => setSearchOpen(false)}
+                                  className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm hover:bg-search-surface-hover"
+                                >
+                                  <Logo
+                                    src={s.logoUrl}
+                                    name={s.title}
+                                    size={22}
+                                    className="shrink-0 rounded-md"
+                                  />
+                                  <span className="flex-1 truncate text-search-text-primary">{s.title}</span>
+                                </Link>
+                              ))}
+                              {remaining > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSearchOpen(false);
+                                    const params = new URLSearchParams(searchParams.toString());
+                                    if (searchValue.trim()) params.set("q", searchValue);
+                                    router.push(`${meta.basePath}?${params.toString()}`);
+                                  }}
+                                  className="flex w-full items-center justify-center rounded-md px-2.5 py-1.5 text-xs text-search-text-tertiary hover:bg-search-surface-hover hover:text-search-text-primary"
+                                >
+                                  View {remaining} more
+                                </button>
+                              )}
+                            </div>
                           );
                         })}
                         <button
@@ -429,8 +517,11 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                             onClick={() => setSearchOpen(false)}
                             className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
                           >
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
-                              <Icon size={14} />
+                            <span
+                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border"
+                              style={{ backgroundColor: `${link.color}1a`, borderColor: `${link.color}40` }}
+                            >
+                              <Icon size={14} style={{ color: link.color }} />
                             </span>
                             {link.label}
                           </Link>
@@ -439,19 +530,22 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                     </div>
 
                     <div className="p-2">
-                      {BROWSE_BY_TYPE.map((link) => {
-                        const Icon = link.icon;
+                      {DIRECTORY_CARDS.filter((card) => card.name !== "New").map((card) => {
+                        const Icon = card.icon;
                         return (
                           <Link
-                            key={link.label}
-                            href={link.href}
+                            key={card.name}
+                            href={card.href}
                             onClick={() => setSearchOpen(false)}
                             className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-search-text-primary hover:bg-search-surface-hover"
                           >
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-search-surface-active text-search-text-secondary">
-                              <Icon size={14} />
+                            <span
+                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border"
+                              style={{ backgroundColor: `${card.color}1a`, borderColor: `${card.color}40` }}
+                            >
+                              <Icon size={14} style={{ color: card.color }} />
                             </span>
-                            {link.label}
+                            {card.name}
                           </Link>
                         );
                       })}
@@ -480,77 +574,23 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
       {/* Directory nav strip */}
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
         <div className="mx-auto w-full max-w-[1600px]">
-          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none">
-            {DIRECTORY_CARDS.map((card) => {
-              const Icon = card.icon;
-              const isSelected =
-                card.href === "/"
-                  ? pathname === "/"
-                  : card.name === "Tools"
-                  ? pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp") && !pathname?.startsWith("/tools/compare"))
-                  : card.name === "Agents"
-                  ? pathname === "/agents" || pathname?.startsWith("/agents")
-                  : card.name === "Tasks"
-                  ? pathname === "/tasks"
-                  : card.name === "Personal"
-                  ? pathname === "/tasks/personal" || pathname === "/personal"
-                  : card.name === "Creativity"
-                  ? pathname === "/tasks/creativity" || pathname?.startsWith("/creativity")
-                  : pathname?.startsWith(card.href);
-              const isNew = card.name === "New";
+          
+          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 w-full">
+            
+            {/* 1. The "New" Button wrapped in the Dropdown (Escaping overflow!) */}
+            <div className="shrink-0 relative z-[9999] overflow-visible">
+              <UnifiedFilterDropdown>
+                {renderCard(DIRECTORY_CARDS[0])}
+              </UnifiedFilterDropdown>
+            </div>
 
-              return (
-                <Link
-                  key={card.name}
-                  href={card.href}
-                  className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${
-                    isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
-                  }`}
-                  onPointerEnter={(e) => {
-                    handlePointerEnter(card.name, card.href);
-                    if (!(isNew && isSelected)) e.currentTarget.style.borderColor = card.color;
-                    e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
-                  }}
-                  onPointerLeave={(e) => {
-                    handlePointerLeave(card.name);
-                    if (!isSelected) {
-                      e.currentTarget.style.borderColor = "";
-                      e.currentTarget.style.boxShadow = "";
-                    }
-                  }}
-                  onFocus={() => {
-                    handlePointerEnter(card.name, card.href);
-                  }}
-                  style={
-                    isSelected && !isNew
-                      ? { borderColor: card.color, boxShadow: `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55` }
-                      : undefined
-                  }
-                >
-                  {isNew && isSelected && (
-                    <>
-                      <div 
-                        className="absolute inset-[-100%] animate-[spin_3s_linear_infinite] opacity-70"
-                        style={{ 
-                          background: `conic-gradient(from 0deg at 50% 50%, transparent 0%, transparent 60%, ${card.color} 100%)` 
-                        }} 
-                      />
-                      <div className="absolute inset-[1px] rounded-[7px] bg-[#0d0d10]" />
-                    </>
-                  )}
-                  <div
-                    className="relative z-10 flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border transition-colors"
-                    style={{ backgroundColor: `${card.color}1a`, borderColor: `${card.color}40` }}
-                  >
-                    <Icon size={10} strokeWidth={1.75} style={{ color: card.color }} />
-                  </div>
-                  <span className="relative z-10 text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
-                    {card.name}
-                  </span>
-                </Link>
-              );
-            })}
+            {/* 2. The rest of the categories (Safely scrollable) */}
+            <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none w-full">
+              {DIRECTORY_CARDS.slice(1).map(renderCard)}
+            </div>
+
           </div>
+
         </div>
       </div>
     </>

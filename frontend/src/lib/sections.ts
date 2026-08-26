@@ -24,7 +24,6 @@ export type SectionKey =
   | "new"
   | "rankings"
   | "featured"
-  | "collections"
   | "agents"
   | "requests"
   | "tasks"
@@ -61,7 +60,6 @@ export const SECTIONS: SectionConfig[] = [
   { key: "new", label: "New", slug: "new", icon: Sparkles, types: [], view: "forYou", sort: "newest", layout: "new" },
   { key: "rankings", label: "Rankings", slug: "rankings", icon: Trophy, types: [], view: "leaderboard", sort: "relevance", layout: "rankings" },
   { key: "featured", label: "Featured", slug: "featured", icon: Star, types: [], view: "forYou", sort: "popular", layout: "featured" },
-  { key: "collections", label: "Collections", slug: "collections", icon: Layers, types: ["collection"], view: "forYou", sort: "relevance", layout: "collections" },
   { key: "agents", label: "Agents", slug: "agents", icon: Bot, types: ["tool"], view: "forYou", sort: "popular", layout: "agents" },
   { key: "requests", label: "Requests", slug: "requests", icon: MessageSquare, types: ["task"], view: "forYou", sort: "newest", layout: "requests" },
   { key: "tasks", label: "Tasks", slug: "tasks", icon: ListChecks, types: ["task"], view: "forYou", sort: "relevance", layout: "tasksTable" },
@@ -82,7 +80,6 @@ export const SECTION_DESCRIPTIONS: Record<SectionKey, string> = {
   new: "The newest additions to the directory, freshest first.",
   rankings: "The all-time leaderboard, ranked by popularity.",
   featured: "Editorially featured picks worth a closer look.",
-  collections: "Curated lists of tools grouped by use case.",
   agents: "Autonomous and semi-autonomous AI agents, ranked by popularity.",
   requests: "Looking for a specific AI tool? Post a request and someone in the community might build it, or point you to one that already exists.",
   tasks: "Browse by task — find the right tool for what you're trying to do.",

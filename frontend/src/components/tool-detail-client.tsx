@@ -5,21 +5,20 @@ import { useParams, notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
-    ThumbsUp, Bookmark, ArrowUpRight, FileText, Check, X,
-  ChevronLeft, ChevronRight, Sparkles, Layers,
-  ArrowRight, ShieldCheck, MessageSquare, Globe, Building,
-  Tag, Zap, BarChart2, ExternalLink, Play, Star,
-  TrendingUp, Code2, Github, Twitter, Linkedin, Share2,
+  ThumbsUp, Bookmark, ArrowUpRight, FileText, Check,
+  Sparkles, Layers, ArrowRight, ShieldCheck, MessageSquare,
+  Building, Tag, Zap, BarChart2, Star, TrendingUp,
+    Code2, Share2, ListChecks,
+  ExternalLink, ChevronDown, ChevronUp,
 } from 'lucide-react';
 
 import { useQuery } from "@tanstack/react-query";
-import { API_URL, prefetchUrl } from "@/lib/api";
-import type { ToolDetailData, ToolCardData, ReviewData } from "@/lib/types";
+import { API_URL, fetchToolDetails, getFromCache } from "@/lib/api";
+import type { ToolCardData, ReviewData } from "@/lib/types";
 import type { ToolDetailDataExtended, PricingTier } from "@/data/tools";
 import { getSampleTool, getSampleSimilarTools } from "@/data/tools";
 import { PricingBadge } from "@/components/PricingBadge";
 import { RatingStars } from "@/components/RatingStars";
-import { BookmarkButton } from "@/components/BookmarkButton";
 import { ProsConsVerdict } from "@/components/ProsConsVerdict";
 import { RatingHistogram } from "@/components/RatingHistogram";
 import { ReviewForm } from "@/components/ReviewForm";
@@ -40,6 +39,11 @@ const PERSONA_MAP: Record<string, string> = {
   CONTENT_CREATORS: "Content Creators",
 };
 
+const ALT_ACCENT_COLORS = [
+  "#6E56CF", "#E85D4A", "#0082FB", "#34A853",
+  "#FF9900", "#E91E8C", "#00BCD4", "#FF6B35",
+];
+
 function formatNum(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
   return String(n);
@@ -47,190 +51,174 @@ function formatNum(n: number): string {
 
 function parseFeature(feat: string) {
   const parts = feat.split(/[:|-]/);
-  if (parts.length > 1) {
-    return { title: parts[0].trim(), description: parts.slice(1).join(":").trim() };
-  }
+  if (parts.length > 1) return { title: parts[0].trim(), description: parts.slice(1).join(":").trim() };
   return { title: feat, description: "" };
 }
 
-// ── Logo with fallback ────────────────────────────────────────────────────────
-function ToolLogo({ logoUrl, name, size = 96 }: { logoUrl: string | null; name: string; size?: number }) {
+// ── Logo ──────────────────────────────────────────────────────────────────────
+function ToolLogo({ logoUrl, name }: { logoUrl: string | null; name: string }) {
   const [failed, setFailed] = useState(false);
-  if (!logoUrl || failed) {
-    return <span className="text-3xl font-black text-neutral-900 select-none">{name.charAt(0)}</span>;
-  }
-  return (
-    <Image src={logoUrl} alt={`${name} logo`} width={size} height={size}
-      className="h-full w-full object-contain" priority onError={() => setFailed(true)} />
-  );
+  if (!logoUrl || failed) return <span className="text-2xl font-black text-neutral-900">{name.charAt(0)}</span>;
+  return <Image src={logoUrl} alt={name} width={80} height={80} className="h-full w-full object-contain" priority onError={() => setFailed(true)} />;
 }
 
-// ── Screenshot / Video Gallery ────────────────────────────────────────────────
-function MediaGallery({ screenshots, videoUrl, name }: {
-  screenshots: string[]; videoUrl?: string | null; name: string;
-}) {
-  const mediaItems = [
-    ...(videoUrl ? [{ type: "video" as const, src: videoUrl }] : []),
-    ...screenshots.map((src) => ({ type: "image" as const, src })),
-  ];
-  const [idx, setIdx] = useState(0);
-  if (mediaItems.length === 0) return null;
-  const active = mediaItems[idx];
-
+// ── Stat card ─────────────────────────────────────────────────────────────────
+function StatCard({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
-    <section className="rounded-xl border border-[#232326] bg-[#0d0d10] overflow-hidden">
-      {/* Main display */}
-      <div className="relative bg-[#0a0a0c] h-[280px] sm:h-[400px] flex items-center justify-center overflow-hidden">
-        {active.type === "video" ? (
-  <iframe
-    src={active.src
-      .replace("youtu.be/", "www.youtube.com/embed/")
-      .replace("watch?v=", "embed/")
-      .replace(/[?&]si=[^&]+/, "")}
-    className="w-full h-full"
-    allowFullScreen
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  />
-) : (
-          <Image src={active.src} alt={`${name} screenshot ${idx + 1}`} fill
-  className="object-cover" unoptimized />
-        )}
-        {mediaItems.length > 1 && (
-          <>
-            <button onClick={() => setIdx((i) => (i === 0 ? mediaItems.length - 1 : i - 1))}
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-colors">
-              <ChevronLeft size={16} />
-            </button>
-            <button onClick={() => setIdx((i) => (i === mediaItems.length - 1 ? 0 : i + 1))}
-              className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-colors">
-              <ChevronRight size={16} />
-            </button>
-          </>
-        )}
-      </div>
-      {/* Thumbnail strip */}
-      {mediaItems.length > 1 && (
-        <div className="flex gap-2 p-3 bg-[#0a0a0c] border-t border-[#1a1a1e] overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-[#232326] [&::-webkit-scrollbar-thumb]:rounded-full">          {mediaItems.map((item, i) => (
-            <button key={i} onClick={() => setIdx(i)}
-              className={`relative shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all ${i === idx ? "border-[#6E56CF]" : "border-[#232326] hover:border-[#52525B]"}`}>
-              {item.type === "video" ? (
-                <div className="w-full h-full bg-[#18181C] flex items-center justify-center">
-                  <Play size={14} className="text-white/60 fill-white/60" />
-                </div>
-              ) : (
-                <Image src={item.src} alt={`thumb ${i}`} fill className="object-cover" unoptimized />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-// ── Stat pill ─────────────────────────────────────────────────────────────────
-function StatPill({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl border border-[#232326] bg-[#111114] px-2 py-3 w-full hover:border-[#6E56CF]/30 transition-colors">
-      <Icon size={14} className="text-[#6E56CF]" />
+    <div className="flex flex-col items-center gap-1 rounded-xl border border-[#232326] bg-[#111114] px-3 py-3 hover:border-[#6E56CF]/30 transition-colors">
+      <Icon size={13} className="text-[#6E56CF]" />
       <span className="text-sm font-black text-white leading-none">{value}</span>
-      <span className="text-[9px] font-mono font-bold text-[#52525B] uppercase tracking-widest">{label}</span>
+      <span className="text-[9px] font-mono font-bold text-[#52525B] uppercase tracking-widest leading-none">{label}</span>
     </div>
   );
 }
 
-// ── Pricing tier card ─────────────────────────────────────────────────────────
+// ── Spec row ──────────────────────────────────────────────────────────────────
+function SpecRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[#131316] transition-colors border-b border-[#1a1a1e] last:border-0 text-xs">
+      <span className="text-[#52525B] shrink-0">{label}</span>
+      <span className="font-semibold text-white capitalize text-right ml-4">{value}</span>
+    </div>
+  );
+}
+
+// ── Integration Logo ──────────────────────────────────────────────────────────
+function IntegrationLogo({ integration }: { integration: { slug: string; name: string; logoUrl?: string | null; websiteUrl?: string | null } }) {
+  const [src, setSrc] = useState(
+    integration.logoUrl || `https://www.google.com/s2/favicons?domain=${integration.slug}.com&sz=128`
+  );
+  const [failed, setFailed] = useState(false);
+
+  const handleError = () => {
+    if (src !== `https://www.google.com/s2/favicons?domain=${integration.slug}.com&sz=128`) {
+      setSrc(`https://www.google.com/s2/favicons?domain=${integration.slug}.com&sz=128`);
+    } else {
+      setFailed(true);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center p-2.5 rounded-xl border border-[#232326] bg-[#131316]/40 hover:border-[#6E56CF]/20 transition-all gap-1.5">
+      <div className="relative h-7 w-7 rounded-lg bg-white p-0.5 overflow-hidden flex items-center justify-center">
+        {failed
+          ? <span className="text-[10px] font-bold text-neutral-900">{integration.name.charAt(0)}</span>
+          : <Image src={src} alt={integration.name} fill className="object-contain p-0.5" onError={handleError} />
+        }
+      </div>
+      <span className="text-[9px] text-[#71717A] font-semibold truncate w-full text-center">{integration.name}</span>
+    </div>
+  );
+}
+
+// ── Pricing card ──────────────────────────────────────────────────────────────
 function PricingCard({ tier }: { tier: PricingTier }) {
   return (
-    <div className={cn(
-      "relative rounded-xl border p-4 space-y-3 flex flex-col",
-      tier.isPopular
-        ? "border-[#6E56CF]/40 bg-[#6E56CF]/5"
-        : "border-[#232326] bg-[#0d0d10]"
-    )}>
+    <div className={cn("relative rounded-xl border p-4 space-y-3 flex flex-col",
+      tier.isPopular ? "border-[#6E56CF]/40 bg-[#6E56CF]/5" : "border-[#232326] bg-[#0d0d10]")}>
       {tier.isPopular && (
         <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#6E56CF] text-white text-[9px] font-extrabold uppercase px-3 py-0.5 rounded-full tracking-wider">
-          Most Popular
+          Popular
         </div>
       )}
       <div>
         <p className="text-[10px] font-mono font-bold text-[#71717A] uppercase tracking-widest">{tier.name}</p>
-        <p className="text-2xl font-black text-white mt-1">{tier.price}</p>
+        <p className="text-xl font-black text-white mt-1">{tier.price}</p>
         <p className="text-[11px] text-[#71717A] mt-0.5">{tier.description}</p>
       </div>
       <ul className="space-y-1.5 flex-1">
         {tier.features.map((f, i) => (
           <li key={i} className="flex items-start gap-2 text-[11px] text-[#A1A1AA]">
-            <Check size={11} className="text-[#6E56CF] shrink-0 mt-0.5" />
-            {f}
+            <Check size={10} className="text-[#6E56CF] shrink-0 mt-0.5" />{f}
           </li>
         ))}
       </ul>
-      <button className={cn(
-        "w-full rounded-lg py-2 text-xs font-bold transition-all",
-        tier.isPopular
-          ? "bg-[#6E56CF] text-white hover:bg-[#7C66DF]"
-          : "border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-white/10"
-      )}>
+      <button className={cn("w-full rounded-lg py-2 text-xs font-bold transition-all",
+        tier.isPopular ? "bg-[#6E56CF] text-white hover:bg-[#7C66DF]"
+          : "border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-white/10")}>
         {tier.price === "Custom" ? "Contact Sales" : "Get Started"}
       </button>
     </div>
   );
 }
 
-// ── Alternative tool card ─────────────────────────────────────────────────────
-const ALT_ACCENT_COLORS = [
-  "#6E56CF", "#E85D4A", "#0082FB", "#34A853",
-  "#FF9900", "#E91E8C", "#00BCD4", "#FF6B35",
-];
-
+// ── Alt card ──────────────────────────────────────────────────────────────────
 function AltCard({ tool, index = 0 }: { tool: ToolCardData; index?: number }) {
-  const [logoFailed, setLogoFailed] = useState(false);
-  const accentColor = ALT_ACCENT_COLORS[index % ALT_ACCENT_COLORS.length];
+  const [failed, setFailed] = useState(false);
+  const accent = ALT_ACCENT_COLORS[index % ALT_ACCENT_COLORS.length];
   return (
     <Link href={`/tools/${tool.slug}`}
       className="group flex gap-3 rounded-xl border border-[#232326] bg-[#0d0d10] p-4 transition-all duration-200 relative overflow-hidden"
       onMouseEnter={(e) => {
-        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
         const el = e.currentTarget;
-        el.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
-        el.style.backgroundColor = `${accentColor}08`;
-        const logoEl = el.querySelector<HTMLElement>('[data-altlogo="true"]');
-        if (logoEl) { logoEl.style.borderColor = accentColor; logoEl.style.boxShadow = `0 0 8px ${accentColor}55`; }
-        const nameEl = el.querySelector<HTMLElement>('[data-altname="true"]');
-        if (nameEl) nameEl.style.color = accentColor;
-      }}
-      onTouchStart={() => {
-        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
-      }}
-      onFocus={() => {
-        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
+        el.style.boxShadow = `inset 3px 0 0 ${accent}`;
+        el.style.backgroundColor = `${accent}08`;
+        (el.querySelector('[data-altlogo]') as HTMLElement)?.style.setProperty('border-color', accent);
+        (el.querySelector('[data-altname]') as HTMLElement)?.style.setProperty('color', accent);
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget;
         el.style.boxShadow = "";
         el.style.backgroundColor = "";
-        const logoEl = el.querySelector<HTMLElement>('[data-altlogo="true"]');
-        if (logoEl) { logoEl.style.borderColor = ""; logoEl.style.boxShadow = ""; }
-        const nameEl = el.querySelector<HTMLElement>('[data-altname="true"]');
-        if (nameEl) nameEl.style.color = "";
-      }}
-    >
-      <div data-altlogo="true" className="relative h-12 w-12 md:h-16 md:w-16 shrink-0 overflow-hidden rounded-xl border border-[#232326] bg-white flex items-center justify-center p-1.5 md:p-2 transition-all duration-200">
-        {tool.logoUrl && !logoFailed ? (
-          <Image src={tool.logoUrl} alt={tool.name} fill className="object-contain p-1"
-            onError={() => setLogoFailed(true)} />
-        ) : (
-          <span className="text-xl font-bold text-neutral-900">{tool.name.charAt(0)}</span>
-        )}
+        (el.querySelector('[data-altlogo]') as HTMLElement)?.style.removeProperty('border-color');
+        (el.querySelector('[data-altname]') as HTMLElement)?.style.removeProperty('color');
+      }}>
+      <div data-altlogo className="relative h-11 w-11 shrink-0 rounded-xl border border-[#232326] bg-white flex items-center justify-center p-1.5 transition-colors duration-200 overflow-hidden">
+        {tool.logoUrl && !failed
+          ? <Image src={tool.logoUrl} alt={tool.name} fill className="object-contain p-0.5" onError={() => setFailed(true)} />
+          : <span className="text-sm font-bold text-neutral-900">{tool.name.charAt(0)}</span>}
       </div>
-            <div className="min-w-0 flex-1">
-        <p data-altname="true" className="text-[13px] font-bold text-white truncate transition-colors duration-200">{tool.name}</p>
+      <div className="min-w-0 flex-1">
+        <p data-altname className="text-[13px] font-bold text-white truncate transition-colors duration-200">{tool.name}</p>
         <p className="text-[11px] text-[#71717A] line-clamp-2 mt-0.5 leading-snug">{tool.description}</p>
-        {tool.categories?.[0]?.category?.name && (
-          <span className="inline-flex items-center mt-2 rounded-full border border-[#232326] bg-[#131316] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA]">
-            {tool.categories[0].category.name}
-          </span>
+        <div className="flex items-center gap-2 mt-2">
+          {tool.categories?.[0]?.category?.name && (
+            <span className="rounded-full border border-[#232326] bg-[#131316] px-2 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+              {tool.categories[0].category.name}
+            </span>
+          )}
+          <PricingBadge pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} billingFrequency={tool.billingFrequency} />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+// ── Section header ────────────────────────────────────────────────────────────
+function SectionHeader({ icon: Icon, title, badge }: { icon: any; title: string; badge?: string }) {
+  return (
+    <div className="flex items-center justify-between border-b border-[#232326]/60 pb-2.5">
+      <div className="flex items-center gap-2">
+        <span className="flex h-5 w-5 items-center justify-center rounded bg-[#6E56CF]/15">
+          <Icon className="text-[#6E56CF] h-3 w-3" />
+        </span>
+        <h2 className="text-xs font-bold text-white uppercase tracking-wider">{title}</h2>
+      </div>
+      {badge && (
+        <span className="text-[10px] font-mono text-[#52525B] bg-[#131316] border border-[#232326] rounded-full px-2 py-0.5">
+          {badge}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ── Task card (matches Key Features card style) ───────────────────────────────
+function TaskCard({ task }: { task: { slug: string; title: string; description?: string } }) {
+  return (
+    <Link
+      href={`/tasks/${task.slug}`}
+      className="flex items-start gap-3 rounded-xl border border-[#232326] bg-[#131316]/40 px-3.5 py-3 hover:border-[#6E56CF]/30 hover:bg-[#6E56CF]/5 transition-all group"
+    >
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#6E56CF]/15 border border-[#6E56CF]/25 mt-0.5">
+        <Check size={11} className="text-[#6E56CF]" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[12px] font-bold text-white group-hover:text-[#A78BFA] transition-colors leading-snug">
+          {task.title}
+        </p>
+        {task.description && (
+          <p className="text-[11px] text-[#71717A] mt-0.5 leading-snug line-clamp-2">{task.description}</p>
         )}
       </div>
     </Link>
@@ -238,7 +226,7 @@ function AltCard({ tool, index = 0 }: { tool: ToolCardData; index?: number }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN COMPONENT
+// MAIN
 // ─────────────────────────────────────────────────────────────────────────────
 export function ToolDetailClient() {
   const params = useParams();
@@ -250,48 +238,49 @@ export function ToolDetailClient() {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "pricing" | "reviews">("overview");
 
+
+  const TASKS_VISIBLE = 8; // initial
+const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards (2 rows of 4 / 4 rows of 2) before "show all"
+
   const { data: detailData, isLoading, isError } = useQuery({
     queryKey: ["tool-detail", slug],
     queryFn: async () => {
       const sample = getSampleTool(slug);
-      if (sample) {
-        return {
-          tool: sample,
-          similarTools: getSampleSimilarTools(slug),
-          reviews: [],
-          bookmarked: false,
-        };
-      }
-      const res = await fetch(`${API_URL}/api/v1/tools/${slug}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Tool not found");
-      return await res.json();
+      if (sample) return { tool: sample, similarTools: getSampleSimilarTools(slug), reviews: [], bookmarked: false };
+      return fetchToolDetails(slug);
     },
-    staleTime: 10 * 60 * 1000,
+    initialData: () => {
+      const sample = getSampleTool(slug);
+      if (sample) return { tool: sample, similarTools: getSampleSimilarTools(slug), reviews: [], bookmarked: false };
+      return getFromCache<any>(`${API_URL}/api/v1/tools/${encodeURIComponent(slug)}`) || undefined;
+    },
+    staleTime: 15 * 60 * 1000,
   });
 
-  const toolRaw = detailData?.tool;
-  const tool: ToolDetailDataExtended | null = toolRaw ? {
-    ...toolRaw,
-    longDescription: toolRaw.longDescription ?? null,
-    videoUrl: toolRaw.videoUrl ?? null,
-    websiteScreenshotUrl: toolRaw.websiteScreenshotUrl ?? null,
-    releasedBy: toolRaw.releasedBy ?? toolRaw.company?.name ?? null,
-    country: toolRaw.country ?? null,
-    views: toolRaw.views ?? 0,
-    saves: toolRaw._count?.bookmarks ?? 0,
-    useCases: toolRaw.useCases ?? [],
-    pricingTiers: toolRaw.pricingTiers ?? [],
-    verdict: toolRaw.verdict ?? null,
-    linkedInUrl: toolRaw.linkedInUrl ?? null,
-    twitterUrl: toolRaw.twitterUrl ?? null,
-    githubUrl: toolRaw.githubUrl ?? null,
-    launchDate: toolRaw.launchDate ?? null,
-    alternativeIds: toolRaw.alternativeIds ?? [],
+  const raw = detailData?.tool;
+  const tool: ToolDetailDataExtended | null = raw ? {
+    ...raw,
+    longDescription: raw.longDescription ?? null,
+    videoUrl: null,
+    websiteScreenshotUrl: null,
+    releasedBy: raw.releasedBy ?? raw.company?.name ?? null,
+    country: raw.country ?? null,
+    views: raw.views ?? 0,
+    saves: raw._count?.bookmarks ?? 0,
+    useCases: raw.useCases ?? [],
+    pricingTiers: raw.pricingTiers ?? [],
+    verdict: raw.verdict ?? null,
+    linkedInUrl: raw.linkedInUrl ?? null,
+    twitterUrl: raw.twitterUrl ?? null,
+    githubUrl: raw.githubUrl ?? null,
+    launchDate: raw.launchDate ?? null,
+    alternativeIds: raw.alternativeIds ?? [],
   } : null;
 
   const similarTools: ToolCardData[] = detailData?.similarTools || [];
   const reviews: ReviewData[] = detailData?.reviews || [];
-  const notFoundState = isError || (!isLoading && !tool);
+  const ttasks: any[] = (raw?.ttasks) || [];
+  const visibleTasks = ttasks.slice(0, visibleCount);
 
   useEffect(() => {
     if (detailData?.tool) {
@@ -310,73 +299,76 @@ export function ToolDetailClient() {
   }, [detailData]);
 
   useEffect(() => {
-    if (tool) document.title = `${tool.name} — AI Tool Details, Pricing & Reviews | AI Orbit`;
+    if (tool) document.title = `${tool.name} — AI Tool | AI Orbit`;
   }, [tool]);
 
   const handleUpvote = () => {
     if (!tool) return;
     const next = !upvoted;
     setUpvoted(next);
-    setUpvoteCount((p) => next ? p + 1 : Math.max(0, p - 1));
+    setUpvoteCount(p => next ? p + 1 : Math.max(0, p - 1));
     localStorage.setItem(`upvoted-${tool.id}`, next ? "true" : "false");
   };
 
   const handleShare = async () => {
-  if (!tool) return;
-  const shareData = {
-    title: tool.name,
-    text: tool.description,
-    url: window.location.href,
+    if (!tool) return;
+    if (navigator.share) { try { await navigator.share({ title: tool.name, url: window.location.href }); } catch {} }
+    else navigator.clipboard.writeText(window.location.href).catch(() => {});
   };
-  if (navigator.share) {
-    try { await navigator.share(shareData); } catch {}
-  } else {
-    await navigator.clipboard.writeText(window.location.href);
-  }
-};
 
-  if (notFoundState) return notFound();
+  if (isError || (!isLoading && !tool)) return notFound();
 
-  if (isLoading || !tool) {
-    return (
-      <main className="mx-auto max-w-[1400px] px-4 py-8 md:px-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-4 w-32 rounded bg-[#232326]" />
-          <div className="rounded-2xl border border-[#232326] bg-[#0d0d10] p-8 h-48" />
-          <div className="grid lg:grid-cols-[1fr_360px] gap-6">
-            <div className="space-y-4">
-              <div className="h-80 rounded-xl bg-[#131316] border border-[#232326]" />
-              <div className="h-48 rounded-xl bg-[#131316] border border-[#232326]" />
-            </div>
-            <div className="space-y-4">
-              <div className="h-48 rounded-xl bg-[#131316] border border-[#232326]" />
-              <div className="h-48 rounded-xl bg-[#131316] border border-[#232326]" />
-            </div>
-          </div>
+  if (isLoading || !tool) return (
+    <main className="mx-auto max-w-[1400px] px-4 py-8 md:px-6 animate-pulse space-y-5">
+      <div className="h-4 w-32 rounded bg-[#232326]" />
+      <div className="h-52 rounded-2xl bg-[#131316] border border-[#232326]" />
+      <div className="grid lg:grid-cols-[1fr_300px] gap-5">
+        <div className="space-y-4">
+          <div className="h-40 rounded-xl bg-[#131316] border border-[#232326]" />
+          <div className="h-40 rounded-xl bg-[#131316] border border-[#232326]" />
         </div>
-      </main>
-    );
-  }
+        <div className="space-y-4">
+          <div className="h-40 rounded-xl bg-[#131316] border border-[#232326]" />
+          <div className="h-40 rounded-xl bg-[#131316] border border-[#232326]" />
+        </div>
+      </div>
+    </main>
+  );
 
   const formatDate = (v: string | null) => {
     if (!v) return "—";
-    return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date(v));
+    try { return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date(v)); }
+    catch { return v; }
   };
 
   const displayDescription = tool.longDescription || tool.description;
 
-  return (
-    <main className="mx-auto max-w-[1400px] px-4 py-6 md:px-6 md:py-10 text-white">
+  const specs = [
+    { label: "Pricing", value: tool.pricingModel.toLowerCase().replace("_", " ") },
+    tool.pricingAmount ? { label: "Starting at", value: `$${tool.pricingAmount}/${tool.billingFrequency.toLowerCase()}` } : null,
+    { label: "Open Source", value: tool.isOpenSource ? "Yes" : "No" },
+    { label: "API", value: tool.hasApi ? "Available" : "No" },
+    tool.releasedBy ? { label: "Released By", value: tool.releasedBy } : null,
+    tool.country ? { label: "Country", value: tool.country } : null,
+    tool.launchDate ? { label: "Launch Date", value: tool.launchDate } : null,
+    tool.releaseDate ? { label: "Release Date", value: formatDate(tool.releaseDate) } : null,
+    tool.company ? { label: "Company", value: tool.company.name } : null,
+    tool.performanceScore ? { label: "Score", value: `${tool.performanceScore}/100` } : null,
+  ].filter(Boolean) as { label: string; value: string }[];
 
-      {/* ── Breadcrumb ────────────────────────────────────────────────────────── */}
-      <nav className="mb-5 text-xs font-semibold text-[#52525B] flex items-center gap-1.5 flex-wrap">
+  const hasStats = tool.views > 0 || tool.saves > 0 || upvoteCount > 0 || tool.reviewCount > 0 || !!tool.avgRating;
+
+  return (
+    <main className="mx-auto max-w-[1400px] px-4 py-5 md:px-6 md:py-8 text-white">
+
+      {/* Breadcrumb */}
+      <nav className="mb-4 text-xs font-semibold text-[#52525B] flex items-center gap-1.5 flex-wrap">
         <Link href="/" className="hover:text-white transition-colors">Home</Link>
         <span>›</span>
         <Link href="/tools" className="hover:text-white transition-colors">AI Tools</Link>
         {tool.categories[0] && <>
           <span>›</span>
-          <Link href={`/tools/${tool.categories[0].category.slug}`}
-            className="hover:text-white transition-colors capitalize">
+          <Link href={`/tools/${tool.categories[0].category.slug}`} className="hover:text-white transition-colors">
             {tool.categories[0].category.name}
           </Link>
         </>}
@@ -384,186 +376,160 @@ export function ToolDetailClient() {
         <span className="text-[#A1A1AA]">{tool.name}</span>
       </nav>
 
-      {/* ── Hero Header ──────────────────────────────────────────────────────── */}
-      <header className="relative rounded-2xl border border-[#232326] bg-[#0A0A0C] p-6 md:p-8 mb-6 overflow-hidden">
-        {/* Accent top bar */}
+      {/* ── HERO ── */}
+      <header className="relative rounded-2xl border border-[#232326] bg-[#0A0A0C] overflow-hidden mb-5">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/60 to-transparent" />
-        <div className="absolute right-0 top-0 w-80 h-80 bg-[#6E56CF]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 w-64 h-64 bg-[#6E56CF]/5 rounded-full blur-3xl pointer-events-none" />
 
-                <div className="relative flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          {/* Left: logo + info */}
-          <div className="flex flex-col md:flex-row gap-4 items-center md:items-start">
-            <div className="relative flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#232326] bg-white p-2 md:p-3 shadow-xl shadow-black/25">
-              <ToolLogo logoUrl={tool.logoUrl} name={tool.name} />
+        <div className="relative p-5 md:p-7">
+          {/* Top row: logo + name + actions */}
+          <div className="flex flex-col sm:flex-row gap-4 sm:items-start sm:justify-between">
+
+            {/* Logo + name block */}
+            <div className="flex gap-4 items-start">
+              <div className="relative flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#232326] bg-white p-2 shadow-lg">
+                <ToolLogo logoUrl={tool.logoUrl} name={tool.name} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-xl md:text-2xl font-black text-white tracking-tight">{tool.name}</h1>
+                  {tool.verified && <ShieldCheck size={18} className="text-[#6E56CF] shrink-0" />}
+                  {tool.isTrending && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 border border-orange-500/20 px-2 py-0.5 text-[10px] font-bold text-orange-400">
+                      <TrendingUp size={9} /> Trending
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  <PricingBadge pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} billingFrequency={tool.billingFrequency} />
+                  <RatingStars rating={tool.avgRating} reviewCount={tool.reviewCount} size="sm" />
+                  {tool.categories.slice(0, 3).map(({ category }) => (
+                    <Link key={category.slug} href={`/tools/${category.slug}`}
+                      className="inline-block text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-white/10 transition-colors leading-none">
+                      {category.name}
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Description inline in hero — no separate block below */}
+                <p className="text-sm text-[#A1A1AA] leading-relaxed mt-2.5 max-w-2xl">{tool.description}</p>
+
+                {/* Meta rows */}
+                <div className="flex flex-col gap-1.5 mt-2">
+                  {tool.targetUsers?.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] text-[#52525B] font-bold shrink-0">Best for:</span>
+                      {tool.targetUsers.map(p => (
+                        <span key={p} className="rounded-md border border-[#232326] bg-[#131316] px-2 py-0.5 text-[10px] font-bold text-white/80">
+                          {PERSONA_MAP[p] || p}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {tool.compatibility?.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] text-[#52525B] font-bold shrink-0">Works on:</span>
+                      {tool.compatibility.map(c => (
+                        <span key={c} className="rounded-md border border-[#232326] bg-[#131316] px-2 py-0.5 text-[10px] font-bold text-[#A1A1AA]">
+                          {PLATFORM_MAP[c] || c}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {tool.tags?.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {tool.tags.slice(0, 5).map(({ tag }) => (
+                        <Link key={tag.slug} href={`/tools?tag=${tag.slug}`}
+                          className="inline-flex items-center gap-0.5 rounded-full border border-[#6E56CF]/30 bg-[#6E56CF]/10 px-2.5 py-0.5 text-[10px] font-mono font-bold text-[#A78BFA] hover:bg-[#6E56CF]/20 hover:text-white transition-all">
+                          <span className="text-[#6E56CF]">#</span>{tag.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
             </div>
 
-            <div className="space-y-2 min-w-0 w-full text-center md:text-left">
-                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-                <h1 className="text-xl md:text-3xl font-black tracking-tight text-white">
-                  {tool.name}
-                </h1>
-                {tool.verified && (
-                  <ShieldCheck size={20} className="text-[#6E56CF] shrink-0" aria-label="Verified" />
-                )}
-                {tool.isTrending && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 border border-orange-500/20 px-2 py-0.5 text-[10px] font-bold text-orange-400">
-                    <TrendingUp size={10} /> Trending
-                  </span>
-                )}
-              </div>
-
-              {/* Category + rating row */}
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-                {tool.pricingModel ? (
-  <PricingBadge pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} billingFrequency={tool.billingFrequency} />
-) : (
-  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#232326] bg-[#131316] px-2.5 py-1 text-[10px] font-bold text-[#52525B]">
-    <Tag size={9} className="text-[#52525B]" /> Pricing N/A
-  </span>
-)}
-                <RatingStars rating={tool.avgRating} reviewCount={tool.reviewCount} size="sm" />
-                {tool.categories.map(({ category }) => (
-                  <Link key={category.slug} href={`/tools/${category.slug}`}
-                    className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border border-[#232326] text-[#A1A1AA] hover:text-white hover:border-white/10 transition-colors">
-                    {category.name}
-                  </Link>
-                ))}
-              </div>
-
-              <p className="text-sm text-[#A1A1AA] max-w-2xl leading-relaxed">
-                {tool.description}
-              </p>
-
-              {/* Best for + Works on */}
-              <div className="flex flex-col gap-1.5 pt-1">
-                {tool.targetUsers?.length > 0 && (
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 text-xs">
-                    <span className="text-[#52525B] font-bold">Best for:</span>
-                    {tool.targetUsers.map((p) => (
-                      <span key={p} className="rounded-md border border-[#232326] bg-[#131316] px-2 py-0.5 font-bold text-white/80 text-[10px]">
-                        {PERSONA_MAP[p] || p}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {tool.compatibility?.length > 0 && (
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 text-xs">
-                    <span className="text-[#52525B] font-bold">Works on:</span>
-                    {tool.compatibility.map((c) => (
-                      <span key={c} className="rounded-md border border-[#232326] bg-[#131316] px-2 py-0.5 font-bold text-[#A1A1AA] text-[10px]">
-                        {PLATFORM_MAP[c] || c}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Tags */}
-              {tool.tags?.length > 0 && (
-  <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 pt-1 max-w-full">
-    {tool.tags.slice(0, 4).map(({ tag }) => (
-      <Link key={tag.slug} href={`/tools?tag=${tag.slug}`}
-        className="inline-flex items-center gap-1 rounded-full border border-[#6E56CF]/30 bg-[#6E56CF]/10 px-3 py-1 text-[10px] font-mono font-bold text-[#A78BFA] hover:bg-[#6E56CF]/20 hover:text-white hover:border-[#6E56CF]/50 transition-all">
-        <span className="text-[#6E56CF]">#</span>{tag.name}
-      </Link>
-    ))}
-  </div>
-)}
-            </div>
-          </div>
-
-          {/* Right: action buttons */}
-          <div className="flex flex-col gap-2 w-full md:w-56 shrink-0">
-            <a href={tool.websiteUrl} target="_blank" rel="noopener noreferrer nofollow"
-              className="inline-flex w-full justify-center items-center gap-2 rounded-xl bg-[#6E56CF] px-4 py-3 text-sm font-extrabold text-white shadow-lg shadow-[#6E56CF]/20 hover:bg-[#7C66DF] hover:-translate-y-0.5 transition-all active:scale-95">
-              Visit Website <ArrowUpRight size={15} strokeWidth={2.5} />
-            </a>
-            {tool.hasApi && tool.apiDocsUrl && (
-              <a href={tool.apiDocsUrl} target="_blank" rel="noopener noreferrer nofollow"
-                className="inline-flex w-full justify-center items-center gap-1.5 rounded-xl border border-[#232326] bg-[#0d0d10] px-4 py-2.5 text-sm font-semibold text-[#A1A1AA] hover:text-white hover:border-white/10 transition-all">
-                <Code2 size={14} /> View API Docs
+            {/* Action buttons */}
+            <div className="flex flex-col gap-2 w-full sm:w-52 shrink-0">
+              <a href={tool.websiteUrl} target="_blank" rel="noopener noreferrer nofollow"
+                className="inline-flex w-full justify-center items-center gap-2 rounded-xl bg-[#6E56CF] px-4 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-[#6E56CF]/20 hover:bg-[#7C66DF] transition-all active:scale-95">
+                Visit Website <ArrowUpRight size={14} strokeWidth={2.5} />
               </a>
-            )}
-            <div className="grid grid-cols-3 gap-2">
-  <button onClick={handleUpvote}
-    className={cn("flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all active:scale-95",
-      upvoted ? "bg-[#6E56CF] text-white border-[#6E56CF]" : "border-[#232326] bg-[#131316] text-white hover:border-white/10")}>
-    <ThumbsUp size={12} className={cn("shrink-0", upvoted && "fill-white")} />
-    {formatNum(upvoteCount)}
-  </button>
-  <button
-  onClick={() => setBookmarked((b) => !b)}
-  className={cn(
-    "flex items-center justify-center rounded-xl border px-3 py-2 transition-all active:scale-95",
-    bookmarked
-      ? "bg-[#6E56CF] text-white border-[#6E56CF]"
-      : "border-[#232326] bg-[#131316] text-white hover:border-white/10"
-  )}>
-  <Bookmark size={14} className={cn("shrink-0", bookmarked && "fill-white")} />
-</button>
-  <button onClick={handleShare}
-    className="flex items-center justify-center rounded-xl border border-[#232326] bg-[#131316] px-3 py-2 text-white hover:border-white/10 transition-all active:scale-95">
-    <Share2 size={14} className="shrink-0" />
-  </button>
-</div>
+              {tool.hasApi && tool.apiDocsUrl && (
+                <a href={tool.apiDocsUrl} target="_blank" rel="noopener noreferrer nofollow"
+                  className="inline-flex w-full justify-center items-center gap-1.5 rounded-xl border border-[#232326] bg-[#0d0d10] px-4 py-2 text-xs font-semibold text-[#A1A1AA] hover:text-white hover:border-white/10 transition-all">
+                  <Code2 size={13} /> View API Docs
+                </a>
+              )}
+              <div className="grid grid-cols-3 gap-2">
+                <button onClick={handleUpvote}
+                  className={cn("flex items-center justify-center gap-1 rounded-xl border px-2 py-2 text-xs font-bold transition-all",
+                    upvoted ? "bg-[#6E56CF] text-white border-[#6E56CF]" : "border-[#232326] bg-[#131316] text-white hover:border-white/10")}>
+                  <ThumbsUp size={11} className={cn(upvoted && "fill-white")} />
+                  <span className="text-[10px]">{formatNum(upvoteCount)}</span>
+                </button>
+                <button onClick={() => setBookmarked(b => !b)}
+                  className={cn("flex items-center justify-center rounded-xl border py-2 transition-all",
+                    bookmarked ? "bg-[#6E56CF] text-white border-[#6E56CF]" : "border-[#232326] bg-[#131316] text-white hover:border-white/10")}>
+                  <Bookmark size={13} className={cn(bookmarked && "fill-white")} />
+                </button>
+                <button onClick={handleShare}
+                  className="flex items-center justify-center rounded-xl border border-[#232326] bg-[#131316] py-2 text-white hover:border-white/10 transition-all">
+                  <Share2 size={13} />
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Stats row */}
-        <div className="relative grid grid-cols-3 sm:grid-cols-5 gap-2 mt-5 pt-4 border-t border-[#1a1a1e] w-full">
-  {tool.views > 0 && <StatPill icon={BarChart2} label="Views" value={formatNum(tool.views)} />}
-  {tool.saves > 0 && <StatPill icon={Bookmark} label="Saves" value={formatNum(tool.saves)} />}
-  {upvoteCount > 0 && <StatPill icon={ThumbsUp} label="Upvotes" value={formatNum(upvoteCount)} />}
-  {tool.reviewCount > 0 && <StatPill icon={Star} label="Reviews" value={formatNum(tool.reviewCount)} />}
-  {tool.avgRating && <StatPill icon={Star} label="Rating" value={`${tool.avgRating.toFixed(1)}/5`} />}
-</div>
+          {/* Stats row — only when data exists */}
+          {hasStats && (
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-4 pt-4 border-t border-[#1a1a1e]">
+              {tool.views > 0 && <StatCard icon={BarChart2} label="Views" value={formatNum(tool.views)} />}
+              {tool.saves > 0 && <StatCard icon={Bookmark} label="Saves" value={formatNum(tool.saves)} />}
+              {upvoteCount > 0 && <StatCard icon={ThumbsUp} label="Upvotes" value={formatNum(upvoteCount)} />}
+              {tool.reviewCount > 0 && <StatCard icon={Star} label="Reviews" value={formatNum(tool.reviewCount)} />}
+              {tool.avgRating && <StatCard icon={Star} label="Rating" value={`${tool.avgRating.toFixed(1)}/5`} />}
+            </div>
+          )}
+        </div>
       </header>
 
-      {/* ── Tab switcher ──────────────────────────────────────────────────────── */}
-      <div className="flex border-b border-[#232326] mb-6 overflow-x-auto scrollbar-none">
-        {(["overview", "pricing", "reviews"] as const).map((tab) => (
+      {/* ── TABS ── */}
+      <div className="flex border-b border-[#232326] mb-5 overflow-x-auto scrollbar-none">
+        {(["overview", "pricing", "reviews"] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
-            className={cn("px-6 py-3 text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border-b-2 -mb-px",
-  activeTab === tab
-    ? "border-[#6E56CF] text-white bg-[#6E56CF]/5"
-    : "border-transparent text-[#52525B] hover:text-[#A1A1AA] hover:bg-white/[0.03]")}>
+            className={cn("px-5 py-2.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border-b-2 -mb-px",
+              activeTab === tab ? "border-[#6E56CF] text-white bg-[#6E56CF]/5"
+                : "border-transparent text-[#52525B] hover:text-[#A1A1AA]")}>
             {tab === "reviews" ? `Reviews (${tool.reviewCount})` : tab}
           </button>
         ))}
       </div>
 
-      {/* ── OVERVIEW TAB ─────────────────────────────────────────────────────── */}
+      {/* ── OVERVIEW ── */}
       {activeTab === "overview" && (
-                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
 
-          {/* ── LEFT COLUMN ── */}
-          <div className="space-y-5">
+          {/* LEFT */}
+          <div className="space-y-4 min-w-0">
 
-            {/* Media gallery */}
-            <MediaGallery screenshots={tool.screenshots} videoUrl={tool.videoUrl} name={tool.name} />
-
-            {/* Overview */}
-            <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 md:p-6 space-y-4">
-              <div className="flex items-center gap-2.5 border-b border-[#232326]/60 pb-3">
-                <span className="flex h-6 w-6 items-center justify-center rounded bg-[#6E56CF]/15">
-                  <FileText className="text-[#6E56CF] h-3.5 w-3.5" />
-                </span>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Overview</h2>
+            {/* Overview — always show with description + use cases */}
+            <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-3 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              <div className="absolute -top-8 -left-8 w-32 h-32 bg-white/2 rounded-full blur-2xl pointer-events-none" />
+              <SectionHeader icon={FileText} title="Overview" />
+              <div className="text-[13px] leading-relaxed text-[#A1A1AA] space-y-2.5">
+                {displayDescription.split("\n\n").map((p, i) => <p key={i}>{p}</p>)}
               </div>
-              <div className="text-[13px] leading-relaxed text-[#A1A1AA] whitespace-pre-line space-y-3">
-                {displayDescription.split("\n\n").map((para, i) => (
-                  <p key={i}>{para}</p>
-                ))}
-              </div>
-
-              {/* Use cases */}
-              {tool.useCases && tool.useCases.length > 0 && (
-                <div className="pt-3 border-t border-[#232326]/60 space-y-2">
-                  <h3 className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-wider">Use Cases</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {tool.useCases.map((uc) => (
-                      <span key={uc} className="inline-flex items-center gap-1 rounded-full border border-[#232326] bg-[#131316] px-3 py-1 text-[11px] font-semibold text-[#A1A1AA]">
-                        <Zap size={9} className="text-[#6E56CF]" /> {uc}
+              {tool.useCases?.length > 0 && (
+                <div className="pt-2.5 border-t border-[#232326]/60 space-y-2">
+                  <p className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-wider">Use Cases</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {tool.useCases.map(uc => (
+                      <span key={uc} className="inline-flex items-center gap-1 rounded-full border border-[#232326] bg-[#131316] px-2.5 py-1 text-[11px] font-semibold text-[#A1A1AA]">
+                        <Zap size={8} className="text-[#6E56CF]" />{uc}
                       </span>
                     ))}
                   </div>
@@ -573,27 +539,21 @@ export function ToolDetailClient() {
 
             {/* Key Features */}
             {tool.features?.length > 0 && (
-              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 md:p-6 space-y-4">
-                <div className="flex items-center gap-2.5 border-b border-[#232326]/60 pb-3">
-                  <span className="flex h-6 w-6 items-center justify-center rounded bg-[#6E56CF]/15">
-                    <Sparkles className="text-[#6E56CF] h-3.5 w-3.5" />
-                  </span>
-                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">Key Features</h2>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {tool.features.map((feature, i) => {
-                    const parsed = parseFeature(feature);
+              <section className="rounded-xl border border-[#6E56CF]/20 bg-[#0d0d10] p-5 space-y-3 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/50 to-transparent" />
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#6E56CF]/5 rounded-full blur-2xl pointer-events-none" />
+                <SectionHeader icon={Sparkles} title="Key Features" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {tool.features.map((feat, i) => {
+                    const p = parseFeature(feat);
                     return (
-                      <div key={i}
-  className="flex items-start gap-3 rounded-xl border border-[#232326] bg-[#0d0d10] px-4 py-4 hover:border-[#6E56CF]/40 hover:bg-[#6E56CF]/5 hover:shadow-[0_0_20px_rgba(110,86,207,0.08)] transition-all duration-200">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#6E56CF]/15 border border-[#6E56CF]/25 mt-0.5">
-  <Check size={12} className="text-[#6E56CF]" />
-</span>
+                      <div key={i} className="group flex items-start gap-3 rounded-xl border border-[#6E56CF]/15 bg-[#6E56CF]/5 px-3.5 py-3 hover:border-[#6E56CF]/40 hover:bg-[#6E56CF]/10 transition-all">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#6E56CF]/20 border border-[#6E56CF]/40 mt-0.5 group-hover:bg-[#6E56CF]/30 transition-colors">
+                          <Sparkles size={10} className="text-[#A78BFA]" />
+                        </span>
                         <div className="min-w-0">
-                          <p className="text-[12px] font-bold text-white">{parsed.title}</p>
-                          {parsed.description && (
-                            <p className="text-[11px] text-[#71717A] mt-0.5 leading-snug">{parsed.description}</p>
-                          )}
+                          <p className="text-[12px] font-bold text-white group-hover:text-[#A78BFA] transition-colors">{p.title}</p>
+                          {p.description && <p className="text-[11px] text-[#71717A] mt-0.5 leading-snug">{p.description}</p>}
                         </div>
                       </div>
                     );
@@ -602,96 +562,132 @@ export function ToolDetailClient() {
               </section>
             )}
 
-            {/* Pros & Cons */}
-            <section>
-              <ProsConsVerdict
-                name={tool.name}
-                description={tool.description}
-                features={tool.features}
-                categories={tool.categories}
-                pros={tool.pros}
-                cons={tool.cons}
-              />
-            </section>
-
-          </div>
-
-          {/* ── RIGHT SIDEBAR ── */}
-          <aside className="space-y-5">
-
-            {/* Specifications */}
-            <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-3">
-              <h3 className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest border-b border-[#232326]/60 pb-3 flex items-center gap-2">
-                <FileText size={12} className="text-[#6E56CF]" /> Specifications
-              </h3>
-    <div className="space-y-1">
-                {[
-                  tool.pricingModel ? { label: "Pricing", value: tool.pricingModel.toLowerCase().replace("_", " ") } : { label: "Pricing", value: "Not listed" },
-                  tool.pricingAmount ? { label: "Starting at", value: `$${tool.pricingAmount}/${tool.billingFrequency.toLowerCase()}` } : null,
-                  { label: "Open Source", value: tool.isOpenSource ? "Yes" : "No" },
-                  { label: "API", value: tool.hasApi ? "Available" : "No" },
-                  tool.releasedBy ? { label: "Released By", value: tool.releasedBy } : null,
-                  tool.country ? { label: "Country", value: tool.country } : null,
-                  tool.launchDate ? { label: "Launch Date", value: tool.launchDate } : null,
-                  tool.releaseDate ? { label: "Latest Release", value: formatDate(tool.releaseDate) } : null,
-                  tool.company ? { label: "Company", value: tool.company.name } : null,
-                ].filter(Boolean).map((row: any) => (
-                  <div key={row.label} className="flex items-center gap-6 px-3 py-2.5 rounded-lg hover:bg-[#131316] transition-colors text-xs border-b border-[#1a1a1e] last:border-0">
-                    <span className="text-[#52525B] w-28 shrink-0">{row.label}</span>
-                    <span className="font-semibold text-white capitalize flex-1 text-right">{row.value}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* ROI Calculator */}
-            <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5">
-              <ROICalculator pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} name={tool.name} />
-            </section>
-
-            {/* Alternatives sidebar list — only show if media gallery is present */}
-            {similarTools.length > 0 && (tool.screenshots?.length > 0 || tool.videoUrl) && (
-              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-4">
-                <div className="flex items-center justify-between border-b border-[#232326]/60 pb-3">
-                  <h3 className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest flex items-center gap-2">
-                    <Layers size={12} className="text-[#6E56CF]" /> Featured Alternatives
-                  </h3>
-                </div>
-                <div className="space-y-3">
-                  {similarTools.slice(0, 6).map((s) => (
-                    <Link key={s.id} href={`/tools/${s.slug}`}
-                      className="flex items-center gap-3 py-2 border-b border-[#1a1a1e] last:border-0 group">
-                      <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-[#232326] bg-white p-1">
-                        {s.logoUrl ? (
-                          <Image src={s.logoUrl} alt={s.name} fill className="object-contain p-0.5" />
-                        ) : (
-                          <span className="text-xs font-bold text-neutral-900 flex items-center justify-center h-full">{s.name.charAt(0)}</span>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[12px] font-bold text-white group-hover:text-[#6E56CF] truncate transition-colors">{s.name}</p>
-                        <p className="text-[10px] text-[#71717A] truncate">{s.description}</p>
-                      </div>
-                
+            {/* ── WHAT YOU CAN DO — below Key Features, distinct style: left-border accent rows ── */}
+            {ttasks.length > 0 && (
+                            <section className="rounded-xl border border-[#2a2a35] bg-[#0d0d12] p-5 space-y-3 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/25 to-transparent" />
+                <div className="absolute -bottom-8 -right-8 w-36 h-36 bg-[#6E56CF]/4 rounded-full blur-2xl pointer-events-none" />
+                <SectionHeader icon={ListChecks} title="What You Can Do" badge={`${ttasks.length} tasks`} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {visibleTasks.map((t: any) => (
+                    <Link
+                      key={t.task.slug}
+                      href={`/tasks/${t.task.slug}`}
+                      className="group flex items-center gap-2.5 rounded-lg border border-[#232326] bg-[#131316]/60 px-3 py-2.5 hover:border-[#6E56CF]/40 hover:bg-[#6E56CF]/8 transition-all border-l-2 border-l-[#6E56CF]/40 hover:border-l-[#6E56CF]"
+                    >
+                      <Zap size={11} className="text-[#6E56CF] shrink-0 opacity-70 group-hover:opacity-100 transition-opacity" />
+                      <span className="text-[12px] font-semibold text-[#A1A1AA] group-hover:text-white transition-colors leading-snug truncate">
+                        {t.task.title}
+                      </span>
                     </Link>
                   ))}
                 </div>
-                <Link href="/tools" className="inline-flex items-center gap-1 text-xs font-bold text-[#6E56CF] hover:underline">
-                  View all <ArrowRight size={11} />
-                </Link>
+                {visibleCount < ttasks.length && (
+                  <button
+                    onClick={() => setVisibleCount(c => Math.min(c + 4, ttasks.length))}
+                    className="flex items-center gap-1.5 text-xs font-bold text-[#6E56CF] hover:text-[#A78BFA] transition-colors mt-1 group"
+                  >
+                    <ChevronDown size={13} className="group-hover:translate-y-0.5 transition-transform" />
+                    Show more
+                  </button>
+                )}
               </section>
             )}
 
-            {/* Company card — only show if media gallery is present */}
-            {tool.company && (tool.screenshots?.length > 0 || tool.videoUrl) && (
-              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-3">
-                <h3 className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest border-b border-[#232326]/60 pb-3 flex items-center gap-2">
-                  <Building size={12} className="text-[#6E56CF]" /> About the Company
+            {/* Pros & Cons */}
+            <section>
+              <ProsConsVerdict name={tool.name} description={tool.description} features={tool.features}
+                categories={tool.categories} pros={tool.pros} cons={tool.cons} />
+            </section>
+
+            {/* Integrations */}
+            {tool.integrations?.length > 0 && (
+              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-3 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
+                <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-[#6E56CF]/3 rounded-full blur-2xl pointer-events-none" />
+                <SectionHeader icon={Layers} title="Integrations" />
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
+                                    {tool.integrations.map(({ integration }) => (
+                    <IntegrationLogo key={integration.slug} integration={integration} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* RIGHT SIDEBAR */}
+          <aside className="space-y-4">
+
+            {/* Specs */}
+            <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-[#6E56CF]/3 rounded-full blur-xl pointer-events-none" />
+              <h3 className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest border-b border-[#232326]/60 pb-2.5 mb-1 flex items-center gap-1.5">
+                <FileText size={11} className="text-[#6E56CF]" /> Specifications
+              </h3>
+              {specs.map(row => <SpecRow key={row.label} label={row.label} value={row.value} />)}
+            </section>
+
+            {/* Categories + Tags — uniform pill height, no icon inside pill */}
+            {(tool.categories.length > 0 || tool.tags?.length > 0) && (
+              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4 space-y-3 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
+                <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-[#6E56CF]/3 rounded-full blur-xl pointer-events-none" />
+                <h3 className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest border-b border-[#232326]/60 pb-2.5 flex items-center gap-1.5">
+                  <Tag size={11} className="text-[#6E56CF]" /> Categories & Tags
+                </h3>
+                {tool.categories.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[9px] font-mono text-[#52525B] uppercase tracking-widest">Categories</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {tool.categories.map(({ category }) => (
+                        <Link
+                          key={category.slug}
+                          href={`/tools/${category.slug}`}
+                          className="inline-block rounded-md border border-[#6E56CF]/25 bg-[#6E56CF]/10 px-2.5 py-1 text-[11px] font-semibold text-[#A78BFA] hover:bg-[#6E56CF]/20 hover:border-[#6E56CF]/40 transition-all leading-none"
+                        >
+                          {category.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {tool.tags?.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[9px] font-mono text-[#52525B] uppercase tracking-widest">Tags</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {tool.tags.map(({ tag }) => (
+                        <Link
+                          key={tag.slug}
+                          href={`/tools?tag=${tag.slug}`}
+                          className="inline-block rounded-md border border-[#232326] bg-[#131316] px-2.5 py-1 text-[11px] font-mono font-semibold text-[#71717A] hover:border-[#6E56CF]/30 hover:text-[#A1A1AA] transition-all leading-none"
+                        >
+                          #{tag.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* ROI Calculator — only show when there are enough tasks to justify it */}
+            {ttasks.length >= 4 && (
+              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4">
+                <ROICalculator pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} name={tool.name} />
+              </section>
+            )}
+
+            {/* Company */}
+            {tool.company && (
+              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4 space-y-3">
+                <h3 className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest border-b border-[#232326]/60 pb-2.5 flex items-center gap-1.5">
+                  <Building size={11} className="text-[#6E56CF]" /> Company
                 </h3>
                 <div className="flex items-center gap-3">
                   {tool.company.logoUrl && (
-                    <div className="h-10 w-10 rounded-lg border border-[#232326] bg-white flex items-center justify-center overflow-hidden p-1">
-                      <Image src={tool.company.logoUrl} alt={tool.company.name} width={32} height={32} className="object-contain" />
+                    <div className="h-9 w-9 rounded-lg border border-[#232326] bg-white flex items-center justify-center overflow-hidden p-1">
+                      <Image src={tool.company.logoUrl} alt={tool.company.name} width={28} height={28} className="object-contain" />
                     </div>
                   )}
                   <div>
@@ -701,79 +697,63 @@ export function ToolDetailClient() {
                 </div>
               </section>
             )}
-
-           </aside>
+          </aside>
         </div>
       )}
 
-      {activeTab === "overview" && (<>
-        {/* ── FULL WIDTH: Integrations ── */}
-        {tool.integrations?.length > 0 && (
-          <section className="mt-5 rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-4">
-            <div className="flex items-center gap-2.5 border-b border-[#232326]/60 pb-3">
-              <span className="flex h-6 w-6 items-center justify-center rounded bg-[#6E56CF]/15">
-                <Layers className="text-[#6E56CF] h-3.5 w-3.5" />
-              </span>
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Integrations</h2>
-            </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-              {tool.integrations.map(({ integration }) => (
-                <div key={integration.slug}
-                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-[#232326] bg-[#131316]/40 hover:border-[#6E56CF]/20 transition-all text-center gap-2">
-                  <div className="relative h-8 w-8 overflow-hidden rounded-lg bg-white p-1">
-                    {integration.logoUrl ? (
-                      <Image src={integration.logoUrl} alt={integration.name} fill className="object-contain p-0.5" />
-                    ) : (
-                      <span className="text-xs font-bold text-neutral-900 flex items-center justify-center h-full">{integration.name.charAt(0)}</span>
-                    )}
-                  </div>
-                  <span className="text-[10px] text-[#71717A] font-semibold truncate w-full text-center">{integration.name}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-      </>)}
-      {/* ── PRICING TAB ───────────────────────────────────────────────────────── */}
+      {/* ── PRICING TAB ── */}
       {activeTab === "pricing" && (
-        <div className="space-y-6">
-          {tool.pricingTiers && tool.pricingTiers.length > 0 ? (
+        <div className="space-y-5">
+          {tool.pricingTiers?.length > 0 ? (
             <>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {tool.pricingTiers.map((tier) => (
-                  <PricingCard key={tier.name} tier={tier} />
-                ))}
+                {tool.pricingTiers.map(tier => <PricingCard key={tier.name} tier={tier} />)}
               </div>
               <div className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5">
                 <ROICalculator pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} name={tool.name} />
               </div>
             </>
           ) : (
-            <div className="rounded-xl border border-[#232326] bg-[#0d0d10] p-8 text-center">
-              <p className="text-[#52525B] text-sm">Detailed pricing tiers coming soon.</p>
+            <div className="rounded-xl border border-[#232326] bg-[#0d0d10] p-8 text-center space-y-4">
+              <p className="text-[#52525B] text-sm">Detailed pricing tiers not listed yet.</p>
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                <div className="flex flex-col items-center gap-1 px-5 py-3 rounded-xl border border-[#232326] bg-[#131316]">
+                  <span className="text-[10px] text-[#52525B]">Model</span>
+                  <span className="font-bold text-white capitalize">{tool.pricingModel.toLowerCase().replace("_", " ")}</span>
+                </div>
+                {tool.pricingAmount && (
+                  <div className="flex flex-col items-center gap-1 px-5 py-3 rounded-xl border border-[#6E56CF]/20 bg-[#6E56CF]/5">
+                    <span className="text-[10px] text-[#52525B]">Starting at</span>
+                    <span className="font-bold text-white">${tool.pricingAmount}/{tool.billingFrequency.toLowerCase()}</span>
+                  </div>
+                )}
+              </div>
               <a href={tool.websiteUrl} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 mt-3 text-xs font-bold text-[#6E56CF] hover:underline">
-                Check pricing on website <ExternalLink size={11} />
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#6E56CF] hover:underline">
+                Check on website <ExternalLink size={11} />
               </a>
+              <div className="rounded-xl border border-[#232326] bg-[#131316]/40 p-5 mt-4">
+                <ROICalculator pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} name={tool.name} />
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* ── REVIEWS TAB ──────────────────────────────────────────────────────── */}
+      {/* ── REVIEWS TAB ── */}
       {activeTab === "reviews" && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             <div className="lg:col-span-4">
               <RatingHistogram reviews={reviews} avgRating={tool.avgRating} reviewCount={tool.reviewCount} />
             </div>
             <div className="lg:col-span-8 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <MessageSquare size={14} className="text-[#6E56CF]" /> User Reviews
+                <h2 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <MessageSquare size={13} className="text-[#6E56CF]" /> User Reviews
                 </h2>
                 <button onClick={() => setShowReviewForm(!showReviewForm)}
-                  className="rounded-lg border border-[#6E56CF]/20 bg-[#0d0d10] px-3.5 py-1.5 text-xs font-semibold text-[#6E56CF] hover:bg-[#6E56CF]/5 transition-all">
+                  className="rounded-lg border border-[#6E56CF]/20 bg-[#0d0d10] px-3 py-1.5 text-xs font-semibold text-[#6E56CF] hover:bg-[#6E56CF]/5 transition-all">
                   {showReviewForm ? "Cancel" : "Write a review"}
                 </button>
               </div>
@@ -788,43 +768,43 @@ export function ToolDetailClient() {
         </div>
       )}
 
-      {/* ── Full-width Alternatives Grid (always visible) ─────────────────────── */}
+      {/* ── Full-width Alternatives ── */}
       {similarTools.length > 0 && activeTab === "overview" && (
-        <section className="mt-8 space-y-4">
+        <section className="mt-7 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <Layers size={14} className="text-[#6E56CF]" /> Top Alternatives to {tool.name}
+            <h2 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <Layers size={13} className="text-[#6E56CF]" /> Top Alternatives to {tool.name}
             </h2>
             <Link href="/tools" className="inline-flex items-center gap-1 text-xs font-bold text-[#6E56CF] hover:underline">
-              View all <ArrowRight size={12} />
+              View all <ArrowRight size={11} />
             </Link>
           </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {similarTools.map((s, i) => <AltCard key={s.id} tool={s} index={i} />)}
           </div>
         </section>
       )}
 
-      {/* ── Related topics ───────────────────────────────────────────────────── */}
+      {/* ── Related Topics ── */}
       {activeTab === "overview" && (tool.categories.length > 0 || (tool.tags?.length ?? 0) > 0) && (
-        <section className="mt-6 mb-4">
-          <div className="flex items-center gap-3 mb-3">
+        <section className="mt-5 mb-4">
+          <div className="flex items-center gap-3 mb-2.5">
             <div className="h-px flex-1 bg-[#232326]" />
-            <h2 className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest flex items-center gap-1.5">
-              <Tag size={11} className="text-[#6E56CF]" /> Related Topics
-            </h2>
+            <span className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest flex items-center gap-1">
+              <Tag size={10} className="text-[#6E56CF]" /> Related Topics
+            </span>
             <div className="h-px flex-1 bg-[#232326]" />
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {tool.categories.map(({ category }) => (
               <Link key={category.slug} href={`/tools/${category.slug}`}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#232326] bg-[#131316] px-3 py-1 text-[11px] font-semibold text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white hover:bg-[#6E56CF]/10 transition-all">
-                <Layers size={10} className="text-[#6E56CF]" /> {category.name}
+                className="inline-flex items-center gap-1 rounded-full border border-[#232326] bg-[#131316] px-3 py-1 text-[11px] font-semibold text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white hover:bg-[#6E56CF]/10 transition-all">
+                <Layers size={9} className="text-[#6E56CF]" />{category.name}
               </Link>
             ))}
             {tool.tags?.slice(0, 8).map(({ tag }) => (
               <Link key={tag.slug} href={`/tools?tag=${tag.slug}`}
-                className="inline-flex items-center rounded-full border border-[#232326] bg-[#131316] px-4 py-1.5 text-xs font-semibold text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white transition-all">
+                className="rounded-full border border-[#232326] bg-[#131316] px-3 py-1 text-[11px] font-semibold text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white transition-all">
                 #{tag.name}
               </Link>
             ))}

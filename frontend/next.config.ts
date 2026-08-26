@@ -38,7 +38,7 @@ const nextConfig: NextConfig = {
         destination: "/tools",
       },
       {
-        source: "/:type(collections|companies|countries|devices|fundraises|investors|news|repositories|robots|tasks|tools|videos|personal|creativity|models|agents)/:slug",
+        source: "/:type(companies|countries|devices|fundraises|investors|news|repositories|robots|tasks|tools|videos|personal|creativity|models|agents)/:slug",
         destination: "/p/:type/:slug",
       },
     ];

@@ -10,7 +10,6 @@ const CATEGORIES: Category[] = [
   { name: "Companies", href: "/companies", external: true },
   { name: "Repositories", href: "/repositories", external: true },
   { name: "News", href: "/news", external: true },
-  { name: "Collections", href: "/collections", external: true },
 ];
 
 export function HeroCategoryPills() {

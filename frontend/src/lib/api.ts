@@ -1,5 +1,5 @@
 import { cachedFetchJson, prefetchUrl, setInCache, getFromCache } from "./api-cache";
-export { prefetchUrl, setInCache, getFromCache };
+export { cachedFetchJson, prefetchUrl, setInCache, getFromCache };
 
 /**
  * The Hono/Workers backend's origin — every real data fetch and mutation
@@ -21,6 +21,20 @@ export const API_URL = resolveApiUrl();
 
 export async function fetchJsonSafe<T>(url: string | URL, fallback: T): Promise<T> {
   return cachedFetchJson<T>(url, fallback, { ttlMs: 15 * 60 * 1000 });
+}
+
+export async function fetchToolDetails(slug: string): Promise<any> {
+  if (!slug) return null;
+  const safeSlug = encodeURIComponent(slug.trim());
+  const url = `${API_URL}/api/v1/tools/${safeSlug}`;
+  return cachedFetchJson<any>(url, null, { ttlMs: 15 * 60 * 1000 });
+}
+
+export async function fetchAllTools(page = 1, category?: string): Promise<any> {
+  const url = new URL(`${API_URL}/api/v1/tools`);
+  url.searchParams.set("page", String(page));
+  if (category) url.searchParams.set("category", category);
+  return cachedFetchJson<any>(url.toString(), { tools: [], totalPages: 1, page }, { ttlMs: 15 * 60 * 1000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -57,19 +71,45 @@ export async function fetchAllCompanies(): Promise<any[]> {
   return list;
 }
 
+function sanitizeSlug(raw: string): string {
+  if (!raw) return "";
+  return raw
+    .replace(/^!\[+/, '')
+    .replace(/\]\(.*?\)/g, '')
+    .replace(/[\!\[\]]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 export async function fetchCompanyDetails(slug: string): Promise<any> {
   if (!slug) return null;
-  const safeSlug = encodeURIComponent(slug.replace(/^!\[+/, '').replace(/[\]\(\)]/g, '').trim());
-  if (!safeSlug) return null;
+  const decoded = decodeURIComponent(slug);
+  const targetSlug = sanitizeSlug(decoded);
+  if (!targetSlug) return null;
 
+  const safeSlug = encodeURIComponent(targetSlug);
   const primaryUrl = `${API_URL}/api/v1/companies/${safeSlug}`;
-  const res = await cachedFetchJson(primaryUrl, null, { ttlMs: 15 * 60 * 1000 });
-  if (res && !res.error) return res;
-  
+  const res = await cachedFetchJson<any>(primaryUrl, null, { ttlMs: 15 * 60 * 1000 });
+  if (res && !res.error && res.id) return res;
+
   if (API_URL !== "https://ai-orbit.palamrendra-pm.workers.dev") {
-    return cachedFetchJson(`https://ai-orbit.palamrendra-pm.workers.dev/api/v1/companies/${safeSlug}`, null, { ttlMs: 15 * 60 * 1000 });
+    const prodRes = await cachedFetchJson<any>(`https://ai-orbit.palamrendra-pm.workers.dev/api/v1/companies/${safeSlug}`, null, { ttlMs: 15 * 60 * 1000 });
+    if (prodRes && !prodRes.error && prodRes.id) return prodRes;
   }
-  return res;
+
+  try {
+    const all = await fetchAllCompanies();
+    const match = all.find((c: any) => {
+      const cSlug = sanitizeSlug(c.slug || "");
+      const cNameSlug = sanitizeSlug(c.name || "");
+      return cSlug === targetSlug || cNameSlug === targetSlug || (cSlug && targetSlug.includes(cSlug)) || (cNameSlug && targetSlug.includes(cNameSlug));
+    });
+    if (match) return match;
+  } catch {}
+
+  return (res && !res.error) ? res : null;
 }
 
 import type { AIModel, ModelsListResponse, ModelsSortOption } from "./types";
@@ -235,7 +275,7 @@ export async function fetchDeviceById(id: string): Promise<any | null> {
 
 export interface RealSearchSuggestion {
   id: string;
-  type: "tool" | "company" | "model" | "repository" | "robot" | "device";
+  type: "tool" | "company" | "model" | "repository" | "robot" | "device" | "news" | "video" | "collection" | "task" | "mcp";
   title: string;
   category: string;
   slug: string | null;
