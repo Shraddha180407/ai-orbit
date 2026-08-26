@@ -237,6 +237,12 @@ function CompanyRow({
   const cleanName = formatCompanyName(company.name);
   const safeSlug = cleanCompanySlug(company.slug);
 
+  const hasModels = authenticModels.length > 0 || (company._count?.aiModels || 0) > 0;
+  const hasTools = (company.tools && company.tools.length > 0) || (company._count?.tools || 0) > 0;
+
+  const derivedAiNative = hasAiNative !== null ? hasAiNative : (hasModels || hasTools ? true : null);
+  const derivedSector = company.sector || (hasModels ? "Foundation Models" : (hasTools ? "Generative AI" : null));
+
   return (
     <Link
       href={`/companies/${safeSlug}`}
@@ -322,7 +328,7 @@ function CompanyRow({
 
       {/* Col 6: AI Native */}
       <div>
-        <BoolPill value={hasAiNative} />
+        <BoolPill value={derivedAiNative} />
       </div>
 
       {/* Col 7: Profitable */}
@@ -332,7 +338,7 @@ function CompanyRow({
 
       {/* Col 8: Sector */}
       <div className="min-w-0 text-[11px] font-mono text-[#A1A1AA] truncate">
-        {company.sector || "—"}
+        {derivedSector || "—"}
       </div>
 
       {/* Col 9: Models Count */}
