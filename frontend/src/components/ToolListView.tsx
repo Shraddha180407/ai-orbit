@@ -20,6 +20,28 @@ import { useUser } from "@/hooks/use-user";
 import { toggleBookmark } from "@/lib/actions";
 import { API_URL, prefetchUrl } from "@/lib/api";
 
+// ── Helper: Smart trim at natural breakpoints without dots ──────────────
+function smartTrim(text: string, maxLength = 85) {
+  if (!text) return "—";
+  if (text.length <= maxLength) return text;
+  
+  const sliced = text.slice(0, maxLength);
+  
+  // Find the last natural pause (comma, or words like 'and', 'or', 'with', 'to')
+  const match = sliced.match(/(.*)(\s+and\s+|\s+or\s+|\s+with\s+|\s+to\s+|,)/i);
+  
+  // If we found a break point, and it doesn't make the string too short
+  if (match && match[1].length > 40) {
+    let clean = match[1].trim();
+    // Clean up any stray commas left at the end
+    if (clean.endsWith(',')) clean = clean.slice(0, -1);
+    return clean; // No "..." added!
+  }
+  
+  // Fallback: cut cleanly at the last space
+  const lastSpace = sliced.lastIndexOf(" ");
+  return sliced.slice(0, lastSpace > 0 ? lastSpace : maxLength);
+}
 const MAX_COMPARE = 2;
 
 const ROW_ACCENT_COLORS = [
@@ -49,11 +71,10 @@ type ToolListViewProps = {
   skeletonRows?: number;
 };
 
-// ── Column layout (matches devices-client exactly) ──────────────────────────
 // logo | name+desc | task | pricing | api | open-source | compatibility | released | share | bookmark | compare
 const COL_TEMPLATE =
-  "grid-cols-[44px_minmax(200px,2.5fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(100px,1fr)_44px_44px_44px]";
-const COL_MIN_WIDTH = "min-w-[1100px]";
+  "grid-cols-[44px_minmax(280px,3.5fr)_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_minmax(80px,0.7fr)_44px_44px_44px]";
+const COL_MIN_WIDTH = "min-w-[1150px]";
 
 // ── Formatters ───────────────────────────────────────────────────────────────
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -284,7 +305,7 @@ function ToolRow({
             <span className="text-[#71717A] opacity-30 shrink-0"><ExternalLink size={13} /></span>
           )}
         </div>
-        <p className="mt-0.5 line-clamp-1 text-[11px] text-[#A1A1AA] leading-snug pr-2">
+        <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-normal break-words">
           {tool.description}
         </p>
       </div>
@@ -292,7 +313,7 @@ function ToolRow({
       {/* Col 3: Task */}
       <div className="min-w-0">
         {tool.ttasks && tool.ttasks.length > 0 ? (
-          <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] max-w-full truncate block">
+          <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] whitespace-normal break-words text-center leading-tight">
             {tool.ttasks[0].task.title}
           </span>
         ) : (
