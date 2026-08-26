@@ -179,7 +179,17 @@ async function performFetch<T>(urlStr: string, fallback: T, ttlMs: number): Prom
     });
 
     if (!res.ok) {
-      // If fetch fails, try to return stale cache before falling back
+      if (urlStr.includes("http://localhost:8787")) {
+        const prodUrl = urlStr.replace("http://localhost:8787", "https://ai-orbit.palamrendra-pm.workers.dev");
+        try {
+          const prodRes = await fetch(prodUrl, { headers: { Accept: "application/json" } });
+          if (prodRes.ok) {
+            const prodData = (await prodRes.json()) as T;
+            setInCache(urlStr, prodData, ttlMs);
+            return prodData;
+          }
+        } catch {}
+      }
       const stale = getFromCache<T>(urlStr);
       if (stale !== null) return stale;
       return fallback;
@@ -189,6 +199,17 @@ async function performFetch<T>(urlStr: string, fallback: T, ttlMs: number): Prom
     setInCache(urlStr, data, ttlMs);
     return data;
   } catch {
+    if (urlStr.includes("http://localhost:8787")) {
+      const prodUrl = urlStr.replace("http://localhost:8787", "https://ai-orbit.palamrendra-pm.workers.dev");
+      try {
+        const prodRes = await fetch(prodUrl, { headers: { Accept: "application/json" } });
+        if (prodRes.ok) {
+          const prodData = (await prodRes.json()) as T;
+          setInCache(urlStr, prodData, ttlMs);
+          return prodData;
+        }
+      } catch {}
+    }
     const stale = getFromCache<T>(urlStr);
     if (stale !== null) return stale;
     return fallback;

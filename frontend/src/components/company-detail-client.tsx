@@ -49,7 +49,7 @@ function formatValuation(val: string | number | null | undefined): string {
   return `$${num}`;
 }
 
-type TabType = 'tools' | 'models' | 'devices' | 'papers' | 'jobs' | 'repositories' | 'news' | 'videos' | 'fundraises' | 'investments';
+type TabType = 'tools' | 'models' | 'devices' | 'repositories' | 'news' | 'videos' | 'fundraises' | 'investments';
 
 export function CompanyDetailClient() {
   const params = useParams();
@@ -67,12 +67,6 @@ export function CompanyDetailClient() {
   const [activeTab, setActiveTab] = useState<TabType>('tools');
   const [isFollowing, setIsFollowing] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
-
-  useEffect(() => {
-    if (!isLoading && !company && slug) {
-      router.replace('/companies');
-    }
-  }, [isLoading, company, slug, router]);
 
   const handleFollowClick = () => {
     if (!isAuthenticated) {
@@ -130,7 +124,26 @@ export function CompanyDetailClient() {
     );
   }
 
-  if (!company) return null;
+  if (!company) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 py-20 flex-1 flex flex-col items-center justify-center text-center">
+          <h1 className="text-2xl font-bold text-white mb-2">Company Not Found</h1>
+          <p className="text-sm text-[#71717A] max-w-md mb-6">
+            The company profile you are looking for does not exist or has been moved.
+          </p>
+          <Link
+            href="/companies"
+            className="px-4 py-2 bg-white text-black text-xs font-bold rounded-xl hover:bg-neutral-200 transition-colors"
+          >
+            Back to Companies Directory
+          </Link>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   const dash = "—";
   const cleanName = formatCompanyName(company.name);
@@ -138,20 +151,20 @@ export function CompanyDetailClient() {
 
   const toolsCount = company.tools?.length || company._count?.tools || 0;
   const modelsCount = company.aiModels?.length || company._count?.aiModels || 0;
-  const sectorName = company.sector || "Artificial Intelligence";
+  const firstTool = company.tools && company.tools.length > 0 ? company.tools[0] : null;
+  const sectorName = company.sector || (firstTool as any)?.category || (firstTool as any)?.tags?.[0] || "Artificial Intelligence";
+  const companyDesc = company.description || (firstTool as any)?.description || `${cleanName} is an artificial intelligence entity building software solutions.`;
   const typesList = (company.type || []) as string[];
   const isAiNative = typesList.length > 0 ? typesList.includes('AI_NATIVE') : null;
   const isProfitable = typesList.length > 0 ? typesList.includes('PROFITABLE') : null;
-  const mostPopularTool = company.tools && company.tools.length > 0 ? company.tools[0] : null;
+  const mostPopularTool = firstTool;
   const locationString = company.city && company.country ? `${company.city}, ${company.country}` : company.country || company.city || dash;
 
-  // Module Navigation Tabs Config (Complete 10 Tabs from Matrix)
+  // Module Navigation Tabs Config (Strict AI Orbit Published Modules: Papers & Jobs Removed)
   const moduleTabs: { id: TabType; label: string; count: number; icon: React.ReactNode }[] = [
     { id: 'tools', label: 'Tools', count: toolsCount, icon: <Layers size={13} /> },
     { id: 'models', label: 'Models', count: modelsCount, icon: <Sparkles size={13} /> },
     { id: 'devices', label: 'Devices', count: 0, icon: <Cpu size={13} /> },
-    { id: 'papers', label: 'Papers', count: 0, icon: <FileText size={13} /> },
-    { id: 'jobs', label: 'Jobs', count: 0, icon: <Briefcase size={13} /> },
     { id: 'repositories', label: 'Repositories', count: 0, icon: <Code size={13} /> },
     { id: 'news', label: 'News', count: 0, icon: <Newspaper size={13} /> },
     { id: 'videos', label: 'Videos', count: 0, icon: <Video size={13} /> },
@@ -307,7 +320,7 @@ export function CompanyDetailClient() {
 
           {/* Description Overview */}
           <p className="text-[#A1A1AA] text-xs sm:text-sm leading-relaxed max-w-4xl mb-5">
-            {company.description || `${cleanName} is a pioneer in artificial intelligence, building cutting-edge foundation models and scalable intelligent software solutions.`}
+            {companyDesc}
           </p>
 
           {/* Social Links Row */}
