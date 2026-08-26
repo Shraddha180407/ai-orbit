@@ -277,7 +277,23 @@ function ToolRow({
   return (
     <div
       onClick={() => {
-        router.push(targetUrl);
+        let targetPath = basePath;
+        let identifier = tool.slug; // Default to slug
+
+        if (tool.entityType === 'COMPANY') targetPath = '/companies';
+        if (tool.entityType === 'VIDEO') targetPath = '/videos';
+        if (tool.entityType === 'NEWS') targetPath = '/news';
+        if (tool.entityType === 'ROBOT') targetPath = '/robots';
+        if (tool.entityType === 'DEVICE') targetPath = '/devices';
+        if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
+        if (tool.entityType === 'MODEL') {
+          targetPath = '/models';
+          identifier = tool.id; 
+        }
+        
+        if (tool.entityType === 'TOOL') targetPath = '/tools';
+        
+        router.push(`${targetPath}/${identifier}`);
       }}
       role="listitem"
       className={`cursor-pointer group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}

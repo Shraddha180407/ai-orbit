@@ -346,7 +346,7 @@ export class MCPService {
 
     const where: Prisma.MCPItemWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
 
-    // Build orderBy clause based on sortBy parameter
+    // Build orderBy clause to guarantee items with launch dates and high engagement float to the top
     let orderBy: Prisma.MCPItemOrderByWithRelationInput[] = [];
     
     switch (sortBy) {
@@ -354,23 +354,29 @@ export class MCPService {
         orderBy = [
           { monthlyVisits: 'desc' },
           { viewCount: 'desc' },
+          { launchDate: 'desc' },
         ];
         break;
       case 'top-rated':
         orderBy = [
           { qualityScore: 'desc' },
+          { launchDate: 'desc' },
           { reviews: { _count: 'desc' } },
         ];
         break;
       case 'most-upvoted':
         orderBy = [
           { upvoteCount: 'desc' },
+          { launchDate: 'desc' },
         ];
         break;
       case 'recently-updated':
       default:
+        // This forces items with a real launchDate to take absolute priority over null ones!
         orderBy = [
+          { launchDate: 'desc' },
           { lastUpdatedDate: 'desc' },
+          { viewCount: 'desc' },
         ];
         break;
     }
