@@ -19,6 +19,7 @@ import UserCircle from 'lucide-react/dist/esm/icons/user-circle';
 import Palette from 'lucide-react/dist/esm/icons/palette';
 import TrendingUp from 'lucide-react/dist/esm/icons/trending-up';
 import Trophy from 'lucide-react/dist/esm/icons/trophy';
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
 
 import { HeroFeatureChips } from "@/components/HeroFeatureChips";
 import { SortDropdown } from "@/components/SortDropdown";
@@ -26,43 +27,32 @@ import { Logo } from "@/components/ui/Logo";
 import { ENTITY_META } from "@/lib/entityMeta";
 import { useHomeSearch } from "@/hooks/useHomeSearch";
 import type { RealSearchSuggestion } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { API_URL, fetchAllCompanies, fetchAllRobots, fetchAllDevices, fetchModels, fetchRepositories, fetchMCPItems, prefetchUrl } from "@/lib/api";
+import { fetchTasks as fetchTasksApi } from "@/lib/tasks-api";
 
-/**
- * Where a live suggestion should actually take you — its own detail page,
- * not another search. Falls back to a search-results link only when the
- * backend didn't give us a slug to route to.
- */
+// NEW: Import the unified filter dropdown
+import { UnifiedFilterDropdown } from "@/components/UnifiedFilterDropdown"; 
+
 function getSuggestionHref(s: RealSearchSuggestion): string {
   const meta = ENTITY_META[s.type];
   if (!s.slug) return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
 
   switch (s.type) {
-    case "tool":
-      return `/p/tools/${s.slug}`;
-    case "company":
-      return `/p/companies/${s.slug}`;
-    case "repository":
-      return `/p/repositories/${s.slug}`;
-    case "robot":
-      return `/p/robots/${s.slug}`;
-    case "device":
-      return `/p/devices/${s.slug}`;
-    case "model":
-      return `/models/${s.slug}`;
-    case "news":
-      return `/p/news/${s.slug}`;
-    case "video":
-      return `/p/videos/${s.slug}`;
-    case "task":
-      return `/p/tasks/${s.slug}`;
-    case "mcp":
-      return `/p/mcp/${s.slug}`;
-    default:
-      return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
+case "tool": return `/p/tools/${s.slug}`;
+    case "company": return `/p/companies/${s.slug}`;
+    case "repository": return `/p/repositories/${s.slug}`;
+    case "robot": return `/p/robots/${s.slug}`;
+    case "device": return `/p/devices/${s.slug}`;
+    case "model": return `/models/${s.slug}`;
+    case "news": return `/p/news/${s.slug}`;
+    case "video": return `/p/videos/${s.slug}`;
+    case "task": return `/p/tasks/${s.slug}`;
+    case "mcp": return `/p/mcp/${s.slug}`;
+    default: return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
   }
 }
 
-// Top-of-menu quick actions for the homepage hero search dropdown.
 const QUICK_LINKS = [
   { label: "Trending", href: "/search/trending", icon: TrendingUp, color: "#34D399" },
   { label: "Leaderboard", href: "/leaderboard", icon: Trophy, color: "#FBBF24" },
@@ -95,8 +85,6 @@ function groupSuggestionsByType(
 // "Browse by type" section in the empty-query dropdown reuses DIRECTORY_CARDS
 // directly (defined below) so its icons/colors always match the nav strip.
 
-import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
-
 const DIRECTORY_CARDS = [
   { name: "New", href: "/", description: "Discover the newest AI additions.", icon: Sparkles, color: "#6E56CF" },
   { name: "Tools", href: "/tools", description: "Browse the full AI tools directory, filter by category and pricing.", icon: Wrench, color: "#FFC53D" },
@@ -114,19 +102,9 @@ const DIRECTORY_CARDS = [
   { name: "Creativity", href: "/creativity/image-generation", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
 
-// Search-suggestion group headers (e.g. "Companies", "Models") must look
-// exactly like the DIRECTORY_CARDS nav strip above: same icon glyph AND the
-// same colored rounded badge treatment (tinted background + tinted icon),
-// not a plain gray icon. Falls back to ENTITY_META's icon/no-tint for types
-// with no strip entry (e.g. country, fundraise, investor).
 const DIRECTORY_CARD_BY_NAME: Record<string, (typeof DIRECTORY_CARDS)[number]> = Object.fromEntries(
   DIRECTORY_CARDS.map((c) => [c.name, c])
 );
-
-import { useQueryClient } from "@tanstack/react-query";
-import { API_URL, fetchAllCompanies, fetchAllRobots, fetchAllDevices, fetchModels, fetchRepositories, fetchMCPItems, prefetchUrl } from "@/lib/api";
-import { fetchTasks as fetchTasksApi } from "@/lib/tasks-api";
-
 export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string } = {}) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -136,6 +114,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
   const hoverTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   const prefetchCategory = (cardName: string, href: string) => {
+    // ... [Prefetch logic remains identical]
     switch (cardName) {
       case "New":
         queryClient.prefetchInfiniteQuery({
@@ -249,7 +228,6 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     }
   };
 
-  // Idle background prefetch for top categories
   useEffect(() => {
     const timer = setTimeout(() => {
       prefetchCategory("Tools", "/tools");
@@ -271,11 +249,8 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
 
   const runSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (query.trim()) {
-      params.set("q", query);
-    } else {
-      params.delete("q");
-    }
+    if (query.trim()) params.set("q", query);
+    else params.delete("q");
     setSearchOpen(false);
     router.push(`${searchAction}?${params.toString()}`);
   };
@@ -285,7 +260,6 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     runSearch(searchValue);
   };
 
-  // Close the search dropdown on outside click or Escape.
   useEffect(() => {
     if (!searchOpen) return;
     function handleClick(e: MouseEvent) {
@@ -307,7 +281,6 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     };
   }, [searchOpen]);
 
-  // ⌘K / Ctrl+K opens the homepage search dropdown.
   useEffect(() => {
     function handleShortcut(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -320,9 +293,75 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     return () => document.removeEventListener("keydown", handleShortcut);
   }, []);
 
+  // Helper to render the actual pill card UI
+  const renderCard = (card: typeof DIRECTORY_CARDS[number]) => {
+    const Icon = card.icon;
+    const isSelected =
+      card.href === "/"
+        ? pathname === "/"
+        : card.name === "Tools"
+        ? pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp") && !pathname?.startsWith("/tools/compare"))
+        : card.name === "Agents"
+        ? pathname === "/agents" || pathname?.startsWith("/agents")
+        : card.name === "Tasks"
+        ? pathname === "/tasks"
+        : card.name === "Personal"
+        ? pathname === "/tasks/personal" || pathname === "/personal"
+        : card.name === "Creativity"
+        ? pathname === "/tasks/creativity" || pathname?.startsWith("/creativity")
+        : pathname?.startsWith(card.href);
+    const isNew = card.name === "New";
+
+    return (
+      <Link
+        key={card.name}
+        href={card.href}
+        className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${
+          isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
+        }`}
+        onPointerEnter={(e) => {
+          handlePointerEnter(card.name, card.href);
+          if (!(isNew && isSelected)) e.currentTarget.style.borderColor = card.color;
+          e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
+        }}
+        onPointerLeave={(e) => {
+          handlePointerLeave(card.name);
+          if (!isSelected) {
+            e.currentTarget.style.borderColor = "";
+            e.currentTarget.style.boxShadow = "";
+          }
+        }}
+        onFocus={() => handlePointerEnter(card.name, card.href)}
+        style={
+          isSelected && !isNew
+            ? { borderColor: card.color, boxShadow: `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55` }
+            : undefined
+        }
+      >
+        {isNew && isSelected && (
+          <>
+            <div 
+              className="absolute inset-[-100%] animate-[spin_3s_linear_infinite] opacity-70"
+              style={{ background: `conic-gradient(from 0deg at 50% 50%, transparent 0%, transparent 60%, ${card.color} 100%)` }} 
+            />
+            <div className="absolute inset-[1px] rounded-[7px] bg-[#0d0d10]" />
+          </>
+        )}
+        <div
+          className="relative z-10 flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border transition-colors"
+          style={{ backgroundColor: `${card.color}1a`, borderColor: `${card.color}40` }}
+        >
+          <Icon size={10} strokeWidth={1.75} style={{ color: card.color }} />
+        </div>
+        <span className="relative z-10 text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
+          {card.name}
+        </span>
+      </Link>
+    );
+  };
+
   return (
     <>
-      {/* Hero Section */}
       <section
         className="relative z-20 w-full flex flex-col items-center pt-4 pb-6 px-6"
         style={{
@@ -409,7 +448,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                           const visible = items.slice(0, MAX_ROWS_PER_GROUP);
                           const remaining = items.length - visible.length;
                           return (
-                            <div key={type} className="mb-1 last:mb-0">
+<div key={type} className="mb-1 last:mb-0">
                               {/* Section header, e.g. "Companies" — icon + badge match the nav strip (DIRECTORY_CARDS) exactly */}
                               <div className="sticky top-0 z-10 mb-1 flex items-center gap-2 rounded-md border-y border-search-border/60 bg-search-surface-active px-2.5 py-2 text-[11px] font-bold uppercase tracking-wider text-search-text-secondary">
                                 <span
@@ -424,6 +463,17 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                                 <Link
                                   key={`${s.type}-${s.id}`}
                                   href={getSuggestionHref(s)}
+                                  // 👇 OUR PREFETCH LOGIC MERGED INTO THE NEW UI
+                                  onPointerEnter={() => {
+                                    if (s.slug) {
+                                      if (s.type === "tool") prefetchUrl(`${API_URL}/api/v1/tools/${s.slug}`);
+                                      else if (s.type === "company") prefetchUrl(`${API_URL}/api/v1/companies/${s.slug}`);
+                                      else if (s.type === "model") prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(s.slug)}`);
+                                      else if (s.type === "robot") prefetchUrl(`${API_URL}/api/v1/robots/${s.slug}`);
+                                      else if (s.type === "device") prefetchUrl(`${API_URL}/api/v1/devices/${s.slug}`);
+                                      else if (s.type === "repository") prefetchUrl(`${API_URL}/api/v1/repositories/${s.slug}`);
+                                    }
+                                  }}
                                   onClick={() => setSearchOpen(false)}
                                   className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm hover:bg-search-surface-hover"
                                 >
@@ -532,77 +582,23 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
       {/* Directory nav strip */}
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
         <div className="mx-auto w-full max-w-[1600px]">
-          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none">
-            {DIRECTORY_CARDS.map((card) => {
-              const Icon = card.icon;
-              const isSelected =
-                card.href === "/"
-                  ? pathname === "/"
-                  : card.name === "Tools"
-                  ? pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp") && !pathname?.startsWith("/tools/compare"))
-                  : card.name === "Agents"
-                  ? pathname === "/agents" || pathname?.startsWith("/agents")
-                  : card.name === "Tasks"
-                  ? pathname === "/tasks"
-                  : card.name === "Personal"
-                  ? pathname === "/tasks/personal" || pathname === "/personal"
-                  : card.name === "Creativity"
-                  ? pathname === "/tasks/creativity" || pathname?.startsWith("/creativity")
-                  : pathname?.startsWith(card.href);
-              const isNew = card.name === "New";
+          
+          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 w-full">
+            
+            {/* 1. The "New" Button wrapped in the Dropdown (Escaping overflow!) */}
+            <div className="shrink-0 relative z-[9999] overflow-visible">
+              <UnifiedFilterDropdown>
+                {renderCard(DIRECTORY_CARDS[0])}
+              </UnifiedFilterDropdown>
+            </div>
 
-              return (
-                <Link
-                  key={card.name}
-                  href={card.href}
-                  className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${
-                    isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
-                  }`}
-                  onPointerEnter={(e) => {
-                    handlePointerEnter(card.name, card.href);
-                    if (!(isNew && isSelected)) e.currentTarget.style.borderColor = card.color;
-                    e.currentTarget.style.boxShadow = `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55`;
-                  }}
-                  onPointerLeave={(e) => {
-                    handlePointerLeave(card.name);
-                    if (!isSelected) {
-                      e.currentTarget.style.borderColor = "";
-                      e.currentTarget.style.boxShadow = "";
-                    }
-                  }}
-                  onFocus={() => {
-                    handlePointerEnter(card.name, card.href);
-                  }}
-                  style={
-                    isSelected && !isNew
-                      ? { borderColor: card.color, boxShadow: `0 0 0 1px ${card.color}, 0 8px 20px -6px ${card.color}55` }
-                      : undefined
-                  }
-                >
-                  {isNew && isSelected && (
-                    <>
-                      <div 
-                        className="absolute inset-[-100%] animate-[spin_3s_linear_infinite] opacity-70"
-                        style={{ 
-                          background: `conic-gradient(from 0deg at 50% 50%, transparent 0%, transparent 60%, ${card.color} 100%)` 
-                        }} 
-                      />
-                      <div className="absolute inset-[1px] rounded-[7px] bg-[#0d0d10]" />
-                    </>
-                  )}
-                  <div
-                    className="relative z-10 flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border transition-colors"
-                    style={{ backgroundColor: `${card.color}1a`, borderColor: `${card.color}40` }}
-                  >
-                    <Icon size={10} strokeWidth={1.75} style={{ color: card.color }} />
-                  </div>
-                  <span className="relative z-10 text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
-                    {card.name}
-                  </span>
-                </Link>
-              );
-            })}
+            {/* 2. The rest of the categories (Safely scrollable) */}
+            <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none w-full">
+              {DIRECTORY_CARDS.slice(1).map(renderCard)}
+            </div>
+
           </div>
+
         </div>
       </div>
     </>

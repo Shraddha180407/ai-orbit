@@ -1,11 +1,13 @@
 import { Context } from 'hono';
 import { CompaniesService } from './companies.service.js';
 import { getPrisma } from '../../lib/prisma.js';
-
+import { CompanyType } from '@prisma/client';
 export class CompaniesController {
   async listCompanies(c: Context) {
     const prisma = getPrisma(c.env);
     const service = new CompaniesService(prisma);
+    const typeFilter = c.req.query('type');
+    const validTypeFilter = typeFilter && typeFilter in CompanyType ? typeFilter as CompanyType : undefined;
 
     try {
       const companies = await service.listCompanies();

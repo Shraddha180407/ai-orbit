@@ -197,7 +197,6 @@ function BookmarkBtn({ tool }: { tool: ListTool }) {
   );
 }
 
-// ── Single row ────────────────────────────────────────────────────────────────
 function ToolRow({
   tool,
   index,
@@ -213,15 +212,16 @@ function ToolRow({
   onToggleCompare: (t: ListTool) => void;
   basePath?: string;
 }) {
+  const router = useRouter(); // <-- ADD THIS
   const accentColor = ROW_ACCENT_COLORS[index % ROW_ACCENT_COLORS.length];
   const isOpenSource = isTruthy(tool.isOpenSource, tool.openSource);
   const hasApi = isTruthy(tool.hasApi);
 
   return (
-    <Link
-      href={`${basePath}/${tool.slug}`}
+    <div
+      onClick={() => router.push(`${basePath}/${tool.slug}`)}
       role="listitem"
-      className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
+      className={`cursor-pointer group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
       onMouseEnter={(e) => {
         prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
         const el = e.currentTarget;
@@ -375,7 +375,7 @@ function ToolRow({
           <GitCompare size={14} />
         </button>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -446,9 +446,19 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
       );
     }
     list.sort((a, b) => {
+      // 1. PRIORITY OVERRIDE: Push items with tasks to the top of the list!
+      const aHasTask = a.ttasks && a.ttasks.length > 0 ? 1 : 0;
+      const bHasTask = b.ttasks && b.ttasks.length > 0 ? 1 : 0;
+      
+      if (aHasTask !== bHasTask) {
+        return bHasTask - aHasTask; // 1 (has task) comes before 0 (no task)
+      }
+
+      // 2. NORMAL SORTING: Fall back to Release Date or Name for everything else
       let cmp = 0;
       if (sortKey === "name") cmp = a.name.localeCompare(b.name);
       else cmp = ((b as any).releaseDate || b.createdAt || "").localeCompare((a as any).releaseDate || a.createdAt || "");
+      
       return sortDir === "asc" ? cmp : -cmp;
     });
     return list;

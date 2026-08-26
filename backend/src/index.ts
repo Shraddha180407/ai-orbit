@@ -15,7 +15,7 @@ import { tasksRouter } from './modules/tasks/tasks.routes.js'
 import { modelsRouter } from './modules/models/models.routes.js'
 import { repositoriesRouter } from './modules/repositories/repositories.routes.js'
 import { robotsRouter } from './modules/robots/robots.routes.js'
-
+import feedRoutes from './modules/feed/feed.routes.js';
 import { homepageRouter } from './modules/homepage/homepage.routes.js'
 import { toolsRouter } from './modules/tools/tools.routes.js'
 import { userRouter } from './modules/user/user.routes.js'
@@ -63,7 +63,7 @@ app.use('*', cors({
 
 // High-speed in-memory response cache for GET endpoints (120s TTL)
 app.use('*', cacheMiddleware(120))
-
+app.route('/api/v1/feed', feedRoutes);
 app.route('/api/videos', videosRouter)
 app.route('/api/news', newsRouter)
 app.route('/api/ingestion', ingestionRouter)
