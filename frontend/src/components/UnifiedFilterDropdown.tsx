@@ -5,6 +5,9 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 const FILTER_OPTIONS = [
   { id: 'tools', label: 'Tools', count: 52816, color: 'bg-blue-500' },
+  { id: 'companies', label: 'Companies', count: 890, color: 'bg-teal-500' },
+  { id: 'videos', label: 'Videos', count: 1240, color: 'bg-red-500' },
+  { id: 'repositories', label: 'Repositories', count: 412, color: 'bg-purple-500' },
   { id: 'devices', label: 'Devices', count: 322, color: 'bg-green-500' },
   { id: 'robots', label: 'Robots', count: 664, color: 'bg-indigo-500' },
   { id: 'news', label: 'News', count: 124, color: 'bg-yellow-500' },
