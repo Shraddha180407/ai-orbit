@@ -56,7 +56,7 @@ export type RelatedQueryInput = z.infer<typeof RelatedQuerySchema>;
 
 // Shape written by the crawler's youtube-enrich.ts on upsert
 export const VideoUpsertSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   slug: z.string(),
   title: z.string(),
   description: z.string(),
