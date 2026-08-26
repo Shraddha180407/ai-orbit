@@ -9,7 +9,7 @@ export const runtime = "edge";
 
 export const dynamic = "force-dynamic";
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 100;
 
 /**
  * Split out from VideosPage so the backend fetch (getVideosPage +
@@ -39,7 +39,7 @@ export default function VideosPage() {
     <div className="min-h-screen flex flex-col bg-[#000000] text-white">
       <Header />
       <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-      <main className="flex-1 w-full pb-24 pt-2">
+      <main className="flex-1 w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 pb-24 pt-2">
         <Suspense fallback={
           <div className="flex-1 flex items-center justify-center py-24">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
