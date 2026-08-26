@@ -20,25 +20,10 @@ import { useUser } from "@/hooks/use-user";
 import { toggleBookmark } from "@/lib/actions";
 import { API_URL, prefetchUrl } from "@/lib/api";
 
-// ── Helper: Smart trim at natural breakpoints without dots ──────────────
-function smartTrim(text: string, maxLength = 85) {
+function trimNoDots(text: string, maxLength = 85) {
   if (!text) return "—";
   if (text.length <= maxLength) return text;
-  
   const sliced = text.slice(0, maxLength);
-  
-  // Find the last natural pause (comma, or words like 'and', 'or', 'with', 'to')
-  const match = sliced.match(/(.*)(\s+and\s+|\s+or\s+|\s+with\s+|\s+to\s+|,)/i);
-  
-  // If we found a break point, and it doesn't make the string too short
-  if (match && match[1].length > 40) {
-    let clean = match[1].trim();
-    // Clean up any stray commas left at the end
-    if (clean.endsWith(',')) clean = clean.slice(0, -1);
-    return clean; // No "..." added!
-  }
-  
-  // Fallback: cut cleanly at the last space
   const lastSpace = sliced.lastIndexOf(" ");
   return sliced.slice(0, lastSpace > 0 ? lastSpace : maxLength);
 }
@@ -305,8 +290,8 @@ function ToolRow({
             <span className="text-[#71717A] opacity-30 shrink-0"><ExternalLink size={13} /></span>
           )}
         </div>
-        <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-normal break-words">
-          {tool.description}
+        <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-clip">
+          {trimNoDots(tool.description || "")}
         </p>
       </div>
 
@@ -467,15 +452,21 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
       );
     }
     list.sort((a, b) => {
-      // 1. PRIORITY OVERRIDE: Push items with tasks to the top of the list!
-      const aHasTask = a.ttasks && a.ttasks.length > 0 ? 1 : 0;
-      const bHasTask = b.ttasks && b.ttasks.length > 0 ? 1 : 0;
-      
-      if (aHasTask !== bHasTask) {
-        return bHasTask - aHasTask; // 1 (has task) comes before 0 (no task)
+      // 1. PRIORITY OVERRIDE: Quality Scoring
+      const getScore = (t: ListTool) => {
+        if (t.ttasks && t.ttasks.length > 0) return 3; // Tier 1: Has a Task
+        if (t.logoUrl && t.description && t.description.trim() !== "") return 2; // Tier 2: Logo + Description
+        return 1; // Tier 3: Missing Logo or Description
+      };
+
+      const scoreA = getScore(a);
+      const scoreB = getScore(b);
+
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA; // Higher tier always comes first
       }
 
-      // 2. NORMAL SORTING: Fall back to Release Date or Name for everything else
+      // 2. NORMAL SORTING: Fall back to Release Date or Name only if they are in the same tier
       let cmp = 0;
       if (sortKey === "name") cmp = a.name.localeCompare(b.name);
       else cmp = ((b as any).releaseDate || b.createdAt || "").localeCompare((a as any).releaseDate || a.createdAt || "");
