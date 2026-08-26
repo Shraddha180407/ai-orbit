@@ -53,6 +53,7 @@ export function SectionPageContent({ slug }: { slug: string }) {
   const [retryToken, setRetryToken] = useState(0);
 
   const isGallery = config?.layout === "gallery";
+  const isCollections = config?.layout === "collections";
   const isNewReleases = config?.layout === "new";
   const isRankings = config?.layout === "rankings";
   const isAgents = config?.layout === "agents";

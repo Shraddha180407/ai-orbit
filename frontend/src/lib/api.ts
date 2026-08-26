@@ -63,7 +63,7 @@ export async function fetchCompanyDetails(slug: string): Promise<any> {
   if (!safeSlug) return null;
 
   const primaryUrl = `${API_URL}/api/v1/companies/${safeSlug}`;
-  const res = await cachedFetchJson(primaryUrl, null, { ttlMs: 15 * 60 * 1000 });
+  const res = await cachedFetchJson<any>(primaryUrl, null, { ttlMs: 15 * 60 * 1000 });
   if (res && !res.error) return res;
   
   if (API_URL !== "https://ai-orbit.palamrendra-pm.workers.dev") {
@@ -235,7 +235,7 @@ export async function fetchDeviceById(id: string): Promise<any | null> {
 
 export interface RealSearchSuggestion {
   id: string;
-  type: "tool" | "company" | "model" | "repository" | "robot" | "device";
+  type: "tool" | "company" | "model" | "repository" | "robot" | "device" | "news" | "video" | "collection" | "task" | "mcp";
   title: string;
   category: string;
   slug: string | null;

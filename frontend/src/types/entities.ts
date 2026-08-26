@@ -10,7 +10,9 @@ export type EntityType =
   | "fundraise"
   | "investor"
   | "robot"
-  | "device";
+  | "device"
+  | "mcp"
+  | "collection";
 
 export interface SearchEntity {
   id: string;
