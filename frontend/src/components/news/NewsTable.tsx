@@ -136,7 +136,7 @@ function NewsRow({ article, sources, isAdmin, isLoggedIn, onEdit, onDelete }: { 
             <PublisherIcon source={source} box={36} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="line-clamp-2 text-[14.5px] font-semibold leading-snug text-white transition-colors group-hover:text-[#F5A623]">
+            <span className="block truncate overflow-hidden text-[14.5px] font-semibold leading-snug text-white transition-colors group-hover:text-[#F5A623]" style={{ WebkitLineClamp: 1, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'clip' }}>
               {article.headline}
             </span>
           </span>
