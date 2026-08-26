@@ -51,12 +51,8 @@ export function cacheMiddleware(ttlSeconds = 300): MiddlewareHandler {
       return next();
     }
 
-    // Do not cache authenticated or private user routes or requests with auth headers/cookies
+    // Do not cache authenticated or private user routes
     const path = c.req.path;
-    const authHeader = c.req.header('Authorization');
-    const cookieHeader = c.req.header('Cookie') || '';
-    const hasAuthCookie = cookieHeader.includes('token') || cookieHeader.includes('session') || cookieHeader.includes('auth');
-
     const isPrivate = (
       path.startsWith('/api/auth') ||
       path.startsWith('/api/user') ||
@@ -64,9 +60,7 @@ export function cacheMiddleware(ttlSeconds = 300): MiddlewareHandler {
       path.includes('/user/') ||
       path.includes('/bookmarks') ||
       path.includes('/favorites') ||
-      path.includes('/personal/user') ||
-      Boolean(authHeader) ||
-      hasAuthCookie
+      path.includes('/personal/user')
     );
 
     if (isPrivate) {

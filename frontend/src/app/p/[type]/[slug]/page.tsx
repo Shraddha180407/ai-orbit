@@ -61,24 +61,6 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
   }
 
   if (type === "news") {
-    try {
-      const res = await fetch(`${SERVER_API_URL}/api/news/${encodeURIComponent(slug)}`, {
-        next: { revalidate: 300 },
-        signal: AbortSignal.timeout(300),
-      } as RequestInit);
-      if (res.ok) {
-        const { article } = (await res.json()) as { article?: { headline: string; aiSummary: string; dek: string } };
-        if (article) {
-          const description = article.aiSummary || article.dek;
-          return {
-            title: article.headline,
-            description,
-            openGraph: { title: article.headline, description, type: "article" },
-            twitter: { card: "summary_large_image", title: article.headline, description },
-          };
-        }
-      }
-    } catch {}
     return {
       title: `${formattedSlug} — News | AI Orbit`,
       description: `Read the latest AI news and updates about ${formattedSlug}.`,
@@ -86,22 +68,10 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
   }
 
   if (type === "tasks") {
-    try {
-      const res = await fetch(`${SERVER_API_URL}/api/v1/tasks/${encodeURIComponent(slug)}`, {
-        next: { revalidate: 300 },
-        signal: AbortSignal.timeout(300),
-      } as RequestInit);
-      if (res.ok) {
-        const data = (await res.json()) as { task?: { title: string; description: string } };
-        if (data?.task) {
-          return {
-            title: `${data.task.title} | AI Orbit`,
-            description: data.task.description,
-          };
-        }
-      }
-    } catch {}
-    return { title: `${formattedSlug} Tasks | AI Orbit` };
+    return {
+      title: `${formattedSlug} Tasks | AI Orbit`,
+      description: `Discover the best AI tools and workflows for ${formattedSlug.toLowerCase()}.`,
+    };
   }
 
   if (type === "robots") {
@@ -112,16 +82,10 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
   }
   
   if (type === "mcp") {
-    try {
-      const item = await fetchMCPItemBySlug(slug);
-      if (item) {
-        return {
-          title: `${item.name} — Model Context Protocol (MCP) | AI Orbit`,
-          description: item.shortDescription,
-        };
-      }
-    } catch {}
-    return { title: `${formattedSlug} — MCP Directory | AI Orbit` };
+    return {
+      title: `${formattedSlug} — Model Context Protocol (MCP) | AI Orbit`,
+      description: `Explore ${formattedSlug} in the MCP Directory.`,
+    };
   }
 
   if (type === "tools" || type === "personal" || type === "creativity" || type === "agents") {

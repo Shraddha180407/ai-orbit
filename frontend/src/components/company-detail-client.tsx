@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from "next/navigation";
-import { fetchCompanyDetails } from "@/lib/api";
+import { fetchCompanyDetails, API_URL, getFromCache } from "@/lib/api";
 import { Company } from '@/lib/types';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -61,7 +61,12 @@ export function CompanyDetailClient() {
   const { data: company = null, isLoading } = useQuery<Company | null>({
     queryKey: ["company-detail", slug],
     queryFn: () => fetchCompanyDetails(slug),
-    staleTime: 10 * 60 * 1000,
+    initialData: () => {
+      if (!slug) return undefined;
+      return getFromCache<Company>(`${API_URL}/api/v1/companies/${encodeURIComponent(slug)}`) || undefined;
+    },
+    staleTime: 15 * 60 * 1000,
+    enabled: Boolean(slug),
   });
 
   const [activeTab, setActiveTab] = useState<TabType>('tools');

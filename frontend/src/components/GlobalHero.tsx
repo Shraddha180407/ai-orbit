@@ -128,25 +128,17 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
         }).catch(() => {});
         break;
       case "Tools":
+      case "Agents":
+      case "Personal":
+      case "Creativity":
         queryClient.prefetchInfiniteQuery({
-          queryKey: ["tools", { q: undefined, category: undefined, pricing: undefined, sort: undefined }],
+          queryKey: ["tools", cardName.toLowerCase(), "", undefined, undefined, undefined],
           queryFn: async () => {
-            const res = await fetch(`${API_URL}/api/v1/tools?page=1&pageSize=50`);
+            const res = await fetch(`${API_URL}/api/v1/tools?page=1`);
             return res.ok ? res.json() : { tools: [], totalPages: 1, page: 1 };
           },
           initialPageParam: 1,
-          staleTime: 10 * 60 * 1000,
-        }).catch(() => {});
-        break;
-      case "Personal":
-      case "Creativity":
-        queryClient.prefetchQuery({
-          queryKey: ["tools", cardName.toLowerCase()],
-          queryFn: async () => {
-            const res = await fetch(`${API_URL}/api/v1/tools?limit=100`);
-            return res.ok ? res.json() : { tools: [] };
-          },
-          staleTime: 10 * 60 * 1000,
+          staleTime: 15 * 60 * 1000,
         }).catch(() => {});
         break;
       case "Companies":

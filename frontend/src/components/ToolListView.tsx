@@ -232,36 +232,57 @@ function ToolRow({
   onToggleCompare: (t: ListTool) => void;
   basePath?: string;
 }) {
-  const router = useRouter(); // <-- ADD THIS
+  const router = useRouter();
   const accentColor = ROW_ACCENT_COLORS[index % ROW_ACCENT_COLORS.length];
   const isOpenSource = isTruthy(tool.isOpenSource, tool.openSource);
   const hasApi = isTruthy(tool.hasApi);
 
+  let targetPath = basePath;
+  let identifier = tool.slug;
+  if (tool.entityType === 'COMPANY') targetPath = '/companies';
+  else if (tool.entityType === 'VIDEO') targetPath = '/videos';
+  else if (tool.entityType === 'NEWS') targetPath = '/news';
+  else if (tool.entityType === 'ROBOT') targetPath = '/robots';
+  else if (tool.entityType === 'DEVICE') targetPath = '/devices';
+  else if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
+  else if (tool.entityType === 'MODEL') {
+    targetPath = '/models';
+    identifier = tool.id;
+  } else if (tool.entityType === 'TOOL') {
+    targetPath = '/tools';
+  }
+  const targetUrl = `${targetPath}/${identifier}`;
+
+  const prefetchRow = () => {
+    try { router.prefetch(targetUrl); } catch {}
+    if (tool.entityType === 'MODEL') {
+      prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(tool.id)}`);
+    } else if (tool.entityType === 'COMPANY') {
+      prefetchUrl(`${API_URL}/api/v1/companies/${tool.slug}`);
+    } else if (tool.entityType === 'REPOSITORY') {
+      prefetchUrl(`${API_URL}/api/v1/repositories/${tool.slug}`);
+    } else if (tool.entityType === 'NEWS') {
+      prefetchUrl(`${API_URL}/api/news/${encodeURIComponent(tool.slug)}`);
+    } else if (tool.entityType === 'DEVICE') {
+      prefetchUrl(`${API_URL}/api/v1/devices/${tool.id || tool.slug}`);
+    } else if (tool.entityType === 'ROBOT') {
+      prefetchUrl(`${API_URL}/api/v1/robots/${tool.slug || tool.id}`);
+    } else if (tool.entityType === 'VIDEO') {
+      prefetchUrl(`${API_URL}/api/videos/${tool.slug || tool.id}`);
+    } else {
+      prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
+    }
+  };
+
   return (
     <div
       onClick={() => {
-        let targetPath = basePath;
-        let identifier = tool.slug; // Default to slug
-
-        if (tool.entityType === 'COMPANY') targetPath = '/companies';
-        if (tool.entityType === 'VIDEO') targetPath = '/videos';
-        if (tool.entityType === 'NEWS') targetPath = '/news';
-        if (tool.entityType === 'ROBOT') targetPath = '/robots';
-        if (tool.entityType === 'DEVICE') targetPath = '/devices';
-        if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
-        if (tool.entityType === 'MODEL') {
-          targetPath = '/models';
-          identifier = tool.id; 
-        }
-        
-        if (tool.entityType === 'TOOL') targetPath = '/tools';
-        
-        router.push(`${targetPath}/${identifier}`);
+        router.push(targetUrl);
       }}
       role="listitem"
       className={`cursor-pointer group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
       onMouseEnter={(e) => {
-        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
+        prefetchRow();
         const el = e.currentTarget;
         el.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
         const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
@@ -269,12 +290,8 @@ function ToolRow({
         const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
         if (nameEl) nameEl.style.color = accentColor;
       }}
-      onTouchStart={() => {
-        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
-      }}
-      onFocus={() => {
-        prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
-      }}
+      onTouchStart={prefetchRow}
+      onFocus={prefetchRow}
       onMouseLeave={(e) => {
         const el = e.currentTarget;
         el.style.boxShadow = "";

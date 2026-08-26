@@ -1,5 +1,5 @@
 import { cachedFetchJson, prefetchUrl, setInCache, getFromCache } from "./api-cache";
-export { prefetchUrl, setInCache, getFromCache };
+export { cachedFetchJson, prefetchUrl, setInCache, getFromCache };
 
 /**
  * The Hono/Workers backend's origin — every real data fetch and mutation
@@ -21,6 +21,20 @@ export const API_URL = resolveApiUrl();
 
 export async function fetchJsonSafe<T>(url: string | URL, fallback: T): Promise<T> {
   return cachedFetchJson<T>(url, fallback, { ttlMs: 15 * 60 * 1000 });
+}
+
+export async function fetchToolDetails(slug: string): Promise<any> {
+  if (!slug) return null;
+  const safeSlug = encodeURIComponent(slug.trim());
+  const url = `${API_URL}/api/v1/tools/${safeSlug}`;
+  return cachedFetchJson<any>(url, null, { ttlMs: 15 * 60 * 1000 });
+}
+
+export async function fetchAllTools(page = 1, category?: string): Promise<any> {
+  const url = new URL(`${API_URL}/api/v1/tools`);
+  url.searchParams.set("page", String(page));
+  if (category) url.searchParams.set("category", category);
+  return cachedFetchJson<any>(url.toString(), { tools: [], totalPages: 1, page }, { ttlMs: 15 * 60 * 1000 });
 }
 
 // ---------------------------------------------------------------------------
