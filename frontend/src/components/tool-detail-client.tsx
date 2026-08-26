@@ -513,7 +513,9 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
           <div className="space-y-4 min-w-0">
 
             {/* Overview — always show with description + use cases */}
-            <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-3">
+            <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-3 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              <div className="absolute -top-8 -left-8 w-32 h-32 bg-white/2 rounded-full blur-2xl pointer-events-none" />
               <SectionHeader icon={FileText} title="Overview" />
               <div className="text-[13px] leading-relaxed text-[#A1A1AA] space-y-2.5">
                 {displayDescription.split("\n\n").map((p, i) => <p key={i}>{p}</p>)}
@@ -597,7 +599,9 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
 
             {/* Integrations */}
             {tool.integrations?.length > 0 && (
-              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-3">
+              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-3 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
+                <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-[#6E56CF]/3 rounded-full blur-2xl pointer-events-none" />
                 <SectionHeader icon={Layers} title="Integrations" />
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
                                     {tool.integrations.map(({ integration }) => (
@@ -612,7 +616,9 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
           <aside className="space-y-4">
 
             {/* Specs */}
-            <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4">
+            <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-[#6E56CF]/3 rounded-full blur-xl pointer-events-none" />
               <h3 className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest border-b border-[#232326]/60 pb-2.5 mb-1 flex items-center gap-1.5">
                 <FileText size={11} className="text-[#6E56CF]" /> Specifications
               </h3>
@@ -621,7 +627,9 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
 
             {/* Categories + Tags — uniform pill height, no icon inside pill */}
             {(tool.categories.length > 0 || tool.tags?.length > 0) && (
-              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4 space-y-3">
+              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4 space-y-3 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
+                <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-[#6E56CF]/3 rounded-full blur-xl pointer-events-none" />
                 <h3 className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest border-b border-[#232326]/60 pb-2.5 flex items-center gap-1.5">
                   <Tag size={11} className="text-[#6E56CF]" /> Categories & Tags
                 </h3>
