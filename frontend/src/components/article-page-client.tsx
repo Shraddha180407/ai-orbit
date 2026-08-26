@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, notFound } from "next/navigation";
 import { PageShell } from "@/components/news/PageShell";
 import { ArticleDetail } from "@/components/news/ArticleDetail";
-import { API_URL } from "@/lib/api";
+import { API_URL, cachedFetchJson, getFromCache } from "@/lib/api";
 import { getClientId } from "@/lib/clientId";
 import type { NewsArticle, NewsComment, NewsSource } from "@/types/news";
 
@@ -27,11 +27,14 @@ export function ArticlePageClient() {
     queryFn: async () => {
       const clientId = getClientId();
       const url = `${API_URL}/api/news/${encodeURIComponent(slug)}${clientId ? `?clientId=${encodeURIComponent(clientId)}` : ""}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Article not found");
-      return res.json();
+      return cachedFetchJson<NewsDetailResponse | null>(url, null, { ttlMs: 15 * 60 * 1000 });
     },
-    staleTime: 10 * 60 * 1000,
+    initialData: () => {
+      if (!slug) return undefined;
+      return getFromCache<NewsDetailResponse>(`${API_URL}/api/news/${encodeURIComponent(slug)}`) || undefined;
+    },
+    staleTime: 15 * 60 * 1000,
+    enabled: Boolean(slug),
   });
 
   const notFoundState = isError || (!isLoading && !data);

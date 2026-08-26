@@ -2,65 +2,42 @@
 
 import { useEffect, useState } from "react";
 import { useParams, notFound } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { fetchTask, fetchTasks, type Task, type TaskDetail as TaskDetailData } from "@/lib/tasks-api";
+import { API_URL, getFromCache } from "@/lib/api";
 import { TaskDetail } from "@/components/TaskDetail";
 
 export function TaskDetailClient() {
   const params = useParams();
   const slug = params.slug as string;
 
-  const [task, setTask] = useState<TaskDetailData | null>(null);
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["task-detail", slug],
+    queryFn: () => fetchTask(slug),
+    initialData: () => {
+      if (!slug) return undefined;
+      return getFromCache<any>(`${API_URL}/api/v1/tasks/${encodeURIComponent(slug)}`) || undefined;
+    },
+    staleTime: 15 * 60 * 1000,
+    enabled: Boolean(slug),
+  });
+
+  const task = data?.task || null;
   const [relatedTasks, setRelatedTasks] = useState<Task[]>([]);
-  const [bookmarked, setBookmarked] = useState(false);
-  const [liked, setLiked] = useState(false);
-  const [subscribed, setSubscribed] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [notFoundState, setNotFoundState] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadTask() {
-      setIsLoading(true);
-      try {
-
-        const data = await fetchTask(slug);
-
-        if (!data) {
-          if (!cancelled) setNotFoundState(true);
-          return;
-        }
-        if (cancelled) return;
-
-        setTask(data.task);
-        setBookmarked(data.bookmarked);
-        setLiked(data.liked);
-        setSubscribed(data.subscribed);
-
-        if (data.task.category?.slug) {
-          try {
-            const related = await fetchTasks({ category: data.task.category.slug, page: 1 });
-            if (!cancelled) {
-              setRelatedTasks(related.tasks.filter((t) => t.slug !== data.task.slug).slice(0, 5));
-            }
-          } catch (relatedError) {
-            console.error("Failed to fetch related tasks:", relatedError);
-            if (!cancelled) setRelatedTasks([]);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch task:", error);
-        if (!cancelled) setNotFoundState(true);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
+    if (task?.category?.slug) {
+      fetchTasks({ category: task.category.slug, page: 1 })
+        .then((related) => {
+          setRelatedTasks(related.tasks.filter((t) => t.slug !== task.slug).slice(0, 5));
+        })
+        .catch(() => setRelatedTasks([]));
     }
+  }, [task?.category?.slug, task?.slug]);
 
-    loadTask();
-    return () => {
-      cancelled = true;
-    };
-  }, [slug]);
+  const bookmarked = data?.bookmarked ?? false;
+  const liked = data?.liked ?? false;
+  const subscribed = data?.subscribed ?? false;
 
   useEffect(() => {
     if (task) {
@@ -68,11 +45,11 @@ export function TaskDetailClient() {
     }
   }, [task]);
 
-  if (notFoundState) {
+  if (isError && !task) {
     notFound();
   }
 
-  if (isLoading || !task) {
+  if (isLoading && !task) {
     return (
       <main className="min-h-screen bg-[#000000] w-full max-w-none px-6 lg:px-10 xl:px-14 py-8">
         <div className="animate-pulse space-y-6">

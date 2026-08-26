@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 import { useQuery } from "@tanstack/react-query";
-import { API_URL } from "@/lib/api";
+import { API_URL, fetchToolDetails, getFromCache } from "@/lib/api";
 import type { ToolCardData, ReviewData } from "@/lib/types";
 import type { ToolDetailDataExtended, PricingTier } from "@/data/tools";
 import { getSampleTool, getSampleSimilarTools } from "@/data/tools";
@@ -247,11 +247,14 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
     queryFn: async () => {
       const sample = getSampleTool(slug);
       if (sample) return { tool: sample, similarTools: getSampleSimilarTools(slug), reviews: [], bookmarked: false };
-      const res = await fetch(`${API_URL}/api/v1/tools/${slug}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Not found");
-      return res.json();
+      return fetchToolDetails(slug);
     },
-    staleTime: 10 * 60 * 1000,
+    initialData: () => {
+      const sample = getSampleTool(slug);
+      if (sample) return { tool: sample, similarTools: getSampleSimilarTools(slug), reviews: [], bookmarked: false };
+      return getFromCache<any>(`${API_URL}/api/v1/tools/${encodeURIComponent(slug)}`) || undefined;
+    },
+    staleTime: 15 * 60 * 1000,
   });
 
   const raw = detailData?.tool;

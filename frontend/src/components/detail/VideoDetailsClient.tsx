@@ -1,41 +1,47 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { VideoPlayer } from "@/components/videos/VideoPlayer";
 import { getVideoBySlug, Video } from "@/lib/videos-data";
-
+import { API_URL, getFromCache } from "@/lib/api";
 import { getChannelUrl } from "@/lib/video-types";
+
 export function VideoDetailsClient() {
-const params = useParams();
-const slug = params.slug as string;
+  const params = useParams();
+  const slug = params.slug as string;
 
-const [video, setVideo] = useState<Video | null>(null);
-const [loading, setLoading] = useState(true);
+  const { data: video = null, isLoading: loading, isError } = useQuery<Video | null>({
+    queryKey: ["video-detail", slug],
+    queryFn: () => getVideoBySlug(slug),
+    initialData: () => {
+      if (!slug) return undefined;
+      return getFromCache<Video>(`${API_URL}/api/videos/${encodeURIComponent(slug)}`) || undefined;
+    },
+    staleTime: 15 * 60 * 1000,
+    enabled: Boolean(slug),
+  });
 
-useEffect(() => {
-getVideoBySlug(slug).then((data) => {
-if (!data) notFound();
-setVideo(data);
-setLoading(false);
-});
-}, [slug]);
+  if (isError && !video) {
+    notFound();
+  }
 
-if (loading) {
-return (
-<main className="flex h-[100dvh] items-center justify-center overflow-hidden bg-[#050506]">
-<div
-className="flex w-[94vw] flex-col rounded-[14px] border border-white/[0.07] bg-[#0d0d10] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.7)] sm:w-[81vw] sm:rounded-[22px]"
-style={{ aspectRatio: "16 / 9" }}
->
-<div className="h-full w-full animate-pulse bg-white/5 rounded-[14px] sm:rounded-[22px]" />
-</div>
-</main>
-);
-}
+  if (loading && !video) {
+    return (
+      <main className="flex h-[100dvh] items-center justify-center overflow-hidden bg-[#050506]">
+        <div
+          className="flex w-[94vw] flex-col rounded-[14px] border border-white/[0.07] bg-[#0d0d10] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.7)] sm:w-[81vw] sm:rounded-[22px]"
+          style={{ aspectRatio: "16 / 9" }}
+        >
+          <div className="h-full w-full animate-pulse bg-white/5 rounded-[14px] sm:rounded-[22px]" />
+        </div>
+      </main>
+    );
+  }
 
-if (!video) return null;
+  if (!video) return null;
 
 return (
 <main className="flex h-[100dvh] items-center justify-center overflow-hidden bg-[#050506]">

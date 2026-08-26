@@ -7,6 +7,7 @@ import { RatingStars } from "@/components/RatingStars";
 import type { ToolCardData } from "@/lib/types";
 
 import { Edit2, Trash2 } from "lucide-react";
+import { API_URL, prefetchUrl } from "@/lib/api";
 
 export function ToolCard({ 
   tool,
@@ -49,6 +50,10 @@ export function ToolCard({
       )}
       <Link
         href={`/tools/${tool.slug}`}
+        prefetch={true}
+        onMouseEnter={() => prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`)}
+        onTouchStart={() => prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`)}
+        onFocus={() => prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`)}
         className="group grid grid-cols-1 sm:grid-cols-[80px_1fr_180px_180px] gap-5 items-start sm:items-center justify-between sm:min-h-[80px] py-5 px-5 transition-all hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
       >
       {/* Column 1: Logo */}
