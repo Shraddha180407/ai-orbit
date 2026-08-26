@@ -1,20 +1,28 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useRef, useCallback, useTransition } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Company, CompanyType } from "@/lib/types";
-import { API_URL, fetchAllCompanies } from "@/lib/api";
+import { Company } from "@/lib/types";
+import { API_URL, fetchAllCompanies, prefetchUrl } from "@/lib/api";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Plus, ChevronDown, ChevronLeft, ChevronRight, ArrowUpDown, X, Filter } from "lucide-react";
+import {
+  Plus, ChevronDown, ChevronLeft, ChevronRight, ArrowUpDown, X, Filter,
+  Bookmark, Share2, ExternalLink, BadgeCheck, Check
+} from "lucide-react";
 import { Button } from "@/components/ui/shadcn-button";
 import { cn } from "@/lib/utils";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 
 const PAGE_SIZE = 100;
+
+const ROW_ACCENT_COLORS = [
+  "#6E56CF", "#E85D4A", "#0082FB", "#34A853",
+  "#FF9900", "#E91E8C", "#00BCD4", "#FF6B35",
+];
 
 const COMPANY_TYPES: { label: string; value: string; slug: string }[] = [
   { label: "All", value: "ALL", slug: "all" },
@@ -36,6 +44,10 @@ const COMPANY_TYPES: { label: string; value: string; slug: string }[] = [
 
 type SortField = 'name' | 'country' | 'valuation' | 'valEmp' | 'aiNative' | 'profitable' | 'sector' | 'modelsCount' | 'toolsCount';
 type SortDir = 'asc' | 'desc';
+
+const COL_TEMPLATE =
+  "grid-cols-[44px_minmax(200px,2.2fr)_minmax(110px,1fr)_minmax(100px,1fr)_minmax(90px,0.9fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(120px,1.1fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_44px_44px]";
+const COL_MIN_WIDTH = "min-w-[1150px]";
 
 function formatCompanyName(name: string): string {
   if (!name) return "";
@@ -97,12 +109,69 @@ function getValEmpNumeric(valuation: string | number | null | undefined, employe
   return val / employeeCount;
 }
 
-function TypeBadge({ status }: { status: boolean | null }) {
-  if (status === null) return <span className="text-xs text-[#52525B]">—</span>;
+function BoolPill({ value, trueLabel = "YES", falseLabel = "NO" }: { value: boolean | null; trueLabel?: string; falseLabel?: string }) {
+  if (value === null) return <span className="text-[11px] text-[#71717A] font-mono">—</span>;
   return (
-    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${status ? 'text-emerald-400 bg-emerald-400/10' : 'text-red-400 bg-red-400/10'}`}>
-      {status ? "Yes" : "No"}
+    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
+      {value ? trueLabel : falseLabel}
     </span>
+  );
+}
+
+function LogoCell({ name, logoUrl }: { name: string; logoUrl: string | null }) {
+  const [failed, setFailed] = useState(false);
+  if (!logoUrl || failed) {
+    return <span className="text-xs font-bold text-neutral-900">{name.charAt(0)}</span>;
+  }
+  return (
+    <img
+      src={logoUrl}
+      alt={name}
+      className="h-8 w-8 object-contain"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function BookmarkBtn({ companyId, companyName }: { companyId: string; companyName: string }) {
+  const router = useRouter();
+  const { isAuthenticated } = useUser();
+  const [bookmarked, setBookmarked] = useState(false);
+
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      toast.error("Sign in required to bookmark companies", {
+        description: "Please sign in or create an account to save companies to your bookmarks.",
+        action: {
+          label: "Sign In",
+          onClick: () => router.push("/auth/signin"),
+        },
+        duration: 5000,
+      });
+      return;
+    }
+
+    const nextState = !bookmarked;
+    setBookmarked(nextState);
+    toast.success(nextState ? `Saved ${companyName} to bookmarks` : `Removed ${companyName} from bookmarks`);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleBookmark}
+      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors cursor-pointer ${
+        bookmarked
+          ? "border-[#6E56CF] text-[#6E56CF]"
+          : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
+      }`}
+      title={bookmarked ? "Remove bookmark" : "Bookmark company"}
+    >
+      {bookmarked ? <Check size={14} /> : <Bookmark size={14} />}
+    </button>
   );
 }
 
@@ -150,6 +219,151 @@ function matchesSubcategory(c: Company, slug: string): boolean {
   }
 }
 
+function CompanyRow({
+  company,
+  index,
+  onShare,
+}: {
+  company: Company;
+  index: number;
+  onShare: (c: Company) => void;
+}) {
+  const accentColor = ROW_ACCENT_COLORS[index % ROW_ACCENT_COLORS.length];
+  const authenticModels = company.aiModels || [];
+  const typesList = company.type || [];
+  const hasAiNative = typesList.length > 0 ? typesList.includes('AI_NATIVE') : null;
+  const hasProfitable = typesList.length > 0 ? typesList.includes('PROFITABLE') : null;
+  const logoSrc = getCompanyLogo(company);
+  const cleanName = formatCompanyName(company.name);
+  const safeSlug = cleanCompanySlug(company.slug);
+
+  return (
+    <Link
+      href={`/companies/${safeSlug}`}
+      role="listitem"
+      className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative hover:bg-[#131316]/70`}
+      onMouseEnter={(e) => {
+        prefetchUrl(`${API_URL}/api/v1/companies/${safeSlug}`);
+        const el = e.currentTarget;
+        el.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
+        const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
+        if (logoEl) { logoEl.style.borderColor = accentColor; logoEl.style.boxShadow = `0 0 8px ${accentColor}55`; }
+        const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
+        if (nameEl) nameEl.style.color = accentColor;
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget;
+        el.style.boxShadow = "";
+        const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
+        if (logoEl) { logoEl.style.borderColor = ""; logoEl.style.boxShadow = ""; }
+        const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
+        if (nameEl) nameEl.style.color = "";
+      }}
+    >
+      {/* Col 1: Logo */}
+      <div
+        data-logo="true"
+        className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white transition-all duration-200"
+      >
+        <LogoCell name={cleanName} logoUrl={logoSrc} />
+      </div>
+
+      {/* Col 2: Name + Models */}
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <h3
+            data-name="true"
+            className="truncate text-[13px] font-semibold text-white transition-colors duration-200"
+          >
+            {cleanName}
+          </h3>
+          {company.verified && (
+            <BadgeCheck size={13} className="shrink-0 text-blue-400" aria-label="Verified" />
+          )}
+          {company.website && (
+            <a
+              href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-[#71717A] hover:text-white transition-colors shrink-0"
+            >
+              <ExternalLink size={13} />
+            </a>
+          )}
+        </div>
+        {authenticModels.length > 0 ? (
+          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+            {authenticModels.slice(0, 2).map((m) => (
+              <span key={m.id} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[9px] font-mono text-[#A1A1AA] truncate max-w-[90px]">
+                {m.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-0.5 text-[11px] text-[#71717A] font-mono">—</p>
+        )}
+      </div>
+
+      {/* Col 3: Country */}
+      <div className="min-w-0 text-[11px] font-mono text-[#A1A1AA] truncate">
+        {company.country || "—"}
+      </div>
+
+      {/* Col 4: Valuation */}
+      <div className="text-[11px] font-mono text-white font-medium">
+        {formatValuation(company.valuation)}
+      </div>
+
+      {/* Col 5: Val/Emp */}
+      <div className="text-[11px] font-mono text-[#A1A1AA]">
+        {formatValEmp(company.valuation, company.employeeCount)}
+      </div>
+
+      {/* Col 6: AI Native */}
+      <div>
+        <BoolPill value={hasAiNative} />
+      </div>
+
+      {/* Col 7: Profitable */}
+      <div>
+        <BoolPill value={hasProfitable} />
+      </div>
+
+      {/* Col 8: Sector */}
+      <div className="min-w-0 text-[11px] font-mono text-[#A1A1AA] truncate">
+        {company.sector || "—"}
+      </div>
+
+      {/* Col 9: Models Count */}
+      <div className="text-[11px] font-mono text-white font-semibold">
+        {company._count?.aiModels || company.aiModels?.length || 0}
+      </div>
+
+      {/* Col 10: Tools Count */}
+      <div className="text-[11px] font-mono text-white font-semibold">
+        {company._count?.tools || company.tools?.length || 0}
+      </div>
+
+      {/* Col 11: Share */}
+      <div onClick={(e) => e.preventDefault()}>
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onShare(company); }}
+          className="inline-flex items-center justify-center rounded-md border border-[#232326]/60 bg-[#18181C] p-1.5 text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors cursor-pointer"
+        >
+          <Share2 size={14} />
+        </button>
+      </div>
+
+      {/* Col 12: Bookmark */}
+      <div>
+        <BookmarkBtn companyId={company.id} companyName={cleanName} />
+      </div>
+    </Link>
+  );
+}
+
 export function CompaniesClient({ defaultCategory }: { defaultCategory?: string }) {
   const { user } = useUser();
   const queryClient = useQueryClient();
@@ -181,9 +395,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const [sortField, setSortField] = useState<SortField>('valuation');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const tableContainerRef = useRef<HTMLDivElement>(null);
 
-  // React to top-right header SortDropdown URL parameter changes
   useEffect(() => {
     if (urlSortParam) {
       if (urlSortParam === "name-asc") { setSortField("name"); setSortDir("asc"); }
@@ -210,7 +422,6 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     queryClient.invalidateQueries({ queryKey: ["companies"] });
   }, [queryClient]);
 
-  // Click outside to close country popover
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (countryPopoverRef.current && !countryPopoverRef.current.contains(e.target as Node)) {
@@ -221,7 +432,6 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Compute unique countries from DB for Country popover filter
   const availableCountries = useMemo(() => {
     const set = new Set<string>();
     allCompanies.forEach((c) => {
@@ -236,21 +446,17 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     return availableCountries.filter((c) => c.toLowerCase().includes(q));
   }, [availableCountries, countrySearch]);
 
-  // Instant Client-Side Subcategory, Country, Search, and Sort
   const filteredAndSorted = useMemo(() => {
     let list = allCompanies;
 
-    // 1. Subcategory filter
     if (activeCategorySlug && activeCategorySlug !== "all") {
       list = list.filter((c) => matchesSubcategory(c, activeCategorySlug));
     }
 
-    // 2. Country filter
     if (selectedCountry && selectedCountry !== "all") {
       list = list.filter((c) => (c.country || "").toLowerCase() === selectedCountry.toLowerCase());
     }
 
-    // 3. Search query
     if (query) {
       const needle = query.toLowerCase();
       list = list.filter((c) =>
@@ -260,7 +466,6 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
       );
     }
 
-    // 4. Sort
     list = [...list].sort((a, b) => {
       let cmp = 0;
       switch (sortField) {
@@ -302,7 +507,6 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     return list;
   }, [allCompanies, activeCategorySlug, selectedCountry, query, sortField, sortDir]);
 
-  // Reset page to 1 whenever filters or search query change
   useEffect(() => {
     setCurrentPage(1);
   }, [query, activeCategorySlug, selectedCountry, sortField, sortDir]);
@@ -316,9 +520,6 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
-      if (tableContainerRef.current) {
-        tableContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
     }
   };
 
@@ -339,6 +540,14 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     }
   };
 
+  const handleShare = (company: Company) => {
+    const url = typeof window !== "undefined" ? `${window.location.origin}/companies/${cleanCompanySlug(company.slug)}` : "";
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      toast.success(`Copied ${formatCompanyName(company.name)} link to clipboard!`);
+    }
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -355,23 +564,27 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
 
   const openAdd = () => { setEditingId(null); setFormData({ name: '', slug: '', logoUrl: '' }); setIsModalOpen(true); };
 
-  const SortableHeader = ({ label, field, className = '' }: { label: string; field: SortField; className?: string }) => (
+  const SortHeader = ({ label, field }: { label: string; field: SortField }) => (
     <button
+      type="button"
       onClick={() => toggleSort(field)}
-      className={`flex items-center gap-1 text-[11px] uppercase tracking-wider font-semibold hover:text-white transition-colors cursor-pointer select-none ${sortField === field ? 'text-[#F5A623]' : 'text-[#71717A]'} ${className}`}
+      className={`flex items-center gap-1 font-mono hover:text-white transition-colors cursor-pointer select-none ${
+        sortField === field ? 'text-[#6E56CF]' : 'text-[#A1A1AA]'
+      }`}
     >
-      {label}
-      {sortField === field && (
-        <ChevronDown className={`w-3 h-3 transition-transform ${sortDir === 'asc' ? 'rotate-180' : ''}`} />
+      <span>{label}</span>
+      {sortField === field ? (
+        <span className="text-[10px] text-[#6E56CF]">{sortDir === 'desc' ? '↓' : '↑'}</span>
+      ) : (
+        <span className="text-[10px] opacity-40">↕</span>
       )}
-      {sortField !== field && <ArrowUpDown className="w-3 h-3 opacity-40" />}
     </button>
   );
 
   return (
     <>
       <main className="w-full px-2 sm:px-4 py-3 flex-1 flex flex-col selection:bg-neutral-800 selection:text-white">
-        <div className="w-full space-y-4" ref={tableContainerRef}>
+        <div className="w-full space-y-4">
           {/* Subcategories Horizontal Scrollbar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1 w-full">
@@ -383,10 +596,10 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                     type="button"
                     onClick={() => handleSubcategoryClick(ct.slug)}
                     className={cn(
-                      "rounded-full px-2.5 sm:px-3 py-1 text-[11px] sm:text-[12px] font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer",
+                      "rounded-full px-3 py-1 text-xs font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer",
                       isSelected
                         ? "bg-white text-black border-transparent font-bold shadow-sm"
-                        : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#F5A623]/50 hover:text-white"
+                        : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/50 hover:text-white"
                     )}
                   >
                     <span>{ct.label}</span>
@@ -417,11 +630,11 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
             </div>
           )}
 
-          {/* Companies Table Container */}
+          {/* Companies List Container */}
           {isLoading ? (
             <div className="w-full space-y-2">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-16 animate-pulse bg-[#131316]/50 rounded-xl border border-[#1C1C1F]" />
+                <div key={i} className="h-16 animate-pulse bg-[#131316]/50 rounded-xl border border-[#232326]/60" />
               ))}
             </div>
           ) : filteredAndSorted.length === 0 ? (
@@ -433,237 +646,82 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
           ) : (
             <div className="w-full rounded-xl border border-[#232326] bg-[#0A0A0C] overflow-hidden shadow-xl">
               <div className="overflow-x-auto relative touch-pan-x">
-                <table className="w-full min-w-[950px] sm:min-w-[1100px] border-collapse table-fixed">
-                  <colgroup>
-                    {/* Compact 1st sticky column on mobile (160px) to prevent screen takeover */}
-                    <col className="w-[160px] sm:w-[220px] md:w-[270px]" />
-                    <col className="w-[110px]" />
-                    <col className="w-[100px]" />
-                    <col className="w-[100px]" />
-                    <col className="w-[85px]" />
-                    <col className="w-[85px]" />
-                    <col className="w-[110px]" />
-                    <col className="w-[80px]" />
-                    <col className="w-[80px]" />
-                  </colgroup>
-                  <thead>
-                    <tr className="bg-[#131316] border-b border-[#232326]">
-                      {/* Sticky 1st Column (Company Name & Logo) on Mobile/Tablet */}
-                      <th className="px-2.5 sm:px-4 py-3 text-left sticky left-0 z-30 bg-[#131316] shadow-[2px_0_6px_rgba(0,0,0,0.6)] border-r border-[#232326]">
-                        <SortableHeader label="Company" field="name" />
-                      </th>
+                {/* Header Row */}
+                <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2.5 bg-[#131316] border-b border-[#232326]/60 text-[10px] font-bold font-mono tracking-wider uppercase text-[#A1A1AA]`}>
+                  <div></div>
+                  <div><SortHeader label="COMPANY" field="name" /></div>
+                  <div>
+                    <div className="relative" ref={countryPopoverRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsCountryPopoverOpen(!isCountryPopoverOpen)}
+                        className={`flex items-center gap-1 font-mono hover:text-white transition-colors cursor-pointer select-none ${
+                          selectedCountry !== 'all' || sortField === 'country' ? 'text-[#6E56CF]' : 'text-[#A1A1AA]'
+                        }`}
+                      >
+                        <span>COUNTRY</span>
+                        <Filter size={10} className="ml-0.5" />
+                      </button>
 
-                      {/* Country Header with Searchable Popover Dropdown matching theresanaiforthat */}
-                      <th className="px-3 sm:px-4 py-3 text-left">
-                        <div className="relative" ref={countryPopoverRef}>
-                          <button
-                            type="button"
-                            onClick={() => setIsCountryPopoverOpen(!isCountryPopoverOpen)}
-                            className={`flex items-center gap-1 text-[11px] uppercase tracking-wider font-semibold hover:text-white transition-colors cursor-pointer select-none ${
-                              selectedCountry !== 'all' || sortField === 'country' ? 'text-[#F5A623]' : 'text-[#71717A]'
-                            }`}
-                          >
-                            <span>Country</span>
-                            <Filter size={11} className="ml-0.5" />
-                            <ChevronDown size={12} className={`transition-transform ${isCountryPopoverOpen ? 'rotate-180' : ''}`} />
-                          </button>
-
-                          {/* Country Search & Filter Popover */}
-                          {isCountryPopoverOpen && (
-                            <div className="absolute left-0 top-full mt-2 w-60 sm:w-64 rounded-xl border border-[#232326] bg-[#131316] p-3 shadow-2xl z-50">
-                              <div className="relative mb-2.5">
-                                <input
-                                  type="text"
-                                  value={countrySearch}
-                                  onChange={(e) => setCountrySearch(e.target.value)}
-                                  placeholder="Search countries..."
-                                  className="w-full rounded-lg border border-[#232326] bg-[#0A0A0C] px-3 py-1.5 text-xs text-white placeholder-[#71717A] focus:border-[#F5A623] focus:outline-none"
-                                />
-                              </div>
-
-                              <div className="flex items-center justify-between border-b border-[#232326] pb-2 mb-2">
-                                <button
-                                  onClick={() => { toggleSort('country'); }}
-                                  className="text-[11px] text-[#A1A1AA] hover:text-white flex items-center gap-1"
-                                >
-                                  <span>Sort {sortDir === 'asc' ? 'A-Z' : 'Z-A'}</span>
-                                  <ArrowUpDown size={11} />
-                                </button>
-
-                                {selectedCountry !== 'all' && (
-                                  <button
-                                    onClick={() => { setSelectedCountry('all'); setIsCountryPopoverOpen(false); }}
-                                    className="text-[11px] text-[#F5A623] hover:underline"
-                                  >
-                                    Reset
-                                  </button>
-                                )}
-                              </div>
-
-                              <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-thin">
-                                <button
-                                  type="button"
-                                  onClick={() => { setSelectedCountry('all'); setIsCountryPopoverOpen(false); }}
-                                  className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                                    selectedCountry === 'all' ? 'bg-white text-black font-bold' : 'text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white'
-                                  }`}
-                                >
-                                  All countries
-                                </button>
-
-                                {filteredCountriesList.map((countryName) => (
-                                  <button
-                                    key={countryName}
-                                    type="button"
-                                    onClick={() => { setSelectedCountry(countryName); setIsCountryPopoverOpen(false); }}
-                                    className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors truncate ${
-                                      selectedCountry.toLowerCase() === countryName.toLowerCase()
-                                        ? 'bg-white text-black font-bold'
-                                        : 'text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white'
-                                    }`}
-                                  >
-                                    {countryName}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                      {isCountryPopoverOpen && (
+                        <div className="absolute left-0 top-full mt-2 w-60 rounded-xl border border-[#232326] bg-[#131316] p-3 shadow-2xl z-50 text-xs normal-case font-sans">
+                          <input
+                            type="text"
+                            value={countrySearch}
+                            onChange={(e) => setCountrySearch(e.target.value)}
+                            placeholder="Search countries..."
+                            className="w-full rounded-lg border border-[#232326] bg-[#0A0A0C] px-3 py-1.5 text-xs text-white placeholder-[#71717A] focus:border-[#6E56CF] focus:outline-none mb-2"
+                          />
+                          <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-thin">
+                            <button
+                              type="button"
+                              onClick={() => { setSelectedCountry('all'); setIsCountryPopoverOpen(false); }}
+                              className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold ${selectedCountry === 'all' ? 'bg-white text-black font-bold' : 'text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white'}`}
+                            >
+                              All countries
+                            </button>
+                            {filteredCountriesList.map((countryName) => (
+                              <button
+                                key={countryName}
+                                type="button"
+                                onClick={() => { setSelectedCountry(countryName); setIsCountryPopoverOpen(false); }}
+                                className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold truncate ${selectedCountry.toLowerCase() === countryName.toLowerCase() ? 'bg-white text-black font-bold' : 'text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white'}`}
+                              >
+                                {countryName}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </th>
+                      )}
+                    </div>
+                  </div>
+                  <div><SortHeader label="VALUATION" field="valuation" /></div>
+                  <div><SortHeader label="VAL/EMP" field="valEmp" /></div>
+                  <div><SortHeader label="AI NATIVE" field="aiNative" /></div>
+                  <div><SortHeader label="PROFITABLE" field="profitable" /></div>
+                  <div><SortHeader label="SECTOR" field="sector" /></div>
+                  <div><SortHeader label="MODELS" field="modelsCount" /></div>
+                  <div><SortHeader label="TOOLS" field="toolsCount" /></div>
+                  <div>SHARE</div>
+                  <div>BOOKMARK</div>
+                </div>
 
-                      <th className="px-3 sm:px-4 py-3 text-left">
-                        <SortableHeader label="Valuation" field="valuation" />
-                      </th>
-                      <th className="px-3 sm:px-4 py-3 text-left">
-                        <SortableHeader label="Val/Emp" field="valEmp" />
-                      </th>
-                      <th className="px-3 sm:px-4 py-3 text-left">
-                        <SortableHeader label="AI Native" field="aiNative" />
-                      </th>
-                      <th className="px-3 sm:px-4 py-3 text-left">
-                        <SortableHeader label="Profitable" field="profitable" />
-                      </th>
-                      <th className="px-3 sm:px-4 py-3 text-left">
-                        <SortableHeader label="Sector" field="sector" />
-                      </th>
-                      <th className="px-3 sm:px-4 py-3 text-left">
-                        <SortableHeader label="Models" field="modelsCount" />
-                      </th>
-                      <th className="px-3 sm:px-4 py-3 text-left">
-                        <SortableHeader label="Tools" field="toolsCount" />
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {paginatedCompanies.map((company) => {
-                      const authenticModels = company.aiModels || [];
-                      const typesList = company.type || [];
-                      const hasAiNative = typesList.length > 0 ? typesList.includes('AI_NATIVE') : null;
-                      const hasProfitable = typesList.length > 0 ? typesList.includes('PROFITABLE') : null;
-                      const logoSrc = getCompanyLogo(company);
-
-                      const cleanName = formatCompanyName(company.name);
-                      const safeSlug = cleanCompanySlug(company.slug);
-
-                      return (
-                        <tr
-                          key={company.id}
-                          className="group border-b border-[#1C1C1F] last:border-b-0 hover:bg-[#131316]/70 transition-colors"
-                        >
-                          {/* Sticky 1st Column (Company Name & Logo) on Mobile/Tablet */}
-                          <td className="px-2.5 sm:px-4 py-3 sticky left-0 z-20 bg-[#0A0A0C] group-hover:bg-[#131316] shadow-[2px_0_6px_rgba(0,0,0,0.6)] border-r border-[#232326]">
-                            <Link href={`/companies/${safeSlug}`} className="flex items-center gap-2 sm:gap-3 min-w-0">
-                              {/* Separate small square logo box matching Tools */}
-                              <div className="h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-lg bg-gradient-to-br from-[#1A1A1E] to-[#141418] border border-[#26262B] p-1 flex items-center justify-center shadow-sm overflow-hidden">
-                                {logoSrc ? (
-                                  <img
-                                    src={logoSrc}
-                                    alt={cleanName}
-                                    className="object-contain w-full h-full rounded"
-                                    onError={(e) => {
-                                      // Hide broken image link and display fallback initial avatar
-                                      (e.target as HTMLElement).style.display = 'none';
-                                    }}
-                                  />
-                                ) : (
-                                  <span className="text-xs sm:text-sm font-black text-white">{cleanName.charAt(0)}</span>
-                                )}
-                              </div>
-
-                              <div className="min-w-0 flex-1">
-                                <h3 className="font-semibold text-xs sm:text-sm text-white truncate group-hover:text-[#F5A623] transition-colors">{cleanName}</h3>
-                                {/* Authentic Models / Tags strictly from DB */}
-                                {authenticModels.length > 0 ? (
-                                  <div className="hidden sm:flex items-center gap-1 mt-0.5 flex-wrap">
-                                    {authenticModels.slice(0, 3).map((m) => (
-                                      <span
-                                        key={m.id}
-                                        className="text-[9px] sm:text-[10px] text-[#A1A1AA] bg-[#1A1A1E] border border-[#2A2A2E] rounded px-1.5 py-0.5 truncate max-w-[90px] sm:max-w-[110px]"
-                                      >
-                                        {m.name}
-                                      </span>
-                                    ))}
-                                    {authenticModels.length > 3 && (
-                                      <span className="text-[9px] sm:text-[10px] text-[#71717A]">+{authenticModels.length - 3}</span>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div className="text-[9px] sm:text-[10px] text-[#52525B] truncate sm:block hidden">—</div>
-                                )}
-                              </div>
-                            </Link>
-                          </td>
-
-                          {/* Country */}
-                          <td className="px-3 sm:px-4 py-3 text-xs text-[#A1A1AA] truncate">
-                            {company.country || "—"}
-                          </td>
-
-                          {/* Valuation */}
-                          <td className="px-3 sm:px-4 py-3 text-xs text-white font-medium">
-                            {formatValuation(company.valuation)}
-                          </td>
-
-                          {/* Val/Emp */}
-                          <td className="px-3 sm:px-4 py-3 text-xs text-white font-medium">
-                            {formatValEmp(company.valuation, company.employeeCount)}
-                          </td>
-
-                          {/* AI Native */}
-                          <td className="px-3 sm:px-4 py-3">
-                            <TypeBadge status={hasAiNative} />
-                          </td>
-
-                          {/* Profitable */}
-                          <td className="px-3 sm:px-4 py-3">
-                            <TypeBadge status={hasProfitable} />
-                          </td>
-
-                          {/* Sector */}
-                          <td className="px-3 sm:px-4 py-3 text-xs text-[#A1A1AA] truncate">
-                            {company.sector || "—"}
-                          </td>
-
-                          {/* Models count */}
-                          <td className="px-3 sm:px-4 py-3 text-xs text-white font-medium text-left">
-                            {company._count?.aiModels || company.aiModels?.length || 0}
-                          </td>
-
-                          {/* Tools count */}
-                          <td className="px-3 sm:px-4 py-3 text-xs text-white font-medium text-left">
-                            {company._count?.tools || company.tools?.length || 0}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                {/* Data Rows */}
+                <div role="list" className="divide-y divide-[#232326]/60">
+                  {paginatedCompanies.map((company, idx) => (
+                    <CompanyRow
+                      key={company.id}
+                      company={company}
+                      index={idx}
+                      onShare={handleShare}
+                    />
+                  ))}
+                </div>
               </div>
 
-              {/* 100 Rows per Page Pagination Bar */}
+              {/* 100 Rows Pagination Bar */}
               {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-[#131316] border-t border-[#232326] text-xs text-[#A1A1AA]">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-[#131316] border-t border-[#232326]/60 text-xs text-[#A1A1AA]">
                   <div>
                     Showing <span className="font-bold text-white">{(currentPage - 1) * PAGE_SIZE + 1}</span>–<span className="font-bold text-white">{Math.min(currentPage * PAGE_SIZE, filteredAndSorted.length)}</span> of <span className="font-bold text-white">{filteredAndSorted.length.toLocaleString()}</span> companies
                   </div>
@@ -674,7 +732,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                       size="sm"
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="h-8 px-2.5 text-xs font-semibold border-[#232326] bg-[#0A0A0C] hover:bg-[#1A1A1E] text-white disabled:opacity-40"
+                      className="h-8 px-2.5 text-xs font-semibold border-[#232326] bg-[#0A0A0C] hover:bg-[#1A1A1E] text-[#A1A1AA] hover:text-white disabled:opacity-40"
                     >
                       <ChevronLeft size={14} className="mr-1" /> Prev
                     </Button>
@@ -713,7 +771,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                       size="sm"
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="h-8 px-2.5 text-xs font-semibold border-[#232326] bg-[#0A0A0C] hover:bg-[#1A1A1E] text-white disabled:opacity-40"
+                      className="h-8 px-2.5 text-xs font-semibold border-[#232326] bg-[#0A0A0C] hover:bg-[#1A1A1E] text-[#A1A1AA] hover:text-[#A1A1AA] disabled:opacity-40"
                     >
                       Next <ChevronRight size={14} className="ml-1" />
                     </Button>
