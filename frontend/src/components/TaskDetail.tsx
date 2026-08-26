@@ -4,19 +4,18 @@ import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import Bell from 'lucide-react/dist/esm/icons/bell';
 import MoreHorizontal from 'lucide-react/dist/esm/icons/more-horizontal';
-import type { Task } from "@/lib/tasks-api";
-import { getToolsByCategory } from "@/lib/tools-data";
+import type { Task, TaskDetail as TaskDetailData } from "@/lib/tasks-api";
 import { getSubcategories } from "@/lib/subcategories-data";
 import { TaskDetailActions } from "./TaskDetailActions";
 import { TaskToolsList } from "./TaskToolsList";
 
 type TaskDetailProps = {
-  task: Task;
+  task: TaskDetailData;
   relatedTasks: Task[];
   bookmarked: boolean;
   liked: boolean;
   subscribed: boolean;
-};
+};;
 
 const VISIBLE_CHIPS_LIMIT = 6;
 
@@ -27,14 +26,6 @@ function formatCount(value: number | null | undefined): string {
   return value.toLocaleString("en-US");
 }
 
-function faviconUrl(websiteUrl: string, size = 32): string {
-  try {
-    const host = new URL(websiteUrl).hostname;
-    return `https://www.google.com/s2/favicons?domain=${host}&sz=${size}`;
-  } catch {
-    return "";
-  }
-}
 
 function StatColumn({ label, value }: { label: string; value: string }) {
   return (
@@ -51,9 +42,9 @@ export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }
   const title = task.title ?? "Untitled Task";
   const description = task.description ?? "";
 
-  const relevantTools = useMemo(() => getToolsByCategory(categorySlug), [categorySlug]);
+  const relevantTools = task.popularTools ?? [];
+const popularTool = relevantTools[0];
   const subcategories = useMemo(() => getSubcategories(categorySlug), [categorySlug]);
-  const popularTool = relevantTools[0];
 
   const [activeSubcategory, setActiveSubcategory] = useState<string | null>(null);
   const [showAllChips, setShowAllChips] = useState(false);
@@ -61,9 +52,7 @@ export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }
   const visibleChips = showAllChips ? subcategories : subcategories.slice(0, VISIBLE_CHIPS_LIMIT);
   const hiddenChipCount = subcategories.length - visibleChips.length;
 
-  const filteredTools = activeSubcategory
-    ? relevantTools.filter((t) => t.subcategory === activeSubcategory)
-    : relevantTools;
+  const filteredTools = relevantTools;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
@@ -138,7 +127,14 @@ export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }
                 <div className="text-xs text-[#71717A] mb-1.5">Most popular</div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#18181C] ring-1 ring-[#232326]/70 px-3 py-1.5 text-sm text-white">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={faviconUrl(popularTool.websiteUrl)} alt="" className="h-4 w-4 rounded" />
+                  {popularTool.logoUrl ? (
+  // eslint-disable-next-line @next/next/no-img-element
+  <img
+    src={popularTool.logoUrl}
+    alt=""
+    className="h-4 w-4 rounded"
+  />
+) : null}
                   {popularTool.name}
                 </span>
               </div>

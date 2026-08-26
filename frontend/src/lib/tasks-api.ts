@@ -28,11 +28,23 @@ export type Creator = {
   avatarUrl?: string;
 } | null;
 
+export type PopularTool = {
+  slug: string;
+  name: string;
+  logoUrl: string | null;
+  tagline: string | null;
+  pricingModel: string | null;
+  rating: number | null;
+  bookmarkCount: number | null;
+  visitUrl: string | null;
+};
+
 export type Task = {
   id: string;
   slug: string;
   title: string;
   description: string;
+  iconUrl: string | null;
   difficulty: Difficulty;
   pricingModel: PricingModel;
   isFeatured: boolean;
@@ -50,6 +62,10 @@ export type Task = {
   url?: string;
 };
 
+export type TaskDetail = Task & {
+  popularTools: PopularTool[];
+};
+
 export type TaskListResponse = {
   tasks: Task[];
   total: number;
@@ -60,7 +76,7 @@ export type TaskListResponse = {
 };
 
 export type TaskDetailResponse = {
-  task: Task;
+  task: TaskDetail;
   bookmarked: boolean;
   liked: boolean;
   subscribed: boolean;

@@ -2,15 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams, notFound } from "next/navigation";
-import { fetchTask, fetchTasks, type Task } from "@/lib/tasks-api";
-import { PINNED_TASKS } from "@/lib/pinned-tasks";
+import { fetchTask, fetchTasks, type Task, type TaskDetail as TaskDetailData } from "@/lib/tasks-api";
 import { TaskDetail } from "@/components/TaskDetail";
 
 export function TaskDetailClient() {
   const params = useParams();
   const slug = params.slug as string;
 
-  const [task, setTask] = useState<Task | null>(null);
+  const [task, setTask] = useState<TaskDetailData | null>(null);
   const [relatedTasks, setRelatedTasks] = useState<Task[]>([]);
   const [bookmarked, setBookmarked] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -24,32 +23,6 @@ export function TaskDetailClient() {
     async function loadTask() {
       setIsLoading(true);
       try {
-        // Pinned mock tasks don't exist on the real backend — fetching
-        // them there would always fail. Serve them directly instead.
-        const pinned = PINNED_TASKS.find((t) => t.slug === slug);
-
-        if (pinned) {
-          if (!cancelled) {
-            setTask(pinned);
-            setBookmarked(false);
-            setLiked(false);
-            setSubscribed(false);
-          }
-
-          if (pinned.category?.slug) {
-            try {
-              const related = await fetchTasks({ category: pinned.category.slug, page: 1 });
-              if (!cancelled) {
-                setRelatedTasks(related.tasks.filter((t) => t.slug !== pinned.slug).slice(0, 5));
-              }
-            } catch (relatedError) {
-              console.error("Failed to fetch related tasks for pinned task:", relatedError);
-              if (!cancelled) setRelatedTasks([]);
-            }
-          }
-
-          return;
-        }
 
         const data = await fetchTask(slug);
 

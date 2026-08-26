@@ -2,8 +2,6 @@
 
 import React, { useMemo } from "react";
 import Link from "next/link";
-import Bell from 'lucide-react/dist/esm/icons/bell';
-import Bookmark from 'lucide-react/dist/esm/icons/bookmark';
 import Wrench from 'lucide-react/dist/esm/icons/wrench';
 import Brain from 'lucide-react/dist/esm/icons/brain';
 import Bot from 'lucide-react/dist/esm/icons/bot';
@@ -12,7 +10,7 @@ import type { Task } from "@/lib/tasks-api";
 import { getCategoryIcon } from "@/lib/category-icons";
 
 type TaskCardProps = {
-  task: Task & { iconUrl?: string };
+  task: Task;
 };
 
 function formatCount(value: number | null | undefined): string {
@@ -28,7 +26,7 @@ export function TaskCard({ task }: TaskCardProps) {
   return (
     <Link
       href={`/tasks/${task.slug}`}
-      className="group relative grid grid-cols-[48px_minmax(220px,1.6fr)_repeat(6,minmax(90px,1fr))] items-center gap-4 px-5 py-2.5 border-b border-[#232326]/50 last:border-b-0 transition-colors duration-200 hover:bg-gradient-to-r hover:from-[#18181C]/70 hover:to-[#131316]/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF]/60 focus-visible:ring-inset"
+      className="group relative grid grid-cols-[48px_minmax(220px,1.6fr)_repeat(4,minmax(90px,1fr))] items-center gap-4 px-5 py-2.5 border-b border-[#232326]/50 last:border-b-0 transition-colors duration-200 hover:bg-gradient-to-r hover:from-[#18181C]/70 hover:to-[#131316]/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF]/60 focus-visible:ring-inset"
     >
       <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-[#6E56CF] scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-200" />
 
@@ -52,14 +50,6 @@ export function TaskCard({ task }: TaskCardProps) {
         )}
       </div>
 
-      <span className="flex items-center justify-end gap-2 text-xs text-[#A1A1AA] font-mono tabular-nums">
-        <Bell className="h-4 w-4 text-[#71717A] shrink-0" aria-hidden="true" />
-        {formatCount(task.subscribers)}
-      </span>
-      <span className="flex items-center justify-end gap-2 text-xs text-[#A1A1AA] font-mono tabular-nums">
-        <Bookmark className="h-4 w-4 text-[#71717A] shrink-0" aria-hidden="true" />
-        {formatCount(task.saves)}
-      </span>
       <span className="flex items-center justify-end gap-2 text-xs text-[#A1A1AA] font-mono tabular-nums">
         <Wrench className="h-4 w-4 text-[#71717A] shrink-0" aria-hidden="true" />
         {formatCount(task.tools)}

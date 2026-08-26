@@ -11,7 +11,6 @@ import {
   type FilterOption,
   type TaskListResponse,
 } from "@/lib/tasks-api";
-import { PINNED_TASKS } from "@/lib/pinned-tasks";
 import { TaskCard } from "./TaskCard";
 import { TaskSkeleton } from "./TaskSkeleton";
 import { EmptyTasks } from "./EmptyTasks";
@@ -23,7 +22,7 @@ type TasksClientProps = {
   defaultCategory?: string;
 };
 
-const COLUMN_LABELS = ["SUBSCRIBERS", "SAVES", "TOOLS", "MODELS", "ROBOTS", "DEVICES"];
+const COLUMN_LABELS = ["TOOLS", "MODELS", "ROBOTS", "DEVICES"];
 
 const TASK_CATEGORIES = [
   { name: "All", slug: "" },
@@ -146,7 +145,7 @@ const queryParams = useMemo(
   !error &&
   !authRequired;
 
-  const displayTasks = [...PINNED_TASKS, ...tasks];
+  const displayTasks = tasks;
 
   return (
       <main className="w-full px-6 lg:px-10 py-2 flex-1 selection:bg-neutral-800 selection:text-white">
@@ -192,7 +191,7 @@ const queryParams = useMemo(
           <EmptyTasks />
         ) : (
           <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#131316]/60 to-[#0D0D10]/60 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_20px_60px_-30px_rgba(0,0,0,0.8)] ring-1 ring-[#232326]/70">
-            <div className="grid grid-cols-[48px_minmax(220px,1.6fr)_repeat(6,minmax(90px,1fr))] items-center gap-4 px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
+            <div className="grid grid-cols-[48px_minmax(220px,1.6fr)_repeat(4,minmax(90px,1fr))] items-center gap-4 px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
               <span />
               <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A]">Task</span>
               {COLUMN_LABELS.map((label) => (
