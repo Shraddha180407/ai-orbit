@@ -277,21 +277,15 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     </div>
   );
   if (type === "mcp") {
+    // ONLY fetch the main item on the server. Do not wait for alternatives!
     const item = await fetchMCPItemBySlug(slug);
     if (!item) return notFound();
-
-    // Fetch alternatives safely so failed fetch doesn't block critical page load
-    let initialAlternatives: any[] = [];
-    try {
-      initialAlternatives = await fetchMCPItemAlternatives(slug);
-    } catch (err) {
-      console.warn("Failed to prefetch alternatives for MCP detail page on server:", err);
-    }
 
     return (
       <div className="min-h-screen flex flex-col bg-[#000000] text-white">
         <Header />
-        <MCPDetailClient item={item} initialAlternatives={initialAlternatives} />
+        {/* Pass undefined for alternatives, letting the client fetch them in the background */}
+        <MCPDetailClient item={item} initialAlternatives={undefined} />
         <Footer />
       </div>
     );
