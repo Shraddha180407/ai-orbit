@@ -17,9 +17,9 @@ import { CategoryChip } from "@/components/CategoryChip";
 import { PricingBadge } from "@/components/PricingBadge";
 import type { MCPCategory, MCPSubCategory } from "@/lib/types";
 
-// 8-column layout template
-const COL_TEMPLATE = "grid-cols-[40px_minmax(200px,2.4fr)_minmax(130px,1.4fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)]";
-const COL_MIN_WIDTH = "min-w-[1220px]";
+// 8-column layout template updated for mobile sticky columns
+const COL_TEMPLATE = "grid-cols-[48px_200px_minmax(130px,1.4fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)] md:grid-cols-[40px_minmax(200px,2.4fr)_minmax(130px,1.4fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)]";
+const COL_MIN_WIDTH = "min-w-fit md:min-w-[1220px]";
 const COLUMN_HEADERS = ["", "MCP ITEM", "COMPANY", "TYPE", "CLASSIFICATION", "PRICING", "RELEASED", "ACTIONS"];
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -57,25 +57,34 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  // FIXED: Added local React state to track the active subcategory so the query knows when to refetch!
+  const initialSub = defaultSubCategory || defaultCategory || searchParams.get("subCategory") || searchParams.get("category") || "";
+  const [activeSubCategory, setActiveSubCategory] = useState<string>(initialSub);
+
   const q = searchParams.get("q") ?? "";
-  const paramSubCategory = searchParams.get("subCategory") || searchParams.get("category") || "";
-  const selectedSubCategorySlug = defaultSubCategory || defaultCategory || paramSubCategory;
 
   const handleSelectSubCategory = (slug: string | null) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const newSlug = slug === activeSubCategory ? "" : (slug || "");
+    
+    // 1. Update React state immediately so the data re-fetches
+    setActiveSubCategory(newSlug);
+
+    // 2. Silently update the URL without triggering Next.js router layout re-renders
+    const currentSearch = typeof window !== "undefined" ? window.location.search : searchParams.toString();
+    const params = new URLSearchParams(currentSearch);
     params.delete("category");
     params.delete("subCategory");
     
-    // Add the selected subcategory to the URL parameters
-    if (slug && slug !== selectedSubCategorySlug) {
-      params.set("subCategory", slug);
+    if (newSlug) {
+      params.set("subCategory", newSlug);
     }
 
     const queryString = params.toString();
+    const newUrl = queryString ? `/mcp?${queryString}` : `/mcp`;
     
-    // FIXED: Always stay on the exact same page and just change the query string.
-    // This prevents the Header (and the Submit Tool button) from remounting and blinking!
-    router.push(queryString ? `/mcp?${queryString}` : `/mcp`, { scroll: false });
+    if (typeof window !== "undefined") {
+      window.history.constructor.prototype.replaceState.call(window.history, null, "", newUrl);
+    }
   };
 
   const {
@@ -91,7 +100,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
       "mcpItems",
       {
         q,
-        subCategory: selectedSubCategorySlug,
+        subCategory: activeSubCategory, // FIXED: Using the local state here
       },
     ],
     queryFn: async ({ pageParam }) => {
@@ -99,7 +108,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
         page: pageParam as number,
         limit: 20,
         search: q || undefined,
-        subCategory: selectedSubCategorySlug || undefined,
+        subCategory: activeSubCategory || undefined, // FIXED: Using the local state here
       });
     },
     retry: false,
@@ -171,12 +180,11 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
         }
       `}</style>
       <div className="mx-auto w-full max-w-[1600px] space-y-4 animate-fade-in">
-        {/* Single combined scrollable pill row — categories + subcategories */}
         <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           <button
             onClick={() => handleSelectSubCategory(null)}
             className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
-              !selectedSubCategorySlug
+              !activeSubCategory
                 ? "bg-white text-black border-white shadow-lg shadow-white/5"
                 : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
             }`}
@@ -184,7 +192,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
             All
           </button>
           {MCP_SUBCATEGORIES.map((sub) => {
-            const isSelected = selectedSubCategorySlug === sub.slug;
+            const isSelected = activeSubCategory === sub.slug;
             return (
               <button
                 key={sub.id}
@@ -208,18 +216,18 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
             <div className="overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10">
               <div className="flex flex-col divide-y divide-[#232326]/60">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2.5`}>
-                    <div className="h-11 w-11 animate-pulse rounded-lg bg-[#18181C]" />
-                    <div className="space-y-1.5">
+                  <div key={i} className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 py-2.5`}>
+                    <div className="pl-4 md:pl-0"><div className="h-8 w-8 md:h-11 md:w-11 animate-pulse rounded-lg bg-[#18181C]" /></div>
+                    <div className="space-y-1.5 pr-4 md:pr-0">
                       <div className="h-3 w-36 animate-pulse rounded bg-[#18181C]" />
                       <div className="h-2.5 w-48 animate-pulse rounded bg-[#18181C]" />
                     </div>
-                    <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
+                    <div className="h-3 w-20 animate-pulse rounded bg-[#18181C] pl-4 md:pl-0" />
                     <div className="h-4.5 w-16 animate-pulse rounded-full bg-[#18181C]" />
                     <div className="h-4 w-24 animate-pulse rounded bg-[#18181C]" />
                     <div className="h-4.5 w-16 animate-pulse rounded-full bg-[#18181C]" />
                     <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 pr-4 md:pr-0">
                       <div className="h-7 w-7 animate-pulse rounded bg-[#18181C]" />
                       <div className="h-7 w-7 animate-pulse rounded bg-[#18181C]" />
                     </div>
@@ -244,18 +252,22 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
             </div>
           ) : (
             <div className={`overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
-              <div className="flex flex-col">
+              <div className={`flex flex-col relative bg-[#000000] ${COL_MIN_WIDTH}`}>
+                
                 {/* Column Headers */}
-                <div className="border-b border-[#232326]/60 bg-[#131316]/40">
-                  <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2`}>
-                    {COLUMN_HEADERS.map((h, i) => (
-                      <span
-                        key={i}
-                        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase"
-                      >
-                        {h}
-                      </span>
-                    ))}
+                <div className="border-b border-[#232326]/60 bg-[#131316] sticky top-0 z-30">
+                  <div className={`grid ${COL_TEMPLATE} items-center gap-4 py-2`}>
+                    {COLUMN_HEADERS.map((h, i) => {
+                      if (i === 0) return <div key={i} className="sticky left-0 md:static z-40 bg-[#131316] md:bg-transparent h-full pl-4" />;
+                      if (i === 1) return (
+                        <div key={i} className="relative flex items-center gap-2 sticky left-[60px] md:static z-40 bg-[#131316] md:bg-transparent shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none h-full pr-4 md:pr-0 before:content-[''] before:absolute before:inset-y-0 before:-left-[12px] before:w-[12px] before:bg-[#131316] md:before:hidden">
+                          <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase">{h}</span>
+                        </div>
+                      );
+                      if (i === 2) return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase pl-4 md:pl-0">{h}</span>;
+                      if (i === COLUMN_HEADERS.length - 1) return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase pr-4 md:pr-0">{h}</span>;
+                      return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase">{h}</span>;
+                    })}
                   </div>
                 </div>
 
@@ -275,41 +287,41 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                             router.push(`/p/mcp/${item.slug}`);
                           }
                         }}
-                        className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none relative cursor-pointer`}
+                        className={`group grid ${COL_TEMPLATE} items-center gap-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none relative cursor-pointer`}
                       >
-                        {/* Hover accent line on the left side of the row */}
-                        <span className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
-
                         {/* Column 1: Logo */}
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
-                          {item.logoUrl ? (
-                            <Image
-                              src={item.logoUrl}
-                              alt={`${item.name} logo`}
-                              width={40}
-                              height={40}
-                              className="h-9 w-9 object-contain"
-                              unoptimized
-                            />
-                          ) : (
-                            <span className="text-sm font-bold text-neutral-900">
-                              {item.name.charAt(0)}
-                            </span>
-                          )}
+                        <div className="sticky left-0 md:static z-20 flex h-full items-center bg-[#000000] md:bg-transparent pl-4 md:pl-0 transition-all duration-200">
+                          <span className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%] z-30" />
+                          <div className="flex h-8 w-8 md:h-11 md:w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white group-hover:border-[#6E56CF] transition-colors">
+                            {item.logoUrl ? (
+                              <Image
+                                src={item.logoUrl}
+                                alt={`${item.name} logo`}
+                                width={40}
+                                height={40}
+                                className="h-6 w-6 md:h-9 md:w-9 object-contain"
+                                unoptimized
+                              />
+                            ) : (
+                              <span className="text-[10px] md:text-sm font-bold text-neutral-900">
+                                {item.name.charAt(0)}
+                              </span>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Column 2: MCP Item (Name & shortDescription) */}
-                        <div className="min-w-0 flex flex-col justify-center">
+                        {/* Column 2: Name */}
+                        <div className="min-w-0 sticky left-[60px] md:static z-20 bg-[#000000] group-hover:bg-[#18181C] md:bg-transparent md:group-hover:bg-transparent h-full flex flex-col justify-center before:content-[''] before:absolute before:inset-y-0 before:-left-[12px] before:w-[12px] before:bg-[#000000] group-hover:before:bg-[#18181C] md:before:hidden shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none pr-4 md:pr-0 transition-colors">
                           <span className="truncate text-[13px] font-semibold text-white group-hover:text-white transition-colors">
                             {item.name}
                           </span>
-                          <p className="mt-0.5 line-clamp-1 text-[11.5px] text-[#A1A1AA] leading-relaxed">
+                          <p className="mt-0.5 line-clamp-1 text-[11.5px] text-[#A1A1AA] leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis md:text-clip md:whitespace-normal">
                             {item.shortDescription}
                           </p>
                         </div>
 
                         {/* Column 3: Company */}
-                        <div className="min-w-0 flex items-center">
+                        <div className="min-w-0 flex items-center pl-4 md:pl-0">
                           <span className="truncate text-[12px] font-medium text-[#D4D4D8]">
                             {item.providerName || "—"}
                           </span>
@@ -340,13 +352,13 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                           <PricingBadge pricingModel={item.pricingType} />
                         </div>
 
-                        {/* Column 7: Released (Only shows the launch date) */}
+                        {/* Column 7: Released */}
                         <div className="text-[11px] font-mono text-[#A1A1AA]">
                           {formatReleased(item.launchDate)}
                         </div>
 
-                        {/* Column 8: Actions (Website, Docs, Repo) */}
-                        <div className="flex items-center gap-1.5 z-20">
+                        {/* Column 8: Actions */}
+                        <div className="flex items-center gap-1.5 z-20 pr-4 md:pr-0">
                           {item.websiteUrl && (
                             <a
                               href={item.websiteUrl}
@@ -396,7 +408,6 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
           )}
         </div>
 
-        {/* Sentinel for infinite scroll */}
         {items.length > 0 && hasNextPage && (
           <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
