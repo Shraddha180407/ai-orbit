@@ -276,35 +276,19 @@ function ToolRow({
 
   return (
     <div
-      onClick={() => {
-        let targetPath = basePath;
-        let identifier = tool.slug; // Default to slug
-
-        if (tool.entityType === 'COMPANY') targetPath = '/companies';
-        if (tool.entityType === 'VIDEO') targetPath = '/videos';
-        if (tool.entityType === 'NEWS') targetPath = '/news';
-        if (tool.entityType === 'ROBOT') targetPath = '/robots';
-        if (tool.entityType === 'DEVICE') targetPath = '/devices';
-        if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
-        if (tool.entityType === 'MODEL') {
-          targetPath = '/models';
-          identifier = tool.id; 
-        }
-        
-        if (tool.entityType === 'TOOL') targetPath = '/tools';
-        
-        router.push(`${targetPath}/${identifier}`);
-      }}
+      onClick={() => router.push(targetUrl)}
       role="listitem"
-      className={`cursor-pointer group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
+      className={`cursor-pointer group relative transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 
+        flex flex-col p-4 gap-3
+        lg:grid lg:${COL_TEMPLATE} lg:${COL_MIN_WIDTH} lg:items-center lg:gap-3 lg:px-4 lg:py-3 lg:p-0`}
       onMouseEnter={(e) => {
         prefetchRow();
         const el = e.currentTarget;
-        el.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
+        if (window.innerWidth >= 1024) el.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
         const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
         if (logoEl) { logoEl.style.borderColor = accentColor; logoEl.style.boxShadow = `0 0 8px ${accentColor}55`; }
-        const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
-        if (nameEl) nameEl.style.color = accentColor;
+        const nameEl = el.querySelectorAll<HTMLElement>('[data-name="true"]');
+        nameEl.forEach(n => n.style.color = accentColor);
       }}
       onTouchStart={prefetchRow}
       onFocus={prefetchRow}
@@ -313,139 +297,129 @@ function ToolRow({
         el.style.boxShadow = "";
         const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
         if (logoEl) { logoEl.style.borderColor = ""; logoEl.style.boxShadow = ""; }
-        const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
-        if (nameEl) nameEl.style.color = "";
+        const nameEl = el.querySelectorAll<HTMLElement>('[data-name="true"]');
+        nameEl.forEach(n => n.style.color = "");
       }}
     >
-      {/* Col 1: Logo */}
-      <div
-        data-logo="true"
-        className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white transition-all duration-200"
-      >
-        <LogoCell name={tool.name} logoUrl={tool.logoUrl} />
-      </div>
-
-      {/* Col 2: Name + description */}
-      <div className="min-w-0">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <h3
-            data-name="true"
-            className="truncate text-[13px] font-semibold text-white transition-colors duration-200"
-          >
-            {tool.name}
-          </h3>
-          {tool.isVerified && (
-            <BadgeCheck size={13} className="shrink-0 text-blue-400" aria-label="Verified" />
-          )}
-          {tool.isFeatured && (
-            <Sparkles size={13} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
-          )}
-          {tool.websiteUrl ? (
-            <a
-              href={tool.websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="text-[#71717A] hover:text-white transition-colors shrink-0"
-              aria-label={`Visit ${tool.name} website`}
-            >
-              <ExternalLink size={13} />
-            </a>
-          ) : (
-            <span className="text-[#71717A] opacity-30 shrink-0"><ExternalLink size={13} /></span>
-          )}
+      {/* ── TOP ROW MOBILE / FIRST 2 COLS DESKTOP ── */}
+      <div className="flex items-start gap-3 lg:contents">
+        
+        {/* Col 1: Logo */}
+        <div
+          data-logo="true"
+          className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white transition-all duration-200"
+        >
+          <LogoCell name={tool.name} logoUrl={tool.logoUrl} />
         </div>
-        <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-clip">
-          {trimNoDots(tool.description || "")}
-        </p>
-      </div>
 
-      {/* Col 3: Task */}
-      <div className="min-w-0">
-        {tool.ttasks && tool.ttasks.length > 0 ? (
-          <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] whitespace-normal break-words text-center leading-tight">
-            {tool.ttasks[0].task.title}
-          </span>
-        ) : (
-          <span className="text-[11px] text-[#71717A] font-mono">—</span>
-        )}
-      </div>
-
-      {/* Col 4: Pricing */}
-      <div>
-        <PricingBadge
-  pricingModel={tool.pricingModel}
-  pricingAmount={tool.pricingAmount}
-  billingFrequency={tool.billingFrequency}
-  className="text-[10px] px-2 py-0.5"
-/>
-      </div>
-
-      {/* Col 5: API */}
-      <div>
-        <BoolPill value={hasApi} trueLabel="YES" falseLabel="NO" />
-      </div>
-
-      {/* Col 6: Open-Source */}
-      <div>
-        <BoolPill value={isOpenSource} trueLabel="YES" falseLabel="NO" />
-      </div>
-
-      {/* Col 7: Compatibility */}
-      <div className="min-w-0">
-        {tool.compatibility && tool.compatibility.length > 0 ? (
-          <div className="flex gap-1 flex-wrap">
-            {tool.compatibility.slice(0, 2).map((c, i) => (
-              <span key={i} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
-                {c}
-              </span>
-            ))}
-            {tool.compatibility.length > 2 && (
-              <span className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
-                +{tool.compatibility.length - 2}
-              </span>
+        {/* Col 2: Name + Description */}
+        <div className="min-w-0 flex-1 lg:flex lg:flex-col lg:justify-center">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h3 data-name="true" className="truncate text-[14px] lg:text-[13px] font-semibold text-white transition-colors duration-200">
+              {tool.name}
+            </h3>
+            {tool.isVerified && <BadgeCheck size={13} className="shrink-0 text-blue-400" aria-label="Verified" />}
+            {tool.isFeatured && <Sparkles size={13} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />}
+            {tool.websiteUrl && (
+              <a href={tool.websiteUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[#71717A] hover:text-white transition-colors shrink-0" aria-label={`Visit ${tool.name} website`}>
+                <ExternalLink size={12} />
+              </a>
             )}
           </div>
-        ) : (
-          <span className="text-[11px] text-[#71717A] font-mono">—</span>
-        )}
+          <p className="mt-0.5 text-[13px] lg:text-[11px] text-[#A1A1AA] leading-snug line-clamp-2 lg:line-clamp-1 lg:truncate lg:whitespace-nowrap lg:pr-2 lg:overflow-hidden lg:text-clip">
+            {trimNoDots(tool.description || "")}
+          </p>
+        </div>
+
+        {/* MOBILE BUTTONS (Hidden on Desktop) */}
+        <div className="flex items-center gap-1.5 lg:hidden shrink-0 mt-0.5">
+          <div onClick={(e) => e.preventDefault()}><ShareButton tool={tool} /></div>
+          <div onClick={(e) => e.preventDefault()}><BookmarkBtn tool={tool} /></div>
+          <div onClick={(e) => e.preventDefault()}>
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleCompare(tool); }}
+              disabled={!isSelected && isCompareFull}
+              className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+                isSelected ? "border-[#6E56CF] text-[#6E56CF]" : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
+              }`}
+            >
+              <GitCompare size={14} />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Col 8: Released */}
-      <div className="text-[10px] font-mono text-[#A1A1AA]">
-        {formatReleased(tool.releaseDate)}
+      {/* ── METADATA ROW MOBILE / REMAINING COLS DESKTOP ── */}
+      <div className="flex flex-wrap items-center gap-2 lg:contents mt-1 lg:mt-0">
+        
+        {/* Col 3: Task */}
+        <div className="min-w-0">
+          {tool.ttasks && tool.ttasks.length > 0 ? (
+            <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] whitespace-normal break-words text-center leading-tight">
+              {tool.ttasks[0].task.title}
+            </span>
+          ) : (
+            <span className="text-[11px] text-[#71717A] font-mono">—</span>
+          )}
+        </div>
+
+        {/* Col 4: Pricing */}
+        <div>
+          <PricingBadge pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} billingFrequency={tool.billingFrequency} className="text-[10px] px-2 py-0.5" />
+        </div>
+
+        {/* Col 5: API */}
+        <div>
+          <BoolPill value={hasApi} trueLabel="API" falseLabel="NO API" />
+        </div>
+
+        {/* Col 6: Open-Source */}
+        <div>
+          <BoolPill value={isOpenSource} trueLabel="OPEN" falseLabel="CLOSED" />
+        </div>
+
+        {/* Col 7: Compatibility */}
+        <div className="min-w-0 hidden lg:block">
+          {tool.compatibility && tool.compatibility.length > 0 ? (
+            <div className="flex gap-1 flex-wrap">
+              {tool.compatibility.slice(0, 2).map((c, i) => (
+                <span key={i} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">{c}</span>
+              ))}
+              {tool.compatibility.length > 2 && (
+                <span className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">+{tool.compatibility.length - 2}</span>
+              )}
+            </div>
+          ) : <span className="text-[11px] text-[#71717A] font-mono">—</span>}
+        </div>
+
+        {/* Col 8: Released */}
+        <div className="text-[11px] lg:text-[10px] font-mono text-[#71717A] lg:text-[#A1A1AA]">
+          {formatReleased(tool.releaseDate)}
+        </div>
       </div>
 
-      {/* Col 9: Share */}
-      <div onClick={(e) => e.preventDefault()}>
+      {/* ── DESKTOP BUTTONS (Hidden on Mobile) ── */}
+      <div className="hidden lg:block" onClick={(e) => e.preventDefault()}>
         <ShareButton tool={tool} />
       </div>
-
-      {/* Col 10: Bookmark */}
-      <div onClick={(e) => e.preventDefault()}>
+      <div className="hidden lg:block" onClick={(e) => e.preventDefault()}>
         <BookmarkBtn tool={tool} />
       </div>
-
-      {/* Col 11: Compare */}
-      <div onClick={(e) => e.preventDefault()}>
+      <div className="hidden lg:block" onClick={(e) => e.preventDefault()}>
         <button
           type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onToggleCompare(tool);
-          }}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleCompare(tool); }}
           disabled={!isSelected && isCompareFull}
           className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
-            isSelected
-              ? "border-[#6E56CF] text-[#6E56CF]"
-              : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
+            isSelected ? "border-[#6E56CF] text-[#6E56CF]" : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
           }`}
           aria-label={isSelected ? `Remove ${tool.name} from compare` : `Add ${tool.name} to compare`}
         >
-          <GitCompare size={14} />
+          {isSelected ? <Check size={14} /> : <GitCompare size={14} />}
         </button>
       </div>
+
     </div>
   );
 }
@@ -589,12 +563,12 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     <>
       <div
         ref={dropdownRef}
-        className="overflow-x-auto touch-pan-x rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
+        className="lg:overflow-x-auto lg:touch-pan-x rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
       >
-        <div style={{ minWidth: "1200px" }} className="relative bg-[#000000]">
+        <div className="relative bg-[#000000] lg:min-w-[1200px]">
 
           {/* ── Header row ───────────────────────────────────────────────────── */}
-          <div className="border-b border-[#232326]/60 bg-[#131316]/40">
+          <div className="hidden lg:block border-b border-[#232326]/60 bg-[#131316]/40">
             <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3`}>
 
               {/* Logo col — no label */}
