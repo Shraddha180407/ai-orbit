@@ -21,8 +21,10 @@ export default function RootLayout({
     <html lang="en" className="dark" data-scroll-behavior="smooth">
       <body className="font-sans">
         <ReactQueryProvider>
-          {children}
-          <Toaster />
+          <main className="relative flex flex-col min-h-screen w-full">
+            {children}
+            <Toaster />
+          </main>
         </ReactQueryProvider>
       </body>
     </html>

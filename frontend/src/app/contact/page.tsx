@@ -16,7 +16,7 @@ import {
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-24 pb-12">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-24 pb-12 overflow-x-hidden">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
         
         {/* Hero Section */}

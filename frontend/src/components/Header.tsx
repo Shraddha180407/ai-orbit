@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useUser } from '@/hooks/use-user';
 import Plus from 'lucide-react/dist/esm/icons/plus';
+import { AiOrbitLogo } from './AiOrbitLogo';
 
 export function Header() {
   const { user, isLoading } = useUser();
@@ -11,7 +12,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/20 bg-background/50 backdrop-blur-md py-4 relative">
       {/* Center: Nav links, centered against the full page width, not just the inner container */}
-      <nav className="hidden md:flex items-center gap-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+      <nav className="hidden lg:flex items-center gap-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
         <Link
           href="/tools?category=business"
           className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
@@ -41,9 +42,7 @@ export function Header() {
       <div className="mx-auto max-w-[1440px] px-4 sm:px-8 flex items-center justify-between relative gap-2">
         {/* Left: The AI Signal Logo */}
         <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group shrink-0 min-w-0">
-          <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-white text-black font-black text-sm sm:text-base transition-transform group-hover:scale-105 active:scale-95 border border-border">
-            S
-          </div>
+          <AiOrbitLogo className="h-7 w-7 sm:h-8 sm:w-8 text-white transition-transform group-hover:scale-105 active:scale-95" />
           <span className="text-sm sm:text-base font-bold tracking-tight text-white transition-colors truncate">
             AI Orbit
           </span>
