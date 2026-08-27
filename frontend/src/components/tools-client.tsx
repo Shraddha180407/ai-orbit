@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams, usePathname, useRouter } from "next/navigation";
-import { useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
+import { useSearchParams, usePathname } from "next/navigation";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { ToolListView } from "@/components/ToolListView";
 import { API_URL } from "@/lib/api";
@@ -90,7 +90,12 @@ export function ToolsClient({
 }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const router = useRouter();
+
+  // Page state for pagination
+  const [currentPage, setCurrentPage] = useState<number>(() => {
+    const pageFromUrl = searchParams.get("page");
+    return pageFromUrl ? parseInt(pageFromUrl, 10) : 1;
+  });
 
   const [mode, setMode] = useState<DirectoryMode>(() => {
     if (defaultMode) return defaultMode;
@@ -103,138 +108,82 @@ export function ToolsClient({
     return "tools";
   });
 
-  useEffect(() => {
-    if (defaultMode) return;
-    const path = window.location.pathname;
-    if (path.includes("personal")) {
-      setMode("personal");
-    } else if (path.includes("creativity")) {
-      setMode("creativity");
-    } else if (path.includes("agents")) {
-      setMode("agents");
-    } else {
-      setMode("tools");
-    }
-  }, [defaultMode, pathname]);
-
   const [activeCategory, setActiveCategory] = useState<string>(() => {
-    const explicitCategory = defaultCategory || searchParams.get("category");
-    if (explicitCategory) return explicitCategory;
-    return "";
+    return defaultCategory || searchParams.get("category") || "";
   });
 
-  // Synchronize state when URL path or query parameters change
-  useEffect(() => {
-    const pathParts = pathname.split("/").filter(Boolean);
-    let categoryFromPath = "";
+  // Reset to page 1 whenever active category or mode changes
+  const handleCategoryChange = (slug: string) => {
+    setActiveCategory(slug);
+    setCurrentPage(1);
 
-    // Extract subcategory slug from /tools/[slug], /personal/[slug], /creativity/[slug], /agents/[slug]
-    const modeKeys = ["tools", "personal", "creativity", "agents"];
-    const modeIdx = pathParts.findIndex(p => modeKeys.includes(p));
-    if (modeIdx !== -1 && pathParts[modeIdx + 1]) {
-      categoryFromPath = pathParts[modeIdx + 1];
-    }
+    const base = mode === "personal" ? "/personal" : mode === "creativity" ? "/creativity" : mode === "agents" ? "/agents" : "/tools";
+    const url = slug ? `${base}/${slug}` : base;
+    window.history.pushState(null, "", url);
+  };
 
-    const queryCategory = searchParams.get("category") || "";
-    const resolvedCategory = categoryFromPath || queryCategory || defaultCategory;
-
-    if (resolvedCategory) {
-      setActiveCategory(resolvedCategory);
-    } else {
-      setActiveCategory("");
-    }
-  }, [pathname, searchParams, defaultCategory, mode]);
-
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Build query params
   const q = searchParams.get("q") || undefined;
   const pricing = searchParams.get("pricing") || undefined;
   const sort = (searchParams.get("sort") || undefined) as SortOption | undefined;
 
-  const queryKey = ["tools", mode, activeCategory, q, pricing, sort];
-
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    isPlaceholderData,
-  } = useInfiniteQuery({
-    queryKey,
-    queryFn: async ({ pageParam = 1 }) => {
+  // Single page Query
+  const { data, isLoading, isPlaceholderData } = useQuery({
+    queryKey: ["tools", mode, activeCategory, q, pricing, sort, currentPage],
+    queryFn: async () => {
       const query = new URLSearchParams();
       if (q) query.set("q", q);
       if (pricing) query.set("pricing", pricing);
       if (sort) query.set("sort", sort);
-      query.set("page", String(pageParam));
+      query.set("page", String(currentPage));
 
       const endpoint = activeCategory
         ? `${API_URL}/api/v1/tools/category/${activeCategory}`
         : `${API_URL}/api/v1/tools`;
 
-      try {
-        const res = await fetch(`${endpoint}?${query.toString()}`);
-        if (!res.ok) return { tools: [], totalPages: 1, page: pageParam };
-        return await res.json();
-      } catch {
-        return { tools: [], totalPages: 1, page: pageParam };
-      }
-    },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage: any) => {
-      if (lastPage?.page < lastPage?.totalPages) return lastPage.page + 1;
-      return undefined;
+      const res = await fetch(`${endpoint}?${query.toString()}`);
+      if (!res.ok) return { tools: [], totalPages: 1 };
+      return res.json();
     },
     placeholderData: keepPreviousData,
     staleTime: 10 * 60 * 1000,
   });
 
-  // Flatten all fetched pages into a single list
-  const tools = data?.pages.flatMap((p: any) => p.tools || []) || [];
-  const totalPages = data?.pages[data.pages.length - 1]?.totalPages || 1;
-  const currentPage = data?.pages.length || 1;
-
-  // IntersectionObserver for endless scrolling
-  useEffect(() => {
-    if (isLoading || isFetchingNextPage || !hasNextPage) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        fetchNextPage();
-      }
-    }, { threshold: 0.1 });
-
-    const currentSentinel = sentinelRef.current;
-    if (currentSentinel) observer.observe(currentSentinel);
-    return () => { if (currentSentinel) observer.unobserve(currentSentinel); };
-  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
+  const tools = data?.tools || [];
+  const totalPages = data?.totalPages || 1;
 
   const categories = CATEGORY_MAP[mode] || CATEGORY_MAP.tools;
 
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setCurrentPage(newPage);
+    
+    // Scroll smoothly to top of grid
+    const target = document.getElementById("tools");
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
-    <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
-      <div className={`mx-auto w-full max-w-[1600px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
-        {/* Top Sliding Category Row */}
-        <div className="mb-2 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+    <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-6">
+      <div className={`mx-auto w-full max-w-[1600px] space-y-4 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
+        
+        {/* Category Row */}
+        <div className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none touch-pan-x w-auto sm:w-full">
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
               <button
                 key={topic.name}
-                                onClick={(e) => {
-                  setActiveCategory(topic.slug);
-                  const base = mode === "personal" ? "/personal" : mode === "creativity" ? "/creativity" : mode === "agents" ? "/agents" : "/tools";
-                  const url = topic.slug ? `${base}/${topic.slug}` : base;
-                  window.history.pushState(null, "", url);
+                onClick={(e) => {
+                  handleCategoryChange(topic.slug);
                   e.currentTarget.scrollIntoView({
                     behavior: "smooth",
                     block: "nearest",
                     inline: "center"
                   });
                 }}
-                className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
@@ -246,17 +195,39 @@ export function ToolsClient({
           })}
         </div>
 
-        <ToolListView
-          tools={tools}
-          loading={isLoading && currentPage === 1}
-        />
+        {/* List Grid */}
+        <ToolListView tools={tools} loading={isLoading} />
 
-        {/* Sentinel for infinite scroll */}
-        {hasNextPage && (
-          <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+        {/* Pagination Bar */}
+        {totalPages > 1 && (
+          <div className="mt-8 flex items-center justify-center gap-2 pt-4 border-t border-[#232326]">
+            {/* Prev Button */}
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium border border-[#232326] bg-[#131316] text-neutral-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+
+            {/* Page Indicator */}
+            <div className="flex items-center gap-1 px-2">
+              <span className="text-xs text-neutral-400">
+                Page <strong className="text-white">{currentPage}</strong> of <strong className="text-white">{totalPages}</strong>
+              </span>
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium border border-[#232326] bg-[#131316] text-neutral-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </div>
         )}
+
       </div>
     </div>
   );
