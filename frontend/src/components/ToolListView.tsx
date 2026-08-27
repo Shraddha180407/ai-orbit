@@ -57,12 +57,11 @@ type ToolListViewProps = {
   skeletonRows?: number;
 };
 
-// logo | name+desc | task | pricing | api | open-source | compatibility | released | share | bookmark | compare
+// FIXED: Adjusted grid template to account for internal padding and smaller mobile columns
 const COL_TEMPLATE =
-  "grid-cols-[44px_minmax(280px,3.5fr)_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_minmax(80px,0.7fr)_44px_44px_44px]";
-const COL_MIN_WIDTH = "min-w-[1150px]";
+  "grid-cols-[48px_200px_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_minmax(80px,0.7fr)_44px_44px_60px] md:grid-cols-[60px_minmax(280px,3.5fr)_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_minmax(80px,0.7fr)_44px_44px_60px]";
+const COL_MIN_WIDTH = "min-w-fit md:min-w-[1150px]";
 
-// ── Formatters ───────────────────────────────────────────────────────────────
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 function formatReleased(value?: string | null): string {
@@ -76,7 +75,6 @@ function isTruthy(...vals: Array<unknown>): boolean {
   return vals.some((v) => v === true || v === "true" || v === 1 || v === "1");
 }
 
-// ── Filter icon (same as devices-client) ────────────────────────────────────
 function FilterIcon({ active }: { active?: boolean }) {
   return (
     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -88,37 +86,35 @@ function FilterIcon({ active }: { active?: boolean }) {
   );
 }
 
-// ── Sort icon ────────────────────────────────────────────────────────────────
 function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
   if (!active) return <span className="text-[#3a3a3a] text-[10px]">↕</span>;
   return <span className="text-[#6E56CF] text-[10px]">{dir === "desc" ? "↓" : "↑"}</span>;
 }
 
-// ── Logo image with fallback ─────────────────────────────────────────────────
+// FIXED: Added responsive classes to make the image slightly smaller on mobile
 function LogoCell({ name, logoUrl }: { name: string; logoUrl: string | null }) {
   const [failed, setFailed] = React.useState(false);
   if (!logoUrl || failed) {
-    return <span className="text-xs font-bold text-neutral-900">{name.charAt(0)}</span>;
+    return <span className="text-[10px] md:text-xs font-bold text-neutral-900">{name.charAt(0)}</span>;
   }
   return (
     <img
       src={logoUrl}
       alt={name}
-      className="h-8 w-8 object-contain"
+      className="h-6 w-6 md:h-8 md:w-8 object-contain"
       onError={() => setFailed(true)}
     />
   );
 }
 
-// ── Bool pill (API / Open-Source) ────────────────────────────────────────────
 function BoolPill({ value, trueLabel, falseLabel }: { value: boolean; trueLabel: string; falseLabel: string }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">      {value ? trueLabel : falseLabel}
+    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">      
+      {value ? trueLabel : falseLabel}
     </span>
   );
 }
 
-// ── Share button ─────────────────────────────────────────────────────────────
 function ShareButton({ tool }: { tool: ListTool }) {
   const [copied, setCopied] = useState(false);
   const handleShare = async (e: React.MouseEvent) => {
@@ -176,7 +172,6 @@ function ShareButton({ tool }: { tool: ListTool }) {
   );
 }
 
-// ── Bookmark button ───────────────────────────────────────────────────────────
 function BookmarkBtn({ tool }: { tool: ListTool }) {
   const router = useRouter();
   const { isAuthenticated } = useUser();
@@ -255,52 +250,20 @@ function ToolRow({
 
   const prefetchRow = () => {
     try { router.prefetch(targetUrl); } catch {}
-    if (tool.entityType === 'MODEL') {
-      prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(tool.id)}`);
-    } else if (tool.entityType === 'COMPANY') {
-      prefetchUrl(`${API_URL}/api/v1/companies/${tool.slug}`);
-    } else if (tool.entityType === 'REPOSITORY') {
-      prefetchUrl(`${API_URL}/api/v1/repositories/${tool.slug}`);
-    } else if (tool.entityType === 'NEWS') {
-      prefetchUrl(`${API_URL}/api/news/${encodeURIComponent(tool.slug)}`);
-    } else if (tool.entityType === 'DEVICE') {
-      prefetchUrl(`${API_URL}/api/v1/devices/${tool.id || tool.slug}`);
-    } else if (tool.entityType === 'ROBOT') {
-      prefetchUrl(`${API_URL}/api/v1/robots/${tool.slug || tool.id}`);
-    } else if (tool.entityType === 'VIDEO') {
-      prefetchUrl(`${API_URL}/api/videos/${tool.slug || tool.id}`);
-    } else {
-      prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
-    }
   };
 
   return (
     <div
-      onClick={() => {
-        let targetPath = basePath;
-        let identifier = tool.slug; // Default to slug
-
-        if (tool.entityType === 'COMPANY') targetPath = '/companies';
-        if (tool.entityType === 'VIDEO') targetPath = '/videos';
-        if (tool.entityType === 'NEWS') targetPath = '/news';
-        if (tool.entityType === 'ROBOT') targetPath = '/robots';
-        if (tool.entityType === 'DEVICE') targetPath = '/devices';
-        if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
-        if (tool.entityType === 'MODEL') {
-          targetPath = '/models';
-          identifier = tool.id; 
-        }
-        
-        if (tool.entityType === 'TOOL') targetPath = '/tools';
-        
-        router.push(`${targetPath}/${identifier}`);
-      }}
+      onClick={() => router.push(targetUrl)}
       role="listitem"
-      className={`cursor-pointer group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
+      // FIXED: Removed px-4 from the row and moved it to the column edges so the sticky background covers the edges perfectly
+      className={`cursor-pointer group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
       onMouseEnter={(e) => {
         prefetchRow();
         const el = e.currentTarget;
-        el.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
+        const firstCell = el.querySelector<HTMLElement>('[data-sticky-first="true"]');
+        if (firstCell) firstCell.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
+        
         const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
         if (logoEl) { logoEl.style.borderColor = accentColor; logoEl.style.boxShadow = `0 0 8px ${accentColor}55`; }
         const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
@@ -310,23 +273,32 @@ function ToolRow({
       onFocus={prefetchRow}
       onMouseLeave={(e) => {
         const el = e.currentTarget;
-        el.style.boxShadow = "";
+        const firstCell = el.querySelector<HTMLElement>('[data-sticky-first="true"]');
+        if (firstCell) firstCell.style.boxShadow = "";
+
         const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
         if (logoEl) { logoEl.style.borderColor = ""; logoEl.style.boxShadow = ""; }
         const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
         if (nameEl) nameEl.style.color = "";
       }}
     >
-      {/* Col 1: Logo */}
+      {/* FIXED: Added pl-4 to the sticky column itself, and reduced logo container size on mobile */}
+      {/* Col 1: Logo (Sticky on mobile) */}
       <div
-        data-logo="true"
-        className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white transition-all duration-200"
+        data-sticky-first="true"
+        className="sticky left-0 md:static z-20 flex h-full items-center bg-[#000000] md:bg-transparent pl-4 transition-all duration-200"
       >
-        <LogoCell name={tool.name} logoUrl={tool.logoUrl} />
+        <div
+          data-logo="true"
+          className="flex h-8 w-8 md:h-11 md:w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white group-hover:border-[#6E56CF] transition-colors"
+        >
+          <LogoCell name={tool.name} logoUrl={tool.logoUrl} />
+        </div>
       </div>
 
-      {/* Col 2: Name + description */}
-      <div className="min-w-0">
+      {/* FIXED: The before: selector perfectly fills the 12px gap so scrolling text is hidden! */}
+      {/* Col 2: Name + description (Sticky on mobile) */}
+      <div className="min-w-0 sticky left-[60px] md:static z-20 bg-[#000000] group-hover:bg-[#000000] md:bg-transparent md:group-hover:bg-transparent h-full flex flex-col justify-center before:content-[''] before:absolute before:inset-y-0 before:-left-[12px] before:w-[12px] before:bg-[#000000] md:before:hidden shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none pr-4 md:pr-0 transition-colors">
         <div className="flex items-center gap-1.5 min-w-0">
           <h3
             data-name="true"
@@ -355,13 +327,13 @@ function ToolRow({
             <span className="text-[#71717A] opacity-30 shrink-0"><ExternalLink size={13} /></span>
           )}
         </div>
-        <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-clip">
+        <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis md:text-clip">
           {trimNoDots(tool.description || "")}
         </p>
       </div>
 
       {/* Col 3: Task */}
-      <div className="min-w-0">
+      <div className="min-w-0 pl-4 md:pl-0">
         {tool.ttasks && tool.ttasks.length > 0 ? (
           <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] whitespace-normal break-words text-center leading-tight">
             {tool.ttasks[0].task.title}
@@ -427,7 +399,8 @@ function ToolRow({
       </div>
 
       {/* Col 11: Compare */}
-      <div onClick={(e) => e.preventDefault()}>
+      {/* FIXED: Added right padding specifically to the final column to keep standard borders clean */}
+      <div onClick={(e) => e.preventDefault()} className="pr-4">
         <button
           type="button"
           onClick={(e) => {
@@ -452,7 +425,6 @@ function ToolRow({
 
 const MemoizedToolRow = React.memo(ToolRow);
 
-// ── Main component ────────────────────────────────────────────────────────────
 function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolListViewProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -462,11 +434,9 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
   const [compareSet, setCompareSet] = useState<ListTool[]>([]);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-  // Name filter
   const [nameInput, setNameInput] = useState("");
   const [nameSearch, setNameSearch] = useState("");
 
-  // Sort
   type SortKey = "released" | "name";
   const [sortKey, setSortKey] = useState<SortKey>("released");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -476,7 +446,6 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     else { setSortKey(key); setSortDir("desc"); }
   }
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -505,7 +474,6 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     router.push(`/tools/compare?slugs=${slugs}`);
   };
 
-  // Apply local name filter + sort on top of server-fetched tools
   const filtered = React.useMemo(() => {
     let list = [...tools];
     if (nameSearch.trim()) {
@@ -517,21 +485,19 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
       );
     }
     list.sort((a, b) => {
-      // 1. PRIORITY OVERRIDE: Quality Scoring
       const getScore = (t: ListTool) => {
-        if (t.ttasks && t.ttasks.length > 0) return 3; // Tier 1: Has a Task
-        if (t.logoUrl && t.description && t.description.trim() !== "") return 2; // Tier 2: Logo + Description
-        return 1; // Tier 3: Missing Logo or Description
+        if (t.ttasks && t.ttasks.length > 0) return 3; 
+        if (t.logoUrl && t.description && t.description.trim() !== "") return 2; 
+        return 1; 
       };
 
       const scoreA = getScore(a);
       const scoreB = getScore(b);
 
       if (scoreA !== scoreB) {
-        return scoreB - scoreA; // Higher tier always comes first
+        return scoreB - scoreA; 
       }
 
-      // 2. NORMAL SORTING: Fall back to Release Date or Name only if they are in the same tier
       let cmp = 0;
       if (sortKey === "name") cmp = a.name.localeCompare(b.name);
       else cmp = ((b as any).releaseDate || b.createdAt || "").localeCompare((a as any).releaseDate || a.createdAt || "");
@@ -541,16 +507,15 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     return list;
   }, [tools, nameSearch, sortKey, sortDir]);
 
-  // ── Loading skeleton ────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
-        <div style={{ minWidth: "1200px" }} className="bg-[#000000]">
+        <div className={`bg-[#000000] ${COL_MIN_WIDTH}`}>
           <div className="flex flex-col divide-y divide-[#232326]/60">
             {Array.from({ length: skeletonRows }).map((_, i) => (
-              <div key={i} className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3`}>
-                <div className="h-11 w-11 animate-pulse rounded-lg bg-[#18181C]" />
-                <div className="space-y-1.5">
+              <div key={i} className={`grid ${COL_TEMPLATE} items-center gap-3 py-3`}>
+                <div className="pl-4"><div className="h-8 w-8 md:h-11 md:w-11 animate-pulse rounded-lg bg-[#18181C]" /></div>
+                <div className="space-y-1.5 pr-4 md:pr-0">
                   <div className="h-3 w-32 animate-pulse rounded bg-[#18181C]" />
                   <div className="h-2 w-48 animate-pulse rounded bg-[#18181C]" />
                 </div>
@@ -562,7 +527,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
                 <div className="h-3 w-16 animate-pulse rounded bg-[#18181C]" />
                 <div className="h-7 w-7 animate-pulse rounded-md bg-[#18181C]" />
                 <div className="h-7 w-7 animate-pulse rounded-md bg-[#18181C]" />
-                <div className="h-7 w-7 animate-pulse rounded-md bg-[#18181C]" />
+                <div className="h-7 w-7 animate-pulse rounded-md bg-[#18181C] mr-4 md:mr-0" />
               </div>
             ))}
           </div>
@@ -571,7 +536,6 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     );
   }
 
-  // ── Empty state ─────────────────────────────────────────────────────────────
   if (tools.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-[#232326] bg-[#131316]/40 py-16 text-center">
@@ -584,24 +548,23 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     );
   }
 
-  // ── Table ───────────────────────────────────────────────────────────────────
   return (
     <>
       <div
         ref={dropdownRef}
         className="overflow-x-auto touch-pan-x rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
       >
-        <div style={{ minWidth: "1200px" }} className="relative bg-[#000000]">
+        <div className={`relative bg-[#000000] ${COL_MIN_WIDTH}`}>
 
           {/* ── Header row ───────────────────────────────────────────────────── */}
-          <div className="border-b border-[#232326]/60 bg-[#131316]/40">
-            <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3`}>
+          <div className="border-b border-[#232326]/60 bg-[#131316] sticky top-0 z-30">
+            <div className={`grid ${COL_TEMPLATE} items-center gap-3 py-3`}>
 
-              {/* Logo col — no label */}
-              <div />
+              {/* Logo col header */}
+              <div className="sticky left-0 md:static z-40 bg-[#131316] md:bg-transparent h-full pl-4" />
 
-              {/* TOOL col — name filter */}
-              <div className="relative flex items-center gap-2">
+              {/* TOOL col header */}
+              <div className="relative flex items-center gap-2 sticky left-[60px] md:static z-40 bg-[#131316] md:bg-transparent shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none h-full pr-4 md:pr-0 before:content-[''] before:absolute before:inset-y-0 before:-left-[12px] before:w-[12px] before:bg-[#131316] md:before:hidden">
                 <button
                   onClick={() => handleSort("name")}
                   className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1"
@@ -639,7 +602,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               </div>
 
               {/* TASK */}
-              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">TASK</span>
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pl-4 md:pl-0">TASK</span>
 
               {/* PRICING */}
               <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">PRICING</span>
@@ -668,7 +631,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">SAVE</span>
 
               {/* COMPARE */}
-              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">CMP</span>
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pr-4">CMP</span>
             </div>
           </div>
 
