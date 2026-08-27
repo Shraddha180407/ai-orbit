@@ -56,20 +56,28 @@ export const MCP_SUBCATEGORIES: MCPSubCategory[] = [
 export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { defaultCategory?: string; defaultSubCategory?: string }) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  
+  const q = searchParams.get("q") ?? "";
 
-  // FIXED: Added local React state to track the active subcategory so the query knows when to refetch!
+  // 1. Initialize local state safely
   const initialSub = defaultSubCategory || defaultCategory || searchParams.get("subCategory") || searchParams.get("category") || "";
   const [activeSubCategory, setActiveSubCategory] = useState<string>(initialSub);
 
-  const q = searchParams.get("q") ?? "";
+  // 2. Sync local state with Next.js navigation (in case the user clicks a link from the Hero instead of a pill)
+  useEffect(() => {
+    const currentParam = searchParams.get("subCategory") || searchParams.get("category") || "";
+    if (currentParam !== activeSubCategory) {
+      setActiveSubCategory(currentParam);
+    }
+  }, [searchParams]);
 
   const handleSelectSubCategory = (slug: string | null) => {
     const newSlug = slug === activeSubCategory ? "" : (slug || "");
     
-    // 1. Update React state immediately so the data re-fetches
+    // Update React state immediately so the data re-fetches
     setActiveSubCategory(newSlug);
 
-    // 2. Silently update the URL without triggering Next.js router layout re-renders
+    // Silently update the URL without triggering Next.js router layout re-renders
     const currentSearch = typeof window !== "undefined" ? window.location.search : searchParams.toString();
     const params = new URLSearchParams(currentSearch);
     params.delete("category");
@@ -100,16 +108,21 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
       "mcpItems",
       {
         q,
-        subCategory: activeSubCategory, // FIXED: Using the local state here
+        subCategory: activeSubCategory,
       },
     ],
     queryFn: async ({ pageParam }) => {
-      return fetchMCPItems({
+      // FIXED: Strictly clean the API payload! We only spread in the search and subCategory 
+      // if they are NOT empty strings. This prevents '?subCategory=undefined' from breaking the API!
+      const apiParams: any = {
         page: pageParam as number,
         limit: 20,
-        search: q || undefined,
-        subCategory: activeSubCategory || undefined, // FIXED: Using the local state here
-      });
+      };
+      
+      if (q) apiParams.search = q;
+      if (activeSubCategory) apiParams.subCategory = activeSubCategory;
+
+      return fetchMCPItems(apiParams);
     },
     retry: false,
     refetchOnWindowFocus: false,
