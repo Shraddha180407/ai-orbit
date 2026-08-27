@@ -33,10 +33,10 @@ export function StickyCTA({ name, logoUrl, websiteUrl, avgRating, reviewCount }:
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 rounded-xl border border-border/80 bg-background/95 p-3.5 backdrop-blur-lg shadow-[0_10px_30px_rgba(0,0,0,0.6)] flex items-center justify-between md:hidden animate-slideUp transition-all duration-300">
-      <div className="flex items-center gap-3 min-w-0">
+    <div className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-3 sm:left-4 sm:right-4 z-50 rounded-xl border border-border/80 bg-background/95 p-2.5 sm:p-3.5 backdrop-blur-lg shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex items-center justify-between md:hidden animate-slideUp transition-all duration-300">
+      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
         {/* Logo container */}
-        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border/40 bg-white p-1">
+        <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border/40 bg-white p-1">
           {logoUrl ? (
             <Image
               src={logoUrl}
@@ -54,7 +54,7 @@ export function StickyCTA({ name, logoUrl, websiteUrl, avgRating, reviewCount }:
 
         {/* Text information */}
         <div className="min-w-0">
-          <div className="text-sm font-bold text-foreground truncate">{name}</div>
+          <div className="text-xs sm:text-sm font-bold text-foreground truncate">{name}</div>
           {avgRating !== null && (
             <div className="flex items-center gap-1 text-[10px] text-pricing-trial">
               <Star size={10} className="fill-pricing-trial text-pricing-trial" />
@@ -69,7 +69,7 @@ export function StickyCTA({ name, logoUrl, websiteUrl, avgRating, reviewCount }:
         href={websiteUrl}
         target="_blank"
         rel="noopener noreferrer nofollow"
-        className="inline-flex items-center gap-1 text-xs font-bold text-black bg-accent px-3.5 py-2 rounded-lg shadow-md shadow-accent/20 hover:bg-accent-hover transition-all active:scale-95"
+        className="inline-flex items-center gap-1 text-xs font-bold text-black bg-accent px-3.5 py-2 rounded-lg shadow-md shadow-accent/20 hover:bg-accent-hover transition-all active:scale-95 shrink-0"
       >
         Visit
         <ArrowUpRight size={13} />

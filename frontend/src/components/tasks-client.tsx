@@ -148,26 +148,26 @@ const queryParams = useMemo(
   const displayTasks = tasks;
 
   return (
-      <main className="w-full px-6 lg:px-10 py-2 flex-1 selection:bg-neutral-800 selection:text-white">
-        <div className="mb-2 flex items-center justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full">
+      <main className="w-full px-3 sm:px-6 lg:px-10 py-2 flex-1 selection:bg-neutral-800 selection:text-white">
+        <div className="mb-2 flex items-center justify-start sm:justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-1">
           {TASK_CATEGORIES.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
               <button
                 key={topic.name}
                 onClick={(e) => {
-  setActiveCategory(topic.slug);
-  const params = new URLSearchParams(searchParams.toString());
-  if (topic.slug) params.set("category", topic.slug);
-  else params.delete("category");
-  window.history.pushState(null, "", `/tasks?${params.toString()}`);
-  e.currentTarget.scrollIntoView({
-    behavior: "smooth",
-    block: "nearest",
-    inline: "center"
-  });
-}}
-                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                  setActiveCategory(topic.slug);
+                  const params = new URLSearchParams(searchParams.toString());
+                  if (topic.slug) params.set("category", topic.slug);
+                  else params.delete("category");
+                  window.history.pushState(null, "", `/tasks?${params.toString()}`);
+                  e.currentTarget.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "center"
+                  });
+                }}
+                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
@@ -191,22 +191,26 @@ const queryParams = useMemo(
           <EmptyTasks />
         ) : (
           <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#131316]/60 to-[#0D0D10]/60 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_20px_60px_-30px_rgba(0,0,0,0.8)] ring-1 ring-[#232326]/70">
-            <div className="grid grid-cols-[48px_minmax(220px,1.6fr)_repeat(4,minmax(90px,1fr))] items-center gap-4 px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
-              <span />
-              <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A]">Task</span>
-              {COLUMN_LABELS.map((label) => (
-                <span
-                  key={label}
-                  className="text-right text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A]"
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
+            <div className="overflow-x-auto scrollbar-none">
+              <div className="min-w-[620px]">
+                <div className="grid grid-cols-[48px_minmax(220px,1.6fr)_repeat(4,minmax(90px,1fr))] items-center gap-4 px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
+                  <span />
+                  <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A]">Task</span>
+                  {COLUMN_LABELS.map((label) => (
+                    <span
+                      key={label}
+                      className="text-right text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A]"
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
 
-            {displayTasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
+                {displayTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            </div>
 
             {error && tasks.length > 0 && (
               <div className="px-5 py-3 text-xs text-red-400 border-t border-[#232326]/60">

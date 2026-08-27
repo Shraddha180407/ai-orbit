@@ -441,8 +441,8 @@ useEffect(() => {
   return (
     <>
     <div className="w-full flex-1 flex flex-col">
-      <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
-        <div className="flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+      <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1">
+        <div className="flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-1 md:px-0">
           <button
             onClick={() => {
               setSelectedCategory(ALL_CATEGORIES);
@@ -478,7 +478,7 @@ useEffect(() => {
       </div>
 
       {/* ── LIST VIEW ── */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 pt-0.5 pb-8">
+      <div className="w-full px-3 sm:px-6 lg:px-8 pt-0.5 pb-8">
           {/*  Outer container matches ToolListView exactly */}
           <div className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
               <div ref={dropdownRef} style={{ minWidth: '1150px' }} className={`relative bg-[#000000] transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>

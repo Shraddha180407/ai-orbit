@@ -78,12 +78,12 @@ export function Shell({ children, title, description, actions }: ShellProps) {
             <div className="flex h-5 w-5 items-center justify-center rounded-[4px] bg-[#5e6ad2] font-bold text-white text-[10px]">
               S
             </div>
-            <span className="ml-2.5 text-[13px] font-semibold tracking-tight text-[#e8e8e8]">The AI Signal</span>
+            <span className="ml-2.5 text-[13px] font-semibold tracking-tight text-[#e8e8e8]">AI Orbit</span>
           </Link>
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8 lg:hidden text-[#8A8F98] hover:text-white" 
+            className="h-8 w-8 lg:hidden text-[#8A8F98] hover:text-white cursor-pointer" 
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <X className="h-4 w-4" />
@@ -235,7 +235,7 @@ export function Shell({ children, title, description, actions }: ShellProps) {
         </header>
 
         {/* Scrollable Content */}
-        <div className="flex-1 p-6 sm:p-8 max-w-[1100px] mx-auto w-full animate-fade-in-up">
+        <div className="flex-1 p-4 sm:p-8 max-w-[1100px] mx-auto w-full animate-fade-in-up">
           {(title || description || actions) && (
             <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
               <div>

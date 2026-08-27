@@ -589,7 +589,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     <>
       <div
         ref={dropdownRef}
-        className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
+        className="overflow-x-auto touch-pan-x rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
       >
         <div style={{ minWidth: "1200px" }} className="relative bg-[#000000]">
 
@@ -691,22 +691,22 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
 
       {/* ── Sticky compare bar ───────────────────────────────────────────────── */}
       {compareSet.length > 0 && (
-        <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
-          <div className="flex w-full max-w-xl items-center gap-3 rounded-xl border border-[#232326]/70 bg-[#111113]/95 backdrop-blur px-4 py-3 shadow-2xl shadow-black/40">
-            <div className="flex flex-1 items-center gap-2 min-w-0">
+        <div className="fixed inset-x-0 bottom-2 sm:bottom-4 z-40 flex justify-center px-2 sm:px-4">
+          <div className="flex w-full max-w-xl items-center gap-2 sm:gap-3 rounded-xl border border-[#232326]/70 bg-[#111113]/95 backdrop-blur px-3 sm:px-4 py-2.5 sm:py-3 shadow-2xl shadow-black/60">
+            <div className="flex flex-1 items-center gap-1.5 sm:gap-2 min-w-0">
               {Array.from({ length: MAX_COMPARE }).map((_, i) => {
                 const t = compareSet[i];
                 return (
-                  <div key={i} className={`flex flex-1 items-center gap-2 rounded-lg border px-2.5 py-1.5 min-w-0 ${t ? "border-[#232326]/70 bg-[#18181C]" : "border-dashed border-[#232326]/50"}`}>
+                  <div key={i} className={`flex flex-1 items-center gap-1.5 sm:gap-2 rounded-lg border px-2 sm:px-2.5 py-1.5 min-w-0 ${t ? "border-[#232326]/70 bg-[#18181C]" : "border-dashed border-[#232326]/50"}`}>
                     {t ? (
                       <>
-                        <span className="truncate text-[12px] font-semibold text-white">{t.name}</span>
-                        <button type="button" onClick={() => toggleCompare(t)} className="ml-auto shrink-0 text-[#71717A] hover:text-white">
+                        <span className="truncate text-[11px] sm:text-[12px] font-semibold text-white">{t.name}</span>
+                        <button type="button" onClick={() => toggleCompare(t)} className="ml-auto shrink-0 text-[#71717A] hover:text-white p-0.5" aria-label={`Remove ${t.name}`}>
                           <X size={12} />
                         </button>
                       </>
                     ) : (
-                      <span className="text-[11px] text-[#71717A]">Select another tool…</span>
+                      <span className="text-[10px] sm:text-[11px] text-[#71717A] truncate">Select tool…</span>
                     )}
                   </div>
                 );
@@ -716,14 +716,14 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               type="button"
               onClick={goToCompare}
               disabled={compareSet.length !== MAX_COMPARE}
-              className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[12px] font-semibold transition-colors ${
+              className={`shrink-0 inline-flex items-center gap-1 sm:gap-1.5 rounded-lg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold transition-colors ${
                 compareSet.length === MAX_COMPARE ? "text-black" : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
               }`}
               style={compareSet.length === MAX_COMPARE ? { backgroundColor: "#6E56CF" } : undefined}
             >
-              <GitCompare size={13} /> Compare
+              <GitCompare size={13} /> <span className="hidden xs:inline">Compare</span>
             </button>
-            <button type="button" onClick={() => setCompareSet([])} className="shrink-0 text-[#71717A] hover:text-white">
+            <button type="button" onClick={() => setCompareSet([])} className="shrink-0 text-[#71717A] hover:text-white p-1" aria-label="Clear compare">
               <X size={16} />
             </button>
           </div>

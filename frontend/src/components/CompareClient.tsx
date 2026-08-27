@@ -152,11 +152,11 @@ export function CompareClient() {
     <div className="flex min-h-screen flex-col bg-[#000000]">
       <Header />
 
-      <main className="mx-auto w-full max-w-[900px] flex-1 px-6 py-10">
+      <main className="mx-auto w-full max-w-[900px] flex-1 px-3 sm:px-6 py-6 sm:py-10">
         <button
           type="button"
           onClick={() => router.push("/tools")}
-          className="mb-6 inline-flex items-center gap-1.5 text-[13px] text-[#71717A] hover:text-white transition-colors"
+          className="mb-6 inline-flex items-center gap-1.5 text-[13px] text-[#71717A] hover:text-white transition-colors cursor-pointer"
         >
           <ArrowLeft size={14} /> Back to all tools
         </button>
@@ -176,9 +176,10 @@ export function CompareClient() {
             </Link>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-[#232326]/60 bg-[#131316]/10">
-            {/* Header row: the two tools */}
-            <div className="grid grid-cols-[140px_1fr_1fr] border-b border-[#232326]/60">
+          <div className="overflow-x-auto scrollbar-none rounded-xl border border-[#232326]/60 bg-[#131316]/10">
+            <div className="min-w-[480px]">
+              {/* Header row: the two tools */}
+              <div className="grid grid-cols-[140px_1fr_1fr] border-b border-[#232326]/60">
               <div />
               {tools.map((t, i) => (
                 <div
@@ -225,6 +226,7 @@ export function CompareClient() {
                 ))}
               </div>
             ))}
+            </div>
           </div>
         )}
       </main>

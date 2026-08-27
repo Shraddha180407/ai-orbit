@@ -81,7 +81,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const showSuggestions = value.trim().length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center px-4 pt-[10vh] sm:pt-[14vh]">
+    <div className="fixed inset-0 z-50 flex justify-center px-3 sm:px-4 pt-4 sm:pt-[14vh]">
       {/* Backdrop */}
       <button
         aria-label="Close search"
@@ -90,7 +90,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
       />
 
       {/* Panel */}
-      <div className="relative z-10 flex h-fit max-h-[76vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-search-border bg-search-bg shadow-2xl shadow-black/20">
+      <div className="relative z-10 flex h-fit max-h-[88vh] sm:max-h-[76vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-search-border bg-search-bg shadow-2xl shadow-black/20">
         {/* Search field row */}
         <div className="flex items-center gap-2.5 border-b border-search-border px-4 py-3.5">
           <Search size={18} className="shrink-0 text-search-text-tertiary" />

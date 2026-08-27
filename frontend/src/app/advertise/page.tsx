@@ -13,41 +13,41 @@ import {
 
 export default function AdvertisePage() {
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-24 pb-12">
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-16 sm:pt-24 pb-12">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
         
         {/* Hero Section */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-16 mb-32">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-16 mb-16 sm:mb-32">
           <div className="w-full lg:w-1/2">
-            <div className="mb-6 flex items-center gap-4">
+            <div className="mb-4 sm:mb-6 flex items-center gap-4">
               <h2 className="text-[12px] font-bold tracking-[0.2em] uppercase text-[#a1a1aa]">
                 ADVERTISE
               </h2>
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6 sm:mb-8 leading-[1.1]">
               Advertise with<br />AI Orbit
             </h1>
             
-            <h3 className="text-2xl font-bold text-white mb-4">
+            <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">
               Reach the world's most engaged AI audience.
             </h3>
             
-            <p className="text-[18px] leading-relaxed text-[#a1a1aa] mb-10 max-w-[500px]">
+            <p className="text-base sm:text-[18px] leading-relaxed text-[#a1a1aa] mb-8 sm:mb-10 max-w-[500px]">
               Put your brand in front of builders, researchers, founders, and professionals who are actively exploring the AI ecosystem.
             </p>
             
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               <Link 
                 href="#options"
-                className="inline-flex items-center justify-center gap-2 bg-white text-black px-6 py-3 rounded-full font-medium hover:bg-gray-200 transition-colors group"
+                className="inline-flex items-center justify-center gap-2 bg-white text-black px-5 sm:px-6 py-3 rounded-full font-medium hover:bg-gray-200 transition-colors group text-sm sm:text-base"
               >
                 Explore Ad Options 
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <a 
                 href="mailto:theaisignal.india@gmail.com"
-                className="inline-flex items-center justify-center gap-2 bg-transparent border border-[#3f3f46] text-white px-6 py-3 rounded-full font-medium hover:bg-white/5 transition-colors group"
+                className="inline-flex items-center justify-center gap-2 bg-transparent border border-[#3f3f46] text-white px-5 sm:px-6 py-3 rounded-full font-medium hover:bg-white/5 transition-colors group text-sm sm:text-base"
               >
                 Contact Sales 
                 <ArrowRight size={18} className="text-[#a1a1aa] group-hover:text-white transition-colors group-hover:translate-x-1" />

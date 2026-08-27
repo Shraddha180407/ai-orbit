@@ -589,7 +589,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
 
   return (
     <>
-      <main className="w-full px-2 sm:px-4 py-3 flex-1 flex flex-col selection:bg-neutral-800 selection:text-white">
+      <main className="w-full px-3 sm:px-6 lg:px-8 py-3 flex-1 flex flex-col selection:bg-neutral-800 selection:text-white">
         <div className="w-full space-y-4">
           {/* Subcategories Horizontal Scrollbar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">

@@ -293,9 +293,10 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
   const DEFAULT_VIDEOS = [
     { id: "v1", youtubeId: "fn3KWM1kuAw", title: "The Most Advanced AI Robots In The World", channel: "Tech Vision", views: "2.4M views", year: "2024", duration: "12:34" },
     { id: "v2", youtubeId: "bHFAQkRPa7E", title: "Boston Dynamics Atlas — Next Generation Robot", channel: "Boston Dynamics", views: "5.1M views", year: "2024", duration: "3:07" },
-    { id: "v3", youtubeId: "djzOBZUFzTw", title: "Humanoid Robots — The Future of AI", channel: "AI Explained", views: "1.8M views", year: "2024", duration: "18:22" },
-  ];  return (
-    <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8 pb-24">
+  ];
+
+  return (
+    <main className="flex-1 w-full px-3 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24">
       <div className="mx-auto max-w-[1200px] space-y-6">
 
         {/* Breadcrumb */}
@@ -308,17 +309,17 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
         </nav>
 
         {/* Hero */}
-        <header className="relative rounded-2xl border border-[#1e1e24] bg-[#080810] p-6 md:p-8 overflow-hidden">
+        <header className="relative rounded-2xl border border-[#1e1e24] bg-[#080810] p-4 sm:p-6 md:p-8 overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#1a6bff]/50 to-transparent" />
           <div className="absolute right-0 top-0 w-72 h-72 bg-[#1a6bff]/5 rounded-full blur-3xl pointer-events-none" />
           <div className="relative flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-            <div className="flex gap-4 items-start">
-              <div className="relative h-20 w-20 shrink-0 rounded-xl border border-[#1e1e24] bg-[#0d0d15] flex items-center justify-center overflow-hidden">
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <div className="relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-xl border border-[#1e1e24] bg-[#0d0d15] flex items-center justify-center overflow-hidden">
                 {robot.logoUrl ? <Image src={robot.logoUrl} alt={robot.name} width={80} height={80} className="object-contain p-2" unoptimized /> : <Bot size={28} className="text-[#555560]" />}
               </div>
               <div className="space-y-1.5 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">{robot.name}</h1>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white">{robot.name}</h1>
                   {robot.availability && (
                     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${avail.badge}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${avail.dot}`} />{robot.availability}

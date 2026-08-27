@@ -16,41 +16,41 @@ import {
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-24 pb-12">
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-16 sm:pt-24 pb-12">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
         
         {/* Hero Section */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-16 mb-24">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-16 mb-16 sm:mb-24">
           <div className="w-full lg:w-1/2">
-            <div className="mb-6 flex items-center gap-4">
+            <div className="mb-4 sm:mb-6 flex items-center gap-4">
               <h2 className="text-[12px] font-bold tracking-[0.2em] uppercase text-[#a1a1aa]">
                 CONTACT
               </h2>
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.1]">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-4 sm:mb-6 leading-[1.1]">
               Let's Connect.
             </h1>
             
-            <p className="text-[18px] leading-relaxed text-[#e4e4e7] mb-2 max-w-[500px]">
+            <p className="text-base sm:text-[18px] leading-relaxed text-[#e4e4e7] mb-2 max-w-[500px]">
               Have a question, found an issue, want to suggest an AI tool, or interested in working with AI Orbit?
             </p>
-            <p className="text-[18px] leading-relaxed text-[#a1a1aa] mb-10 max-w-[500px]">
+            <p className="text-base sm:text-[18px] leading-relaxed text-[#a1a1aa] mb-8 sm:mb-10 max-w-[500px]">
               We'd love to hear from you.
             </p>
             
-            <div className="inline-flex items-center gap-4 bg-[#0a0a0a] border border-[#27272a] rounded-xl p-4 pl-5 pr-8">
-              <div className="w-10 h-10 rounded-lg border border-[#3f3f46] flex items-center justify-center bg-[#121212]">
-                <Mail size={20} className="text-[#a1a1aa]" />
+            <div className="inline-flex items-center gap-3 sm:gap-4 bg-[#0a0a0a] border border-[#27272a] rounded-xl p-3 sm:p-4 pl-4 sm:pl-5 pr-6 sm:pr-8">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg border border-[#3f3f46] flex items-center justify-center bg-[#121212] shrink-0">
+                <Mail size={18} className="text-[#a1a1aa]" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[13px] text-[#a1a1aa] font-medium">We usually reply within</span>
-                <span className="text-[16px] font-bold text-white">24–48 hours</span>
+                <span className="text-[12px] sm:text-[13px] text-[#a1a1aa] font-medium">We usually reply within</span>
+                <span className="text-sm sm:text-[16px] font-bold text-white">24–48 hours</span>
               </div>
             </div>
           </div>
           
-          <div className="w-full lg:w-1/2 flex justify-center lg:justify-end">
+          <div className="w-full lg:w-1/2 flex justify-center lg:justify-end hidden md:flex">
             <div className="relative w-full max-w-[450px] aspect-square rounded-full flex items-center justify-center">
               {/* Planet graphic */}
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#1a1a1a] to-[#27272a] rounded-full opacity-40"></div>
