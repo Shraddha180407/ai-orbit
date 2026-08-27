@@ -584,7 +584,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
             </div>
 
             {/* 2. The rest of the categories (Safely scrollable) */}
-            <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none touch-pan-x w-full">
+            <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none w-full">
               {DIRECTORY_CARDS.slice(1).map(renderCard)}
             </div>
 
