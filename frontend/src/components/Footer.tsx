@@ -96,9 +96,8 @@ export function Footer() {
 
           {/* Left Column */}
           <div className="w-full lg:w-[380px] shrink-0">
-            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 mb-4 sm:mb-6">
-              <AiOrbitLogo size={38} className="text-white" />
-              <span className="text-[26px] sm:text-[34px] font-bold tracking-tight">AI Orbit</span>
+            <Link href="/" className="flex items-center mb-4 sm:mb-6 -ml-5 sm:-ml-6 relative z-30">
+              <AiOrbitLogo size={160} className="text-white" />
             </Link>
 
             <p className="text-[14px] sm:text-[16px] text-[#e4e4e7] mb-3 sm:mb-5">

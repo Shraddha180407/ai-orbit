@@ -114,11 +114,8 @@ export function Header() {
             <Menu size={16} />
           </button>
 
-          <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group shrink-0 min-w-0">
-            <AiOrbitLogo className="h-7 w-7 sm:h-8 sm:w-8 text-white transition-transform group-hover:scale-105 active:scale-95" />
-            <span className="text-sm sm:text-base font-bold tracking-tight text-white transition-colors truncate">
-              AI Orbit
-            </span>
+          <Link href="/" className="flex items-center group shrink-0 min-w-0 -ml-2 relative z-30">
+            <AiOrbitLogo size="auto" className="h-10 sm:h-14 lg:h-16 text-white transition-transform group-hover:scale-105 active:scale-95" />
           </Link>
         </div>
 
@@ -160,12 +157,9 @@ export function Header() {
             <Link
               href="/"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2"
+              className="flex items-center relative z-30"
             >
-              <AiOrbitLogo className="h-7 w-7 text-white" />
-              <span className="text-sm font-bold tracking-tight text-white">
-                AI Orbit
-              </span>
+              <AiOrbitLogo size="auto" className="h-10 text-white" />
             </Link>
 
             <button
