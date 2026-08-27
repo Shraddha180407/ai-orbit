@@ -110,6 +110,36 @@ router.post("/tasks", requireIngestionToken, async (c) => {
   }
 });
 
+router.delete("/tasks/:slug", requireIngestionToken, async (c) => {
+  try {
+    const slug = c.req.param("slug");
+
+    const prisma = getPrismaTx(c.env);
+    const summary = await TasksIngestService.deleteTask(prisma, slug);
+
+if (!summary) {
+  return c.json({ error: "Task not found" }, 404);
+}
+
+return c.json(summary, 200);
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "An unexpected error occurred while deleting task";
+
+    logger.error("Task deletion error:", err);
+
+    return c.json(
+      {
+        error: "INTERNAL_SERVER_ERROR",
+        message,
+      },
+      500
+    );
+  }
+});
+
 router.post("/devices", requireIngestionToken, async (c) => {
   try {
     const body = await c.req.json();

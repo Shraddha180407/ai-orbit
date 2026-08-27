@@ -3,6 +3,25 @@ import type { TasksIngestPayload } from "./tasks.ingest.schema.js";
 import { logger } from "../../lib/logger.js";
 
 export class TasksIngestService {
+    static async deleteTask(prisma: PrismaClient, slug: string) {
+  const task = await prisma.task.findUnique({
+    where: { slug },
+    select: { id: true },
+  });
+
+  if (!task) {
+    return null;
+  }
+
+  await prisma.task.delete({
+    where: { id: task.id },
+  });
+
+  return {
+    deleted: 1,
+    slug,
+  };
+}
   static async ingestTasks(
     prisma: PrismaClient,
     payload: TasksIngestPayload
