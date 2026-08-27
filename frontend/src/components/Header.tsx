@@ -115,7 +115,7 @@ export function Header() {
           </button>
 
           <Link href="/" className="flex items-center group shrink-0 min-w-0 -ml-2 relative z-30">
-            <AiOrbitLogo size="auto" className="h-10 sm:h-14 lg:h-16 text-white transition-transform group-hover:scale-105 active:scale-95" />
+            <AiOrbitLogo size="auto" className="h-14 sm:h-20 lg:h-24 text-white transition-transform group-hover:scale-105 active:scale-95" />
           </Link>
         </div>
 
@@ -159,7 +159,7 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center relative z-30"
             >
-              <AiOrbitLogo size="auto" className="h-10 text-white" />
+              <AiOrbitLogo size="auto" className="h-14 text-white" />
             </Link>
 
             <button
