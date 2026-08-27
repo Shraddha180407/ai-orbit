@@ -16,7 +16,6 @@ export function HomeClient() {
   const searchParams = useSearchParams();
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-
   const showParam = searchParams.get("show");
   const show = showParam !== null ? showParam : "tools,devices,robots,news,models";
   const queryKey = ["unified-feed", { show }];
@@ -50,7 +49,7 @@ export function HomeClient() {
     staleTime: 10 * 60 * 1000,
   });
 
-const tools = data?.pages.flatMap((p: any) => p?.items || p?.tools || []) || [];
+  const tools = data?.pages.flatMap((p: any) => p?.items || p?.tools || []) || [];
 
   useEffect(() => {
     if (isLoading || isFetchingNextPage || !hasNextPage) return;
@@ -70,9 +69,14 @@ const tools = data?.pages.flatMap((p: any) => p?.items || p?.tools || []) || [];
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <Header />
-      <GlobalHero />
+      
+      {/* FIXED: Wrapped GlobalHero in a very high z-index so any dropdowns inside it will float above the table below */}
+      <div className="relative z-[60]">
+        <GlobalHero />
+      </div>
 
-      <div id="tools" className="scroll-mt-28 w-full px-3 sm:px-6 lg:px-8 pt-2 pb-2">
+      {/* FIXED: Confined the table wrapper to a lower z-index (z-10) so its sticky columns can never overlap the Hero */}
+      <div id="tools" className="relative z-10 scroll-mt-28 w-full px-3 sm:px-6 lg:px-8 pt-2 pb-2">
         <div className={`mx-auto w-full max-w-[1600px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
           
           {/* Feed the unified items directly into your full-width table */}
