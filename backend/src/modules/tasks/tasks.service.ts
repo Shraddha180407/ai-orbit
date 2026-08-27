@@ -38,6 +38,19 @@ const taskDetailSelect = {
     orderBy: { createdAt: 'desc' as const },
     take: 20,
   },
+    tools: {
+    select: {
+      tool: {
+        select: {
+          slug: true,
+          name: true,
+          logoUrl: true,
+          pricingModel: true,
+          websiteUrl: true,
+        },
+      },
+    },
+  },
   popularTools: {
     select: {
       slug: true, name: true, logoUrl: true, tagline: true,
@@ -363,6 +376,16 @@ switch (filters.sort) {
         source: r.source ?? null,
         postedAt: r.postedAt?.toISOString?.() ?? null,
         stars: r.stars ?? null,
+      })),
+            toolItems: t.tools.map((tt) => ({
+        slug: tt.tool.slug,
+        name: tt.tool.name,
+        logoUrl: tt.tool.logoUrl,
+        tagline: null,
+        pricingModel: tt.tool.pricingModel,
+        rating: null,
+        bookmarkCount: null,
+        visitUrl: tt.tool.websiteUrl,
       })),
       popularTools: t.popularTools.map((pt) => ({
         slug: pt.slug,

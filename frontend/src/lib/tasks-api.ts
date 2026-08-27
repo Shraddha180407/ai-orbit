@@ -63,6 +63,7 @@ export type Task = {
 };
 
 export type TaskDetail = Task & {
+  toolItems: PopularTool[];
   popularTools: PopularTool[];
 };
 
