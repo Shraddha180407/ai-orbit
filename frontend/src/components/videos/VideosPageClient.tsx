@@ -142,8 +142,8 @@ export function VideosPageClient({
   }
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-[1440px] flex flex-col gap-0.5">
+    <div className="w-full px-4">
+      <div className="w-full flex flex-col gap-0.5">
         <div id="videos-list-top" className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           {VIDEO_CATEGORIES.map((topic) => {
             const isSelected = activeCategory === topic.slug;
