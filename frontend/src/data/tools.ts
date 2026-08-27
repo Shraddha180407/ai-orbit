@@ -17,6 +17,7 @@ export type ToolDetailDataExtended = ToolDetailData & {
   githubUrl: string | null;
   launchDate: string | null;              // human-readable e.g. "March 2023"
   alternativeIds: string[];               // slugs of alternative tools
+  ttasks?: { task: { slug: string; title: string } }[];
 };
 
 export type PricingTier = {
@@ -152,6 +153,20 @@ export const SAMPLE_TOOL_DESCRIPT: ToolDetailDataExtended = {
     { integration: { slug: "dropbox", name: "Dropbox", logoUrl: "https://www.google.com/s2/favicons?sz=64&domain=dropbox.com" } },
     { integration: { slug: "riverside", name: "Riverside", logoUrl: "https://www.google.com/s2/favicons?sz=64&domain=riverside.fm" } },
   ],
+    ttasks: [
+    { task: { slug: "edit-video-transcripts", title: "Edit Video Transcripts" } },
+    { task: { slug: "remove-filler-words", title: "Remove Filler Words" } },
+    { task: { slug: "record-screen", title: "Record Screen" } },
+    { task: { slug: "clone-voice", title: "Clone Voice" } },
+    { task: { slug: "transcribe-audio", title: "Transcribe Audio" } },
+    { task: { slug: "collaborate-on-video", title: "Collaborate On Video" } },
+    { task: { slug: "export-captions", title: "Export Captions" } },
+    { task: { slug: "create-podcast-episodes", title: "Create Podcast Episodes" } },
+    { task: { slug: "generate-show-notes", title: "Generate Show Notes" } },
+    { task: { slug: "create-video-clips", title: "Create Video Clips" } },
+    { task: { slug: "overdub-mistakes", title: "Overdub Mistakes" } },
+    { task: { slug: "publish-to-youtube", title: "Publish To YouTube" } },
+  ],
   _count: { reviews: 284, bookmarks: 3100 },
 };
 
@@ -265,6 +280,21 @@ export const SAMPLE_TOOL_JULIUS: ToolDetailDataExtended = {
     { integration: { slug: "excel", name: "Excel", logoUrl: "https://www.google.com/s2/favicons?sz=64&domain=microsoft.com" } },
     { integration: { slug: "notion", name: "Notion", logoUrl: "https://www.google.com/s2/favicons?sz=64&domain=notion.so" } },
     { integration: { slug: "airtable", name: "Airtable", logoUrl: "https://www.google.com/s2/favicons?sz=64&domain=airtable.com" } },
+  ],
+  ttasks: [
+    { task: { slug: "analyze-data", title: "Analyze Data" } },
+    { task: { slug: "visualize-metrics", title: "Visualize Metrics" } },
+    { task: { slug: "clean-datasets", title: "Clean Datasets" } },
+    { task: { slug: "generate-synthetic-data", title: "Generate Synthetic Data" } },
+    { task: { slug: "forecast-demand", title: "Forecast Demand" } },
+    { task: { slug: "detect-anomalies", title: "Detect Anomalies" } },
+    { task: { slug: "cluster-customer-segments", title: "Cluster Customer Segments" } },
+    { task: { slug: "build-etl-pipelines", title: "Build ETL Pipelines" } },
+    { task: { slug: "write-data-dictionaries", title: "Write Data Dictionaries" } },
+    { task: { slug: "label-training-data", title: "Label Training Data" } },
+    { task: { slug: "forecast-churn-risk", title: "Forecast Churn Risk" } },
+    { task: { slug: "analyze-survey-results", title: "Analyze Survey Results" } },
+    { task: { slug: "fine-tune-language-models", title: "Fine Tune Language Models" } },
   ],
   _count: { reviews: 127, bookmarks: 1870 },
 };

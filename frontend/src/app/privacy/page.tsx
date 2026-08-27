@@ -16,21 +16,21 @@ export default function PrivacyPolicyPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-24 pb-12 overflow-x-hidden">
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12 flex flex-col lg:flex-row gap-12 lg:gap-24">
-        
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-16 sm:pt-24 pb-12">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 flex flex-col lg:flex-row gap-8 lg:gap-24">
+
         {/* Left Sidebar */}
         <div className="w-full lg:w-[280px] shrink-0">
-          <div className="sticky top-24">
-            <h3 className="text-[12px] font-bold tracking-[0.2em] uppercase text-[#a1a1aa] mb-6">
+          <div className="lg:sticky lg:top-24">
+            <h3 className="text-[12px] font-bold tracking-[0.2em] uppercase text-[#a1a1aa] mb-4 sm:mb-6">
               ON THIS PAGE
             </h3>
-            <ul className="space-y-2 mb-10 border-l border-[#27272a]">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-1 sm:gap-2 mb-6 sm:mb-10 border-l border-[#27272a]">
               {sections.map((section, idx) => (
                 <li key={section.id}>
-                  <a 
+                  <a
                     href={`#section-${section.id}`}
-                    className={`block pl-4 py-2 text-[14px] font-medium transition-colors ${idx === 0 ? 'border-l-2 border-white text-white -ml-[1px] bg-white/5' : 'text-[#a1a1aa] hover:text-[#e4e4e7]'}`}
+                    className={`block pl-4 py-1.5 sm:py-2 text-xs sm:text-[14px] font-medium transition-colors ${idx === 0 ? 'border-l-2 border-white text-white -ml-[1px] bg-white/5' : 'text-[#a1a1aa] hover:text-[#e4e4e7]'}`}
                   >
                     {section.id}. {section.title}
                   </a>
@@ -38,7 +38,7 @@ export default function PrivacyPolicyPage() {
               ))}
             </ul>
 
-            <div className="p-6 rounded-2xl border border-[#27272a] bg-[#0a0a0a]">
+            <div className="p-4 sm:p-6 rounded-2xl border border-[#27272a] bg-[#0a0a0a] hidden sm:block">
               <ShieldCheck size={24} className="text-white mb-4" strokeWidth={1.5} />
               <h4 className="font-bold text-white mb-2">Your privacy matters.</h4>
               <p className="text-[#a1a1aa] text-[14px] leading-relaxed">
@@ -51,12 +51,12 @@ export default function PrivacyPolicyPage() {
         {/* Right Content */}
         <div className="flex-1">
           {/* Header */}
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-10 mb-16 pb-16 border-b border-[#27272a]">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 sm:gap-10 mb-10 sm:mb-16 pb-10 sm:pb-16 border-b border-[#27272a]">
             <div className="max-w-[600px]">
-              <h2 className="text-[12px] font-bold tracking-[0.2em] uppercase text-[#a1a1aa] mb-6">
+              <h2 className="text-[12px] font-bold tracking-[0.2em] uppercase text-[#a1a1aa] mb-4 sm:mb-6">
                 PRIVACY POLICY
               </h2>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 leading-[1.1]">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 sm:mb-6 leading-[1.1]">
                 Privacy Policy
               </h1>
               <p className="text-[16px] leading-relaxed text-[#a1a1aa] mb-6">
@@ -84,7 +84,7 @@ export default function PrivacyPolicyPage() {
 
           {/* Sections Content */}
           <div className="space-y-16 max-w-[800px]">
-            
+
             <section id="section-01">
               <div className="flex items-center gap-4 mb-6">
                 <div className="bg-[#121212] border border-[#27272a] rounded-lg px-3 py-1 text-[14px] font-bold">01</div>
@@ -120,7 +120,7 @@ export default function PrivacyPolicyPage() {
                 </ul>
               </div>
             </section>
-            
+
             {/* Placeholder sections for the rest to keep the layout complete */}
             {[
               { id: "03", title: "AI Tool Listings" },

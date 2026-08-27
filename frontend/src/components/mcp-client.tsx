@@ -139,7 +139,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
   }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   return (
-    <div id="mcp" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
+    <div id="mcp" className="scroll-mt-28 w-full px-3 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
       <style>{`
         @keyframes slideUpFade {
           from {
@@ -168,7 +168,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
       `}</style>
       <div className="mx-auto w-full max-w-[1600px] space-y-4 animate-fade-in">
         {/* Single combined scrollable pill row — categories + subcategories */}
-        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-1 md:px-0">
           <button
             onClick={() => handleSelectSubCategory(null)}
             className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${

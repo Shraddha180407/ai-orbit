@@ -42,8 +42,8 @@ export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }
   const title = task.title ?? "Untitled Task";
   const description = task.description ?? "";
 
-  const relevantTools = task.popularTools ?? [];
-const popularTool = relevantTools[0];
+  const relevantTools = task.toolItems ?? [];
+  const popularTool = task.popularTools?.[0];
   const subcategories = useMemo(() => getSubcategories(categorySlug), [categorySlug]);
 
   const [activeSubcategory, setActiveSubcategory] = useState<string | null>(null);
@@ -56,7 +56,7 @@ const popularTool = relevantTools[0];
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      <main className="w-full px-6 lg:px-10 py-6 flex-1">
+      <main className="w-full px-3 sm:px-6 lg:px-10 py-4 sm:py-6 flex-1">
         <Link
           href="/tasks"
           className="inline-flex items-center gap-1 text-xs text-[#71717A] hover:text-white transition-colors duration-200 mb-3"
@@ -64,10 +64,10 @@ const popularTool = relevantTools[0];
           ← Back to Tasks
         </Link>
 
-        <div className="w-full rounded-2xl bg-[#0B0B0E] ring-1 ring-[#232326]/60 p-6 sm:p-7 mb-6">
+        <div className="w-full rounded-2xl bg-[#0B0B0E] ring-1 ring-[#232326]/60 p-4 sm:p-7 mb-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">{title}</h1>
+              <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">{title}</h1>
 
               <div className="flex flex-wrap items-center gap-2 mt-3">
                 <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-[#18181C] ring-1 ring-[#232326]/70 text-[11px] text-[#A1A1AA] font-mono">
@@ -117,7 +117,7 @@ const popularTool = relevantTools[0];
             There are {formatCount(task.tools)} AI tools for {title}.
           </p>
 
-          <div className="flex flex-wrap gap-x-10 gap-y-4 mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-wrap gap-4 sm:gap-x-10 sm:gap-y-4 mt-6">
             <StatColumn label="Number of tools" value={formatCount(task.tools)} />
             <StatColumn label="Number of models" value={formatCount(task.models)} />
             <StatColumn label="Number of robots" value={formatCount(task.robots)} />

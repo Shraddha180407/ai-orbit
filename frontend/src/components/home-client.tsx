@@ -72,7 +72,7 @@ const tools = data?.pages.flatMap((p: any) => p?.items || p?.tools || []) || [];
       <Header />
       <GlobalHero />
 
-      <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
+      <div id="tools" className="scroll-mt-28 w-full px-3 sm:px-6 lg:px-8 pt-2 pb-2">
         <div className={`mx-auto w-full max-w-[1600px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
           
           {/* Feed the unified items directly into your full-width table */}

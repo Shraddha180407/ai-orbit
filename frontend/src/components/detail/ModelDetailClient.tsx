@@ -160,21 +160,21 @@ export function ModelDetailClient() {
   };
 
   return (
-    <main className="mx-auto max-w-[1100px] px-4 py-6 md:px-6 md:py-10 flex-1 w-full relative overflow-hidden">
+    <main className="mx-auto max-w-[1100px] px-3 sm:px-6 md:py-10 flex-1 w-full relative overflow-hidden py-4 sm:py-6">
       <div className="pointer-events-none absolute top-0 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#6E56CF]/5 rounded-full blur-3xl z-0" />
 
-      <nav className="mb-4 md:mb-6 text-sm text-[#71717A] relative z-10">
+      <nav className="mb-3 sm:mb-6 text-xs sm:text-sm text-[#71717A] relative z-10">
         <Link href="/models" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
           <ArrowLeft size={14} />
           AI Models
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-[#A1A1AA]">{model.name}</span>
+        <span className="text-[#A1A1AA] truncate">{model.name}</span>
       </nav>
 
       {/* Header */}
-      <header className="relative z-10 flex flex-col gap-6 rounded-xl border border-[#232326]/80 bg-[#131316]/40 p-4 md:p-6 backdrop-blur-md sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex gap-4 items-start">
+      <header className="relative z-10 flex flex-col gap-4 sm:gap-6 rounded-xl border border-[#232326]/80 bg-[#131316]/40 p-3.5 sm:p-6 backdrop-blur-md sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col xs:flex-row sm:flex-row gap-3.5 sm:gap-4 items-start">
           <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#232326]/60 bg-white/95 p-2.5">
             {model.provider?.logoUrl ? (
               <Image
