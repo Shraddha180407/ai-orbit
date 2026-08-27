@@ -17,7 +17,7 @@ import { CategoryChip } from "@/components/CategoryChip";
 import { PricingBadge } from "@/components/PricingBadge";
 import type { MCPCategory, MCPSubCategory } from "@/lib/types";
 
-// 8-column layout template (Logo, Item, Company, Type, Classification, Pricing, Released, Actions)
+// 8-column layout template
 const COL_TEMPLATE = "grid-cols-[40px_minmax(200px,2.4fr)_minmax(130px,1.4fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)]";
 const COL_MIN_WIDTH = "min-w-[1220px]";
 const COLUMN_HEADERS = ["", "MCP ITEM", "COMPANY", "TYPE", "CLASSIFICATION", "PRICING", "RELEASED", "ACTIONS"];
@@ -65,13 +65,17 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
     const params = new URLSearchParams(searchParams.toString());
     params.delete("category");
     params.delete("subCategory");
-    const queryString = params.toString();
-
-    if (!slug || slug === selectedSubCategorySlug) {
-      router.push(queryString ? `/mcp?${queryString}` : `/mcp`);
-    } else {
-      router.push(queryString ? `/p/mcp/${slug}?${queryString}` : `/p/mcp/${slug}`);
+    
+    // Add the selected subcategory to the URL parameters
+    if (slug && slug !== selectedSubCategorySlug) {
+      params.set("subCategory", slug);
     }
+
+    const queryString = params.toString();
+    
+    // FIXED: Always stay on the exact same page and just change the query string.
+    // This prevents the Header (and the Submit Tool button) from remounting and blinking!
+    router.push(queryString ? `/mcp?${queryString}` : `/mcp`, { scroll: false });
   };
 
   const {
@@ -139,7 +143,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
   }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   return (
-    <div id="mcp" className="scroll-mt-28 w-full px-3 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
+    <div id="mcp" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
       <style>{`
         @keyframes slideUpFade {
           from {
@@ -168,7 +172,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
       `}</style>
       <div className="mx-auto w-full max-w-[1600px] space-y-4 animate-fade-in">
         {/* Single combined scrollable pill row — categories + subcategories */}
-        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-1 md:px-0">
+        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           <button
             onClick={() => handleSelectSubCategory(null)}
             className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
@@ -184,13 +188,8 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
             return (
               <button
                 key={sub.id}
-                onClick={(e) => {
+                onClick={() => {
                   handleSelectSubCategory(sub.slug);
-                  e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center",
-                  });
                 }}
                 className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
                   isSelected
