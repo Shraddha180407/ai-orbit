@@ -8,10 +8,15 @@ import { logger } from "../../lib/logger.js";
  * CPU and wall-clock limits, while large enough to amortise per-transaction
  * connection overhead against Neon's serverless pool.
  *
- * Each model inside a chunk requires 1 upsert (AIModel) = 1 query.
- * Providers are pre-upserted outside the transaction.
- * At chunk size 50 that is ~50 queries per transaction — comfortably under
- * the 10 s Prisma timeout.
+ * NOTE: This now uses Prisma's *sequential array* transaction API
+ * (`prisma.$transaction([...])`) instead of the *interactive* callback API
+ * (`prisma.$transaction(async (tx) => ...)`). The interactive form requires
+ * a persistent DB connection/session (only available via the `pg.Pool` /
+ * `PrismaPg` adapter — i.e. `getPrismaTx`), which leaks TCP connections to
+ * Neon across Cloudflare Worker isolate recycles and eventually exhausts
+ * Neon's connection limit (this was the root cause of ingestion failing
+ * after ~90-100 models). The array form works over Neon's stateless HTTP
+ * adapter (`getPrisma`), so no persistent connection is ever held.
  */
 const CHUNK_SIZE = 50;
 
@@ -27,9 +32,6 @@ export class ModelsIngestService {
     if (payload.models.length === 0) return summary;
 
     // ── 1. Pre-upsert all unique providers outside a transaction ───────────
-    // This collapses N company upserts (many models share the same provider)
-    // into one upsert per unique provider slug, without paying per-model
-    // transaction overhead.
     const uniqueProviders = new Map<
       string,
       { slug: string; name: string; logoUrl: string | null }
@@ -59,9 +61,6 @@ export class ModelsIngestService {
         logger.error(`Error upserting provider ${prov.slug}:`, err);
         failedProviders.add(prov.slug);
 
-        // Record every model that references this failed provider so the
-        // caller sees them in the error list.  These models are NOT counted
-        // in processed/created/updated — they were never attempted.
         for (const m of payload.models) {
           if (m.provider?.slug === prov.slug) {
             summary.errors.push({
@@ -77,8 +76,6 @@ export class ModelsIngestService {
     for (let i = 0; i < payload.models.length; i += CHUNK_SIZE) {
       const chunk = payload.models.slice(i, i + CHUNK_SIZE);
 
-      // Skip models whose provider failed — they were already recorded
-      // as errors above.
       const chunkModels = chunk.filter(
         (m) => !m.provider || !failedProviders.has(m.provider.slug),
       );
@@ -87,8 +84,6 @@ export class ModelsIngestService {
 
       const chunkSlugs = chunkModels.map((m) => m.slug);
 
-      // Single query to find which models in this chunk already exist.
-      // Replaces the old per-model findUnique — saves N-1 round-trips.
       let existingSlugs: Set<string>;
       try {
         const rows = await prisma.aIModel.findMany({
@@ -100,8 +95,6 @@ export class ModelsIngestService {
         const message = err instanceof Error ? err.message : String(err);
         logger.error("Error querying existing models for chunk:", err);
 
-        // Cannot determine create/update split — fail the entire chunk
-        // so counts stay accurate.
         summary.processed += chunkModels.length;
         for (const modelData of chunkModels) {
           summary.errors.push({ slug: modelData.slug, message });
@@ -109,70 +102,70 @@ export class ModelsIngestService {
         continue;
       }
 
-      // Track counts locally; only commit to summary on transaction success.
+      // Build the list of upsert operations for this chunk. Nothing is
+      // executed yet — these are unresolved Prisma "promises" that
+      // `$transaction([...])` will batch into a single request over the
+      // Neon HTTP adapter.
+      const ops = chunkModels.map((modelData) => {
+        const providerId = modelData.provider
+          ? providerIdMap.get(modelData.provider.slug) ?? null
+          : null;
+
+        return prisma.aIModel.upsert({
+          where: { slug: modelData.slug },
+          create: {
+            slug: modelData.slug,
+            name: modelData.name,
+            creator: modelData.creator,
+            contextWindow: modelData.contextWindow,
+            parameterSize: modelData.parameterSize,
+            modality: modelData.modality,
+            releaseDate: modelData.releaseDate,
+            description: modelData.description,
+            websiteUrl: modelData.websiteUrl || null,
+            capabilities: modelData.capabilities,
+            apiAvailable: modelData.apiAvailable,
+            documentation: modelData.documentation ?? undefined,
+            promptExamples: modelData.promptExamples,
+            openSource: modelData.openSource,
+            primaryTask: modelData.primaryTask || null,
+            modelType: modelData.modelType || null,
+            providerId,
+          },
+          update: {
+            name: modelData.name,
+            creator: modelData.creator,
+            contextWindow: modelData.contextWindow,
+            parameterSize: modelData.parameterSize,
+            modality: modelData.modality,
+            releaseDate: modelData.releaseDate,
+            description: modelData.description,
+            websiteUrl: modelData.websiteUrl || null,
+            capabilities: modelData.capabilities,
+            apiAvailable: modelData.apiAvailable,
+            documentation: modelData.documentation ?? undefined,
+            promptExamples: modelData.promptExamples,
+            openSource: modelData.openSource,
+            primaryTask: modelData.primaryTask || null,
+            modelType: modelData.modelType || null,
+            providerId,
+          },
+        });
+      });
+
       let chunkCreated = 0;
       let chunkUpdated = 0;
+      for (const modelData of chunkModels) {
+        if (existingSlugs.has(modelData.slug)) {
+          chunkUpdated++;
+        } else {
+          chunkCreated++;
+        }
+      }
 
       try {
-        await prisma.$transaction(
-          async (tx) => {
-            for (const modelData of chunkModels) {
-              const providerId = modelData.provider
-                ? providerIdMap.get(modelData.provider.slug) ?? null
-                : null;
+        await prisma.$transaction(ops);
 
-              await tx.aIModel.upsert({
-                where: { slug: modelData.slug },
-                create: {
-                  slug: modelData.slug,
-                  name: modelData.name,
-                  creator: modelData.creator,
-                  contextWindow: modelData.contextWindow,
-                  parameterSize: modelData.parameterSize,
-                  modality: modelData.modality,
-                  releaseDate: modelData.releaseDate,
-                  description: modelData.description,
-                  websiteUrl: modelData.websiteUrl || null,
-                  capabilities: modelData.capabilities,
-                  apiAvailable: modelData.apiAvailable,
-                  documentation: modelData.documentation ?? undefined,
-                  promptExamples: modelData.promptExamples,
-                  openSource: modelData.openSource,
-                  primaryTask: modelData.primaryTask || null,
-                  modelType: modelData.modelType || null,
-                  providerId,
-                },
-                update: {
-                  name: modelData.name,
-                  creator: modelData.creator,
-                  contextWindow: modelData.contextWindow,
-                  parameterSize: modelData.parameterSize,
-                  modality: modelData.modality,
-                  releaseDate: modelData.releaseDate,
-                  description: modelData.description,
-                  websiteUrl: modelData.websiteUrl || null,
-                  capabilities: modelData.capabilities,
-                  apiAvailable: modelData.apiAvailable,
-                  documentation: modelData.documentation ?? undefined,
-                  promptExamples: modelData.promptExamples,
-                  openSource: modelData.openSource,
-                  primaryTask: modelData.primaryTask || null,
-                  modelType: modelData.modelType || null,
-                  providerId,
-                },
-              });
-
-              if (existingSlugs.has(modelData.slug)) {
-                chunkUpdated++;
-              } else {
-                chunkCreated++;
-              }
-            }
-          },
-          { timeout: 10000 },
-        );
-
-        // Transaction succeeded — all models in chunk were persisted.
         summary.processed += chunkModels.length;
         summary.created += chunkCreated;
         summary.updated += chunkUpdated;
@@ -183,9 +176,6 @@ export class ModelsIngestService {
           err,
         );
 
-        // Transaction rolled back — record every model in the chunk as an
-        // error.  processed increments (attempt count), but created/updated
-        // are NOT incremented because nothing was actually persisted.
         summary.processed += chunkModels.length;
         for (const modelData of chunkModels) {
           summary.errors.push({ slug: modelData.slug, message });
