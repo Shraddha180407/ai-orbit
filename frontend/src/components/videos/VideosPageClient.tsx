@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Video } from "@/lib/video-types";
 import {
@@ -10,6 +10,7 @@ import {
   type VideoSortDir,
 } from "@/lib/videos-data";
 import { VideoTable } from "./VideoTable";
+import { Pagination } from "./Pagination";
 
 const VIDEO_CATEGORIES = [
   { name: "All", slug: "" },
@@ -53,6 +54,11 @@ export function VideosPageClient({
   const [sortBy, setSortBy] = useState<VideoSortBy>("posted");
   const [sortDir, setSortDir] = useState<VideoSortDir>("desc");
 
+  // Page-based pagination (replaces the previous infinite-scroll approach).
+  // 1-indexed for the UI/URL; converted to a 0-indexed offset when fetching.
+  const initialPage = Math.max(1, Number(searchParams?.get("page")) || 1);
+  const [page, setPage] = useState<number>(initialPage);
+
   useEffect(() => {
     if (defaultCategory !== undefined) {
       setActiveCategory(defaultCategory);
@@ -61,109 +67,52 @@ export function VideosPageClient({
 
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const didMountRef = useRef(false);
 
-  const hasMore = videos.length < total;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  const loadMore = useCallback(async () => {
-    if (loading || !hasMore) return;
-
-    setLoading(true);
-
-    try {
-      const next = await getVideosPage(
-        pageSize,
-        videos.length,
-        activeCategory || undefined,
-        sortBy,
-        sortDir
-      );
-
-      if (next.length === 0) {
-        setTotal(videos.length);
-        return;
-      }
-
-      setVideos((prev) => {
-        const seen = new Set(prev.map((v) => v.id));
-        const deduped = next.filter((v) => !seen.has(v.id));
-        return [...prev, ...deduped];
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    loading,
-    hasMore,
-    pageSize,
-    videos.length,
-    activeCategory,
-    sortBy,
-    sortDir,
-  ]);
+  // Whenever category or sort changes, jump back to page 1 — a filter/sort
+  // change on page 5 of the old result set doesn't make sense on the new one.
+  // Skipped on initial mount so it doesn't clobber a page number that came
+  // in via the URL (e.g. a bookmarked/shared /videos?page=3 link).
+  useEffect(() => {
+    if (!didMountRef.current) return;
+    setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory, sortBy, sortDir]);
 
   useEffect(() => {
-    if (!didMountRef.current && initialVideos.length > 0) {
+    if (!didMountRef.current) {
       didMountRef.current = true;
       return;
     }
-
-    didMountRef.current = true;
 
     let cancelled = false;
 
     (async () => {
       setLoading(true);
-      setVideos([]);
 
       try {
-        const [firstPage, count] = await Promise.all([
-          getVideosPage(
-            pageSize,
-            0,
-            activeCategory || undefined,
-            sortBy,
-            sortDir
-          ),
+        const offset = (page - 1) * pageSize;
+        const [pageVideos, count] = await Promise.all([
+          getVideosPage(pageSize, offset, activeCategory || undefined, sortBy, sortDir),
           getVideosCount(activeCategory || undefined),
         ]);
 
         if (cancelled) return;
 
-        setVideos(firstPage);
+        setVideos(pageVideos);
         setTotal(count);
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory, sortBy, sortDir, pageSize]);
-
-  useEffect(() => {
-    const node = sentinelRef.current;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          loadMore();
-        }
-      },
-      { rootMargin: "600px" }
-    );
-
-    observer.observe(node);
-
-    return () => observer.disconnect();
-  }, [loadMore]);
+  }, [activeCategory, sortBy, sortDir, page, pageSize]);
 
   function handleSortChange(key: VideoSortBy) {
     if (key === sortBy) {
@@ -174,10 +123,28 @@ export function VideosPageClient({
     }
   }
 
+  function goToPage(next: number) {
+    const clamped = Math.min(Math.max(1, next), totalPages);
+    setPage(clamped);
+
+    const params = new URLSearchParams(searchParams?.toString());
+    if (clamped > 1) {
+      params.set("page", String(clamped));
+    } else {
+      params.delete("page");
+    }
+    const qs = params.toString();
+    router.push(`/videos${qs ? `?${qs}` : ""}`, { scroll: false });
+
+    // Jump back to the top of the list, not the top of the whole page —
+    // otherwise switching pages while scrolled down feels disorienting.
+    document.getElementById("videos-list-top")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-[1440px] flex flex-col gap-0.5">
-        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+    <div className="w-full">
+      <div className="w-full flex flex-col gap-0.5">
+        <div id="videos-list-top" className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           {VIDEO_CATEGORIES.map((topic) => {
             const isSelected = activeCategory === topic.slug;
 
@@ -187,10 +154,22 @@ export function VideosPageClient({
                 onClick={(e) => {
                   setActiveCategory(topic.slug);
 
-                  const url = topic.slug ? `/videos/${topic.slug}` : "/videos";
-                  if (typeof window !== "undefined") {
-                    window.history.pushState(null, "", url);
+                  // Query-param navigation on the SAME /videos route — not
+                  // a path segment (/videos/<slug>), since there is no
+                  // app/videos/[category]/page.tsx route to match that. A
+                  // path-based push forced a full remount of this page,
+                  // which wiped the activeCategory state set just above,
+                  // right before it could take effect — that was the
+                  // sub-category filter bug (URL changed, list didn't).
+                  const params = new URLSearchParams(searchParams?.toString());
+                  if (topic.slug) {
+                    params.set("category", topic.slug);
+                  } else {
+                    params.delete("category");
                   }
+                  params.delete("page"); // category change resets to page 1
+                  const qs = params.toString();
+                  router.push(`/videos${qs ? `?${qs}` : ""}`, { scroll: false });
 
                   e.currentTarget.scrollIntoView({
                     behavior: "smooth",
@@ -198,7 +177,7 @@ export function VideosPageClient({
                     inline: "center",
                   });
                 }}
-                className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
@@ -225,22 +204,15 @@ export function VideosPageClient({
           </div>
         )}
 
-        <div
-          ref={sentinelRef}
-          className="flex items-center justify-center py-8"
-        >
-          {loading && (
-            <span className="font-mono text-[12.5px] text-muted">
-              Loading more videos…
-            </span>
-          )}
+        {loading && (
+          <div className="flex items-center justify-center py-16">
+            <span className="font-mono text-[12.5px] text-muted">Loading…</span>
+          </div>
+        )}
 
-          {!loading && !hasMore && videos.length > 0 && (
-            <span className="font-mono text-[12.5px] text-muted">
-              You've reached the end.
-            </span>
-          )}
-        </div>
+        {!loading && videos.length > 0 && (
+          <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
+        )}
       </div>
     </div>
   );

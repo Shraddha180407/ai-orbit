@@ -7,6 +7,8 @@ import Star from "lucide-react/dist/esm/icons/star";
 import GitFork from "lucide-react/dist/esm/icons/git-fork";
 import { Repository } from "@/lib/types";
 
+import { API_URL, prefetchUrl } from "@/lib/api";
+
 interface RepositoryRowProps {
   repo: Repository;
 }
@@ -60,8 +62,16 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo }: Reposit
   const avatarUrl = repo.logoUrl || repo.ownerAvatarUrl;
   const updateHours = getRelativeTime(repo.syncedAt) || getRelativeTime(repo.githubCreatedAt) || "—";
 
+  const repoSlug = repo.slug || repo.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const targetUrl = `/repositories/${repoSlug}`;
+
+  const prefetchRow = () => {
+    try { router.prefetch(targetUrl); } catch {}
+    prefetchUrl(`${API_URL}/api/v1/repositories/${repoSlug}`);
+  };
+
   const handleRowClick = () => {
-    router.push(`/repositories/${repo.slug || repo.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`);
+    router.push(targetUrl);
   };
 
   return (
@@ -71,6 +81,9 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo }: Reposit
         role="link"
         tabIndex={0}
         onClick={handleRowClick}
+        onMouseEnter={prefetchRow}
+        onTouchStart={prefetchRow}
+        onFocus={prefetchRow}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
@@ -156,6 +169,9 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo }: Reposit
         role="link"
         tabIndex={0}
         onClick={handleRowClick}
+        onMouseEnter={prefetchRow}
+        onTouchStart={prefetchRow}
+        onFocus={prefetchRow}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
@@ -164,7 +180,7 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo }: Reposit
         }}
         aria-label={`View details for ${repo.name} repository`}
         style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
-        className="block sm:hidden p-[12px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none flex justify-between items-center gap-[10px] border-b border-white/[0.06] last:border-b-0 cursor-pointer"
+        className="flex sm:hidden p-[12px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none justify-between items-center gap-[10px] border-b border-white/[0.06] last:border-b-0 cursor-pointer"
       >
         <div className="flex-1 min-w-0">
           {/* Row 1: Title & Owner */}

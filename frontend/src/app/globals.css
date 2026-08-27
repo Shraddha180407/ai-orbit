@@ -40,7 +40,6 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    overflow-x: hidden;
   }
 
   * {
@@ -53,7 +52,6 @@
     font-family: var(--font-sans);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
   }
 
   :focus-visible {
@@ -146,16 +144,23 @@
   color: var(--color-search-text-primary);
 }
 
+.search-scope::-webkit-scrollbar,
 .search-scope ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
+.search-scope::-webkit-scrollbar-track,
 .search-scope ::-webkit-scrollbar-track {
   background: transparent;
 }
+.search-scope::-webkit-scrollbar-thumb,
 .search-scope ::-webkit-scrollbar-thumb {
   background: var(--color-search-border-hover);
   border-radius: 8px;
+}
+.search-scope {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-search-border-hover) transparent;
 }
 
 .search-scope .scrollbar-none {

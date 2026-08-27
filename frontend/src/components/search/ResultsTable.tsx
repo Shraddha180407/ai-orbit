@@ -19,8 +19,6 @@ function metaSummary(entity: SearchEntity): string {
       return `${entity.meta.duration ?? ""} · ${entity.meta.channel ?? ""}`;
     case "repository":
       return `★ ${entity.meta.stars ?? 0} · ${entity.meta.language ?? ""}`;
-    case "collection":
-      return String(entity.meta.curator ?? "");
     case "task":
       return `${entity.meta.toolCount ?? 0} tools`;
     case "country":

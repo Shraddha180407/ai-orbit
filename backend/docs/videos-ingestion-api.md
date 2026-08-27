@@ -26,7 +26,7 @@ The API expects a top-level JSON object containing a `videos` array.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `id` | `string` | **Yes** | An identifier (typically matching `youtubeId` in crawler output). |
+| `id` | `string` | No | Not used — the database generates its own id automatically. Safe to omit entirely; any value sent is ignored. |
 | `slug` | `string` | **Yes** | URL-friendly slug for the video (e.g., "my-awesome-video"). |
 | `title` | `string` | **Yes** | The title of the video. |
 | `description` | `string` | **Yes** | The description text of the video. |
@@ -51,7 +51,6 @@ The API expects a top-level JSON object containing a `videos` array.
 {
   "videos": [
     {
-      "id": "abc123xyz",
       "slug": "understanding-llms-in-5-minutes",
       "title": "Understanding LLMs in 5 Minutes",
       "description": "A quick overview of Large Language Models and how they work.",

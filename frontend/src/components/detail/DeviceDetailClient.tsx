@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { fetchAllDevices, fetchDeviceById } from "@/lib/api";
+import { fetchAllDevices, fetchDeviceById, API_URL, prefetchUrl } from "@/lib/api";
 import { Device } from "@/lib/types";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -409,9 +409,13 @@ export function DeviceDetailClient() {
                     className="group flex gap-4 rounded-2xl bg-[#0D0D0F] p-3 transition-all duration-200 relative overflow-hidden"
                     style={{ boxShadow: '0 0 0 1px #ffffff14' }}
                     onMouseEnter={(e) => {
+                      prefetchUrl(`${API_URL}/api/v1/devices/${d.slug || d.id}`);
                       const el = e.currentTarget as HTMLElement;
                       el.style.boxShadow = `0 0 0 1px ${color}30, 0 4px 24px ${color}10`;
                       el.style.background = `${color}06`;
+                    }}
+                    onTouchStart={() => {
+                      prefetchUrl(`${API_URL}/api/v1/devices/${d.slug || d.id}`);
                     }}
                     onMouseLeave={(e) => {
                       const el = e.currentTarget as HTMLElement;

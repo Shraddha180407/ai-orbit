@@ -13,14 +13,20 @@ import Share2 from 'lucide-react/dist/esm/icons/share-2';
 import BadgeCheck from 'lucide-react/dist/esm/icons/badge-check';
 import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
 import GitCompare from 'lucide-react/dist/esm/icons/git-compare';
-import { useQueryClient } from "@tanstack/react-query";
 import { PricingBadge } from "@/components/PricingBadge";
 import { CategoryChip } from "@/components/CategoryChip";
 import type { ToolCardData } from "@/lib/types";
 import { useUser } from "@/hooks/use-user";
 import { toggleBookmark } from "@/lib/actions";
-import { API_URL } from "@/lib/api";
+import { API_URL, prefetchUrl } from "@/lib/api";
 
+function trimNoDots(text: string, maxLength = 85) {
+  if (!text) return "—";
+  if (text.length <= maxLength) return text;
+  const sliced = text.slice(0, maxLength);
+  const lastSpace = sliced.lastIndexOf(" ");
+  return sliced.slice(0, lastSpace > 0 ? lastSpace : maxLength);
+}
 const MAX_COMPARE = 2;
 
 const ROW_ACCENT_COLORS = [
@@ -29,6 +35,7 @@ const ROW_ACCENT_COLORS = [
 ];
 
 type ListTool = ToolCardData & {
+  entityType?: string;
   createdAt?: string | null;
   releaseDate?: string | null;
   isOpenSource?: boolean;
@@ -50,11 +57,10 @@ type ToolListViewProps = {
   skeletonRows?: number;
 };
 
-// ── Column layout (matches devices-client exactly) ──────────────────────────
 // logo | name+desc | task | pricing | api | open-source | compatibility | released | share | bookmark | compare
 const COL_TEMPLATE =
-  "grid-cols-[44px_minmax(200px,2.5fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(100px,1fr)_44px_44px_44px]";
-const COL_MIN_WIDTH = "min-w-[1100px]";
+  "grid-cols-[44px_minmax(280px,3.5fr)_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_minmax(80px,0.7fr)_44px_44px_44px]";
+const COL_MIN_WIDTH = "min-w-[1150px]";
 
 // ── Formatters ───────────────────────────────────────────────────────────────
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -118,7 +124,20 @@ function ShareButton({ tool }: { tool: ListTool }) {
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const url = `${window.location.origin}/tools/${tool.slug}`;
+    let targetPath = '/tools';
+    let identifier = tool.slug;
+    if (tool.entityType === 'COMPANY') targetPath = '/companies';
+    if (tool.entityType === 'VIDEO') targetPath = '/videos';
+    if (tool.entityType === 'NEWS') targetPath = '/news';
+    if (tool.entityType === 'ROBOT') targetPath = '/robots';
+    if (tool.entityType === 'DEVICE') targetPath = '/devices';
+    if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
+    
+    if (tool.entityType === 'MODEL') {
+      targetPath = '/models';
+      identifier = tool.id;
+    }
+    const url = `${window.location.origin}${targetPath}/${identifier}`;
     const shareData = {
       title: tool.name,
       text: tool.description ?? "",
@@ -198,7 +217,6 @@ function BookmarkBtn({ tool }: { tool: ListTool }) {
   );
 }
 
-// ── Single row ────────────────────────────────────────────────────────────────
 function ToolRow({
   tool,
   index,
@@ -214,28 +232,73 @@ function ToolRow({
   onToggleCompare: (t: ListTool) => void;
   basePath?: string;
 }) {
-  const queryClient = useQueryClient();
+  const router = useRouter();
   const accentColor = ROW_ACCENT_COLORS[index % ROW_ACCENT_COLORS.length];
   const isOpenSource = isTruthy(tool.isOpenSource, tool.openSource);
   const hasApi = isTruthy(tool.hasApi);
 
+  let targetPath = basePath;
+  let identifier = tool.slug;
+  if (tool.entityType === 'COMPANY') targetPath = '/companies';
+  else if (tool.entityType === 'VIDEO') targetPath = '/videos';
+  else if (tool.entityType === 'NEWS') targetPath = '/news';
+  else if (tool.entityType === 'ROBOT') targetPath = '/robots';
+  else if (tool.entityType === 'DEVICE') targetPath = '/devices';
+  else if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
+  else if (tool.entityType === 'MODEL') {
+    targetPath = '/models';
+    identifier = tool.id;
+  } else if (tool.entityType === 'TOOL') {
+    targetPath = '/tools';
+  }
+  const targetUrl = `${targetPath}/${identifier}`;
+
+  const prefetchRow = () => {
+    try { router.prefetch(targetUrl); } catch {}
+    if (tool.entityType === 'MODEL') {
+      prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(tool.id)}`);
+    } else if (tool.entityType === 'COMPANY') {
+      prefetchUrl(`${API_URL}/api/v1/companies/${tool.slug}`);
+    } else if (tool.entityType === 'REPOSITORY') {
+      prefetchUrl(`${API_URL}/api/v1/repositories/${tool.slug}`);
+    } else if (tool.entityType === 'NEWS') {
+      prefetchUrl(`${API_URL}/api/news/${encodeURIComponent(tool.slug)}`);
+    } else if (tool.entityType === 'DEVICE') {
+      prefetchUrl(`${API_URL}/api/v1/devices/${tool.id || tool.slug}`);
+    } else if (tool.entityType === 'ROBOT') {
+      prefetchUrl(`${API_URL}/api/v1/robots/${tool.slug || tool.id}`);
+    } else if (tool.entityType === 'VIDEO') {
+      prefetchUrl(`${API_URL}/api/videos/${tool.slug || tool.id}`);
+    } else {
+      prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`);
+    }
+  };
+
   return (
-    <Link
-      href={`${basePath}/${tool.slug}`}
-      role="listitem"
-      className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
-      onPointerEnter={(e) => {
-        if (tool?.slug) {
-          queryClient.prefetchQuery({
-            queryKey: ["tool-detail", tool.slug],
-            queryFn: async () => {
-              const res = await fetch(`${API_URL}/api/v1/tools/${tool.slug}`, { credentials: "include" });
-              if (!res.ok) throw new Error("Tool not found");
-              return res.json();
-            },
-            staleTime: 10 * 60 * 1000,
-          }).catch(() => {});
+    <div
+      onClick={() => {
+        let targetPath = basePath;
+        let identifier = tool.slug; // Default to slug
+
+        if (tool.entityType === 'COMPANY') targetPath = '/companies';
+        if (tool.entityType === 'VIDEO') targetPath = '/videos';
+        if (tool.entityType === 'NEWS') targetPath = '/news';
+        if (tool.entityType === 'ROBOT') targetPath = '/robots';
+        if (tool.entityType === 'DEVICE') targetPath = '/devices';
+        if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
+        if (tool.entityType === 'MODEL') {
+          targetPath = '/models';
+          identifier = tool.id; 
         }
+        
+        if (tool.entityType === 'TOOL') targetPath = '/tools';
+        
+        router.push(`${targetPath}/${identifier}`);
+      }}
+      role="listitem"
+      className={`cursor-pointer group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
+      onMouseEnter={(e) => {
+        prefetchRow();
         const el = e.currentTarget;
         el.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
         const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
@@ -243,6 +306,8 @@ function ToolRow({
         const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
         if (nameEl) nameEl.style.color = accentColor;
       }}
+      onTouchStart={prefetchRow}
+      onFocus={prefetchRow}
       onMouseLeave={(e) => {
         const el = e.currentTarget;
         el.style.boxShadow = "";
@@ -290,15 +355,15 @@ function ToolRow({
             <span className="text-[#71717A] opacity-30 shrink-0"><ExternalLink size={13} /></span>
           )}
         </div>
-        <p className="mt-0.5 line-clamp-1 text-[11px] text-[#A1A1AA] leading-snug pr-2">
-          {tool.description}
+        <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-clip">
+          {trimNoDots(tool.description || "")}
         </p>
       </div>
 
       {/* Col 3: Task */}
       <div className="min-w-0">
         {tool.ttasks && tool.ttasks.length > 0 ? (
-          <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] max-w-full truncate block">
+          <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] whitespace-normal break-words text-center leading-tight">
             {tool.ttasks[0].task.title}
           </span>
         ) : (
@@ -309,11 +374,11 @@ function ToolRow({
       {/* Col 4: Pricing */}
       <div>
         <PricingBadge
-  pricingModel={tool.pricingModel}
-  pricingAmount={tool.pricingAmount}
-  billingFrequency={tool.billingFrequency}
-  className="text-[10px] px-2 py-0.5"
-/>
+          pricingModel={tool.pricingModel}
+          pricingAmount={tool.pricingAmount}
+          billingFrequency={tool.billingFrequency}
+          className="text-[10px] px-2 py-0.5"
+        />
       </div>
 
       {/* Col 5: API */}
@@ -348,7 +413,7 @@ function ToolRow({
 
       {/* Col 8: Released */}
       <div className="text-[10px] font-mono text-[#A1A1AA]">
-        {formatReleased(tool.releaseDate || tool.launchDate)}
+        {formatReleased(tool.releaseDate)}
       </div>
 
       {/* Col 9: Share */}
@@ -381,7 +446,7 @@ function ToolRow({
           <GitCompare size={14} />
         </button>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -452,9 +517,25 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
       );
     }
     list.sort((a, b) => {
+      // 1. PRIORITY OVERRIDE: Quality Scoring
+      const getScore = (t: ListTool) => {
+        if (t.ttasks && t.ttasks.length > 0) return 3; // Tier 1: Has a Task
+        if (t.logoUrl && t.description && t.description.trim() !== "") return 2; // Tier 2: Logo + Description
+        return 1; // Tier 3: Missing Logo or Description
+      };
+
+      const scoreA = getScore(a);
+      const scoreB = getScore(b);
+
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA; // Higher tier always comes first
+      }
+
+      // 2. NORMAL SORTING: Fall back to Release Date or Name only if they are in the same tier
       let cmp = 0;
       if (sortKey === "name") cmp = a.name.localeCompare(b.name);
       else cmp = ((b as any).releaseDate || b.createdAt || "").localeCompare((a as any).releaseDate || a.createdAt || "");
+      
       return sortDir === "asc" ? cmp : -cmp;
     });
     return list;
@@ -508,7 +589,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     <>
       <div
         ref={dropdownRef}
-        className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
+        className="overflow-x-auto touch-pan-x rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
       >
         <div style={{ minWidth: "1200px" }} className="relative bg-[#000000]">
 
@@ -610,22 +691,22 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
 
       {/* ── Sticky compare bar ───────────────────────────────────────────────── */}
       {compareSet.length > 0 && (
-        <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
-          <div className="flex w-full max-w-xl items-center gap-3 rounded-xl border border-[#232326]/70 bg-[#111113]/95 backdrop-blur px-4 py-3 shadow-2xl shadow-black/40">
-            <div className="flex flex-1 items-center gap-2 min-w-0">
+        <div className="fixed inset-x-0 bottom-2 sm:bottom-4 z-40 flex justify-center px-2 sm:px-4">
+          <div className="flex w-full max-w-xl items-center gap-2 sm:gap-3 rounded-xl border border-[#232326]/70 bg-[#111113]/95 backdrop-blur px-3 sm:px-4 py-2.5 sm:py-3 shadow-2xl shadow-black/60">
+            <div className="flex flex-1 items-center gap-1.5 sm:gap-2 min-w-0">
               {Array.from({ length: MAX_COMPARE }).map((_, i) => {
                 const t = compareSet[i];
                 return (
-                  <div key={i} className={`flex flex-1 items-center gap-2 rounded-lg border px-2.5 py-1.5 min-w-0 ${t ? "border-[#232326]/70 bg-[#18181C]" : "border-dashed border-[#232326]/50"}`}>
+                  <div key={i} className={`flex flex-1 items-center gap-1.5 sm:gap-2 rounded-lg border px-2 sm:px-2.5 py-1.5 min-w-0 ${t ? "border-[#232326]/70 bg-[#18181C]" : "border-dashed border-[#232326]/50"}`}>
                     {t ? (
                       <>
-                        <span className="truncate text-[12px] font-semibold text-white">{t.name}</span>
-                        <button type="button" onClick={() => toggleCompare(t)} className="ml-auto shrink-0 text-[#71717A] hover:text-white">
+                        <span className="truncate text-[11px] sm:text-[12px] font-semibold text-white">{t.name}</span>
+                        <button type="button" onClick={() => toggleCompare(t)} className="ml-auto shrink-0 text-[#71717A] hover:text-white p-0.5" aria-label={`Remove ${t.name}`}>
                           <X size={12} />
                         </button>
                       </>
                     ) : (
-                      <span className="text-[11px] text-[#71717A]">Select another tool…</span>
+                      <span className="text-[10px] sm:text-[11px] text-[#71717A] truncate">Select tool…</span>
                     )}
                   </div>
                 );
@@ -635,14 +716,14 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               type="button"
               onClick={goToCompare}
               disabled={compareSet.length !== MAX_COMPARE}
-              className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[12px] font-semibold transition-colors ${
+              className={`shrink-0 inline-flex items-center gap-1 sm:gap-1.5 rounded-lg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold transition-colors ${
                 compareSet.length === MAX_COMPARE ? "text-black" : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
               }`}
               style={compareSet.length === MAX_COMPARE ? { backgroundColor: "#6E56CF" } : undefined}
             >
-              <GitCompare size={13} /> Compare
+              <GitCompare size={13} /> <span className="hidden xs:inline">Compare</span>
             </button>
-            <button type="button" onClick={() => setCompareSet([])} className="shrink-0 text-[#71717A] hover:text-white">
+            <button type="button" onClick={() => setCompareSet([])} className="shrink-0 text-[#71717A] hover:text-white p-1" aria-label="Clear compare">
               <X size={16} />
             </button>
           </div>

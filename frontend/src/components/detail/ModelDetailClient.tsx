@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, notFound } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
 import Share2 from "lucide-react/dist/esm/icons/share-2";
 import Bookmark from "lucide-react/dist/esm/icons/bookmark";
 import Check from "lucide-react/dist/esm/icons/check";
 import Building2 from "lucide-react/dist/esm/icons/building-2";
 import { toast } from "sonner";
-import { fetchModelById } from "@/lib/api";
+import { fetchModelById, API_URL, getFromCache } from "@/lib/api";
 import { isModelBookmarked, toggleModelBookmark } from "@/lib/model-bookmarks";
 import { CategoryChip } from "@/components/CategoryChip";
 import type { ModelDetail, AIModel } from "@/lib/types";
@@ -59,49 +60,30 @@ function RelatedCard({ model }: { model: AIModel }) {
 
 export function ModelDetailClient() {
   const params = useParams();
-  const id = params?.id as string;
+  const id = (params?.id || params?.slug) as string;
 
-  const [model, setModel] = useState<ModelDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { data: model = null, isLoading: loading, isError } = useQuery<ModelDetail | null>({
+    queryKey: ["model-detail", id],
+    queryFn: () => fetchModelById(id),
+    initialData: () => {
+      if (!id) return undefined;
+      return getFromCache<ModelDetail>(`${API_URL}/api/v1/models/${encodeURIComponent(id)}`) || undefined;
+    },
+    staleTime: 15 * 60 * 1000,
+    enabled: Boolean(id),
+  });
+
   const [bookmarked, setBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
-    let active = true;
-    setLoading(true);
-    setLoadError(null);
-    setModel(null);
+    if (model) {
+      setBookmarked(isModelBookmarked(model.id));
+      document.title = `${model.name} — AI Model | AI Orbit`;
+    }
+  }, [model]);
 
-    fetchModelById(id)
-      .then((data) => {
-        if (!active) return;
-        if (data) {
-          setModel(data);
-          setBookmarked(isModelBookmarked(data.id));
-          document.title = `${data.name} — AI Model | AI Orbit`;
-        } else {
-          setModel(null);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!active) return;
-        setModel(null);
-        setLoadError(
-          err instanceof Error ? err.message : "Failed to load model",
-        );
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [id]);
-
-  if (loading) {
+  if (loading && !model) {
     return (
       <main className="mx-auto max-w-[1100px] px-4 py-6 md:px-6 md:py-10 flex-1 w-full">
         <div className="animate-pulse space-y-6">
@@ -113,7 +95,7 @@ export function ModelDetailClient() {
     );
   }
 
-  if (loadError) {
+  if (isError && !model) {
     return (
       <main className="mx-auto max-w-[1100px] px-4 py-6 md:px-6 md:py-10 flex-1 w-full">
         <Link
@@ -125,7 +107,7 @@ export function ModelDetailClient() {
         </Link>
         <div className="mt-8 rounded-xl border border-[#232326]/60 bg-[#131316]/40 p-6 text-center">
           <p className="text-sm font-semibold text-white">Couldn’t load this model</p>
-          <p className="mt-2 text-xs text-[#A1A1AA]">{loadError}</p>
+          <p className="mt-2 text-xs text-[#A1A1AA]">Model details could not be retrieved.</p>
           <p className="mt-1 text-[11px] text-[#71717A]">
             Check that the API is running and NEXT_PUBLIC_API_URL points at it.
           </p>
@@ -178,21 +160,21 @@ export function ModelDetailClient() {
   };
 
   return (
-    <main className="mx-auto max-w-[1100px] px-4 py-6 md:px-6 md:py-10 flex-1 w-full relative overflow-hidden">
+    <main className="mx-auto max-w-[1100px] px-3 sm:px-6 md:py-10 flex-1 w-full relative overflow-hidden py-4 sm:py-6">
       <div className="pointer-events-none absolute top-0 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#6E56CF]/5 rounded-full blur-3xl z-0" />
 
-      <nav className="mb-4 md:mb-6 text-sm text-[#71717A] relative z-10">
+      <nav className="mb-3 sm:mb-6 text-xs sm:text-sm text-[#71717A] relative z-10">
         <Link href="/models" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
           <ArrowLeft size={14} />
           AI Models
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-[#A1A1AA]">{model.name}</span>
+        <span className="text-[#A1A1AA] truncate">{model.name}</span>
       </nav>
 
       {/* Header */}
-      <header className="relative z-10 flex flex-col gap-6 rounded-xl border border-[#232326]/80 bg-[#131316]/40 p-4 md:p-6 backdrop-blur-md sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex gap-4 items-start">
+      <header className="relative z-10 flex flex-col gap-4 sm:gap-6 rounded-xl border border-[#232326]/80 bg-[#131316]/40 p-3.5 sm:p-6 backdrop-blur-md sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col xs:flex-row sm:flex-row gap-3.5 sm:gap-4 items-start">
           <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#232326]/60 bg-white/95 p-2.5">
             {model.provider?.logoUrl ? (
               <Image

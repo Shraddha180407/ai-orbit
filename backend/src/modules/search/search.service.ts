@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 
-export type SuggestionType = 'tool' | 'company' | 'model' | 'repository' | 'robot' | 'device';
+export type SuggestionType = 'tool' | 'company' | 'model' | 'repository' | 'robot' | 'device' | 'news' | 'video' | 'collection' | 'task' | 'mcp';
 
 export interface Suggestion {
   id: string;
@@ -22,15 +22,16 @@ export class SearchService {
 
   /**
    * Cross-entity "as you type" suggestions. Queries Tool/Company/AIModel/
-   * Repository/Robot/Device in parallel with a case-insensitive `contains`
-   * on name, then merges + ranks so exact/prefix matches float to the top
-   * regardless of which table they came from.
+   * Repository/Robot/Device/News/Video/Collection/Task/MCPItem in parallel
+   * with a case-insensitive `contains` on name/title, then merges + ranks
+   * so exact/prefix matches float to the top regardless of which table
+   * they came from.
    */
-  async autocomplete(q: string, limit = 8): Promise<Suggestion[]> {
+  async autocomplete(q: string, limit = 44): Promise<Suggestion[]> {
     const term = q.trim();
     if (!term) return [];
 
-    const [tools, companies, models, repositories, robots, devices] = await Promise.all([
+    const [tools, companies, models, repositories, robots, devices, news, videos, collections, tasks, mcpItems] = await Promise.all([
       this.prisma.tool.findMany({
         where: { name: { contains: term, mode: 'insensitive' } },
         take: PER_TYPE_LIMIT,
@@ -78,6 +79,36 @@ export class SearchService {
         take: PER_TYPE_LIMIT,
         orderBy: { name: 'asc' },
         select: { id: true, slug: true, name: true, category: true, imageUrl: true },
+      }),
+      this.prisma.news.findMany({
+        where: { title: { contains: term, mode: 'insensitive' } },
+        take: PER_TYPE_LIMIT,
+        orderBy: { publishedAt: 'desc' },
+        select: { id: true, slug: true, title: true, category: true },
+      }),
+      this.prisma.video.findMany({
+        where: { title: { contains: term, mode: 'insensitive' } },
+        take: PER_TYPE_LIMIT,
+        orderBy: { publishedAt: 'desc' },
+        select: { id: true, slug: true, title: true, toolCategory: true, thumbnail: true },
+      }),
+      this.prisma.collection.findMany({
+        where: { name: { contains: term, mode: 'insensitive' } },
+        take: PER_TYPE_LIMIT,
+        orderBy: { updatedAt: 'desc' },
+        select: { id: true, slug: true, name: true },
+      }),
+      this.prisma.task.findMany({
+        where: { title: { contains: term, mode: 'insensitive' } },
+        take: PER_TYPE_LIMIT,
+        orderBy: { saveCount: 'desc' },
+        select: { id: true, slug: true, title: true, iconUrl: true, category: { select: { name: true } } },
+      }),
+      this.prisma.mCPItem.findMany({
+        where: { name: { contains: term, mode: 'insensitive' } },
+        take: PER_TYPE_LIMIT,
+        orderBy: { upvoteCount: 'desc' },
+        select: { id: true, slug: true, name: true, logoUrl: true, providerName: true },
       }),
     ]);
 
@@ -129,6 +160,46 @@ export class SearchService {
         category: d.category || 'Device',
         slug: d.slug,
         logoUrl: d.imageUrl,
+      })),
+      ...news.map((n) => ({
+        id: n.id,
+        type: 'news' as const,
+        title: n.title,
+        category: n.category || 'News',
+        slug: n.slug,
+        logoUrl: null,
+      })),
+      ...videos.map((v) => ({
+        id: v.id,
+        type: 'video' as const,
+        title: v.title,
+        category: v.toolCategory || 'Video',
+        slug: v.slug,
+        logoUrl: v.thumbnail,
+      })),
+      ...collections.map((c) => ({
+        id: c.id,
+        type: 'collection' as const,
+        title: c.name,
+        category: 'Collection',
+        slug: c.slug,
+        logoUrl: null,
+      })),
+      ...tasks.map((t) => ({
+        id: t.id,
+        type: 'task' as const,
+        title: t.title,
+        category: t.category?.name || 'Task',
+        slug: t.slug,
+        logoUrl: t.iconUrl,
+      })),
+      ...mcpItems.map((m) => ({
+        id: m.id,
+        type: 'mcp' as const,
+        title: m.name,
+        category: m.providerName || 'MCP',
+        slug: m.slug,
+        logoUrl: m.logoUrl,
       })),
     ];
 

@@ -6,28 +6,21 @@ import Image from "next/image";
 import { useQuery, useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
 
 // Lucide icons
-import ArrowUp from 'lucide-react/dist/esm/icons/arrow-up';
-import Eye from 'lucide-react/dist/esm/icons/eye';
-import Bookmark from 'lucide-react/dist/esm/icons/bookmark';
 import Globe from 'lucide-react/dist/esm/icons/globe';
 import FileText from 'lucide-react/dist/esm/icons/file-text';
 import Github from 'lucide-react/dist/esm/icons/github';
-import Share2 from 'lucide-react/dist/esm/icons/share-2';
-import Check from 'lucide-react/dist/esm/icons/check';
-import BadgeCheck from 'lucide-react/dist/esm/icons/badge-check';
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 
 import { fetchMCPCategories, fetchMCPSubCategories, fetchMCPItems } from "@/lib/api";
 import { EmptyState } from "@/components/EmptyState";
 import { CategoryChip } from "@/components/CategoryChip";
 import { PricingBadge } from "@/components/PricingBadge";
-import { Breadcrumb } from "@/components/news/Breadcrumb";
 import type { MCPCategory, MCPSubCategory } from "@/lib/types";
 
-// 5-column layout template
-const COL_TEMPLATE = "grid-cols-[40px_minmax(240px,3.2fr)_minmax(180px,2.4fr)_minmax(180px,2.4fr)_minmax(120px,1.2fr)]";
-const COL_MIN_WIDTH = "min-w-[960px]";
-const COLUMN_HEADERS = ["", "MCP ITEM", "TYPE & CLASSIFICATION", "METADATA", "ACTIONS"];
+// 8-column layout template
+const COL_TEMPLATE = "grid-cols-[40px_minmax(200px,2.4fr)_minmax(130px,1.4fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)]";
+const COL_MIN_WIDTH = "min-w-[1220px]";
+const COLUMN_HEADERS = ["", "MCP ITEM", "COMPANY", "TYPE", "CLASSIFICATION", "PRICING", "RELEASED", "ACTIONS"];
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -36,34 +29,6 @@ function formatReleased(value?: string | null | Date): string {
   const d = new Date(value);
   if (isNaN(d.getTime())) return "—";
   return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-}
-
-// Custom Share Button copying link to clipboard
-function ShareButton({ slug, name }: { slug: string; name: string }) {
-  const [copied, setCopied] = useState(false);
-  const handleShare = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const url = `${window.location.origin}/p/mcp/${slug}`;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <button
-      type="button"
-      onClick={handleShare}
-      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors ${
-        copied
-          ? "border-[var(--color-signal,#6E56CF)] text-[var(--color-signal,#6E56CF)]"
-          : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
-      }`}
-      title="Share Link"
-      aria-label={`Share ${name}`}
-    >
-      {copied ? <Check size={14} /> : <Share2 size={14} />}
-    </button>
-  );
 }
 
 export const MCP_SUBCATEGORIES: MCPSubCategory[] = [
@@ -100,16 +65,19 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
     const params = new URLSearchParams(searchParams.toString());
     params.delete("category");
     params.delete("subCategory");
-    const queryString = params.toString();
-
-    if (!slug || slug === selectedSubCategorySlug) {
-      router.push(queryString ? `/mcp?${queryString}` : `/mcp`);
-    } else {
-      router.push(queryString ? `/p/mcp/${slug}?${queryString}` : `/p/mcp/${slug}`);
+    
+    // Add the selected subcategory to the URL parameters
+    if (slug && slug !== selectedSubCategorySlug) {
+      params.set("subCategory", slug);
     }
+
+    const queryString = params.toString();
+    
+    // FIXED: Always stay on the exact same page and just change the query string.
+    // This prevents the Header (and the Submit Tool button) from remounting and blinking!
+    router.push(queryString ? `/mcp?${queryString}` : `/mcp`, { scroll: false });
   };
 
-  // React Query fetch pattern with useInfiniteQuery
   const {
     data,
     fetchNextPage,
@@ -150,7 +118,6 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
 
   const sentinelRef = React.useRef<HTMLDivElement>(null);
 
-  // IntersectionObserver for infinite scroll
   useEffect(() => {
     if (isLoading || isFetchingNextPage || !hasNextPage) return;
 
@@ -221,13 +188,8 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
             return (
               <button
                 key={sub.id}
-                onClick={(e) => {
+                onClick={() => {
                   handleSelectSubCategory(sub.slug);
-                  e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center",
-                  });
                 }}
                 className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
                   isSelected
@@ -241,8 +203,6 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
           })}
         </div>
 
-        
-        {/* Dynamic content rendering based on loading/error/data states */}
         <div className="pt-0">
           {isLoading && items.length === 0 ? (
             <div className="overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10">
@@ -251,20 +211,15 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                   <div key={i} className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 px-4 py-2.5`}>
                     <div className="h-11 w-11 animate-pulse rounded-lg bg-[#18181C]" />
                     <div className="space-y-1.5">
-                      <div className="h-3 w-40 animate-pulse rounded bg-[#18181C]" />
-                      <div className="h-2.5 w-64 animate-pulse rounded bg-[#18181C]" />
+                      <div className="h-3 w-36 animate-pulse rounded bg-[#18181C]" />
+                      <div className="h-2.5 w-48 animate-pulse rounded bg-[#18181C]" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-4 w-14 animate-pulse rounded bg-[#18181C]" />
-                      <div className="h-4.5 w-20 animate-pulse rounded-full bg-[#18181C]" />
-                      <div className="h-4.5 w-16 animate-pulse rounded-full bg-[#18181C]" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <div className="h-3 w-28 animate-pulse rounded bg-[#18181C]" />
-                      <div className="h-2 w-20 animate-pulse rounded bg-[#18181C]" />
-                    </div>
+                    <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
+                    <div className="h-4.5 w-16 animate-pulse rounded-full bg-[#18181C]" />
+                    <div className="h-4 w-24 animate-pulse rounded bg-[#18181C]" />
+                    <div className="h-4.5 w-16 animate-pulse rounded-full bg-[#18181C]" />
+                    <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
                     <div className="flex items-center gap-1.5">
-                      <div className="h-7 w-7 animate-pulse rounded bg-[#18181C]" />
                       <div className="h-7 w-7 animate-pulse rounded bg-[#18181C]" />
                       <div className="h-7 w-7 animate-pulse rounded bg-[#18181C]" />
                     </div>
@@ -343,26 +298,25 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                           )}
                         </div>
 
-                        {/* Column 2: Left Section (Name, shortDescription, providerName) */}
+                        {/* Column 2: MCP Item (Name & shortDescription) */}
                         <div className="min-w-0 flex flex-col justify-center">
-                          <div className="flex items-center gap-2">
-                            <span className="truncate text-[13px] font-semibold text-white group-hover:text-white transition-colors">
-                              {item.name}
-                            </span>
-                            {item.isVerified && (
-                              <BadgeCheck size={14} className="shrink-0 text-blue-400" aria-label="Verified" />
-                            )}
-                          </div>
+                          <span className="truncate text-[13px] font-semibold text-white group-hover:text-white transition-colors">
+                            {item.name}
+                          </span>
                           <p className="mt-0.5 line-clamp-1 text-[11.5px] text-[#A1A1AA] leading-relaxed">
                             {item.shortDescription}
                           </p>
-                          <span className="text-[11px] text-[#71717A] mt-0.5">
-                            by {item.providerName}
+                        </div>
+
+                        {/* Column 3: Company */}
+                        <div className="min-w-0 flex items-center">
+                          <span className="truncate text-[12px] font-medium text-[#D4D4D8]">
+                            {item.providerName || "—"}
                           </span>
                         </div>
 
-                        {/* Column 3: Middle Section (Type pill, primaryCategory, PricingBadge) */}
-                        <div className="flex flex-wrap items-center gap-2">
+                        {/* Column 4: Type */}
+                        <div className="flex items-center">
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold border ${
                             item.itemType === "SERVER"
                               ? "bg-[#6E56CF]/10 text-[#6E56CF] border-[#6E56CF]/30"
@@ -370,37 +324,28 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                           }`}>
                             {item.itemType}
                           </span>
+                        </div>
+
+                        {/* Column 5: Classification */}
+                        <div className="min-w-0 flex items-center">
                           {primaryCategory ? (
                             <CategoryChip label={primaryCategory} />
                           ) : (
                             <span className="text-[#71717A] text-[11px]">—</span>
                           )}
+                        </div>
+
+                        {/* Column 6: Pricing */}
+                        <div className="flex items-center">
                           <PricingBadge pricingModel={item.pricingType} />
                         </div>
 
-                        {/* Column 4: Right Section (Upvotes, Views, Saves, Launch, Updated) */}
-                        <div className="flex flex-col gap-1 text-[11px] font-mono text-[#A1A1AA] py-1">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1.5">
-                              <ArrowUp size={11} className="text-[#A1A1AA]" />
-                              <span>{item.upvoteCount}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Eye size={11} className="text-[#A1A1AA]" />
-                              <span>{item.viewCount}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Bookmark size={11} className="text-[#A1A1AA]" />
-                              <span>{item.saveCount}</span>
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-0.5 text-[10px] text-[#71717A] mt-0.5">
-                            <span>Launch: {formatReleased(item.launchDate)}</span>
-                            <span>Updated: {formatReleased(item.lastUpdatedDate)}</span>
-                          </div>
+                        {/* Column 7: Released (Only shows the launch date) */}
+                        <div className="text-[11px] font-mono text-[#A1A1AA]">
+                          {formatReleased(item.launchDate)}
                         </div>
 
-                        {/* Column 5: Actions (Website, Docs, Repo, Share) */}
+                        {/* Column 8: Actions (Website, Docs, Repo) */}
                         <div className="flex items-center gap-1.5 z-20">
                           {item.websiteUrl && (
                             <a
@@ -441,7 +386,6 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                               <Github size={14} />
                             </a>
                           )}
-                          <ShareButton slug={item.slug} name={item.name} />
                         </div>
                       </div>
                     );

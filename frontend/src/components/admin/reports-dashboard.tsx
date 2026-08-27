@@ -85,7 +85,7 @@ export function ReportsDashboard() {
 
       <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0A] overflow-hidden flex flex-col min-h-[400px]">
         <div className="overflow-x-auto flex-1">
-          <table className="w-full text-left text-sm text-gray-300">
+          <table className="w-full min-w-[700px] text-left text-sm text-gray-300">
             <thead className="bg-[#111111] text-xs uppercase text-[#8A8F98] border-b border-white/[0.06]">
               <tr>
                 <th className="px-6 py-4 font-medium">Report Target</th>
@@ -152,7 +152,7 @@ export function ReportsDashboard() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           {report.status !== 'APPROVED' && (
                             <button
                               onClick={() => statusMutation.mutate({ id: report.id, status: 'APPROVED' })}

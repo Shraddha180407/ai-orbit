@@ -1,17 +1,80 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useUser } from '@/hooks/use-user';
 import Plus from 'lucide-react/dist/esm/icons/plus';
+import { AiOrbitLogo } from './AiOrbitLogo';
+import Menu from 'lucide-react/dist/esm/icons/menu';
+import X from 'lucide-react/dist/esm/icons/x';
+import Trophy from 'lucide-react/dist/esm/icons/trophy';
+import Wrench from 'lucide-react/dist/esm/icons/wrench';
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
+import Bot from 'lucide-react/dist/esm/icons/bot';
+import Building2 from 'lucide-react/dist/esm/icons/building-2';
+import Cpu from 'lucide-react/dist/esm/icons/cpu';
+import Smartphone from 'lucide-react/dist/esm/icons/smartphone';
+import ListChecks from 'lucide-react/dist/esm/icons/list-checks';
+import Newspaper from 'lucide-react/dist/esm/icons/newspaper';
+import PlayCircle from 'lucide-react/dist/esm/icons/play-circle';
+import GitBranch from 'lucide-react/dist/esm/icons/git-branch';
+import Plug from 'lucide-react/dist/esm/icons/plug';
+import Mail from 'lucide-react/dist/esm/icons/mail';
+
+const MOBILE_NAV_LINKS = [
+  { label: "Business AI", href: "/tools?category=business" },
+  { label: "Leaderboard", href: "/leaderboard", highlight: true },
+  { label: "Resources", href: "/tools" },
+  { label: "Newsletter", href: "/#newsletter" },
+];
+
+const DIRECTORY_LINKS = [
+  { name: "AI Tools", href: "/tools", icon: Wrench, color: "#FFC53D" },
+  { name: "AI Agents", href: "/agents", icon: Bot, color: "#A855F7" },
+  { name: "AI Models", href: "/models", icon: Cpu, color: "#A78BFA" },
+  { name: "AI Companies", href: "/companies", icon: Building2, color: "#38BDF8" },
+  { name: "AI Devices", href: "/devices", icon: Smartphone, color: "#F472B6" },
+  { name: "AI Robots", href: "/robots", icon: Bot, color: "#2DD4BF" },
+  { name: "Tasks", href: "/tasks", icon: ListChecks, color: "#FB923C" },
+  { name: "Repositories", href: "/repositories", icon: GitBranch, color: "#22D3EE" },
+  { name: "MCP Servers", href: "/mcp", icon: Plug, color: "#818CF8" },
+  { name: "AI News", href: "/news", icon: Newspaper, color: "#FF6B4A" },
+  { name: "AI Videos", href: "/videos", icon: PlayCircle, color: "#F87171" },
+];
 
 export function Header() {
   const { user, isLoading } = useUser();
-  
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/20 bg-background/50 backdrop-blur-md py-4 relative">
-      {/* Center: Nav links, centered against the full page width, not just the inner container */}
-      <nav className="hidden md:flex items-center gap-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+    <header className="sticky top-0 z-50 w-full border-b border-border/20 bg-background/80 backdrop-blur-md py-3 sm:py-4 relative">
+      {/* Center: Nav links, centered against the full page width on lg+ */}
+      <nav className="hidden lg:flex items-center gap-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
         <Link
           href="/tools?category=business"
           className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
@@ -38,31 +101,39 @@ export function Header() {
         </Link>
       </nav>
 
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-8 flex items-center justify-between relative gap-2">
-        {/* Left: The AI Signal Logo */}
-        <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group shrink-0 min-w-0">
-          <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-white text-black font-black text-sm sm:text-base transition-transform group-hover:scale-105 active:scale-95 border border-border">
-            S
-          </div>
-          <span className="text-sm sm:text-base font-bold tracking-tight text-white transition-colors truncate">
-            AI Orbit
-          </span>
-        </Link>
+      <div className="mx-auto max-w-[1440px] px-3.5 sm:px-8 flex items-center justify-between relative gap-2 z-20">
+        {/* Left: The AI Orbit Logo */}
+        <div className="flex items-center gap-2">
+          {/* Mobile hamburger button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex md:hidden h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer relative z-20"
+            aria-label="Open navigation menu"
+          >
+            <Menu size={16} />
+          </button>
+
+          <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group shrink-0 min-w-0">
+            <AiOrbitLogo className="h-7 w-7 sm:h-8 sm:w-8 text-white transition-transform group-hover:scale-105 active:scale-95" />
+            <span className="text-sm sm:text-base font-bold tracking-tight text-white transition-colors truncate">
+              AI Orbit
+            </span>
+          </Link>
+        </div>
 
         {/* Right: Action buttons */}
-        <div className="flex items-center gap-2 sm:gap-5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
           <Link
-            href="/tools"
-            className="group inline-flex h-[30px] sm:h-[34px] items-center gap-1 sm:gap-1.5 rounded-full px-2.5 sm:px-4 text-[11px] sm:text-[13px] font-semibold text-black transition-all duration-200 hover:brightness-110 active:scale-95 shrink-0 whitespace-nowrap"
-            style={{ backgroundColor: '#6E56CF', color: '#fff' }}
+            href="/submit"
+            className="group inline-flex h-[30px] sm:h-[34px] items-center gap-1 sm:gap-1.5 rounded-full px-2.5 sm:px-4 text-[11px] sm:text-[13px] font-semibold transition-all duration-200 hover:brightness-110 active:scale-95 shrink-0 whitespace-nowrap bg-[#6E56CF] text-white"
           >
-            <Plus size={12} strokeWidth={2.5} className="sm:hidden" />
-            <Plus size={14} strokeWidth={2.5} className="hidden sm:inline" />
+            <Plus size={13} strokeWidth={2.5} className="shrink-0" />
             Submit Tool
           </Link>
 
           {isLoading ? (
-            <div className="h-[30px] w-[64px] sm:h-[32px] sm:w-[80px] animate-pulse rounded-lg bg-white/10 shrink-0" />
+            <div className="h-[30px] w-[50px] sm:h-[32px] sm:w-[80px] animate-pulse rounded-lg bg-white/10 shrink-0" />
           ) : user ? (
             <Link
               href="/dashboard"
@@ -80,6 +151,118 @@ export function Header() {
           )}
         </div>
       </div>
+
+      {/* Mobile Navigation Drawer rendered via portal to break out of containing blocks */}
+      {mounted && mobileMenuOpen && createPortal(
+        <div className="fixed inset-0 z-[99999] md:hidden bg-[#0A0A0C] flex flex-col animate-fadeIn">
+          {/* Top Bar of Drawer */}
+          <div className="flex items-center justify-between p-3.5 border-b border-[#232326]/80 bg-[#0D0D10]">
+            <Link
+              href="/"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2"
+            >
+              <AiOrbitLogo className="h-7 w-7 text-white" />
+              <span className="text-sm font-bold tracking-tight text-white">
+                AI Orbit
+              </span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+              aria-label="Close navigation menu"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Drawer Body (Scrollable) */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
+            {/* Main navigation section */}
+            <div className="p-3.5 border-b border-[#232326]/60">
+              <div className="grid grid-cols-2 gap-2">
+                {MOBILE_NAV_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center justify-center rounded-xl p-3 text-xs font-bold transition-all ${
+                      link.highlight
+                        ? "bg-[#6E56CF]/15 border border-[#6E56CF]/40 text-[#A78BFA]"
+                        : "bg-[#111114] border border-[#232326] text-white hover:border-white/20"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Directory quick links */}
+            <div className="p-3.5">
+              <p className="text-[10px] font-mono font-bold tracking-widest text-[#71717A] uppercase mb-3 px-1">
+                Explore Ecosystem
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {DIRECTORY_LINKS.map((dir) => {
+                  const Icon = dir.icon;
+                  return (
+                    <Link
+                      key={dir.name}
+                      href={dir.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2.5 rounded-xl border border-[#232326]/70 bg-[#0d0d10] p-2.5 hover:border-white/20 transition-all group"
+                    >
+                      <span
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border"
+                        style={{ backgroundColor: `${dir.color}15`, borderColor: `${dir.color}35` }}
+                      >
+                        <Icon size={12} style={{ color: dir.color }} />
+                      </span>
+                      <span className="text-xs font-semibold text-white group-hover:text-white truncate">
+                        {dir.name}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom account/action bar */}
+          <div className="p-3.5 border-t border-[#232326]/80 bg-[#0D0D10] space-y-2 mt-auto">
+            <div className="flex gap-2">
+              <Link
+                href="/submit"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl bg-[#6E56CF] text-white text-xs font-bold transition-colors shadow-md shadow-[#6E56CF]/20"
+              >
+                <Plus size={14} strokeWidth={2.5} /> Submit AI Tool
+              </Link>
+              {user ? (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex-1 flex items-center justify-center h-10 rounded-xl bg-white text-black text-xs font-bold transition-colors"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/auth/signin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex-1 flex items-center justify-center h-10 rounded-xl border border-white/20 text-white text-xs font-bold transition-colors hover:bg-white/10"
+                >
+                  Log In
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </header>
   );
 }

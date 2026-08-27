@@ -115,20 +115,20 @@ export function VideosClient() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      <main className="mx-auto max-w-[1070px] px-8 py-12 flex-1 w-full">
-        <div className="mb-10 flex justify-between items-start">
+      <main className="mx-auto max-w-[1070px] px-3 sm:px-6 lg:px-8 py-6 sm:py-12 flex-1 w-full">
+        <div className="mb-6 sm:mb-10 flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-2">
               <Play className="text-[#6E56CF]" />
               Trending AI Videos & Tutorials
             </h1>
-            <p className="text-sm text-[#A1A1AA] mt-2">
+            <p className="text-xs sm:text-sm text-[#A1A1AA] mt-2">
               Learn and master advanced machine learning concepts, tool tutorials, and model breakdowns.
             </p>
           </div>
           {isAdmin && (
-            <Button className="bg-white text-black hover:bg-neutral-200" onClick={openAdd}>
-              <Plus className="h-4 w-4 mr-2" /> Add Video
+            <Button onClick={openAdd} className="bg-white text-black hover:bg-neutral-200 shrink-0">
+              <Plus className="w-4 h-4 mr-2" /> Add Video
             </Button>
           )}
         </div>
@@ -151,19 +151,22 @@ export function VideosClient() {
                 href={video.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group grid grid-cols-1 sm:grid-cols-[40px_1fr_180px_120px] gap-4 items-center p-4 bg-transparent hover:bg-[#18181C]/40 transition-all w-full focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
+                className="group flex items-center gap-3.5 sm:grid sm:grid-cols-[40px_1fr_180px_120px] sm:gap-4 p-3.5 sm:p-4 bg-transparent hover:bg-[#18181C]/40 transition-all w-full focus-visible:bg-[#18181C]/40 focus-visible:outline-none"
               >
                 {/* Column 1: Play Icon */}
-                <div className="h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-red-600/10 border border-red-600/20 flex text-red-500">
-                  <Play size={20} className="fill-red-500" />
+                <div className="h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-red-600/10 border border-red-600/20 flex text-red-500">
+                  <Play size={18} className="fill-red-500" />
                 </div>
 
                 {/* Column 2: Title + Channel */}
-                <div className="min-w-0">
-                  <h3 className="font-bold text-white text-sm truncate group-hover:text-white transition-colors">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-white text-xs sm:text-sm truncate group-hover:text-white transition-colors">
                     {video.title}
                   </h3>
-                  <p className="text-xs text-[#A1A1AA] truncate mt-0.5">by {video.channel}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-[11px] sm:text-xs text-[#A1A1AA] truncate">by {video.channel}</p>
+                    <span className="sm:hidden text-[10px] text-[#71717A]">• {video.duration}</span>
+                  </div>
                 </div>
 
                 {/* Column 3: Duration & Views */}
@@ -178,7 +181,7 @@ export function VideosClient() {
                   <span className="text-xs text-white font-medium">{video.publishedAt}</span>
                 </div>
                 {isAdmin && (
-                  <div className="flex items-center gap-2 ml-4 shrink-0">
+                  <div className="flex items-center gap-2 ml-auto sm:ml-4 shrink-0">
                     <Button
                       variant="secondary"
                       size="sm"

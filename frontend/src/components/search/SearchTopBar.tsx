@@ -33,7 +33,7 @@ export function SearchTopBar() {
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-search-accent text-white">
               <Sparkles size={14} />
             </span>
-            <span className="hidden lg:inline">The&nbsp;AI&nbsp;Signal</span>
+            <span className="hidden lg:inline">AI&nbsp;Orbit</span>
           </Link>
 
           {/* Free mode toggle — cosmetic, matches the reference site's mode switch */}
@@ -51,14 +51,14 @@ export function SearchTopBar() {
               menuClassName="absolute left-0 mt-2 w-[280px] rounded-lg border border-search-border bg-search-surface p-2 shadow-2xl z-50 text-white"
             />
             <Link
-              href="/search/results?types=collection"
+              href="/search/results?types=tool"
               className="flex items-center gap-1.5 rounded-full border border-search-border px-3 py-1.5 text-sm text-search-text-secondary transition-colors hover:border-search-border-hover hover:text-search-text-primary"
             >
               <Tag size={14} />
               Prompts
             </Link>
             <Link
-              href="/search/results?types=collection"
+              href="/search/results?types=tool"
               className="flex items-center gap-1.5 rounded-full border border-search-border px-3 py-1.5 text-sm text-search-text-secondary transition-colors hover:border-search-border-hover hover:text-search-text-primary"
             >
               <Percent size={14} />

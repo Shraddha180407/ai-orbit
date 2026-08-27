@@ -10,6 +10,7 @@ import Check from 'lucide-react/dist/esm/icons/check';
 import X from 'lucide-react/dist/esm/icons/x';
 import { CategoryChip } from "@/components/CategoryChip";
 import type { AIModel } from "@/lib/types";
+import { API_URL, prefetchUrl } from "@/lib/api";
 
 const MAX_COMPARE = 2;
 
@@ -100,6 +101,15 @@ function ModelRow({
   return (
     <Link
       href={`/models/${model.id}`}
+      onMouseEnter={() => {
+        prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(model.id)}`);
+      }}
+      onTouchStart={() => {
+        prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(model.id)}`);
+      }}
+      onFocus={() => {
+        prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(model.id)}`);
+      }}
       className={`group relative grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none`}
     >
       <span className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal,#6E56CF)] transition-all duration-200 group-hover:h-[70%]" />
@@ -281,34 +291,34 @@ export function ModelListView({
       </div>
 
       {compareSet.length > 0 && (
-        <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
-          <div className="flex w-full max-w-xl items-center gap-3 rounded-xl border border-[#232326]/70 bg-[#111113]/95 backdrop-blur px-4 py-3 shadow-2xl shadow-black/40">
-            <div className="flex flex-1 items-center gap-2 min-w-0">
+        <div className="fixed inset-x-0 bottom-2 sm:bottom-4 z-40 flex justify-center px-2 sm:px-4">
+          <div className="flex w-full max-w-xl items-center gap-2 sm:gap-3 rounded-xl border border-[#232326]/70 bg-[#111113]/95 backdrop-blur px-3 sm:px-4 py-2.5 sm:py-3 shadow-2xl shadow-black/60">
+            <div className="flex flex-1 items-center gap-1.5 sm:gap-2 min-w-0">
               {Array.from({ length: MAX_COMPARE }).map((_, i) => {
                 const model = compareSet[i];
                 return (
                   <div
                     key={i}
-                    className={`flex flex-1 items-center gap-2 rounded-lg border px-2.5 py-1.5 min-w-0 ${
+                    className={`flex flex-1 items-center gap-1.5 sm:gap-2 rounded-lg border px-2 sm:px-2.5 py-1.5 min-w-0 ${
                       model ? "border-[#232326]/70 bg-[#18181C]" : "border-dashed border-[#232326]/50"
                     }`}
                   >
                     {model ? (
                       <>
-                        <span className="truncate text-[12px] font-semibold text-white">
+                        <span className="truncate text-[11px] sm:text-[12px] font-semibold text-white">
                           {model.name}
                         </span>
                         <button
                           type="button"
                           onClick={() => toggleCompare(model)}
                           aria-label={`Remove ${model.name} from compare`}
-                          className="ml-auto shrink-0 text-[#71717A] hover:text-white"
+                          className="ml-auto shrink-0 text-[#71717A] hover:text-white p-0.5"
                         >
                           <X size={12} />
                         </button>
                       </>
                     ) : (
-                      <span className="text-[11px] text-[#71717A]">Select another model…</span>
+                      <span className="text-[10px] sm:text-[11px] text-[#71717A] truncate">Select model…</span>
                     )}
                   </div>
                 );
@@ -319,7 +329,7 @@ export function ModelListView({
               type="button"
               onClick={goToCompare}
               disabled={compareSet.length !== MAX_COMPARE}
-              className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[12px] font-semibold transition-colors ${
+              className={`shrink-0 inline-flex items-center gap-1 sm:gap-1.5 rounded-lg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold transition-colors ${
                 compareSet.length === MAX_COMPARE
                   ? "text-black"
                   : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
@@ -331,14 +341,14 @@ export function ModelListView({
               }
             >
               <GitCompare size={13} />
-              Compare
+              <span className="hidden xs:inline">Compare</span>
             </button>
 
             <button
               type="button"
               onClick={clearCompare}
               aria-label="Clear compare selection"
-              className="shrink-0 text-[#71717A] hover:text-white"
+              className="shrink-0 text-[#71717A] hover:text-white p-1"
             >
               <X size={16} />
             </button>

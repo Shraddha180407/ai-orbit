@@ -7,7 +7,6 @@ import { GlobalHero } from "@/components/GlobalHero";
 import { Footer } from "@/components/Footer";
 import { ToolsClient } from "@/components/tools-client";
 import { ToolDetailClient } from "@/components/tool-detail-client";
-import { CollectionDetailClient } from "@/components/detail/CollectionDetailClient";
 import { VideoDetailsClient } from "@/components/detail/VideoDetailsClient";
 import { ArticlePageClient } from "@/components/article-page-client";
 import { EntityDetail } from "@/components/detail/EntityDetail";
@@ -16,9 +15,9 @@ import { TaskDetailClient } from "@/components/detail/TaskDetailClient";
 import { RepositoryDetailPage } from "@/components/repository-detail/RepositoryDetailPage";
 import { CompanyDetailClient } from "@/components/company-detail-client";
 import { RobotDetailClient } from "@/components/detail/RobotDetailClient";
+import { ModelDetailClient } from "@/components/detail/ModelDetailClient";
 import { MCPDetailClient } from "@/components/mcp-detail-client";
 import { MCPClient } from "@/components/mcp-client";
-import CollectionsPageClient from "@/app/collections/CollectionsPageClient";
 import { TasksClient } from "@/components/tasks-client";
 import { CompaniesClient } from "@/components/companies-client";
 import { NewsListingClient } from "@/components/news/NewsListingClient";
@@ -35,7 +34,6 @@ const VALID_CATEGORIES: Record<string, Set<string>> = {
   creativity: new Set(["image-generation", "writing", "software-development", "video-creation", "music", "graphic-design", "digital-art", "brainstorming", "3d-creation", "presentation-design", "storytelling", "content-creation", "branding", "motion-graphics", "game-creation"]),
   agents: new Set(["content-creation", "research-assistance", "customer-support", "software-development", "business-automation", "data-analysis", "knowledge-management", "personal-productivity", "sales-automation", "workflow-automation", "autonomous-agents"]),
   mcp: new Set(["mcp-servers", "developer-tools", "databases", "file-systems", "productivity", "apis", "cloud", "ml-platforms", "browser", "community", "mcp-clients", "core-mcp-servers", "sdks-frameworks", "specialized-mcp-servers", "testing-tools", "version-control", "automation", "smart-devices", "data-analytics"]),
-  collections: new Set(["research", "productivity", "creative", "developer", "business", "education", "industry", "open-source", "freelancer-toolkit", "recruiters", "analytics", "ecommerce", "no-code-ai", "healthcare", "finance"]),
   tasks: new Set(["content-creation", "image-creation", "video-creation", "audio", "coding", "data-analysis", "research", "productivity", "marketing", "customer-support", "translation", "presentation", "brainstorming", "prompting", "website-building"]),
   companies: new Set(["ai-model-providers", "infrastructure", "enterprise", "healthcare", "generative-ai", "marketing", "developer-tools", "robotics", "education", "open-source", "finance", "ai-native", "model-companies", "unicorns"]),
   news: new Set(["ai-industry", "product-launches", "innovations", "company-updates", "open-source", "regulations", "interviews", "market-trends", "breakthroughs", "security", "agents", "llms", "developer-ecosystem", "consumer"]),
@@ -52,10 +50,10 @@ interface UnifiedEntityPageProps {
 
 export async function generateMetadata({ params }: UnifiedEntityPageProps): Promise<Metadata> {
   const { type, slug } = await params;
+  const formattedSlug = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  const formattedType = type === "mcp" ? "MCP Directory" : type.charAt(0).toUpperCase() + type.slice(1);
 
   if (VALID_CATEGORIES[type]?.has(slug)) {
-    const formattedSlug = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-    const formattedType = type === "mcp" ? "MCP Directory" : type === "collections" ? "Collections" : type.charAt(0).toUpperCase() + type.slice(1);
     return {
       title: `${formattedSlug} ${formattedType} | AI Orbit`,
       description: `Browse the best AI tools/servers for ${formattedSlug.toLowerCase()} in the ${formattedType.toLowerCase()} directory.`,
@@ -63,71 +61,65 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
   }
 
   if (type === "news") {
-    try {
-      const res = await fetch(`${SERVER_API_URL}/api/news/${encodeURIComponent(slug)}`, {
-        next: { revalidate: 300 },
-        signal: AbortSignal.timeout(1500),
-      } as RequestInit);
-      if (!res.ok) return {};
-      const { article } = (await res.json()) as { article?: { headline: string; aiSummary: string; dek: string } };
-      if (!article) return {};
-
-      const description = article.aiSummary || article.dek;
-      return {
-        title: article.headline,
-        description,
-        openGraph: { title: article.headline, description, type: "article" },
-        twitter: { card: "summary_large_image", title: article.headline, description },
-      };
-    } catch {
-      return {};
-    }
+    return {
+      title: `${formattedSlug} — News | AI Orbit`,
+      description: `Read the latest AI news and updates about ${formattedSlug}.`,
+    };
   }
 
   if (type === "tasks") {
-    try {
-      const res = await fetch(`${SERVER_API_URL}/api/v1/tasks/${encodeURIComponent(slug)}`, {
-        next: { revalidate: 300 },
-        signal: AbortSignal.timeout(1500),
-      } as RequestInit);
-      if (!res.ok) return { title: "Task Not Found | AI Orbit" };
-      const data = (await res.json()) as { task?: { title: string; description: string } };
-      if (!data.task) return { title: "Task Not Found | AI Orbit" };
-
-      return {
-        title: `${data.task.title} | AI Orbit`,
-        description: data.task.description,
-      };
-    } catch {
-      return { title: "Tasks | AI Orbit" };
-    }
+    return {
+      title: `${formattedSlug} Tasks | AI Orbit`,
+      description: `Discover the best AI tools and workflows for ${formattedSlug.toLowerCase()}.`,
+    };
   }
 
   if (type === "robots") {
-    const title = slug
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-
     return {
-      title: `${title} — Robots — The AI Signal`,
-      description: `Details and specifications for ${title}.`,
+      title: `${formattedSlug} — Robots — AI Orbit`,
+      description: `Details and specifications for ${formattedSlug}.`,
     };
   }
   
   if (type === "mcp") {
-    try {
-      const item = await fetchMCPItemBySlug(slug);
-      if (!item) return { title: "MCP Item Not Found | AI Orbit" };
-      return {
-        title: `${item.name} — Model Context Protocol (MCP) | AI Orbit`,
-        description: item.shortDescription,
-      };
-    } catch {
-      return { title: "MCP Directory | AI Orbit" };
-    }
+    return {
+      title: `${formattedSlug} — Model Context Protocol (MCP) | AI Orbit`,
+      description: `Explore ${formattedSlug} in the MCP Directory.`,
+    };
   }
 
-  return {};
+  if (type === "tools" || type === "personal" || type === "creativity" || type === "agents") {
+    return {
+      title: `${formattedSlug} — AI Tool Details, Pricing & Reviews | AI Orbit`,
+      description: `Comprehensive details, features, reviews and pricing for ${formattedSlug}.`,
+    };
+  }
+
+  if (type === "companies") {
+    return {
+      title: `${formattedSlug} — AI Company Profile & Overview | AI Orbit`,
+      description: `Profile, tools, models and team details for ${formattedSlug}.`,
+    };
+  }
+
+  if (type === "devices") {
+    return {
+      title: `${formattedSlug} — AI Hardware & Device Specifications | AI Orbit`,
+      description: `Specs, features and availability for ${formattedSlug}.`,
+    };
+  }
+
+  if (type === "models") {
+    return {
+      title: `${formattedSlug} — AI Model Architecture & Benchmarks | AI Orbit`,
+      description: `Technical specs, context window, and benchmark data for ${formattedSlug}.`,
+    };
+  }
+
+  return {
+    title: `${formattedSlug} ${formattedType} | AI Orbit`,
+    description: `Explore ${formattedSlug} in the ${formattedType} section of AI Orbit.`,
+  };
 }
 
 export default async function UnifiedEntityPage({ params }: UnifiedEntityPageProps) {
@@ -172,28 +164,6 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
         }>
           <div className="flex-1">
             <MCPClient defaultSubCategory={slug} />
-          </div>
-        </Suspense>
-        <Footer />
-      </div>
-    );
-  }
-  if (type === "collections" && VALID_CATEGORIES.collections.has(slug)) {
-    return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
-        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-        <Suspense fallback={
-          <main className="mx-auto max-w-container px-6 py-10 flex-1">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {[1,2,3,4,5,6,7,8].map((i) => (
-                <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
-              ))}
-            </div>
-          </main>
-        }>
-          <div className="flex-1">
-            <CollectionsPageClient defaultSubCategory={slug} />
           </div>
         </Suspense>
         <Footer />
@@ -326,12 +296,20 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
       </div>
     );
   }
-  if (type === "collections") return <CollectionDetailClient />;
   if (type === "videos") return <VideoDetailsClient />;
   if (type === "news") return <ArticlePageClient />;
   if (type === "tasks") return <TaskDetailClient />;
   if (type === "repositories") return <RepositoryDetailPage slug={slug} />;
   if (type === "companies") return <CompanyDetailClient />;
+  if (type === "models") {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        <ModelDetailClient />
+        <Footer />
+      </div>
+    );
+  }
 
   if (type === "robots") {
     return (

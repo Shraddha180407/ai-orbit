@@ -5,13 +5,14 @@ export type EntityType =
   | "news"
   | "video"
   | "repository"
-  | "collection"
   | "task"
   | "country"
   | "fundraise"
   | "investor"
   | "robot"
-  | "device";
+  | "device"
+  | "mcp"
+  | "collection";
 
 export interface SearchEntity {
   id: string;

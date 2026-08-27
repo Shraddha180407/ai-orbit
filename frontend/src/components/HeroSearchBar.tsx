@@ -32,9 +32,42 @@ function getSuggestionHref(s: RealSearchSuggestion): string {
       return `/p/devices/${s.slug}`;
     case "model":
       return `/models/${s.slug}`;
+    case "news":
+      return `/p/news/${s.slug}`;
+    case "video":
+      return `/p/videos/${s.slug}`;
+    case "collection":
+      return `/p/collections/${s.slug}`;
+    case "task":
+      return `/p/tasks/${s.slug}`;
+    case "mcp":
+      return `/p/mcp/${s.slug}`;
     default:
       return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
   }
+}
+
+/** Max rows shown per entity-type group before collapsing behind "View N more". */
+const MAX_ROWS_PER_GROUP = 4;
+
+/**
+ * Groups flat autocomplete suggestions into per-entity-type buckets,
+ * preserving the order types first appear in (suggestions already arrive
+ * relevance-sorted from the backend), so the most relevant category leads.
+ */
+function groupSuggestionsByType(
+  suggestions: RealSearchSuggestion[]
+): [RealSearchSuggestion["type"], RealSearchSuggestion[]][] {
+  const groups = new Map<RealSearchSuggestion["type"], RealSearchSuggestion[]>();
+  for (const s of suggestions) {
+    const bucket = groups.get(s.type);
+    if (bucket) {
+      bucket.push(s);
+    } else {
+      groups.set(s.type, [s]);
+    }
+  }
+  return Array.from(groups.entries());
 }
 
 interface QuickLink {
@@ -67,7 +100,6 @@ const BROWSE_BY_TYPE: QuickLink[] = [
 // reference design don't exist here, so only real pages are listed.
 const MORE_TO_EXPLORE: QuickLink[] = [
   { label: ENTITY_META.tool.label, href: ENTITY_META.tool.basePath, icon: ENTITY_META.tool.icon },
-  { label: ENTITY_META.collection.label, href: ENTITY_META.collection.basePath, icon: ENTITY_META.collection.icon },
   { label: "Videos", href: "/videos", icon: Video },
   { label: "News", href: "/news", icon: Newspaper },
 ];
@@ -87,7 +119,9 @@ export function HeroSearchBar({ defaultValue }: { defaultValue?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { suggestions, popular, featured, isLoading } = useHomeSearch(value);
+  const { suggestions: rawSuggestions, popular, featured, isLoading } = useHomeSearch(value);
+  // Collections aren't surfaced in the search dropdown.
+  const suggestions = rawSuggestions.filter((s) => s.type !== "collection");
   const { recent, addRecent, clearRecent } = useRecentSearches();
 
   const showSuggestions = value.trim().length > 0;
@@ -212,24 +246,44 @@ export function HeroSearchBar({ defaultValue }: { defaultValue?: string }) {
                 </div>
               ) : (
                 <>
-                  {suggestions.map((s) => {
-                    const meta = ENTITY_META[s.type];
+                  {groupSuggestionsByType(suggestions).map(([type, items]) => {
+                    const meta = ENTITY_META[type];
+                    const GroupIcon = meta.icon;
+                    const visible = items.slice(0, MAX_ROWS_PER_GROUP);
+                    const remaining = items.length - visible.length;
                     return (
-                      <Link
-                        key={s.id}
-                        href={getSuggestionHref(s)}
-                        onClick={() => {
-                          addRecent(s.title);
-                          setOpen(false);
-                        }}
-                        className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm hover:bg-search-surface-hover"
-                      >
-                        <Logo src={s.logoUrl} name={s.title} size={28} className="shrink-0 rounded-md" />
-                        <span className="flex-1 truncate text-search-text-primary">{s.title}</span>
-                        <span className="shrink-0 text-xs text-search-text-tertiary">
-                          {meta.label} · {s.category}
-                        </span>
-                      </Link>
+                      <div key={type} className="mb-1 last:mb-0">
+                        {/* Section header, e.g. "Models (4)" */}
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-search-text-tertiary">
+                          <GroupIcon size={13} />
+                          {meta.plural}
+                          <span className="text-search-text-tertiary/70">({items.length})</span>
+                        </div>
+                        {visible.map((s) => (
+                          <Link
+                            key={s.id}
+                            href={getSuggestionHref(s)}
+                            onClick={() => {
+                              addRecent(s.title);
+                              setOpen(false);
+                            }}
+                            className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm hover:bg-search-surface-hover"
+                          >
+                            <Logo src={s.logoUrl} name={s.title} size={28} className="shrink-0 rounded-md" />
+                            <span className="flex-1 truncate text-search-text-primary">{s.title}</span>
+                            <span className="shrink-0 text-xs text-search-text-tertiary">{s.category}</span>
+                          </Link>
+                        ))}
+                        {remaining > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => goToResults(value, meta.basePath)}
+                            className="flex w-full items-center justify-center rounded-md px-2.5 py-1.5 text-xs text-search-text-tertiary hover:bg-search-surface-hover hover:text-search-text-primary"
+                          >
+                            View {remaining} more
+                          </button>
+                        )}
+                      </div>
                     );
                   })}
                   <button
