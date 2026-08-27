@@ -13,7 +13,7 @@ export function AiOrbitLogo({ className, size = 32 }: { className?: string; size
       width={numSize * 4}
       height={numSize}
       style={isAuto ? { width: "auto" } : { height: numSize, width: "auto" }}
-      className={`object-contain ${className || ""}`}
+      className={`w-auto object-contain ${className || ""}`}
       unoptimized
       priority={true}
     />
