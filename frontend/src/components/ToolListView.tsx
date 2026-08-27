@@ -374,11 +374,11 @@ function ToolRow({
       {/* Col 4: Pricing */}
       <div>
         <PricingBadge
-  pricingModel={tool.pricingModel}
-  pricingAmount={tool.pricingAmount}
-  billingFrequency={tool.billingFrequency}
-  className="text-[10px] px-2 py-0.5"
-/>
+          pricingModel={tool.pricingModel}
+          pricingAmount={tool.pricingAmount}
+          billingFrequency={tool.billingFrequency}
+          className="text-[10px] px-2 py-0.5"
+        />
       </div>
 
       {/* Col 5: API */}
