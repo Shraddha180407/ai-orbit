@@ -382,106 +382,102 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
 
         <div className="relative p-4 md:p-8">
 
-          {/* Mobile: logo + name top row */}
-          <div className="flex gap-4 items-center mb-3 sm:hidden">
-            <div className="shrink-0 relative">
-              <div className="absolute inset-0 rounded-2xl bg-[#6E56CF]/20 blur-xl scale-110 pointer-events-none" />
-              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl shadow-black/50">
-                <ToolLogo logoUrl={tool.logoUrl} name={tool.name} />
+                    {/* Mobile layout */}
+          <div className="sm:hidden space-y-3">
+
+            {/* Row 1: logo + name */}
+            <div className="flex gap-3 items-center">
+              <div className="shrink-0 relative">
+                <div className="absolute inset-0 rounded-2xl bg-[#6E56CF]/20 blur-xl scale-110 pointer-events-none" />
+                <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl shadow-black/50">
+                  <ToolLogo logoUrl={tool.logoUrl} name={tool.name} />
+                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <h1 className="text-2xl font-black text-white tracking-tight leading-tight">{tool.name}</h1>
+                  {tool.verified && <ShieldCheck size={15} className="text-[#6E56CF] shrink-0" />}
+                  {tool.isTrending && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 border border-orange-500/20 px-2 py-0.5 text-[9px] font-bold text-orange-400">
+                      <TrendingUp size={8} /> Trending
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {tool.categories.slice(0, 3).map(({ category }) => (
+                    <Link key={category.slug} href={`/tools/${category.slug}`}
+                      className="inline-block rounded-md border border-[#6E56CF]/25 bg-[#6E56CF]/10 px-2.5 py-1 text-[11px] font-semibold text-[#A78BFA] leading-none">
+                      {category.name}
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <h1 className="text-xl font-black text-white tracking-tight leading-tight">{tool.name}</h1>
-                {tool.verified && <ShieldCheck size={15} className="text-[#6E56CF] shrink-0" />}
-                {tool.isTrending && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 border border-orange-500/20 px-2 py-0.5 text-[9px] font-bold text-orange-400">
-                    <TrendingUp size={8} /> Trending
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-1 mt-1">
-                <PricingBadge pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} billingFrequency={tool.billingFrequency} />
-                <RatingStars rating={tool.avgRating} reviewCount={tool.reviewCount} size="sm" />
-              </div>
+
+            {/* Row 2: pricing + rating */}
+            <div className="flex flex-wrap items-center gap-2">
+              <PricingBadge pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} billingFrequency={tool.billingFrequency} />
+              <span className="text-[#3a3a3e]">·</span>
+              <RatingStars rating={tool.avgRating} size="sm" />
             </div>
-          </div>
 
-          {/* Mobile: categories row */}
-          <div className="flex flex-wrap gap-1 mb-2 sm:hidden">
-            {tool.categories.slice(0, 3).map(({ category }) => (
-              <Link key={category.slug} href={`/tools/${category.slug}`}
-                className="inline-block text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md border border-[#2a2a2e] text-[#71717A] leading-none">
-                {category.name}
-              </Link>
-            ))}
-          </div>
+            {/* Row 3: description */}
+            <p className="text-[13px] text-[#A1A1AA] leading-relaxed">{tool.description}</p>
 
-          {/* Mobile: description */}
-          <p className="text-[12px] text-[#A1A1AA] leading-relaxed mb-3 sm:hidden">{tool.description}</p>
 
-          {/* Mobile: meta */}
-          <div className="flex flex-col gap-1.5 mb-3 sm:hidden">
-            {tool.targetUsers?.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1">
-                <span className="text-[10px] text-[#52525B] font-bold shrink-0">Best for:</span>
-                {tool.targetUsers.map(p => (
-                  <span key={p} className="rounded-md border border-[#232326] bg-[#131316] px-1.5 py-0.5 text-[10px] font-semibold text-white/70">
-                    {PERSONA_MAP[p] || p}
-                  </span>
-                ))}
-              </div>
-            )}
-            {tool.compatibility?.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1">
-                <span className="text-[10px] text-[#52525B] font-bold shrink-0">Works on:</span>
-                {tool.compatibility.map(c => (
-                  <span key={c} className="rounded-md border border-[#232326] bg-[#131316] px-1.5 py-0.5 text-[10px] font-semibold text-[#A1A1AA]">
-                    {PLATFORM_MAP[c] || c}
-                  </span>
-                ))}
-              </div>
-            )}
-            {tool.tags?.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1">
-                {tool.tags.slice(0, 4).map(({ tag }) => (
-                  <Link key={tag.slug} href={`/tools?tag=${tag.slug}`}
-                    className="inline-flex items-center gap-0.5 rounded-full border border-[#6E56CF]/25 bg-[#6E56CF]/8 px-2 py-0.5 text-[10px] font-mono font-bold text-[#A78BFA]">
-                    <span className="text-[#6E56CF] opacity-70">#</span>{tag.name}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+            {/* Row 5: best for + works on + tags */}
+            <div className="flex flex-col gap-1.5">
+              {tool.targetUsers?.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="text-[10px] text-[#52525B] font-bold shrink-0">Best for:</span>
+                  {tool.targetUsers.map(p => (
+                    <span key={p} className="rounded-md border border-[#232326] bg-[#131316] px-1.5 py-0.5 text-[10px] font-semibold text-white/70">
+                      {PERSONA_MAP[p] || p}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {tool.compatibility?.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="text-[10px] text-[#52525B] font-bold shrink-0">Works on:</span>
+                  {tool.compatibility.map(c => (
+                    <span key={c} className="rounded-md border border-[#232326] bg-[#131316] px-1.5 py-0.5 text-[10px] font-semibold text-[#A1A1AA]">
+                      {PLATFORM_MAP[c] || c}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {/* Mobile: action buttons */}
-          <div className="flex flex-col gap-2 mb-1 sm:hidden">
-            <a href={tool.websiteUrl} target="_blank" rel="noopener noreferrer nofollow"
-              className="inline-flex w-full justify-center items-center gap-2 rounded-xl bg-[#6E56CF] px-4 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-[#6E56CF]/25 hover:bg-[#7C66DF] transition-all active:scale-95">
-              Visit Website <ArrowUpRight size={14} strokeWidth={2.5} />
-            </a>
-            {tool.hasApi && tool.apiDocsUrl && (
-              <a href={tool.apiDocsUrl} target="_blank" rel="noopener noreferrer nofollow"
-                className="inline-flex w-full justify-center items-center gap-1.5 rounded-xl border border-[#2a2a2e] bg-[#0d0d10] px-4 py-2 text-xs font-semibold text-[#71717A]">
-                <Code2 size={13} /> View API Docs
+            {/* Row 6: action buttons */}
+            <div className="flex flex-col gap-2">
+              <a href={tool.websiteUrl} target="_blank" rel="noopener noreferrer nofollow"
+                className="inline-flex w-full justify-center items-center gap-2 rounded-xl bg-[#6E56CF] px-4 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-[#6E56CF]/25 hover:bg-[#7C66DF] transition-all active:scale-95">
+                Visit Website <ArrowUpRight size={14} strokeWidth={2.5} />
               </a>
-            )}
-            <div className="grid grid-cols-3 gap-2">
-              <button onClick={handleUpvote}
-                className={cn("flex flex-col items-center justify-center gap-0.5 rounded-xl border px-2 py-2 text-xs font-bold transition-all",
-                  upvoted ? "bg-[#6E56CF] text-white border-[#6E56CF]" : "border-[#232326] bg-[#0d0d10] text-white")}>
-                <ThumbsUp size={12} className={cn(upvoted && "fill-white")} />
-                <span className="text-[9px] font-mono">{formatNum(upvoteCount)}</span>
-              </button>
-              <button onClick={() => setBookmarked(b => !b)}
-                className={cn("flex items-center justify-center rounded-xl border py-2 transition-all",
-                  bookmarked ? "bg-[#6E56CF] text-white border-[#6E56CF]" : "border-[#232326] bg-[#0d0d10] text-white")}>
-                <Bookmark size={13} className={cn(bookmarked && "fill-white")} />
-              </button>
-              <button onClick={handleShare}
-                className="flex items-center justify-center rounded-xl border border-[#232326] bg-[#0d0d10] py-2 text-[#71717A]">
-                <Share2 size={13} />
-              </button>
+              {tool.hasApi && tool.apiDocsUrl && (
+                <a href={tool.apiDocsUrl} target="_blank" rel="noopener noreferrer nofollow"
+                  className="inline-flex w-full justify-center items-center gap-1.5 rounded-xl border border-[#2a2a2e] bg-[#0d0d10] px-4 py-2 text-xs font-semibold text-[#71717A]">
+                  <Code2 size={13} /> View API Docs
+                </a>
+              )}
+              <div className="grid grid-cols-3 gap-2">
+                <button onClick={handleUpvote}
+                  className={cn("flex flex-col items-center justify-center gap-0.5 rounded-xl border px-2 py-2 text-xs font-bold transition-all",
+                    upvoted ? "bg-[#6E56CF] text-white border-[#6E56CF]" : "border-[#232326] bg-[#0d0d10] text-white")}>
+                  <ThumbsUp size={12} className={cn(upvoted && "fill-white")} />
+                  <span className="text-[9px] font-mono">{formatNum(upvoteCount)}</span>
+                </button>
+                <button onClick={() => setBookmarked(b => !b)}
+                  className={cn("flex items-center justify-center rounded-xl border py-2 transition-all",
+                    bookmarked ? "bg-[#6E56CF] text-white border-[#6E56CF]" : "border-[#232326] bg-[#0d0d10] text-white")}>
+                  <Bookmark size={13} className={cn(bookmarked && "fill-white")} />
+                </button>
+                <button onClick={handleShare}
+                  className="flex items-center justify-center rounded-xl border border-[#232326] bg-[#0d0d10] py-2 text-[#71717A]">
+                  <Share2 size={13} />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -756,15 +752,7 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
               </section>
             )}
 
-            {/* ROI Calculator — only show when there are enough tasks to justify it */}
-            {ttasks.length >= 4 && (
-              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4 relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/30 to-transparent" />
-                <div className="absolute -top-10 -right-10 w-36 h-36 bg-[#6E56CF]/4 rounded-full blur-2xl pointer-events-none" />
-                <ROICalculator pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} name={tool.name} />
-              </section>
-            )}
-
+           
             {/* Company */}
             {tool.company && (
               <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4 space-y-3 relative overflow-hidden">
@@ -786,6 +774,16 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
                 </div>
               </section>
             )}
+
+             {/* ROI Calculator — only show when there are enough tasks to justify it */}
+            {ttasks.length >= 4 && (
+              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/30 to-transparent" />
+                <div className="absolute -top-10 -right-10 w-36 h-36 bg-[#6E56CF]/4 rounded-full blur-2xl pointer-events-none" />
+                <ROICalculator pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} name={tool.name} />
+              </section>
+            )}
+
           </aside>
         </div>
       )}
