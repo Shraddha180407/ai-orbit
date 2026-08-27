@@ -651,7 +651,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
             </div>
           ) : (
             <div className="w-full rounded-xl border border-[#232326] bg-[#0A0A0C] overflow-hidden shadow-xl">
-              <div className="overflow-x-auto relative touch-pan-x">
+              <div className="overflow-x-auto relative">
                 {/* Header Row */}
                 <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2.5 bg-[#131316] border-b border-[#232326]/60 text-[10px] font-bold font-mono tracking-wider uppercase text-[#A1A1AA]`}>
                   <div></div>

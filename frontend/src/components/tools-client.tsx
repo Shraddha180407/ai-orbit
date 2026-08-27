@@ -169,7 +169,7 @@ export function ToolsClient({
       <div className={`mx-auto w-full max-w-[1600px] space-y-4 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
         
         {/* Category Row */}
-        <div className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none touch-pan-x w-auto sm:w-full">
+        <div className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-auto sm:w-full">
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (

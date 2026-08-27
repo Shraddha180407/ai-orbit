@@ -269,7 +269,6 @@ function ToolRow({
         const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
         if (nameEl) nameEl.style.color = accentColor;
       }}
-      onTouchStart={prefetchRow}
       onFocus={prefetchRow}
       onMouseLeave={(e) => {
         const el = e.currentTarget;
@@ -552,7 +551,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     <>
       <div
         ref={dropdownRef}
-        className="overflow-x-auto touch-pan-x rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
+        className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
       >
         <div className={`relative bg-[#000000] ${COL_MIN_WIDTH}`}>
 
