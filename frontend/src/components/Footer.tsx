@@ -5,13 +5,7 @@ import Link from "next/link";
 import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right';
 import ArrowUp from 'lucide-react/dist/esm/icons/arrow-up';
 
-const AiOrbitLogo = () => (
-  <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="7.5" />
-    <ellipse cx="12" cy="12" rx="13" ry="5.5" transform="rotate(-30 12 12)" />
-    <circle cx="3" cy="17.2" r="1.5" fill="currentColor" stroke="none" />
-  </svg>
-);
+import { AiOrbitLogo } from "./AiOrbitLogo";
 
 const XIcon = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
@@ -102,9 +96,15 @@ export function Footer() {
 
           {/* Left Column */}
           <div className="w-full lg:w-[380px] shrink-0">
+<<<<<<< HEAD
+            <Link href="/" className="flex items-center gap-3 mb-6">
+              <AiOrbitLogo size={38} className="text-white" />
+              <span className="text-[34px] font-bold tracking-tight">AI Orbit</span>
+=======
             <Link href="/" className="flex items-center gap-2.5 sm:gap-3 mb-4 sm:mb-6">
               <AiOrbitLogo />
               <span className="text-[26px] sm:text-[34px] font-bold tracking-tight">AI Orbit</span>
+>>>>>>> main
             </Link>
 
             <p className="text-[14px] sm:text-[16px] text-[#e4e4e7] mb-3 sm:mb-5">

@@ -68,7 +68,7 @@ const tools = data?.pages.flatMap((p: any) => p?.items || p?.tools || []) || [];
   }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <Header />
       <GlobalHero />
 

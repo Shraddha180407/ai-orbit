@@ -1,14 +1,14 @@
 import React from "react";
 import Link from "next/link";
-import { 
-  ArrowRight, 
-  Package, 
-  Bot, 
-  Layers, 
-  Building2, 
-  Smartphone, 
-  Cpu, 
-  Code, 
+import {
+  ArrowRight,
+  Package,
+  Bot,
+  Layers,
+  Building2,
+  Smartphone,
+  Cpu,
+  Code,
   Network,
   Target,
   Star,
@@ -19,7 +19,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-16 sm:pt-24 pb-12">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
-        
+
         {/* Hero Section */}
         <div className="flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-16 mb-16 sm:mb-32">
           <div className="w-full lg:w-1/2">
@@ -28,28 +28,28 @@ export default function AboutPage() {
                 ABOUT AI ORBIT
               </h2>
             </div>
-            
+
             <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6 sm:mb-8 leading-[1.1]">
               Everything AI.<br />In One Orbit.
             </h1>
-            
+
             <p className="text-base sm:text-[18px] leading-relaxed text-[#e4e4e7] mb-4 sm:mb-6 max-w-[540px]">
               AI Orbit is a discovery platform built to help you explore the rapidly evolving world of artificial intelligence — from tools and models to companies, agents, devices, robots, repositories, MCP servers, and more.
             </p>
-            
+
             <p className="text-base sm:text-[18px] leading-relaxed text-[#a1a1aa] mb-8 sm:mb-10 max-w-[540px]">
               We bring the entire AI ecosystem together in one place so you can discover what matters, faster.
             </p>
-            
-            <Link 
+
+            <Link
               href="/"
               className="inline-flex items-center justify-center gap-2 bg-white text-black px-6 py-3 rounded-full font-medium hover:bg-gray-200 transition-colors group text-sm sm:text-base"
             >
-              Explore AI Orbit 
+              Explore AI Orbit
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
-          
+
           <div className="w-full lg:w-1/2 flex justify-center lg:justify-end hidden md:flex">
             <div className="relative w-full max-w-[500px] aspect-square rounded-full flex items-center justify-center">
               {/* Planet SVG Representation since image could not be copied */}
@@ -118,7 +118,7 @@ export default function AboutPage() {
 
         {/* Info Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pt-16 border-t border-[#27272a]">
-          
+
           <div className="flex flex-col">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-12 h-12 rounded-full border border-[#3f3f46] flex items-center justify-center">

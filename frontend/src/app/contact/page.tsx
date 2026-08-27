@@ -1,14 +1,14 @@
 import React from "react";
 import Link from "next/link";
-import { 
-  ArrowRight, 
-  Mail, 
-  MessageSquare, 
-  Send, 
-  Handshake, 
-  Bug, 
-  Users, 
-  Clock, 
+import {
+  ArrowRight,
+  Mail,
+  MessageSquare,
+  Send,
+  Handshake,
+  Bug,
+  Users,
+  Clock,
   ShieldCheck,
   Lock,
   Plus
@@ -18,7 +18,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-16 sm:pt-24 pb-12">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
-        
+
         {/* Hero Section */}
         <div className="flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-16 mb-16 sm:mb-24">
           <div className="w-full lg:w-1/2">
@@ -27,18 +27,18 @@ export default function ContactPage() {
                 CONTACT
               </h2>
             </div>
-            
+
             <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-4 sm:mb-6 leading-[1.1]">
               Let's Connect.
             </h1>
-            
+
             <p className="text-base sm:text-[18px] leading-relaxed text-[#e4e4e7] mb-2 max-w-[500px]">
               Have a question, found an issue, want to suggest an AI tool, or interested in working with AI Orbit?
             </p>
             <p className="text-base sm:text-[18px] leading-relaxed text-[#a1a1aa] mb-8 sm:mb-10 max-w-[500px]">
               We'd love to hear from you.
             </p>
-            
+
             <div className="inline-flex items-center gap-3 sm:gap-4 bg-[#0a0a0a] border border-[#27272a] rounded-xl p-3 sm:p-4 pl-4 sm:pl-5 pr-6 sm:pr-8">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg border border-[#3f3f46] flex items-center justify-center bg-[#121212] shrink-0">
                 <Mail size={18} className="text-[#a1a1aa]" />
@@ -49,7 +49,7 @@ export default function ContactPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="w-full lg:w-1/2 flex justify-center lg:justify-end hidden md:flex">
             <div className="relative w-full max-w-[450px] aspect-square rounded-full flex items-center justify-center">
               {/* Planet graphic */}
@@ -58,7 +58,7 @@ export default function ContactPage() {
               <div className="absolute w-[150%] h-[40%] border-t border-b border-white/10 rounded-[100%] rotate-12"></div>
               <div className="absolute w-[60%] h-[60%] bg-gradient-to-tr from-black via-[#111] to-[#444] rounded-full shadow-[0_0_80px_rgba(255,255,255,0.05)]"></div>
               <div className="absolute w-[60%] h-[60%] rounded-full shadow-[inset_-20px_-20px_60px_rgba(0,0,0,0.8)]"></div>
-              
+
               {/* Stars */}
               <div className="absolute top-1/4 left-1/4 w-1.5 h-1.5 bg-white rounded-full"></div>
               <div className="absolute bottom-1/4 right-1/4 w-1 h-1 bg-white rounded-full opacity-60"></div>
@@ -109,32 +109,32 @@ export default function ContactPage() {
             <h2 className="text-3xl font-bold mb-8">Send us a message</h2>
             <form className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <input 
-                  type="text" 
-                  placeholder="Your Name *" 
+                <input
+                  type="text"
+                  placeholder="Your Name *"
                   required
                   className="w-full bg-[#121212] border border-[#27272a] rounded-xl px-5 py-4 text-white placeholder:text-[#71717a] focus:outline-none focus:border-[#71717a] transition-colors text-[15px]"
                 />
-                <input 
-                  type="email" 
-                  placeholder="Your Email *" 
+                <input
+                  type="email"
+                  placeholder="Your Email *"
                   required
                   className="w-full bg-[#121212] border border-[#27272a] rounded-xl px-5 py-4 text-white placeholder:text-[#71717a] focus:outline-none focus:border-[#71717a] transition-colors text-[15px]"
                 />
               </div>
-              <input 
-                type="text" 
-                placeholder="Subject *" 
+              <input
+                type="text"
+                placeholder="Subject *"
                 required
                 className="w-full bg-[#121212] border border-[#27272a] rounded-xl px-5 py-4 text-white placeholder:text-[#71717a] focus:outline-none focus:border-[#71717a] transition-colors text-[15px]"
               />
-              <textarea 
-                placeholder="Your Message *" 
+              <textarea
+                placeholder="Your Message *"
                 required
                 rows={6}
                 className="w-full bg-[#121212] border border-[#27272a] rounded-xl px-5 py-4 text-white placeholder:text-[#71717a] focus:outline-none focus:border-[#71717a] transition-colors resize-none text-[15px]"
               ></textarea>
-              <button 
+              <button
                 type="submit"
                 className="w-full bg-white text-black font-semibold py-4 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 group text-[15px]"
               >
@@ -153,7 +153,7 @@ export default function ContactPage() {
             <p className="text-[#a1a1aa] leading-relaxed mb-10 text-[15px]">
               Whether you're a developer, researcher, founder or enthusiast — we're listening.
             </p>
-            
+
             <div className="space-y-8">
               <div className="flex gap-5">
                 <div className="w-12 h-12 shrink-0 rounded-full border border-[#3f3f46] flex items-center justify-center bg-[#121212]">
@@ -201,8 +201,8 @@ export default function ContactPage() {
               "How do I report an issue?",
               "Still have questions?"
             ].map((faq, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className="flex items-center justify-between py-4 border-b border-[#27272a] group cursor-pointer hover:border-[#52525b] transition-colors"
               >
                 <span className="text-[15px] font-medium text-[#e4e4e7] group-hover:text-white transition-colors">{faq}</span>

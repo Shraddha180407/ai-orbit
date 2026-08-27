@@ -18,7 +18,7 @@ export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-16 sm:pt-24 pb-12">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 flex flex-col lg:flex-row gap-8 lg:gap-24">
-        
+
         {/* Left Sidebar */}
         <div className="w-full lg:w-[280px] shrink-0">
           <div className="lg:sticky lg:top-24">
@@ -28,7 +28,7 @@ export default function PrivacyPolicyPage() {
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-1 sm:gap-2 mb-6 sm:mb-10 border-l border-[#27272a]">
               {sections.map((section, idx) => (
                 <li key={section.id}>
-                  <a 
+                  <a
                     href={`#section-${section.id}`}
                     className={`block pl-4 py-1.5 sm:py-2 text-xs sm:text-[14px] font-medium transition-colors ${idx === 0 ? 'border-l-2 border-white text-white -ml-[1px] bg-white/5' : 'text-[#a1a1aa] hover:text-[#e4e4e7]'}`}
                   >
@@ -84,7 +84,7 @@ export default function PrivacyPolicyPage() {
 
           {/* Sections Content */}
           <div className="space-y-16 max-w-[800px]">
-            
+
             <section id="section-01">
               <div className="flex items-center gap-4 mb-6">
                 <div className="bg-[#121212] border border-[#27272a] rounded-lg px-3 py-1 text-[14px] font-bold">01</div>
@@ -120,7 +120,7 @@ export default function PrivacyPolicyPage() {
                 </ul>
               </div>
             </section>
-            
+
             {/* Placeholder sections for the rest to keep the layout complete */}
             {[
               { id: "03", title: "AI Tool Listings" },

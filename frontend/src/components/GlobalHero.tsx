@@ -32,14 +32,14 @@ import { API_URL, fetchAllCompanies, fetchAllRobots, fetchAllDevices, fetchModel
 import { fetchTasks as fetchTasksApi } from "@/lib/tasks-api";
 
 // NEW: Import the unified filter dropdown
-import { UnifiedFilterDropdown } from "@/components/UnifiedFilterDropdown"; 
+import { UnifiedFilterDropdown } from "@/components/UnifiedFilterDropdown";
 
 function getSuggestionHref(s: RealSearchSuggestion): string {
   const meta = ENTITY_META[s.type];
   if (!s.slug) return `${meta.basePath}?q=${encodeURIComponent(s.title)}`;
 
   switch (s.type) {
-case "tool": return `/p/tools/${s.slug}`;
+    case "tool": return `/p/tools/${s.slug}`;
     case "company": return `/p/companies/${s.slug}`;
     case "repository": return `/p/repositories/${s.slug}`;
     case "robot": return `/p/robots/${s.slug}`;
@@ -125,7 +125,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
           },
           initialPageParam: 1,
           staleTime: 10 * 60 * 1000,
-        }).catch(() => {});
+        }).catch(() => { });
         break;
       case "Tools":
       case "Agents":
@@ -139,16 +139,16 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
           },
           initialPageParam: 1,
           staleTime: 15 * 60 * 1000,
-        }).catch(() => {});
+        }).catch(() => { });
         break;
       case "Companies":
-        queryClient.prefetchQuery({ queryKey: ["companies"], queryFn: fetchAllCompanies, staleTime: 10 * 60 * 1000 }).catch(() => {});
+        queryClient.prefetchQuery({ queryKey: ["companies"], queryFn: fetchAllCompanies, staleTime: 10 * 60 * 1000 }).catch(() => { });
         break;
       case "Robots":
-        queryClient.prefetchQuery({ queryKey: ["robots"], queryFn: fetchAllRobots, staleTime: 10 * 60 * 1000 }).catch(() => {});
+        queryClient.prefetchQuery({ queryKey: ["robots"], queryFn: fetchAllRobots, staleTime: 10 * 60 * 1000 }).catch(() => { });
         break;
       case "Devices":
-        queryClient.prefetchQuery({ queryKey: ["devices"], queryFn: () => fetchAllDevices({}), staleTime: 10 * 60 * 1000 }).catch(() => {});
+        queryClient.prefetchQuery({ queryKey: ["devices"], queryFn: () => fetchAllDevices({}), staleTime: 10 * 60 * 1000 }).catch(() => { });
         break;
       case "Models":
         queryClient.prefetchInfiniteQuery({
@@ -156,7 +156,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
           queryFn: () => fetchModels({ page: 1, sort: "newest" as any }),
           initialPageParam: 1,
           staleTime: 10 * 60 * 1000,
-        }).catch(() => {});
+        }).catch(() => { });
         break;
       case "News":
         queryClient.prefetchQuery({
@@ -166,7 +166,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
             return res.ok ? res.json() : null;
           },
           staleTime: 10 * 60 * 1000,
-        }).catch(() => {});
+        }).catch(() => { });
         break;
       case "Videos":
         queryClient.prefetchQuery({
@@ -176,7 +176,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
             return res.ok ? res.json() : [];
           },
           staleTime: 10 * 60 * 1000,
-        }).catch(() => {});
+        }).catch(() => { });
         break;
       case "Tasks":
         queryClient.prefetchInfiniteQuery({
@@ -184,7 +184,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
           queryFn: () => fetchTasksApi({ sort: "newest", filter: "all", page: 1 }),
           initialPageParam: 1,
           staleTime: 10 * 60 * 1000,
-        }).catch(() => {});
+        }).catch(() => { });
         break;
       case "Repositories":
         queryClient.prefetchInfiniteQuery({
@@ -192,7 +192,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
           queryFn: () => fetchRepositories({ sort: "stars_desc", limit: 15 }),
           initialPageParam: null,
           staleTime: 10 * 60 * 1000,
-        }).catch(() => {});
+        }).catch(() => { });
         break;
       case "MCP":
         queryClient.prefetchInfiniteQuery({
@@ -200,13 +200,13 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
           queryFn: () => fetchMCPItems({ page: 1, limit: 20 }),
           initialPageParam: 1,
           staleTime: 10 * 60 * 1000,
-        }).catch(() => {});
+        }).catch(() => { });
         break;
     }
   };
 
   const handlePointerEnter = (cardName: string, href: string) => {
-    try { router.prefetch(href); } catch {}
+    try { router.prefetch(href); } catch { }
     if (hoverTimeoutRef.current[cardName]) clearTimeout(hoverTimeoutRef.current[cardName]);
     hoverTimeoutRef.current[cardName] = setTimeout(() => {
       prefetchCategory(cardName, href);
@@ -292,25 +292,24 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
       card.href === "/"
         ? pathname === "/"
         : card.name === "Tools"
-        ? pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp") && !pathname?.startsWith("/tools/compare"))
-        : card.name === "Agents"
-        ? pathname === "/agents" || pathname?.startsWith("/agents")
-        : card.name === "Tasks"
-        ? pathname === "/tasks"
-        : card.name === "Personal"
-        ? pathname === "/tasks/personal" || pathname === "/personal"
-        : card.name === "Creativity"
-        ? pathname === "/tasks/creativity" || pathname?.startsWith("/creativity")
-        : pathname?.startsWith(card.href);
+          ? pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp") && !pathname?.startsWith("/tools/compare"))
+          : card.name === "Agents"
+            ? pathname === "/agents" || pathname?.startsWith("/agents")
+            : card.name === "Tasks"
+              ? pathname === "/tasks"
+              : card.name === "Personal"
+                ? pathname === "/tasks/personal" || pathname === "/personal"
+                : card.name === "Creativity"
+                  ? pathname === "/tasks/creativity" || pathname?.startsWith("/creativity")
+                  : pathname?.startsWith(card.href);
     const isNew = card.name === "New";
 
     return (
       <Link
         key={card.name}
         href={card.href}
-        className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${
-          isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
-        }`}
+        className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
+          }`}
         onPointerEnter={(e) => {
           handlePointerEnter(card.name, card.href);
           if (!(isNew && isSelected)) e.currentTarget.style.borderColor = card.color;
@@ -332,9 +331,9 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
       >
         {isNew && isSelected && (
           <>
-            <div 
+            <div
               className="absolute inset-[-100%] animate-[spin_3s_linear_infinite] opacity-70"
-              style={{ background: `conic-gradient(from 0deg at 50% 50%, transparent 0%, transparent 60%, ${card.color} 100%)` }} 
+              style={{ background: `conic-gradient(from 0deg at 50% 50%, transparent 0%, transparent 60%, ${card.color} 100%)` }}
             />
             <div className="absolute inset-[1px] rounded-[7px] bg-[#0d0d10]" />
           </>
@@ -440,7 +439,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                           const visible = items.slice(0, MAX_ROWS_PER_GROUP);
                           const remaining = items.length - visible.length;
                           return (
-<div key={type} className="mb-1 last:mb-0">
+                            <div key={type} className="mb-1 last:mb-0">
                               {/* Section header, e.g. "Companies" — icon + badge match the nav strip (DIRECTORY_CARDS) exactly */}
                               <div className="sticky top-0 z-10 mb-1 flex items-center gap-2 rounded-md border-y border-search-border/60 bg-search-surface-active px-2.5 py-2 text-[11px] font-bold uppercase tracking-wider text-search-text-secondary">
                                 <span
@@ -574,9 +573,9 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
       {/* Directory nav strip */}
       <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1">
         <div className="mx-auto w-full max-w-[1600px]">
-          
+
           <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 w-full">
-            
+
             {/* 1. The "New" Button wrapped in the Dropdown (Escaping overflow!) */}
             <div className="shrink-0 relative z-20 overflow-visible">
               <UnifiedFilterDropdown>

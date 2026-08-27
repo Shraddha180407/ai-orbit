@@ -6,6 +6,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from '@/hooks/use-user';
 import Plus from 'lucide-react/dist/esm/icons/plus';
+<<<<<<< HEAD
+import { AiOrbitLogo } from './AiOrbitLogo';
+=======
 import Menu from 'lucide-react/dist/esm/icons/menu';
 import X from 'lucide-react/dist/esm/icons/x';
 import Trophy from 'lucide-react/dist/esm/icons/trophy';
@@ -42,6 +45,7 @@ const DIRECTORY_LINKS = [
   { name: "AI News", href: "/news", icon: Newspaper, color: "#FF6B4A" },
   { name: "AI Videos", href: "/videos", icon: PlayCircle, color: "#F87171" },
 ];
+>>>>>>> main
 
 export function Header() {
   const { user, isLoading } = useUser();
@@ -71,9 +75,15 @@ export function Header() {
   }, [mobileMenuOpen]);
 
   return (
+<<<<<<< HEAD
+    <header className="sticky top-0 z-50 w-full border-b border-border/20 bg-background/50 backdrop-blur-md py-4 relative">
+      {/* Center: Nav links, centered against the full page width, not just the inner container */}
+      <nav className="hidden lg:flex items-center gap-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+=======
     <header className="sticky top-0 z-50 w-full border-b border-border/20 bg-background/80 backdrop-blur-md py-3 sm:py-4 relative">
       {/* Center: Nav links, centered against the full page width on md+ */}
       <nav className="hidden md:flex items-center gap-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+>>>>>>> main
         <Link
           href="/tools?category=business"
           className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center"
@@ -100,6 +110,16 @@ export function Header() {
         </Link>
       </nav>
 
+<<<<<<< HEAD
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-8 flex items-center justify-between relative gap-2">
+        {/* Left: The AI Signal Logo */}
+        <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group shrink-0 min-w-0">
+          <AiOrbitLogo className="h-7 w-7 sm:h-8 sm:w-8 text-white transition-transform group-hover:scale-105 active:scale-95" />
+          <span className="text-sm sm:text-base font-bold tracking-tight text-white transition-colors truncate">
+            AI Orbit
+          </span>
+        </Link>
+=======
       <div className="mx-auto max-w-[1440px] px-3.5 sm:px-8 flex items-center justify-between relative gap-2 z-20">
         {/* Left: The AI Orbit Logo */}
         <div className="flex items-center gap-2">
@@ -122,6 +142,7 @@ export function Header() {
             </span>
           </Link>
         </div>
+>>>>>>> main
 
         {/* Right: Action buttons */}
         <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
