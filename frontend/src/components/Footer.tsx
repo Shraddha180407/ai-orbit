@@ -96,73 +96,73 @@ export function Footer() {
   };
 
   return (
-    <footer className="w-full bg-black text-white pt-24 pb-12 font-sans selection:bg-white/30">
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-        <div className="flex flex-col lg:flex-row justify-between gap-16 lg:gap-32">
+    <footer className="w-full bg-black text-white pt-12 sm:pt-20 lg:pt-24 pb-8 sm:pb-12 font-sans selection:bg-white/30 border-t border-[#1C1C1F]">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
+        <div className="flex flex-col lg:flex-row justify-between gap-10 sm:gap-16 lg:gap-32">
 
           {/* Left Column */}
           <div className="w-full lg:w-[380px] shrink-0">
-            <Link href="/" className="flex items-center gap-3 mb-6">
+            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 mb-4 sm:mb-6">
               <AiOrbitLogo />
-              <span className="text-[34px] font-bold tracking-tight">AI Orbit</span>
+              <span className="text-[26px] sm:text-[34px] font-bold tracking-tight">AI Orbit</span>
             </Link>
 
-            <p className="text-[16px] text-[#e4e4e7] mb-5">
+            <p className="text-[14px] sm:text-[16px] text-[#e4e4e7] mb-3 sm:mb-5">
               The Home of Everything AI.
             </p>
 
-            <p className="text-[15px] leading-relaxed text-[#a1a1aa] mb-10 max-w-[320px]">
+            <p className="text-[13px] sm:text-[15px] leading-relaxed text-[#a1a1aa] mb-6 sm:mb-10 max-w-[320px]">
               Discover the tools, companies, and technologies shaping the global AI ecosystem.
             </p>
 
-            <div className="flex items-center gap-6 mb-10">
-              <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors"><XIcon /></a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors"><LinkedInIcon /></a>
-              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors"><YouTubeIcon /></a>
-              <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors"><DiscordIcon /></a>
+            <div className="flex items-center gap-5 sm:gap-6 mb-6 sm:mb-10">
+              <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="X (Twitter)"><XIcon /></a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="LinkedIn"><LinkedInIcon /></a>
+              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="YouTube"><YouTubeIcon /></a>
+              <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="Discord"><DiscordIcon /></a>
             </div>
 
-            <div className="h-px w-full max-w-[340px] bg-[#27272a] mb-10"></div>
+            <div className="h-px w-full max-w-[340px] bg-[#27272a] mb-6 sm:mb-10"></div>
 
-            <h3 className="text-[17px] font-bold text-white mb-4">Stay in the Orbit</h3>
-            <p className="text-[15px] text-[#a1a1aa] leading-relaxed mb-6 max-w-[300px]">
+            <h3 id="newsletter" className="text-[15px] sm:text-[17px] font-bold text-white mb-2 sm:mb-4">Stay in the Orbit</h3>
+            <p className="text-[13px] sm:text-[15px] text-[#a1a1aa] leading-relaxed mb-4 sm:mb-6 max-w-[300px]">
               Get the most important AI updates, trends, and launches.
             </p>
 
-            <form onSubmit={handleSubscribe} className="flex h-[46px] w-full max-w-[340px]">
+            <form onSubmit={handleSubscribe} className="flex h-[42px] sm:h-[46px] w-full max-w-[340px]">
               <input
                 type="email"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 bg-transparent border border-[#3f3f46] rounded-l-lg px-4 text-[15px] text-white placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#71717a] transition-colors"
+                className="flex-1 min-w-0 bg-transparent border border-[#3f3f46] rounded-l-lg px-3.5 text-[14px] sm:text-[15px] text-white placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#71717a] transition-colors"
               />
               <button
                 type="submit"
-                className="flex items-center justify-center w-14 border border-l-0 border-[#3f3f46] rounded-r-lg hover:bg-white/5 transition-colors group"
+                className="flex items-center justify-center w-12 sm:w-14 shrink-0 border border-l-0 border-[#3f3f46] rounded-r-lg hover:bg-white/5 transition-colors group cursor-pointer"
                 aria-label="Subscribe"
               >
-                <ArrowRight size={20} className="text-[#a1a1aa] group-hover:text-white transition-colors" />
+                <ArrowRight size={18} className="text-[#a1a1aa] group-hover:text-white transition-colors" />
               </button>
             </form>
           </div>
 
           {/* Links Grid */}
-          <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-14 pt-2">
+          <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-x-4 sm:gap-x-8 gap-y-8 sm:gap-y-14 pt-2">
             {LINK_GROUPS.map((group) => (
               <div key={group.heading} className="flex flex-col">
-                <div className="mb-8">
-                  <h4 className="text-[14px] font-bold text-white tracking-[0.1em] uppercase mb-4 inline-block w-fit">
+                <div className="mb-4 sm:mb-8">
+                  <h4 className="text-[12px] sm:text-[14px] font-bold text-white tracking-[0.1em] uppercase mb-2 sm:mb-4 inline-block w-fit">
                     {group.heading}
                   </h4>
-                  <div className="h-px w-full max-w-[100px] bg-[#3f3f46]"></div>
+                  <div className="h-px w-full max-w-[80px] sm:max-w-[100px] bg-[#3f3f46]"></div>
                 </div>
-                <ul className="space-y-[18px]">
+                <ul className="space-y-3 sm:space-y-[18px]">
                   {group.links.map((link) => (
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="text-[16px] text-[#e4e4e7] hover:text-white transition-colors font-medium"
+                        className="text-[13px] sm:text-[16px] text-[#e4e4e7] hover:text-white transition-colors font-medium"
                       >
                         {link.label}
                       </Link>
@@ -176,17 +176,17 @@ export function Footer() {
         </div>
 
         {/* Bottom Row */}
-        <div className="mt-28 pt-8 border-t border-[#27272a] flex items-center justify-between">
-          <p className="text-[15px] text-[#a1a1aa]">
+        <div className="mt-12 sm:mt-24 pt-6 sm:pt-8 border-t border-[#27272a] flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-[13px] sm:text-[15px] text-[#a1a1aa] text-center sm:text-left">
             &copy; 2026 AI Orbit. All rights reserved.
           </p>
 
           <button
             onClick={scrollToTop}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-[#3f3f46] hover:bg-white/5 transition-colors text-white"
+            className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-[#3f3f46] hover:bg-white/5 transition-colors text-white cursor-pointer"
             aria-label="Scroll to top"
           >
-            <ArrowUp size={20} strokeWidth={1.5} />
+            <ArrowUp size={18} strokeWidth={1.5} />
           </button>
         </div>
       </div>

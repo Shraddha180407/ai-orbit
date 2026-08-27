@@ -96,7 +96,7 @@ export function SavedToolsClient() {
                   )}
                 </div>
               </div>
-              <div className="flex shrink-0 items-center justify-end w-full sm:w-auto mt-2 sm:mt-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex shrink-0 items-center justify-end w-full sm:w-auto mt-2 sm:mt-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <Button
                   variant="ghost"
                   size="sm"

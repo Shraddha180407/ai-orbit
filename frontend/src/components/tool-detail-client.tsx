@@ -485,7 +485,7 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
 
           {/* Stats row — only when data exists */}
           {hasStats && (
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-4 pt-4 border-t border-[#1a1a1e]">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mt-4 pt-4 border-t border-[#1a1a1e]">
               {tool.views > 0 && <StatCard icon={BarChart2} label="Views" value={formatNum(tool.views)} />}
               {tool.saves > 0 && <StatCard icon={Bookmark} label="Saves" value={formatNum(tool.saves)} />}
               {upvoteCount > 0 && <StatCard icon={ThumbsUp} label="Upvotes" value={formatNum(upvoteCount)} />}
@@ -706,7 +706,7 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
         <div className="space-y-5">
           {tool.pricingTiers?.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {tool.pricingTiers.map(tier => <PricingCard key={tier.name} tier={tier} />)}
               </div>
               <div className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5">

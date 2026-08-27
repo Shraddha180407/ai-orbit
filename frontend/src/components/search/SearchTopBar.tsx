@@ -33,7 +33,7 @@ export function SearchTopBar() {
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-search-accent text-white">
               <Sparkles size={14} />
             </span>
-            <span className="hidden lg:inline">The&nbsp;AI&nbsp;Signal</span>
+            <span className="hidden lg:inline">AI&nbsp;Orbit</span>
           </Link>
 
           {/* Free mode toggle — cosmetic, matches the reference site's mode switch */}

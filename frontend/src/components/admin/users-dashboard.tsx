@@ -148,7 +148,7 @@ export function UsersDashboard() {
 
       <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0A] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[640px] text-sm text-left">
             <thead className="text-xs text-[#8A8F98] uppercase bg-white/[0.02] border-b border-white/[0.06]">
               <tr>
                 <th className="px-6 py-3 font-medium">User</th>

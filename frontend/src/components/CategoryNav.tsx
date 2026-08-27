@@ -55,8 +55,8 @@ export function CategoryNav() {
 
   return (
     // Explicit overflow-visible added to prevent clipping
-    <div className="w-full border-b border-[#232326]/40 bg-[#000000] py-4 sticky top-navbar z-[9999] select-none overflow-visible">
-      <div className="mx-auto max-w-[1440px] px-8 overflow-visible">
+    <div className="w-full border-b border-[#232326]/40 bg-[#000000] py-3 sm:py-4 sticky top-navbar z-30 select-none overflow-visible">
+      <div className="mx-auto max-w-[1440px] px-3 sm:px-8 overflow-visible">
         
         <div className="flex flex-nowrap gap-2 items-center w-full relative overflow-visible">
           

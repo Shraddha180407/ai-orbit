@@ -355,7 +355,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
   return (
     <>
       <section
-        className="relative z-20 w-full flex flex-col items-center pt-4 pb-6 px-6"
+        className="relative z-20 w-full flex flex-col items-center pt-4 pb-6 px-3 sm:px-6"
         style={{
           backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
@@ -369,7 +369,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
         </div>
 
         <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
-          <h1 className="max-w-[820px] text-2xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.1] mb-4 sm:mb-6 select-none text-white text-balance">
+          <h1 className="max-w-[820px] text-2xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.15] mb-3.5 sm:mb-6 select-none text-white text-balance">
             The Home of Everything AI
           </h1>
 
@@ -410,7 +410,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
             `}</style>
 
             {searchOpen && (
-              <div className="search-scope absolute left-0 right-0 top-[calc(100%+8px)] z-30 max-h-[300px] overflow-y-auto rounded-xl border border-search-border bg-search-bg shadow-2xl shadow-black/40 text-left">
+              <div className="search-scope absolute left-0 right-0 top-[calc(100%+8px)] z-30 max-h-[min(380px,calc(100vh-200px))] overflow-y-auto overscroll-contain rounded-xl border border-search-border bg-search-bg shadow-2xl shadow-black/60 text-left">
                 {showSuggestions ? (
                   <div className="p-2">
                     {isLoading ? (
@@ -565,27 +565,27 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
       <div className="border-b border-[#232326]/40 w-full z-10 relative" />
 
       {/* Sort control */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 pt-4">
+      <div className="w-full px-3 sm:px-6 lg:px-8 pt-3 sm:pt-4">
         <div className="mx-auto w-full max-w-[1600px] flex justify-end">
           <SortDropdown />
         </div>
       </div>
 
       {/* Directory nav strip */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
+      <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1">
         <div className="mx-auto w-full max-w-[1600px]">
           
           <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 w-full">
             
             {/* 1. The "New" Button wrapped in the Dropdown (Escaping overflow!) */}
-            <div className="shrink-0 relative z-[9999] overflow-visible">
+            <div className="shrink-0 relative z-20 overflow-visible">
               <UnifiedFilterDropdown>
                 {renderCard(DIRECTORY_CARDS[0])}
               </UnifiedFilterDropdown>
             </div>
 
             {/* 2. The rest of the categories (Safely scrollable) */}
-            <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none w-full">
+            <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none touch-pan-x w-full">
               {DIRECTORY_CARDS.slice(1).map(renderCard)}
             </div>
 

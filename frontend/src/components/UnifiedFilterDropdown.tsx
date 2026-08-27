@@ -78,7 +78,7 @@ export function UnifiedFilterDropdown({ children }: { children: React.ReactNode 
       {isOpen && (
         // The "pt-2" (padding-top) creates an invisible bridge so your mouse 
         // never leaves the component while moving downward!
-        <div className="absolute left-0 top-full pt-2 w-56 z-[99999]">
+        <div className="absolute left-0 top-full pt-2 w-56 z-50">
           <div className="w-full bg-[#111113] rounded-xl border border-[#232326] p-4 flex flex-col gap-4 shadow-2xl">
             <h3 className="text-[10px] font-bold tracking-widest text-[#71717A] uppercase">Show</h3>
             {FILTER_OPTIONS.map((option) => {

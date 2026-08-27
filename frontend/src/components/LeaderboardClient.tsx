@@ -640,7 +640,7 @@ export function LeaderboardClient() {
 
         {/* Hero Section matching Homepage layout & aesthetics */}
         <section
-          className="relative w-full flex flex-col items-center pt-8 pb-8 px-6 mb-8 rounded-2xl border border-[#232326]/70 bg-[#0d0d10] overflow-hidden"
+          className="relative w-full flex flex-col items-center pt-6 pb-6 sm:pt-8 sm:pb-8 px-3 sm:px-6 mb-6 sm:mb-8 rounded-2xl border border-[#232326]/70 bg-[#0d0d10] overflow-hidden"
           style={{
             backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
             backgroundSize: '32px 32px',

@@ -93,9 +93,9 @@ export function HeroFeatureChips() {
   };
 
   return (
-    <div className="hero-chip-row w-full max-w-4xl relative z-10 flex items-center justify-center overflow-hidden select-none">
+    <div className="hero-chip-row w-full max-w-4xl relative z-10 flex items-center justify-center overflow-x-auto scrollbar-none px-2 select-none">
       <div
-        className="flex flex-nowrap items-center"
+        className="flex flex-nowrap items-center mx-auto"
         style={{ gap: "calc(10px * var(--chip-scale))" }}
       >
         {FILTERS.map((f) => {
@@ -164,22 +164,7 @@ export function HeroFeatureChips() {
 
       <style jsx>{`
         .hero-chip-row {
-          /*
-           * A single dynamic scale factor, computed purely in CSS from the
-           * live viewport width — no JS measurement, no font-load race, no
-           * flash of the wrong size on first paint.
-           *
-           * It's a direct linear model of "available width / natural row
-           * width": (100vw - 48px page padding) / 560px assumed natural
-           * width (deliberately padded above the real ~480px measured
-           * width, so we shrink a bit earlier than strictly required
-           * rather than risk any overflow).
-           *
-           * Below ~320px viewports we hold at the 0.5 floor; from ~608px
-           * viewports upward the row already fits, so scale clamps to 1
-           * and desktop is rendered at its exact original size, untouched.
-           */
-          --chip-scale: clamp(0.5, calc((100vw - 48px) / 560px), 1);
+          --chip-scale: clamp(0.85, calc((100vw - 32px) / 480px), 1);
         }
       `}</style>
     </div>

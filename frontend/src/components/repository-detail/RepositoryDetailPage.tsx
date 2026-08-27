@@ -31,19 +31,19 @@ export function RepositoryDetailPage({ slug }: RepositoryDetailPageProps) {
   const wrapLayout = (content: React.ReactNode) => (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <Header />
-      <main className="mx-auto max-w-[1440px] px-8 pt-0 pb-12 flex-1 w-full">
+      <main className="mx-auto max-w-[1440px] px-3 sm:px-6 lg:px-8 pt-0 pb-12 flex-1 w-full">
         {content}
       </main>
       <Footer />
     </div>
   );
 
-  if (isError && !repo) {
-    return wrapLayout(<RepositoryErrorState message="Repository not found" />);
-  }
-
   if (isLoading && !repo) {
     return wrapLayout(<RepositoryLoadingSkeleton />);
+  }
+
+  if (isError || !repo) {
+    return wrapLayout(<RepositoryErrorState message="Repository not found" />);
   }
 
   return wrapLayout(

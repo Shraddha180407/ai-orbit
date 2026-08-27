@@ -180,7 +180,7 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo }: Reposit
         }}
         aria-label={`View details for ${repo.name} repository`}
         style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
-        className="block sm:hidden p-[12px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none flex justify-between items-center gap-[10px] border-b border-white/[0.06] last:border-b-0 cursor-pointer"
+        className="flex sm:hidden p-[12px] bg-transparent hover:bg-white/[0.02] transition-colors w-full focus-visible:bg-white/[0.02] focus-visible:outline-none justify-between items-center gap-[10px] border-b border-white/[0.06] last:border-b-0 cursor-pointer"
       >
         <div className="flex-1 min-w-0">
           {/* Row 1: Title & Owner */}
