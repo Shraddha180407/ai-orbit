@@ -42,8 +42,8 @@ export function TaskDetail({ task, relatedTasks, bookmarked, liked, subscribed }
   const title = task.title ?? "Untitled Task";
   const description = task.description ?? "";
 
-  const relevantTools = task.popularTools ?? [];
-const popularTool = relevantTools[0];
+  const relevantTools = task.toolItems ?? [];
+  const popularTool = task.popularTools?.[0];
   const subcategories = useMemo(() => getSubcategories(categorySlug), [categorySlug]);
 
   const [activeSubcategory, setActiveSubcategory] = useState<string | null>(null);
