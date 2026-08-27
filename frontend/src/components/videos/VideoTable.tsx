@@ -35,11 +35,27 @@ function formatViewsCompact(n: number) {
 return n.toLocaleString("en-US");
 }
 
-function SortIcon() {
+// Neutral state: small double-chevron (unsorted). Active state: a single
+// arrow that actually points up (ascending) or down (descending), so the
+// icon reflects real direction instead of always showing both.
+function SortDirectionIcon({ active, dir }: { active: boolean; dir: SortDir }) {
+if (!active) {
 return (
-<svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="shrink-0">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="shrink-0 opacity-50">
 <path d="M4.5 6.5 8 3l3.5 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
 <path d="M4.5 9.5 8 13l3.5-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+</svg>
+);
+}
+return (
+<svg
+width="12"
+height="12"
+viewBox="0 0 16 16"
+fill="none"
+className={`shrink-0 transition-transform ${dir === "asc" ? "" : "rotate-180"}`}
+>
+<path d="M4.5 9.5 8 6l3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
 </svg>
 );
 }
@@ -174,10 +190,41 @@ return next;
 });
 }
 
-// Sort order now comes from the backend (see VideosPageClient) — sorting
-// only the currently-loaded page(s) client-side gave wrong results across
-// the full dataset. This only filters out thumbnail failures locally.
-const sorted = videos.filter((v) => !failedThumbIds.has(v.id));
+// Level is fake/derived data (see levelFor above) — there's no real
+// backend field to sort by, so unlike Name/Posted/Duration/Views it's
+// sorted entirely client-side, against whatever page of results is
+// currently loaded, and lives as its own local state rather than going
+// through the parent's backend-driven sortBy/sortDir.
+const [levelSortDir, setLevelSortDir] = useState<SortDir | null>(null);
+
+function toggleLevelSort() {
+setLevelSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+}
+
+function handleColumnSort(key: VideoSortBy) {
+// Switching to a real backend-sorted column cancels any active local
+// Level sort, so only one sort is ever visibly "active" at a time.
+setLevelSortDir(null);
+onSortChange(key);
+}
+
+// Which column is active for highlighting/icon purposes — either the
+// parent's backend sort, or the local Level sort if one is active.
+const activeKey: VideoSortBy | "level" = levelSortDir !== null ? "level" : sortBy;
+const activeDir: SortDir = levelSortDir !== null ? levelSortDir : sortDir;
+
+// Sort order normally comes from the backend (see VideosPageClient) —
+// sorting only the currently-loaded page(s) client-side gave wrong
+// results across the full dataset. Level is the one exception, since
+// it's not real data the backend has anything to sort by.
+let sorted = videos.filter((v) => !failedThumbIds.has(v.id));
+if (levelSortDir !== null) {
+const order = { Beginner: 0, Intermediate: 1, Advanced: 2, Expert: 3 } as const;
+sorted = [...sorted].sort((a, b) => {
+const cmp = order[levelFor(a.id)] - order[levelFor(b.id)];
+return levelSortDir === "asc" ? cmp : -cmp;
+});
+}
 
 const columns: { key: VideoSortBy; label: string; align?: "right" }[] = [
 { key: "name", label: "Name" },
@@ -217,22 +264,27 @@ col.align === "right" ? "text-right" : ""
 } ${col.key === "name" ? "pl-4" : ""}`}
 >
 <button
-onClick={() => onSortChange(col.key)}
+onClick={() => handleColumnSort(col.key)}
 className={`inline-flex items-center gap-1.5 transition-colors hover:text-secondary ${
-sortBy === col.key ? "text-secondary" : ""
+activeKey === col.key ? "text-secondary" : ""
 } ${col.align === "right" ? "flex-row-reverse" : ""}`}
 >
 {col.label}
 {col.key === "name" && <FilterIcon />}
-<SortIcon />
+<SortDirectionIcon active={activeKey === col.key} dir={activeKey === col.key ? activeDir : "asc"} />
 </button>
 </th>
 ))}
 <th className="select-none px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted">
-<span className="inline-flex items-center gap-1.5">
+<button
+onClick={toggleLevelSort}
+className={`inline-flex items-center gap-1.5 transition-colors hover:text-secondary ${
+activeKey === "level" ? "text-secondary" : ""
+}`}
+>
 Level
-<FilterIcon />
-</span>
+<SortDirectionIcon active={activeKey === "level"} dir={activeKey === "level" ? activeDir : "asc"} />
+</button>
 </th>
 <th className="px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted">
 Category

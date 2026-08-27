@@ -142,7 +142,7 @@ export function VideosPageClient({
   }
 
   return (
-    <div className="w-full px-4">
+    <div className="w-full">
       <div className="w-full flex flex-col gap-0.5">
         <div id="videos-list-top" className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
           {VIDEO_CATEGORIES.map((topic) => {

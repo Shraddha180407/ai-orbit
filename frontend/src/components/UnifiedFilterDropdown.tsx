@@ -65,7 +65,8 @@ export function UnifiedFilterDropdown({ children }: { children: React.ReactNode 
 
   return (
     <div 
-      className="relative inline-block overflow-visible"
+      // FIXED: Added z-[100] to the parent wrapper so it creates a stacking context higher than the table
+      className="relative inline-block overflow-visible z-[100]"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -78,7 +79,8 @@ export function UnifiedFilterDropdown({ children }: { children: React.ReactNode 
       {isOpen && (
         // The "pt-2" (padding-top) creates an invisible bridge so your mouse 
         // never leaves the component while moving downward!
-        <div className="absolute left-0 top-full pt-2 w-56 z-50">
+        // FIXED: Bumped absolute z-index to an extremely high value (z-[9999])
+        <div className="absolute left-0 top-full pt-2 w-56 z-[9999]">
           <div className="w-full bg-[#111113] rounded-xl border border-[#232326] p-4 flex flex-col gap-4 shadow-2xl">
             <h3 className="text-[10px] font-bold tracking-widest text-[#71717A] uppercase">Show</h3>
             {FILTER_OPTIONS.map((option) => {

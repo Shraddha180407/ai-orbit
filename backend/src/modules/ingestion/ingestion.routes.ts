@@ -20,7 +20,7 @@ import { repositoriesIngestPayloadSchema } from "./repositories.ingest.schema.js
 import { RepositoriesIngestService } from "./repositories.ingest.service.js";
 import { mcpIngestPayloadSchema } from "./mcp.ingest.schema.js";
 import { MCPIngestService } from "./mcp.ingest.service.js";
-import { getPrismaTx } from "../../lib/prisma.js";
+import { getPrisma, getPrismaTx } from "../../lib/prisma.js";
 import { modelsIngestPayloadSchema } from "./models.ingest.schema.js";
 import { ModelsIngestService } from "./models.ingest.service.js";
 import { companiesIngestPayloadSchema } from "./companies.ingest.schema.js";
@@ -217,7 +217,7 @@ router.post("/models", requireIngestionToken, async (c) => {
       }, 422);
     }
 
-    const prisma = getPrismaTx(c.env);
+    const prisma = getPrisma(c.env);
     const summary = await ModelsIngestService.ingestModels(prisma, parsed.data);
 
     return c.json(summary, 200);
