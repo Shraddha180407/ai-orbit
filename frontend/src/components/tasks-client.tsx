@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 import {
   fetchTasks,
@@ -23,6 +23,7 @@ type TasksClientProps = {
 };
 
 const COLUMN_LABELS = ["TOOLS", "MODELS", "ROBOTS", "DEVICES"];
+const PAGE_SIZE = 100;
 
 const TASK_CATEGORIES = [
   { name: "All", slug: "" },
@@ -44,50 +45,55 @@ const TASK_CATEGORIES = [
 ];
 
 export function TasksClient({ initialData, defaultCategory = "" }: TasksClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [activeCategory, setActiveCategory] = useState<string>(() => {
-    return defaultCategory || searchParams.get("category") || "";
-  });
+
+  const activeCategory = defaultCategory || searchParams.get("category") || "";
+  const currentPage = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
 
   const [tasks, setTasks] = useState<Task[]>(initialData?.tasks ?? []);
-const [total, setTotal] = useState(initialData?.total ?? 0);
-const [page, setPage] = useState(initialData?.page ?? 1);
-const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
+  const [total, setTotal] = useState(initialData?.total ?? 0);
+  const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
 
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  // Guards against race conditions: only the most recently issued request
+  // is allowed to commit its result to state.
+  const requestIdRef = useRef(0);
 
   const rawSort = searchParams.get("sort") ?? "newest";
-const mappedSort: SortOption =
-  rawSort === "oldest" ? "oldest" :
-  rawSort === "name-asc" || rawSort === "name-desc" ? "alphabetical" :
-  rawSort === "rating" ? "popular" :
-  "newest";
+  const mappedSort: SortOption =
+    rawSort === "oldest" ? "oldest" :
+    rawSort === "name-asc" || rawSort === "name-desc" ? "alphabetical" :
+    rawSort === "rating" ? "popular" :
+    "newest";
 
-const queryParams = useMemo(
-  () => ({
-    sort: mappedSort as SortOption,
-    filter: "all" as FilterOption,
-    category: activeCategory || undefined,
-  }),
-  [activeCategory, mappedSort]
-);
+  const queryParams = useMemo(
+    () => ({
+      sort: mappedSort as SortOption,
+      filter: "all" as FilterOption,
+      category: activeCategory || undefined,
+    }),
+    [activeCategory, mappedSort]
+  );
 
-  const loadPage = useCallback(
-    async (pageNum: number, append: boolean) => {
+  const load = useCallback(
+    async (pageNum: number) => {
+      const requestId = ++requestIdRef.current;
       setIsFetching(true);
       setError(null);
       setAuthRequired(false);
       try {
-        const data = await fetchTasks({ ...queryParams, page: pageNum });
-        setTasks((prev) => (append ? [...prev, ...data.tasks] : data.tasks));
+        const data = await fetchTasks({ ...queryParams, page: pageNum, pageSize: PAGE_SIZE });
+        if (requestId !== requestIdRef.current) return; // stale response, ignore
+        setTasks(data.tasks);
         setTotal(data.total);
-        setPage(data.page);
         setTotalPages(data.totalPages);
       } catch (e) {
+        if (requestId !== requestIdRef.current) return;
         if (e instanceof AuthRequiredError) {
           setAuthRequired(true);
           setTasks([]);
@@ -96,7 +102,7 @@ const queryParams = useMemo(
           setError(e instanceof Error ? e.message : "Failed to load tasks.");
         }
       } finally {
-        setIsFetching(false);
+        if (requestId === requestIdRef.current) setIsFetching(false);
       }
     },
     [queryParams]
@@ -107,89 +113,81 @@ const queryParams = useMemo(
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
-      if (initialData) return;
+      if (initialData && currentPage === 1) return;
     }
-    setTasks([]);
-    setPage(1);
-    setTotalPages(1);
-    loadPage(1, false);
+    load(currentPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryParams.category, queryParams.sort, queryParams.filter]);
+  }, [queryParams.category, queryParams.sort, queryParams.filter, currentPage]);
 
-  const loadMore = useCallback(() => {
-    if (isFetching || page >= totalPages) return;
-    loadPage(page + 1, true);
-  }, [isFetching, page, totalPages, loadPage]);
+  const navigate = useCallback(
+    (params: { category?: string; page?: number }) => {
+      const next = new URLSearchParams(searchParams.toString());
 
-  useEffect(() => {
-    if (isFetching || page >= totalPages || authRequired) return;
+      if (params.category !== undefined) {
+        if (params.category) next.set("category", params.category);
+        else next.delete("category");
+        next.delete("page"); // reset to page 1 whenever category changes
+      }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) loadMore();
-      },
-      { threshold: 0.1 }
-    );
+      if (params.page !== undefined) {
+        if (params.page > 1) next.set("page", String(params.page));
+        else next.delete("page");
+      }
 
-    const currentSentinel = sentinelRef.current;
-    if (currentSentinel) observer.observe(currentSentinel);
+      const qs = next.toString();
+      router.push(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+    },
+    [router, pathname, searchParams]
+  );
 
-    return () => {
-      if (currentSentinel) observer.unobserve(currentSentinel);
-    };
-  }, [isFetching, page, totalPages, loadMore, authRequired]);
+  const goToPage = (p: number) => {
+    if (p < 1 || p > totalPages || p === currentPage) return;
+    navigate({ page: p });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
-  const isInitialLoading =
-  isFetching &&
-  tasks.length === 0 &&
-  !error &&
-  !authRequired;
-
-  const displayTasks = tasks;
+  const isInitialLoading = isFetching && tasks.length === 0 && !error && !authRequired;
 
   return (
-      <main className="w-full px-3 sm:px-6 lg:px-10 py-2 flex-1 selection:bg-neutral-800 selection:text-white">
-        <div className="mb-2 flex items-center justify-start sm:justify-center gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-1">
-          {TASK_CATEGORIES.map((topic) => {
-            const isSelected = activeCategory === topic.slug;
-            return (
-              <button
-                key={topic.name}
-                onClick={(e) => {
-                  setActiveCategory(topic.slug);
-                  const params = new URLSearchParams(searchParams.toString());
-                  if (topic.slug) params.set("category", topic.slug);
-                  else params.delete("category");
-                  window.history.pushState(null, "", `/tasks?${params.toString()}`);
-                  e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center"
-                  });
-                }}
-                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
-                  isSelected
-                    ? "bg-white text-black border-white shadow-lg shadow-white/5"
-                    : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                }`}
-              >
-                {topic.name}
-              </button>
-            );
-          })}
-        </div>
+    <main className="w-full px-3 sm:px-6 lg:px-10 py-2 flex-1 selection:bg-neutral-800 selection:text-white">
+      <div className="mb-2 flex items-center justify-start sm:[justify-content:safe_center] gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-1">
+        {TASK_CATEGORIES.map((topic) => {
+          const isSelected = activeCategory === topic.slug;
+          return (
+            <button
+              key={topic.name}
+              type="button"
+              aria-current={isSelected ? "true" : undefined}
+              onClick={(e) => {
+                navigate({ category: topic.slug });
+                e.currentTarget.scrollIntoView({
+                  behavior: "smooth",
+                  block: "nearest",
+                  inline: "center"
+                });
+              }}
+              className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                isSelected
+                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+              }`}
+            >
+              {topic.name}
+            </button>
+          );
+        })}
+      </div>
 
-        {isInitialLoading ? (
-          <TaskSkeleton />
-        ) : authRequired ? (
-          <TaskAuthRequired
-            message="Sign in to see tasks you're following."
-          />
-        ) : error && tasks.length === 0 ? (
-          <TaskErrorState message={error} onRetry={() => loadPage(1, false)} />
-        ) : displayTasks.length === 0 ? (
-          <EmptyTasks />
-        ) : (
+      {isInitialLoading ? (
+        <TaskSkeleton />
+      ) : authRequired ? (
+        <TaskAuthRequired message="Sign in to see tasks you're following." />
+      ) : error && tasks.length === 0 ? (
+        <TaskErrorState message={error} onRetry={() => load(currentPage)} />
+      ) : tasks.length === 0 ? (
+        <EmptyTasks />
+      ) : (
+        <>
           <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#131316]/60 to-[#0D0D10]/60 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_20px_60px_-30px_rgba(0,0,0,0.8)] ring-1 ring-[#232326]/70">
             <div className="overflow-x-auto scrollbar-none">
               <div className="min-w-[620px]">
@@ -206,25 +204,89 @@ const queryParams = useMemo(
                   ))}
                 </div>
 
-                {displayTasks.map((task) => (
+                {tasks.map((task) => (
                   <TaskCard key={task.id} task={task} />
                 ))}
               </div>
             </div>
 
-            {error && tasks.length > 0 && (
+            {error && (
               <div className="px-5 py-3 text-xs text-red-400 border-t border-[#232326]/60">
-                Failed to load more tasks: {error}
+                Failed to load tasks: {error}
               </div>
             )}
 
-            {page < totalPages && (
-              <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
+            {isFetching && !isInitialLoading && (
+              <div className="flex items-center justify-center py-6">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-[#A78BFA]" />
               </div>
             )}
           </div>
-        )}
-      </main>
+
+          {totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage <= 1 || isFetching}
+                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-neutral-300 bg-[#131316]/50 border border-[#232326]/60 hover:border-white/[0.15] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                Prev
+              </button>
+
+              {buildPageList(currentPage, totalPages).map((p, i) =>
+                p === "…" ? (
+                  <span key={`ellipsis-${i}`} className="px-1.5 text-xs text-[#71717A]">…</span>
+                ) : (
+                  <button
+                    key={p}
+                    type="button"
+                    aria-current={p === currentPage ? "true" : undefined}
+                    onClick={() => goToPage(p)}
+                    disabled={isFetching}
+                    className={`h-7 w-7 rounded-lg text-xs font-bold transition-all ${
+                      p === currentPage
+                        ? "bg-white text-black"
+                        : "text-neutral-400 hover:text-white bg-[#131316]/50 border border-[#232326]/60 hover:border-white/[0.15]"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+
+              <button
+                type="button"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage >= totalPages || isFetching}
+                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-neutral-300 bg-[#131316]/50 border border-[#232326]/60 hover:border-white/[0.15] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                Next
+              </button>
+            </div>
+          )}
+
+          <p className="mt-2 text-center text-[10px] font-mono text-[#71717A]">
+            {total.toLocaleString("en-US")} tasks · Page {currentPage} of {totalPages}
+          </p>
+        </>
+      )}
+    </main>
   );
+}
+
+/** Builds a compact page-number list with ellipses, e.g. [1, "…", 4, 5, 6, "…", 20] */
+function buildPageList(current: number, total: number): (number | "…")[] {
+  const delta = 1;
+  const range: (number | "…")[] = [];
+  const rangeStart = Math.max(2, current - delta);
+  const rangeEnd = Math.min(total - 1, current + delta);
+
+  range.push(1);
+  if (rangeStart > 2) range.push("…");
+  for (let i = rangeStart; i <= rangeEnd; i++) range.push(i);
+  if (rangeEnd < total - 1) range.push("…");
+  if (total > 1) range.push(total);
+
+  return range;
 }
