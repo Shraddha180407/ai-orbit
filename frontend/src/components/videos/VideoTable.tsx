@@ -121,13 +121,17 @@ className={`shrink-0 transition-transform ${sortDir === "asc" ? "rotate-180" : "
 
 function MobileTable({ videos, onThumbFailed }: { videos: Video[]; onThumbFailed: (id: string) => void }) {
 return (
-<table className="w-full border-collapse sm:hidden">
+<table className="w-full table-fixed border-collapse sm:hidden">
+<colgroup>
+<col />
+<col className="w-[92px]" />
+</colgroup>
 <thead>
 <tr className="border-b border-white/[0.05]">
 <th className="select-none py-2 pl-0 pr-2 text-left font-mono text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted">
 Name
 </th>
-<th className="w-[92px] select-none py-2 pl-2 pr-0 text-right font-mono text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+<th className="select-none py-2 pl-2 pr-0 text-right font-mono text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted">
 Posted
 </th>
 </tr>
@@ -136,7 +140,7 @@ Posted
 {videos.map((v) => (
 <tr key={v.id} className="border-b border-white/[0.05] active:bg-bg-hover" style={{ ["--row-accent" as string]: v.accent }}>
 <td className="py-2.5 pr-2">
-<Link href={`/videos/${v.slug}`} className="flex items-center gap-2.5">
+<Link href={`/videos/${v.slug}`} className="flex min-w-0 items-center gap-2.5">
 <span className="relative block h-[46px] w-[80px] shrink-0 overflow-hidden rounded-md bg-bg-elevated">
 <ThumbImage
 src={v.thumbnail}
@@ -150,7 +154,7 @@ onError={() => onThumbFailed(v.id)}
 {formatDuration(v.durationSeconds)}
 </span>
 </span>
-<span className="line-clamp-2 min-w-0 text-[13px] font-medium leading-snug text-primary">
+<span className="block min-w-0 truncate text-[13px] font-medium leading-snug text-primary">
 {v.title}
 </span>
 </Link>
@@ -267,7 +271,7 @@ col.align === "right" ? "text-right" : ""
 onClick={() => handleColumnSort(col.key)}
 className={`inline-flex items-center gap-1.5 transition-colors hover:text-secondary ${
 activeKey === col.key ? "text-secondary" : ""
-} ${col.align === "right" ? "flex-row-reverse" : ""}`}
+}`}
 >
 {col.label}
 {col.key === "name" && <FilterIcon />}
@@ -326,7 +330,7 @@ onError={() => markThumbFailed(v.id)}
 </span>
 </span>
 <span className="min-w-0">
-<span className="line-clamp-2 text-[15px] font-medium leading-snug text-primary transition-colors group-hover:text-[var(--row-accent)]">
+<span className="block truncate text-[15px] font-medium leading-snug text-primary transition-colors group-hover:text-[var(--row-accent)]">
 {v.title}
 </span>
 </span>

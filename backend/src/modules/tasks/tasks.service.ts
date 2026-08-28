@@ -86,7 +86,7 @@ export class TasksService {
     userId?: string;
   }) {
     const pageNum = Math.max(1, filters.page || 1);
-    const limit = 12;
+    const limit = 100;
     const skip = (pageNum - 1) * limit;
 
     const where: Prisma.TaskWhereInput = {};

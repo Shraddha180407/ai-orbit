@@ -57,10 +57,13 @@ type ToolListViewProps = {
   skeletonRows?: number;
 };
 
-// FIXED: Adjusted grid template to account for internal padding and smaller mobile columns
-const COL_TEMPLATE =
-  "grid-cols-[48px_200px_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_minmax(80px,0.7fr)_44px_44px_60px] md:grid-cols-[60px_minmax(280px,3.5fr)_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_minmax(80px,0.7fr)_44px_44px_60px]";
-const COL_MIN_WIDTH = "min-w-fit md:min-w-[1150px]";
+// FIXED: Removed the Compatibility column from the MIXED feed grid templates
+const COL_TEMPLATE_MIXED = "grid-cols-[48px_200px_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_44px_44px_60px] md:grid-cols-[60px_minmax(280px,3.5fr)_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_44px_44px_60px]";
+const COL_MIN_WIDTH_MIXED = "min-w-fit md:min-w-[1070px]";
+
+// Tool feed layout remains exactly the same
+const COL_TEMPLATE_SPLIT = "grid-cols-[48px_85px_175px_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_minmax(80px,0.7fr)_44px_44px_60px] md:grid-cols-[60px_minmax(280px,3.5fr)_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_minmax(80px,0.7fr)_44px_44px_60px]";
+const COL_MIN_WIDTH_SPLIT = "min-w-fit md:min-w-[1150px]";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -91,7 +94,6 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
   return <span className="text-[#6E56CF] text-[10px]">{dir === "desc" ? "↓" : "↑"}</span>;
 }
 
-// FIXED: Added responsive classes to make the image slightly smaller on mobile
 function LogoCell({ name, logoUrl }: { name: string; logoUrl: string | null }) {
   const [failed, setFailed] = React.useState(false);
   if (!logoUrl || failed) {
@@ -219,6 +221,7 @@ function ToolRow({
   isCompareFull,
   onToggleCompare,
   basePath = "/tools",
+  isMixedFeed = false,
 }: {
   tool: ListTool;
   index: number;
@@ -226,11 +229,15 @@ function ToolRow({
   isCompareFull: boolean;
   onToggleCompare: (t: ListTool) => void;
   basePath?: string;
+  isMixedFeed?: boolean;
 }) {
   const router = useRouter();
   const accentColor = ROW_ACCENT_COLORS[index % ROW_ACCENT_COLORS.length];
   const isOpenSource = isTruthy(tool.isOpenSource, tool.openSource);
   const hasApi = isTruthy(tool.hasApi);
+
+  const activeTemplate = isMixedFeed ? COL_TEMPLATE_MIXED : COL_TEMPLATE_SPLIT;
+  const activeMinWidth = isMixedFeed ? COL_MIN_WIDTH_MIXED : COL_MIN_WIDTH_SPLIT;
 
   let targetPath = basePath;
   let identifier = tool.slug;
@@ -256,8 +263,7 @@ function ToolRow({
     <div
       onClick={() => router.push(targetUrl)}
       role="listitem"
-      // FIXED: Removed px-4 from the row and moved it to the column edges so the sticky background covers the edges perfectly
-      className={`cursor-pointer group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
+      className={`cursor-pointer group grid ${activeTemplate} ${activeMinWidth} items-center gap-3 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative`}
       onMouseEnter={(e) => {
         prefetchRow();
         const el = e.currentTarget;
@@ -281,11 +287,9 @@ function ToolRow({
         if (nameEl) nameEl.style.color = "";
       }}
     >
-      {/* FIXED: Added pl-4 to the sticky column itself, and reduced logo container size on mobile */}
-      {/* Col 1: Logo (Sticky on mobile) */}
       <div
         data-sticky-first="true"
-        className="sticky left-0 md:static z-20 flex h-full items-center bg-[#000000] md:bg-transparent pl-4 transition-all duration-200"
+        className={`${!isMixedFeed ? "sticky left-0 md:static z-20 shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none" : ""} flex h-full items-center bg-[#000000] md:bg-transparent pl-4 transition-all duration-200`}
       >
         <div
           data-logo="true"
@@ -295,41 +299,85 @@ function ToolRow({
         </div>
       </div>
 
-      {/* FIXED: The before: selector perfectly fills the 12px gap so scrolling text is hidden! */}
-      {/* Col 2: Name + description (Sticky on mobile) */}
-      <div className="min-w-0 sticky left-[60px] md:static z-20 bg-[#000000] group-hover:bg-[#000000] md:bg-transparent md:group-hover:bg-transparent h-full flex flex-col justify-center before:content-[''] before:absolute before:inset-y-0 before:-left-[12px] before:w-[12px] before:bg-[#000000] md:before:hidden shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none pr-4 md:pr-0 transition-colors">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <h3
-            data-name="true"
-            className="truncate text-[13px] font-semibold text-white transition-colors duration-200"
-          >
-            {tool.name}
-          </h3>
-          {tool.isVerified && (
-            <BadgeCheck size={13} className="shrink-0 text-blue-400" aria-label="Verified" />
-          )}
-          {tool.isFeatured && (
-            <Sparkles size={13} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
-          )}
-          {tool.websiteUrl ? (
-            <a
-              href={tool.websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="text-[#71717A] hover:text-white transition-colors shrink-0"
-              aria-label={`Visit ${tool.name} website`}
+      {isMixedFeed ? (
+        <div className="min-w-0 flex flex-col justify-center pr-4 md:pr-0 transition-colors h-full">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h3
+              data-name="true"
+              className="truncate text-[13px] font-semibold text-white transition-colors duration-200"
             >
-              <ExternalLink size={13} />
-            </a>
-          ) : (
-            <span className="text-[#71717A] opacity-30 shrink-0"><ExternalLink size={13} /></span>
-          )}
+              {tool.name}
+            </h3>
+            {tool.isVerified && (
+              <BadgeCheck size={13} className="shrink-0 text-blue-400" aria-label="Verified" />
+            )}
+            {tool.isFeatured && (
+              <Sparkles size={13} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
+            )}
+            {tool.websiteUrl ? (
+              <a
+                href={tool.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-[#71717A] hover:text-white transition-colors shrink-0 hidden md:inline-flex"
+                aria-label={`Visit ${tool.name} website`}
+              >
+                <ExternalLink size={13} />
+              </a>
+            ) : (
+              <span className="text-[#71717A] opacity-30 shrink-0 hidden md:inline-flex"><ExternalLink size={13} /></span>
+            )}
+          </div>
+          <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis md:text-clip">
+            {trimNoDots(tool.description || "")}
+          </p>
         </div>
-        <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis md:text-clip">
-          {trimNoDots(tool.description || "")}
-        </p>
-      </div>
+      ) : (
+        <>
+          <div className="min-w-0 sticky left-[60px] md:static z-20 bg-[#000000] group-hover:bg-[#18181C] md:bg-transparent md:group-hover:bg-transparent h-full flex flex-col justify-center before:content-[''] before:absolute before:inset-y-0 before:-left-[12px] before:w-[12px] before:bg-[#000000] group-hover:before:bg-[#18181C] md:before:hidden shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none pr-1 md:pr-0 transition-colors">
+            <div className="flex flex-col md:flex-row md:items-center gap-0.5 md:gap-1.5 min-w-0">
+              <h3
+                data-name="true"
+                className="text-[11.5px] md:text-[13px] line-clamp-2 md:truncate font-semibold text-white transition-colors duration-200 leading-tight break-words"
+              >
+                {tool.name}
+              </h3>
+              <div className="flex items-center gap-1 shrink-0">
+                {tool.isVerified && (
+                  <BadgeCheck size={12} className="shrink-0 text-blue-400" aria-label="Verified" />
+                )}
+                {tool.isFeatured && (
+                  <Sparkles size={12} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
+                )}
+                {tool.websiteUrl ? (
+                  <a
+                    href={tool.websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-[#71717A] hover:text-white transition-colors shrink-0 hidden md:inline-flex"
+                    aria-label={`Visit ${tool.name} website`}
+                  >
+                    <ExternalLink size={13} />
+                  </a>
+                ) : (
+                  <span className="text-[#71717A] opacity-30 shrink-0 hidden md:inline-flex"><ExternalLink size={13} /></span>
+                )}
+              </div>
+            </div>
+            <p className="hidden md:block mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis md:text-clip">
+              {trimNoDots(tool.description || "")}
+            </p>
+          </div>
+
+          <div className="md:hidden min-w-0 flex flex-col justify-center pr-2 h-full">
+            <p className="text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis">
+              {trimNoDots(tool.description || "")}
+            </p>
+          </div>
+        </>
+      )}
 
       {/* Col 3: Task */}
       <div className="min-w-0 pl-4 md:pl-0">
@@ -362,25 +410,27 @@ function ToolRow({
         <BoolPill value={isOpenSource} trueLabel="YES" falseLabel="NO" />
       </div>
 
-      {/* Col 7: Compatibility */}
-      <div className="min-w-0">
-        {tool.compatibility && tool.compatibility.length > 0 ? (
-          <div className="flex gap-1 flex-wrap">
-            {tool.compatibility.slice(0, 2).map((c, i) => (
-              <span key={i} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
-                {c}
-              </span>
-            ))}
-            {tool.compatibility.length > 2 && (
-              <span className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
-                +{tool.compatibility.length - 2}
-              </span>
-            )}
-          </div>
-        ) : (
-          <span className="text-[11px] text-[#71717A] font-mono">—</span>
-        )}
-      </div>
+      {/* Col 7: Compatibility (Hidden in Mixed Feed) */}
+      {!isMixedFeed && (
+        <div className="min-w-0">
+          {tool.compatibility && tool.compatibility.length > 0 ? (
+            <div className="flex gap-1 flex-wrap">
+              {tool.compatibility.slice(0, 2).map((c, i) => (
+                <span key={i} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+                  {c}
+                </span>
+              ))}
+              {tool.compatibility.length > 2 && (
+                <span className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+                  +{tool.compatibility.length - 2}
+                </span>
+              )}
+            </div>
+          ) : (
+            <span className="text-[11px] text-[#71717A] font-mono">—</span>
+          )}
+        </div>
+      )}
 
       {/* Col 8: Released */}
       <div className="text-[10px] font-mono text-[#A1A1AA]">
@@ -398,7 +448,6 @@ function ToolRow({
       </div>
 
       {/* Col 11: Compare */}
-      {/* FIXED: Added right padding specifically to the final column to keep standard borders clean */}
       <div onClick={(e) => e.preventDefault()} className="pr-4">
         <button
           type="button"
@@ -506,23 +555,51 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     return list;
   }, [tools, nameSearch, sortKey, sortDir]);
 
+  const isMixedFeed = tools.some(t => 
+    t.entityType === 'NEWS' || t.entityType === 'VIDEO' || t.entityType === 'ROBOT' || 
+    t.entityType === 'COMPANY' || t.entityType === 'DEVICE' || t.entityType === 'MODEL' || t.entityType === 'REPOSITORY'
+  );
+  
+  const activeTemplate = isMixedFeed ? COL_TEMPLATE_MIXED : COL_TEMPLATE_SPLIT;
+  const activeMinWidth = isMixedFeed ? COL_MIN_WIDTH_MIXED : COL_MIN_WIDTH_SPLIT;
+
   if (loading) {
     return (
       <div className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
-        <div className={`bg-[#000000] ${COL_MIN_WIDTH}`}>
+        <div className={`bg-[#000000] ${activeMinWidth}`}>
           <div className="flex flex-col divide-y divide-[#232326]/60">
             {Array.from({ length: skeletonRows }).map((_, i) => (
-              <div key={i} className={`grid ${COL_TEMPLATE} items-center gap-3 py-3`}>
+              <div key={i} className={`grid ${activeTemplate} items-center gap-3 py-3`}>
                 <div className="pl-4"><div className="h-8 w-8 md:h-11 md:w-11 animate-pulse rounded-lg bg-[#18181C]" /></div>
-                <div className="space-y-1.5 pr-4 md:pr-0">
-                  <div className="h-3 w-32 animate-pulse rounded bg-[#18181C]" />
-                  <div className="h-2 w-48 animate-pulse rounded bg-[#18181C]" />
-                </div>
+                
+                {isMixedFeed ? (
+                  <div className="space-y-1.5 pr-4 md:pr-0">
+                    <div className="h-3 w-32 animate-pulse rounded bg-[#18181C]" />
+                    <div className="h-2 w-48 animate-pulse rounded bg-[#18181C]" />
+                  </div>
+                ) : (
+                  <>
+                    {/* Skeleton Mobile Name / Desktop Combined */}
+                    <div className="space-y-1.5 pr-2 md:pr-0">
+                      <div className="h-3 w-16 md:w-32 animate-pulse rounded bg-[#18181C]" />
+                      <div className="hidden md:block h-2 w-48 animate-pulse rounded bg-[#18181C]" />
+                    </div>
+                    {/* Skeleton Mobile Description */}
+                    <div className="md:hidden pr-4">
+                      <div className="h-2 w-32 animate-pulse rounded bg-[#18181C]" />
+                    </div>
+                  </>
+                )}
+
                 <div className="h-4 w-16 animate-pulse rounded-full bg-[#18181C]" />
                 <div className="h-4 w-16 animate-pulse rounded-full bg-[#18181C]" />
                 <div className="h-4 w-8 animate-pulse rounded-full bg-[#18181C]" />
                 <div className="h-4 w-8 animate-pulse rounded-full bg-[#18181C]" />
-                <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
+                
+                {!isMixedFeed && (
+                  <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
+                )}
+
                 <div className="h-3 w-16 animate-pulse rounded bg-[#18181C]" />
                 <div className="h-7 w-7 animate-pulse rounded-md bg-[#18181C]" />
                 <div className="h-7 w-7 animate-pulse rounded-md bg-[#18181C]" />
@@ -547,58 +624,72 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     );
   }
 
+  const dropdownHTML = (
+    <>
+      <button
+        onClick={() => handleSort("name")}
+        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1"
+      >
+        TOOL <SortIcon active={sortKey === "name"} dir={sortDir} />
+      </button>
+      <button onClick={() => setOpenDropdown(openDropdown === "name" ? null : "name")} className="hover:text-white transition-colors">
+        <FilterIcon active={nameSearch.length > 0} />
+      </button>
+      {openDropdown === "name" && (
+        <div className="absolute top-8 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-3 min-w-[210px]">
+          <input
+            autoFocus
+            type="text"
+            placeholder="Filter by name..."
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { setNameSearch(nameInput); setOpenDropdown(null); } }}
+            className="w-full bg-[#131316] border border-[#232326] text-white text-xs rounded px-2 py-1.5 placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF]"
+          />
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => { setNameSearch(nameInput); setOpenDropdown(null); }}
+              className="flex-1 text-[10px] bg-[#6E56CF] hover:bg-[#7C66DF] text-white py-1.5 rounded transition-colors font-semibold"
+            >Apply</button>
+            {nameSearch && (
+              <button
+                onClick={() => { setNameSearch(""); setNameInput(""); setOpenDropdown(null); }}
+                className="flex-1 text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors"
+              >Clear</button>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <>
       <div
         ref={dropdownRef}
         className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
       >
-        <div className={`relative bg-[#000000] ${COL_MIN_WIDTH}`}>
+        <div className={`relative bg-[#000000] ${activeMinWidth}`}>
 
           {/* ── Header row ───────────────────────────────────────────────────── */}
           <div className="border-b border-[#232326]/60 bg-[#131316] sticky top-0 z-30">
-            <div className={`grid ${COL_TEMPLATE} items-center gap-3 py-3`}>
+            <div className={`grid ${activeTemplate} items-center gap-3 py-3`}>
 
               {/* Logo col header */}
-              <div className="sticky left-0 md:static z-40 bg-[#131316] md:bg-transparent h-full pl-4" />
+              <div className={`${!isMixedFeed ? "sticky left-0 md:static z-40 shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none" : ""} bg-[#131316] md:bg-transparent h-full pl-4`} />
 
-              {/* TOOL col header */}
-              <div className="relative flex items-center gap-2 sticky left-[60px] md:static z-40 bg-[#131316] md:bg-transparent shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none h-full pr-4 md:pr-0 before:content-[''] before:absolute before:inset-y-0 before:-left-[12px] before:w-[12px] before:bg-[#131316] md:before:hidden">
-                <button
-                  onClick={() => handleSort("name")}
-                  className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1"
-                >
-                  TOOL <SortIcon active={sortKey === "name"} dir={sortDir} />
-                </button>
-                <button onClick={() => setOpenDropdown(openDropdown === "name" ? null : "name")} className="hover:text-white transition-colors">
-                  <FilterIcon active={nameSearch.length > 0} />
-                </button>
-                {openDropdown === "name" && (
-                  <div className="absolute top-8 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-3 min-w-[210px]">
-                    <input
-                      autoFocus
-                      type="text"
-                      placeholder="Filter by name..."
-                      value={nameInput}
-                      onChange={(e) => setNameInput(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") { setNameSearch(nameInput); setOpenDropdown(null); } }}
-                      className="w-full bg-[#131316] border border-[#232326] text-white text-xs rounded px-2 py-1.5 placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF]"
-                    />
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={() => { setNameSearch(nameInput); setOpenDropdown(null); }}
-                        className="flex-1 text-[10px] bg-[#6E56CF] hover:bg-[#7C66DF] text-white py-1.5 rounded transition-colors font-semibold"
-                      >Apply</button>
-                      {nameSearch && (
-                        <button
-                          onClick={() => { setNameSearch(""); setNameInput(""); setOpenDropdown(null); }}
-                          className="flex-1 text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors"
-                        >Clear</button>
-                      )}
-                    </div>
+              {isMixedFeed ? (
+                <div className="relative flex items-center gap-2 h-full pr-4 md:pr-0">
+                  {dropdownHTML}
+                </div>
+              ) : (
+                <>
+                  <div className="relative flex items-center gap-2 sticky left-[60px] md:static z-40 bg-[#131316] md:bg-transparent shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none h-full pr-2 md:pr-0 before:content-[''] before:absolute before:inset-y-0 before:-left-[12px] before:w-[12px] before:bg-[#131316] md:before:hidden">
+                    {dropdownHTML}
                   </div>
-                )}
-              </div>
+                  <span className="md:hidden text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pr-2">DESCRIPTION</span>
+                </>
+              )}
 
               {/* TASK */}
               <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pl-4 md:pl-0">TASK</span>
@@ -612,8 +703,10 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               {/* OPEN-SOURCE */}
               <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">OPEN-SOURCE</span>
 
-              {/* COMPATIBILITY */}
-              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">COMPATIBILITY</span>
+              {/* COMPATIBILITY (Hidden in Mixed Feed) */}
+              {!isMixedFeed && (
+                <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">COMPATIBILITY</span>
+              )}
 
               {/* RELEASED */}
               <button
@@ -645,6 +738,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
                 isCompareFull={compareSet.length >= MAX_COMPARE}
                 onToggleCompare={toggleCompare}
                 basePath={basePath}
+                isMixedFeed={isMixedFeed}
               />
             ))}
           </div>

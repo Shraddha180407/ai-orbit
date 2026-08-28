@@ -96,6 +96,7 @@ export type FetchTasksParams = {
   sort?: SortOption;
   filter?: FilterOption;
   page?: number;
+  pageSize?: number;
 };
 
 class TasksApiError extends Error {
@@ -125,6 +126,7 @@ function buildQueryString(params: FetchTasksParams): string {
   if (params.sort) search.set("sort", params.sort);
   if (params.filter && params.filter !== "all") search.set("filter", params.filter);
   if (params.page) search.set("page", String(params.page));
+  if (params.pageSize) search.set("pageSize", String(params.pageSize));
 
   const qs = search.toString();
   return qs ? `?${qs}` : "";

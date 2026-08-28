@@ -80,7 +80,7 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
       description: `Details and specifications for ${formattedSlug}.`,
     };
   }
-  
+
   if (type === "mcp") {
     return {
       title: `${formattedSlug} — Model Context Protocol (MCP) | AI Orbit`,
@@ -125,7 +125,7 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
 export default async function UnifiedEntityPage({ params }: UnifiedEntityPageProps) {
   const resolvedParams = await params;
   const { type, slug } = resolvedParams;
-  
+
   if ((type === "tools" || type === "personal" || type === "creativity" || type === "agents") && VALID_CATEGORIES[type]?.has(slug)) {
     return (
       <div className="flex flex-col flex-1">
@@ -134,7 +134,7 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
         <Suspense fallback={
           <main className="mx-auto max-w-container px-6 py-10 flex-1">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {[1,2,3,4,5,6,7,8].map((i) => (
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
               ))}
             </div>
@@ -156,7 +156,7 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
         <Suspense fallback={
           <main className="mx-auto max-w-container px-6 py-10 flex-1">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {[1,2,3,4,5,6,7,8].map((i) => (
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
               ))}
             </div>
@@ -277,22 +277,16 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     </div>
   );
   if (type === "mcp") {
+    // ONLY fetch the main item on the server. Do not wait for alternatives!
     const item = await fetchMCPItemBySlug(slug);
     if (!item) return notFound();
 
-    // Fetch alternatives safely so failed fetch doesn't block critical page load
-    let initialAlternatives: any[] = [];
-    try {
-      initialAlternatives = await fetchMCPItemAlternatives(slug);
-    } catch (err) {
-      console.warn("Failed to prefetch alternatives for MCP detail page on server:", err);
-    }
-
     return (
-      <div className="flex flex-col flex-1">
-
-        <MCPDetailClient item={item} initialAlternatives={initialAlternatives} />
-
+      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+        <Header />
+        {/* Pass undefined for alternatives, letting the client fetch them in the background */}
+        <MCPDetailClient item={item} initialAlternatives={undefined} />
+        <Footer />
       </div>
     );
   }

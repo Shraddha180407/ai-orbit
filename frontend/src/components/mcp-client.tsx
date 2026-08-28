@@ -56,20 +56,24 @@ export const MCP_SUBCATEGORIES: MCPSubCategory[] = [
 export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { defaultCategory?: string; defaultSubCategory?: string }) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  
+  const q = searchParams.get("q") ?? "";
 
-  // FIXED: Added local React state to track the active subcategory so the query knows when to refetch!
   const initialSub = defaultSubCategory || defaultCategory || searchParams.get("subCategory") || searchParams.get("category") || "";
   const [activeSubCategory, setActiveSubCategory] = useState<string>(initialSub);
 
-  const q = searchParams.get("q") ?? "";
+  useEffect(() => {
+    const currentParam = searchParams.get("subCategory") || searchParams.get("category") || "";
+    if (currentParam !== activeSubCategory) {
+      setActiveSubCategory(currentParam);
+    }
+  }, [searchParams]);
 
   const handleSelectSubCategory = (slug: string | null) => {
     const newSlug = slug === activeSubCategory ? "" : (slug || "");
     
-    // 1. Update React state immediately so the data re-fetches
     setActiveSubCategory(newSlug);
 
-    // 2. Silently update the URL without triggering Next.js router layout re-renders
     const currentSearch = typeof window !== "undefined" ? window.location.search : searchParams.toString();
     const params = new URLSearchParams(currentSearch);
     params.delete("category");
@@ -100,16 +104,19 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
       "mcpItems",
       {
         q,
-        subCategory: activeSubCategory, // FIXED: Using the local state here
+        subCategory: activeSubCategory,
       },
     ],
     queryFn: async ({ pageParam }) => {
-      return fetchMCPItems({
+      const apiParams: any = {
         page: pageParam as number,
         limit: 20,
-        search: q || undefined,
-        subCategory: activeSubCategory || undefined, // FIXED: Using the local state here
-      });
+      };
+      
+      if (q) apiParams.search = q;
+      if (activeSubCategory) apiParams.subCategory = activeSubCategory;
+
+      return fetchMCPItems(apiParams);
     },
     retry: false,
     refetchOnWindowFocus: false,
@@ -122,7 +129,15 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
   });
 
   const items = React.useMemo(() => {
-    return data?.pages.flatMap((page) => page.items || []) || [];
+    const fetchedItems = data?.pages.flatMap((page) => page.items || []) || [];
+    
+    return fetchedItems.sort((a: any, b: any) => {
+      const getScore = (item: any) => {
+        if (item.logoUrl && item.shortDescription && item.shortDescription.trim() !== "") return 2;
+        return 1;
+      };
+      return getScore(b) - getScore(a);
+    });
   }, [data]);
 
   const sentinelRef = React.useRef<HTMLDivElement>(null);
@@ -259,13 +274,17 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                   <div className={`grid ${COL_TEMPLATE} items-center gap-4 py-2`}>
                     {COLUMN_HEADERS.map((h, i) => {
                       if (i === 0) return <div key={i} className="sticky left-0 md:static z-40 bg-[#131316] md:bg-transparent h-full pl-4" />;
+                      
                       if (i === 1) return (
                         <div key={i} className="relative flex items-center gap-2 sticky left-[60px] md:static z-40 bg-[#131316] md:bg-transparent shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none h-full pr-4 md:pr-0 before:content-[''] before:absolute before:inset-y-0 before:-left-[12px] before:w-[12px] before:bg-[#131316] md:before:hidden">
                           <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase">{h}</span>
                         </div>
                       );
+                      
                       if (i === 2) return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase pl-4 md:pl-0">{h}</span>;
-                      if (i === COLUMN_HEADERS.length - 1) return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase pr-4 md:pr-0">{h}</span>;
+                      if (i >= 3 && i <= 6) return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase text-center block w-full">{h}</span>;
+                      if (i === COLUMN_HEADERS.length - 1) return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase pr-4 md:pr-0 text-center block w-full">{h}</span>;
+                      
                       return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase">{h}</span>;
                     })}
                   </div>
@@ -275,18 +294,28 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                 <div role="list" className="flex flex-col divide-y divide-[#232326]/60">
                   {items.map((item) => {
                     const primaryCategory = item.categories?.[0]?.name;
+                    const targetUrl = `/p/mcp/${item.slug}`;
+                    const prefetchRow = () => {
+                      try {
+                        router.prefetch(targetUrl);
+                      } catch {}
+                    };
+
                     return (
                       <div
                         key={item.id}
                         role="listitem"
                         tabIndex={0}
-                        onClick={() => router.push(`/p/mcp/${item.slug}`)}
+                        onClick={() => router.push(targetUrl)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            router.push(`/p/mcp/${item.slug}`);
+                            router.push(targetUrl);
                           }
                         }}
+                        onMouseEnter={prefetchRow}
+                        onTouchStart={prefetchRow}
+                        onFocus={prefetchRow}
                         className={`group grid ${COL_TEMPLATE} items-center gap-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none relative cursor-pointer`}
                       >
                         {/* Column 1: Logo */}
@@ -328,7 +357,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                         </div>
 
                         {/* Column 4: Type */}
-                        <div className="flex items-center">
+                        <div className="flex items-center justify-center w-full">
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold border ${
                             item.itemType === "SERVER"
                               ? "bg-[#6E56CF]/10 text-[#6E56CF] border-[#6E56CF]/30"
@@ -339,7 +368,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                         </div>
 
                         {/* Column 5: Classification */}
-                        <div className="min-w-0 flex items-center">
+                        <div className="min-w-0 flex items-center justify-center w-full">
                           {primaryCategory ? (
                             <CategoryChip label={primaryCategory} />
                           ) : (
@@ -348,17 +377,17 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                         </div>
 
                         {/* Column 6: Pricing */}
-                        <div className="flex items-center">
+                        <div className="flex items-center justify-center w-full">
                           <PricingBadge pricingModel={item.pricingType} />
                         </div>
 
                         {/* Column 7: Released */}
-                        <div className="text-[11px] font-mono text-[#A1A1AA]">
+                        <div className="text-[11px] font-mono text-[#A1A1AA] text-center w-full flex items-center justify-center">
                           {formatReleased(item.launchDate)}
                         </div>
 
                         {/* Column 8: Actions */}
-                        <div className="flex items-center gap-1.5 z-20 pr-4 md:pr-0">
+                        <div className="flex items-center justify-center gap-1.5 z-20 pr-4 md:pr-0 w-full">
                           {item.websiteUrl && (
                             <a
                               href={item.websiteUrl}

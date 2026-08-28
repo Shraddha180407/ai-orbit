@@ -57,7 +57,7 @@ export function VideoCard({
           </span>
         </div>
         <div className="min-w-0">
-          <p className="line-clamp-2 text-[13.5px] font-medium leading-snug text-primary transition-colors group-hover:text-[var(--tool-accent)] sm:truncate sm:text-[14px]">
+          <p className="truncate text-[13.5px] font-medium leading-snug text-primary transition-colors group-hover:text-[var(--tool-accent)] sm:text-[14px]">
             {video.title}
           </p>
           <p className="mt-1 flex items-center gap-1.5 truncate text-[12px] text-secondary sm:text-[12.5px]">
@@ -132,7 +132,7 @@ export function VideoCard({
           </div>
           <div className="min-w-0">
             <p
-              className="line-clamp-2 text-[14.5px] font-medium leading-snug text-primary transition-colors group-hover:text-[var(--tool-accent)]"
+              className="truncate text-[14.5px] font-medium leading-snug text-primary transition-colors group-hover:text-[var(--tool-accent)]"
             >
               {video.title}
             </p>
@@ -183,7 +183,7 @@ export function VideoCard({
               {video.toolCategory}
             </div>
             <Link href={`/videos/${video.slug}`}>
-              <p className="mt-1.5 line-clamp-2 text-[14px] font-medium leading-snug text-primary hover:text-accent-hover">
+              <p className="mt-1.5 truncate text-[14px] font-medium leading-snug text-primary hover:text-accent-hover">
                 {video.title}
               </p>
             </Link>
