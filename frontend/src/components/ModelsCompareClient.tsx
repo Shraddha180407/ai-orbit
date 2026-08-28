@@ -72,8 +72,8 @@ export function ModelsCompareClient() {
   }, [searchParams.get("ids")]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-      <Header />
+    <div className="flex flex-col flex-1">
+
       <main className="mx-auto w-full max-w-[1100px] px-3 sm:px-6 py-6 sm:py-8 flex-1">
         <Link
           href="/models"
@@ -165,7 +165,7 @@ export function ModelsCompareClient() {
           </div>
         )}
       </main>
-      <Footer />
+
     </div>
   );
 }

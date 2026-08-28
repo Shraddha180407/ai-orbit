@@ -29,8 +29,8 @@ export const metadata: Metadata = {
 export default function MCPPage() {
   return (
     // Added overflow-y-scroll to stop the layout from shifting/blinking on load
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white overflow-y-scroll">
-      <Header />
+    <div className="flex flex-col flex-1 bg-[#000000] text-white overflow-y-scroll">
+
       
       {/* Elevated GlobalHero z-index to stack the dropdowns over the table */}
       <div className="relative z-[60]">
@@ -72,7 +72,7 @@ export default function MCPPage() {
           <MCPClient />
         </Suspense>
       </div>
-      <Footer />
+
     </div>
   );
 }

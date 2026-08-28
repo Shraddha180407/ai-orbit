@@ -7,15 +7,11 @@ export function AiOrbitLogo({ className, size = 32 }: { className?: string; size
   const numSize = isAuto ? 100 : (typeof size === "string" ? parseInt(size, 10) || 32 : size);
 
   return (
-    <Image
+    <img
       src="/logo-full.png"
       alt="AI Orbit Logo"
-      width={numSize * 4}
-      height={numSize}
-      style={isAuto ? { width: "auto" } : { height: numSize, width: "auto" }}
+      style={isAuto ? undefined : { height: numSize, width: "auto" }}
       className={`w-auto object-contain ${className || ""}`}
-      unoptimized
-      priority={true}
     />
   );
 }

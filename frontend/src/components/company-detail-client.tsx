@@ -119,20 +119,20 @@ export function CompanyDetailClient() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 py-12 flex-1 flex items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
         </main>
-        <Footer />
+  
       </div>
     );
   }
 
   if (!company) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 py-20 flex-1 flex flex-col items-center justify-center text-center">
           <h1 className="text-2xl font-bold text-white mb-2">Company Not Found</h1>
           <p className="text-sm text-[#71717A] max-w-md mb-6">
@@ -145,7 +145,7 @@ export function CompanyDetailClient() {
             Back to Companies Directory
           </Link>
         </main>
-        <Footer />
+  
       </div>
     );
   }
@@ -178,8 +178,8 @@ export function CompanyDetailClient() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      <Header />
+    <div className="flex flex-col flex-1 bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
+
 
       <main className="w-full max-w-[1240px] mx-auto px-3 sm:px-6 py-4 sm:py-6 flex-1">
         {/* Top Breadcrumb Navigation */}
@@ -521,7 +521,7 @@ export function CompanyDetailClient() {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 }

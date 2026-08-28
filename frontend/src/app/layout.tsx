@@ -19,6 +19,9 @@ export const metadata: Metadata = {
     "Discover, compare, and explore the best AI tools, companies, models, and repositories in the global ecosystem.",
 };
 
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+
 export default function RootLayout({
   children,
 }: {
@@ -26,10 +29,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark" data-scroll-behavior="smooth">
-      <body className="font-sans">
+      <body className="font-sans bg-black text-white selection:bg-white/30">
         <ReactQueryProvider>
           <main className="relative flex flex-col min-h-screen w-full">
-            {children}
+            <Header />
+            <div className="flex-1 flex flex-col w-full">
+              {children}
+            </div>
+            <Footer />
             <Toaster />
           </main>
         </ReactQueryProvider>

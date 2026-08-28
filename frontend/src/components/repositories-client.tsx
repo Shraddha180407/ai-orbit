@@ -280,7 +280,7 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
+    <div className="flex flex-col flex-1 bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <main className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-12 flex-1">
         <div className={`mx-auto w-full max-w-[1440px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
         {/* Active Topic Filter Chip */}

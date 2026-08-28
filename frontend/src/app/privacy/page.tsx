@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-16 sm:pt-24 pb-12">
+    <div className="flex-1 bg-black text-white font-sans selection:bg-white/30 pt-16 sm:pt-24 pb-12">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 flex flex-col lg:flex-row gap-8 lg:gap-24">
 
         {/* Left Sidebar */}
