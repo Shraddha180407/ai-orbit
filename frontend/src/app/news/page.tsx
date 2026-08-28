@@ -19,8 +19,8 @@ import { Footer } from "@/components/Footer";
 
 export default function NewsPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-      <Header />
+    <div className="flex flex-col flex-1">
+
       <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
       <Suspense fallback={
         <div className="flex-1 flex items-center justify-center">
@@ -29,7 +29,7 @@ export default function NewsPage() {
       }>
         <NewsPageClient />
       </Suspense>
-      <Footer />
+
     </div>
   );
 }

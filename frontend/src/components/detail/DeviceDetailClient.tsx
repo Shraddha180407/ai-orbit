@@ -137,8 +137,8 @@ export function DeviceDetailClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <main className="w-full px-6 md:px-10 py-10 flex-1">
           <div className="h-6 w-48 animate-pulse bg-[#131316] rounded mb-8" />
           <div className="grid md:grid-cols-2 gap-8">
@@ -146,22 +146,22 @@ export function DeviceDetailClient() {
             <div className="h-80 animate-pulse bg-[#131316] rounded-xl border border-[#232326]" />
           </div>
         </main>
-        <Footer />
+  
       </div>
     );
   }
 
   if (!device) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <main className="w-full px-6 md:px-12 py-20 text-center flex-1">
           <p className="text-[#52525B]">Device not found.</p>
           <Link href="/devices" className="text-[#6E56CF] text-sm mt-4 inline-block hover:underline">
             ← Back to Devices
           </Link>
         </main>
-        <Footer />
+  
       </div>
     );
   }
@@ -169,8 +169,8 @@ export function DeviceDetailClient() {
   const accentColor = device.mainTaskColor || "#6E56CF";
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-      <Header />
+    <div className="flex flex-col flex-1 bg-[#000000] text-white">
+
 
       {/* Hero accent bar */}
       <div className="w-full h-px" style={{ background: `linear-gradient(90deg, transparent, ${accentColor}80, transparent)` }} />
@@ -471,7 +471,7 @@ export function DeviceDetailClient() {
           </div>
         )}
       </main>
-      <Footer />
+
     </div>
   );
 }

@@ -13,8 +13,8 @@ export const metadata: Metadata = {
 
 export default function LeaderboardPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-      <Header />
+    <div className="flex flex-col flex-1 bg-[#000000] text-white">
+
       <Suspense fallback={
         <main className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 py-12 flex-1">
           <div className="mb-10 h-16 animate-pulse bg-[#131316] rounded-xl border border-[#232326]" />
@@ -23,7 +23,7 @@ export default function LeaderboardPage() {
       }>
         <LeaderboardClient />
       </Suspense>
-      <Footer />
+
     </div>
   );
 }

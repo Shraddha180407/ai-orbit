@@ -67,8 +67,8 @@ export function HomeClient() {
   }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      <Header />
+    <div className="flex flex-col flex-1">
+
       
       {/* FIXED: Wrapped GlobalHero in a very high z-index so any dropdowns inside it will float above the table below */}
       <div className="relative z-[60]">
@@ -93,7 +93,7 @@ export function HomeClient() {
         </div>
       </div>
 
-      <Footer />
+
     </div>
   );
 }

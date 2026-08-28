@@ -25,6 +25,12 @@ const DiscordIcon = () => (
   </svg>
 );
 
+const InstagramIcon = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm3.98-10.169a1.44 1.44 0 11-2.88 0 1.44 1.44 0 012.88 0z" />
+  </svg>
+);
+
 const YouTubeIcon = () => (
   <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
@@ -60,7 +66,6 @@ const LINK_GROUPS = [
       { label: "MCP", href: "/mcp" },
       { label: "Tasks", href: "/tasks" },
       { label: "Submit AI", href: "/submit" },
-      { label: "Update AI", href: "/update" },
       { label: "Advertise", href: "/advertise" },
     ]
   },
@@ -76,21 +81,12 @@ const LINK_GROUPS = [
 ];
 
 export function Footer() {
-  const [email, setEmail] = useState("");
-
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email.trim()) {
-      setEmail("");
-    }
-  };
-
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <footer className="w-full bg-black text-white pt-12 sm:pt-20 lg:pt-24 pb-8 sm:pb-12 font-sans selection:bg-white/30 border-t border-[#1C1C1F]">
+    <footer className="w-full bg-black text-white pt-2 sm:pt-4 lg:pt-6 pb-4 sm:pb-6 font-sans selection:bg-white/30 border-t border-[#1C1C1F]">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
         <div className="flex flex-col lg:flex-row justify-between gap-10 sm:gap-16 lg:gap-32">
 
@@ -100,62 +96,40 @@ export function Footer() {
               <AiOrbitLogo size={160} className="text-white" />
             </Link>
 
-            <p className="text-[14px] sm:text-[16px] text-[#e4e4e7] mb-3 sm:mb-5">
+            <p className="text-[13px] sm:text-[14px] text-[#e4e4e7] mb-2 sm:mb-3">
               The Home of Everything AI.
             </p>
 
-            <p className="text-[13px] sm:text-[15px] leading-relaxed text-[#a1a1aa] mb-6 sm:mb-10 max-w-[320px]">
+            <p className="text-[12px] sm:text-[13px] leading-relaxed text-[#a1a1aa] mb-4 sm:mb-6 max-w-[320px]">
               Discover the tools, companies, and technologies shaping the global AI ecosystem.
             </p>
 
-            <div className="flex items-center gap-5 sm:gap-6 mb-6 sm:mb-10">
+            <div className="flex items-center gap-5 sm:gap-6">
               <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="X (Twitter)"><XIcon /></a>
               <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="LinkedIn"><LinkedInIcon /></a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="Instagram"><InstagramIcon /></a>
               <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="YouTube"><YouTubeIcon /></a>
               <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="Discord"><DiscordIcon /></a>
             </div>
 
-            <div className="h-px w-full max-w-[340px] bg-[#27272a] mb-6 sm:mb-10"></div>
-
-            <h3 id="newsletter" className="text-[15px] sm:text-[17px] font-bold text-white mb-2 sm:mb-4">Stay in the Orbit</h3>
-            <p className="text-[13px] sm:text-[15px] text-[#a1a1aa] leading-relaxed mb-4 sm:mb-6 max-w-[300px]">
-              Get the most important AI updates, trends, and launches.
-            </p>
-
-            <form onSubmit={handleSubscribe} className="flex h-[42px] sm:h-[46px] w-full max-w-[340px]">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 min-w-0 bg-transparent border border-[#3f3f46] rounded-l-lg px-3.5 text-[14px] sm:text-[15px] text-white placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#71717a] transition-colors"
-              />
-              <button
-                type="submit"
-                className="flex items-center justify-center w-12 sm:w-14 shrink-0 border border-l-0 border-[#3f3f46] rounded-r-lg hover:bg-white/5 transition-colors group cursor-pointer"
-                aria-label="Subscribe"
-              >
-                <ArrowRight size={18} className="text-[#a1a1aa] group-hover:text-white transition-colors" />
-              </button>
-            </form>
           </div>
 
           {/* Links Grid */}
           <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-x-4 sm:gap-x-8 gap-y-8 sm:gap-y-14 pt-2">
             {LINK_GROUPS.map((group) => (
               <div key={group.heading} className="flex flex-col">
-                <div className="mb-4 sm:mb-8">
-                  <h4 className="text-[12px] sm:text-[14px] font-bold text-white tracking-[0.1em] uppercase mb-2 sm:mb-4 inline-block w-fit">
+                <div className="mb-3 sm:mb-4">
+                  <h4 className="text-[11px] sm:text-[12px] font-bold text-white tracking-[0.1em] uppercase mb-2 sm:mb-4 inline-block w-fit">
                     {group.heading}
                   </h4>
                   <div className="h-px w-full max-w-[80px] sm:max-w-[100px] bg-[#3f3f46]"></div>
                 </div>
-                <ul className="space-y-3 sm:space-y-[18px]">
+                <ul className="space-y-2 sm:space-y-3">
                   {group.links.map((link) => (
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="text-[13px] sm:text-[16px] text-[#e4e4e7] hover:text-white transition-colors font-medium"
+                        className="text-[12px] sm:text-[14px] text-[#e4e4e7] hover:text-white transition-colors font-medium"
                       >
                         {link.label}
                       </Link>
@@ -169,8 +143,8 @@ export function Footer() {
         </div>
 
         {/* Bottom Row */}
-        <div className="mt-12 sm:mt-24 pt-6 sm:pt-8 border-t border-[#27272a] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[13px] sm:text-[15px] text-[#a1a1aa] text-center sm:text-left">
+        <div className="mt-4 sm:mt-5 pt-4 sm:pt-5 border-t border-[#27272a] flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-[12px] sm:text-[13px] text-[#a1a1aa] text-center sm:text-left">
             &copy; 2026 AI Orbit. All rights reserved.
           </p>
 

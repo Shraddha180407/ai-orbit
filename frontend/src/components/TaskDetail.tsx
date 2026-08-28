@@ -67,7 +67,7 @@ export function TaskDetail({
   const filteredTools = relevantTools;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
+    <div className="flex flex-col flex-1 bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <main className="w-full px-3 sm:px-6 lg:px-10 py-4 sm:py-6 flex-1">
 
         <Link

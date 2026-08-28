@@ -17,13 +17,13 @@ import { Footer } from "@/components/Footer";
  */
 export function PageShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-      <Header />
+    <div className="flex flex-col flex-1 bg-[#000000] text-white">
+
       {/* flex-1 wrapper, not <main> — the actual <main> element is rendered by
           the page content itself (see NewsListingClient.tsx, ArticleDetail's
           page wrapper), matching ToolsClient.tsx's own single <main>. */}
       <div className="flex-1 w-full">{children}</div>
-      <Footer />
+
     </div>
   );
 }

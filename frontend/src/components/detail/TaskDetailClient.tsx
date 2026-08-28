@@ -51,7 +51,7 @@ export function TaskDetailClient() {
 
   if (isLoading && !task) {
     return (
-      <main className="min-h-screen bg-[#000000] w-full max-w-none px-6 lg:px-10 xl:px-14 py-8">
+      <main className="flex-1 bg-[#000000] w-full max-w-none px-6 lg:px-10 xl:px-14 py-8">
         <div className="animate-pulse space-y-6">
           <div className="h-4 w-40 rounded bg-[#18181C]" />
           <div className="rounded-2xl ring-1 ring-[#232326]/70 bg-gradient-to-b from-[#131316]/70 to-[#0D0D10]/70 p-6 sm:p-9 space-y-6">

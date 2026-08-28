@@ -114,7 +114,7 @@ export function VideosClient() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
+    <div className="flex flex-col flex-1 bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <main className="mx-auto max-w-[1070px] px-3 sm:px-6 lg:px-8 py-6 sm:py-12 flex-1 w-full">
         <div className="mb-6 sm:mb-10 flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>

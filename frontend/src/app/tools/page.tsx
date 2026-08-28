@@ -27,8 +27,8 @@ export const metadata: Metadata = {
 
 export default function ToolsPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white overflow-y-scroll">
-      <Header />
+    <div className="flex flex-col flex-1">
+
       
       {/* FIXED: Elevated GlobalHero z-index specifically for the Tools page */}
       <div className="relative z-[60]">
@@ -52,7 +52,7 @@ export default function ToolsPage() {
         </Suspense>
       </div>
       
-      <Footer />
+
     </div>
   );
 }

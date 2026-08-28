@@ -634,7 +634,7 @@ export function LeaderboardClient() {
   const currentFilteredCompanies = getFilteredCompanies();
 
   return (
-    <div className="w-full flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white min-h-screen">
+    <div className="w-full flex flex-col flex-1 bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       {/* Main Leaderboard Content Frame */}
       <div className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col">
 

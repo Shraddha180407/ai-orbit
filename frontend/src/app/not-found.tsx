@@ -3,7 +3,7 @@ import FileQuestion from 'lucide-react/dist/esm/icons/file-question';
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
+    <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
       <FileQuestion size={32} className="text-foreground-faint" aria-hidden="true" />
       <div>
         <h1 className="font-medium text-foreground">Page not found</h1>

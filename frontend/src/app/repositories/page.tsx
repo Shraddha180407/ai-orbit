@@ -13,8 +13,8 @@ export const metadata: Metadata = {
 
 export default function RepositoriesPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-      <Header />
+    <div className="flex flex-col flex-1">
+
       <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
       <Suspense fallback={
         <main className="mx-auto max-w-[1440px] px-8 py-12 flex-1">
@@ -28,7 +28,7 @@ export default function RepositoriesPage() {
       }>
         <RepositoriesClient />
       </Suspense>
-      <Footer />
+
     </div>
   );
 }
