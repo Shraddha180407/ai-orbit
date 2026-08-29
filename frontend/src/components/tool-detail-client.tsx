@@ -76,7 +76,7 @@ function StatCard({ icon: Icon, label, value }: { icon: any; label: string; valu
 // ── Spec row ──────────────────────────────────────────────────────────────────
 function SpecRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[#131316] transition-colors border-b border-[#1a1a1e] last:border-0 text-xs">
+    <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[#1e1e24] transition-colors border-b border-[#1a1a1e] last:border-0 text-xs">
       <span className="text-[#52525B] shrink-0">{label}</span>
       <span className="font-semibold text-white capitalize text-right ml-4">{value}</span>
     </div>
@@ -99,14 +99,14 @@ function IntegrationLogo({ integration }: { integration: { slug: string; name: s
   };
 
   return (
-    <div className="flex flex-col items-center p-2.5 rounded-xl border border-[#232326] bg-[#131316]/40 hover:border-[#6E56CF]/20 transition-all gap-1.5">
-      <div className="relative h-7 w-7 rounded-lg bg-white p-0.5 overflow-hidden flex items-center justify-center">
+    <div className="flex flex-col items-center gap-2 p-3 rounded-xl border border-[#232326] bg-[#131316]/40 hover:border-[#6E56CF]/25 transition-all group">
+      <div className="relative h-10 w-10 rounded-xl bg-white shadow-md overflow-hidden flex items-center justify-center shrink-0">
         {failed
-          ? <span className="text-[10px] font-bold text-neutral-900">{integration.name.charAt(0)}</span>
-          : <Image src={src} alt={integration.name} fill className="object-contain p-0.5" onError={handleError} />
+          ? <span className="text-sm font-bold text-neutral-900">{integration.name.charAt(0)}</span>
+          : <Image src={src} alt={integration.name} fill className="object-contain p-1" onError={handleError} />
         }
       </div>
-      <span className="text-[9px] text-[#71717A] font-semibold truncate w-full text-center">{integration.name}</span>
+      <span className="text-[10px] text-[#71717A] font-medium truncate w-full text-center group-hover:text-[#A1A1AA] transition-colors">{integration.name}</span>
     </div>
   );
 }
@@ -143,41 +143,90 @@ function PricingCard({ tier }: { tier: PricingTier }) {
 }
 
 // ── Alt card ──────────────────────────────────────────────────────────────────
+const ALT_CARD_STYLES = [
+  { orb1: "top-[-20px] left-[-10px] w-28 h-28 bg-[#6E56CF]/25", orb2: "bottom-[-10px] right-[-10px] w-16 h-16 bg-[#9b78ff]/10", base: "from-[#6E56CF]/15 via-[#6E56CF]/5 to-transparent", dir: "to-br" },
+  { orb1: "top-[-20px] right-[-10px] w-28 h-28 bg-[#7c5fe6]/25", orb2: "bottom-[-10px] left-[-10px] w-16 h-16 bg-[#6E56CF]/10", base: "from-[#7c5fe6]/15 via-[#6E56CF]/5 to-transparent", dir: "to-bl" },
+  { orb1: "top-[-15px] left-[30%] w-24 h-24 bg-[#8b6cf7]/20", orb2: "bottom-[-5px] right-[20%] w-14 h-14 bg-[#6E56CF]/12", base: "from-[#8b6cf7]/12 via-[#6E56CF]/5 to-transparent", dir: "to-b" },
+  { orb1: "bottom-[-10px] left-[-10px] w-24 h-24 bg-[#6E56CF]/22", orb2: "top-[-10px] right-[-5px] w-16 h-16 bg-[#9b78ff]/10", base: "from-[#6E56CF]/10 via-[#8b6cf7]/8 to-transparent", dir: "to-tr" },
+  { orb1: "top-[-10px] left-[-15px] w-20 h-20 bg-[#9b78ff]/20", orb2: "top-[-10px] right-[-15px] w-20 h-20 bg-[#6E56CF]/18", base: "from-transparent via-[#6E56CF]/8 to-transparent", dir: "to-b" },
+];
+
+// ── Sidebar Integration Row ───────────────────────────────────────────────────
+function SidebarIntegrationRow({ integration }: { integration: { slug: string; name: string; logoUrl?: string | null } }) {
+  const [src, setSrc] = useState(
+    integration.logoUrl || `https://www.google.com/s2/favicons?domain=${integration.slug}.com&sz=128`
+  );
+  const [failed, setFailed] = useState(false);
+
+  const handleError = () => {
+    if (src !== `https://www.google.com/s2/favicons?domain=${integration.slug}.com&sz=128`) {
+      setSrc(`https://www.google.com/s2/favicons?domain=${integration.slug}.com&sz=128`);
+    } else {
+      setFailed(true);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-3 py-2.5 border-b border-[#1a1a1e] last:border-0 group hover:bg-[#131316]/60 rounded-lg px-1.5 transition-colors cursor-default">
+      <div className="relative h-7 w-7 rounded-lg bg-white shadow-sm overflow-hidden flex items-center justify-center shrink-0">
+        {failed
+          ? <span className="text-[10px] font-bold text-neutral-900">{integration.name.charAt(0)}</span>
+          : <Image src={src} alt={integration.name} fill className="object-contain p-0.5" onError={handleError} />
+        }
+      </div>
+      <span className="text-[12px] font-medium text-[#A1A1AA] group-hover:text-white transition-colors">{integration.name}</span>
+    </div>
+  );
+}
+
 function AltCard({ tool, index = 0 }: { tool: ToolCardData; index?: number }) {
   const [failed, setFailed] = useState(false);
-  const accent = ALT_ACCENT_COLORS[index % ALT_ACCENT_COLORS.length];
+  const style = ALT_CARD_STYLES[index % ALT_CARD_STYLES.length];
+
   return (
     <Link href={`/tools/${tool.slug}`}
-      className="group flex gap-3 rounded-xl border border-[#232326] bg-[#0d0d10] p-4 transition-all duration-200 relative overflow-hidden"
-      onMouseEnter={(e) => {
-        const el = e.currentTarget;
-        el.style.boxShadow = `inset 3px 0 0 ${accent}`;
-        el.style.backgroundColor = `${accent}08`;
-        (el.querySelector('[data-altlogo]') as HTMLElement)?.style.setProperty('border-color', accent);
-        (el.querySelector('[data-altname]') as HTMLElement)?.style.setProperty('color', accent);
-      }}
-      onMouseLeave={(e) => {
-        const el = e.currentTarget;
-        el.style.boxShadow = "";
-        el.style.backgroundColor = "";
-        (el.querySelector('[data-altlogo]') as HTMLElement)?.style.removeProperty('border-color');
-        (el.querySelector('[data-altname]') as HTMLElement)?.style.removeProperty('color');
-      }}>
-      <div data-altlogo className="relative h-20 w-20 shrink-0 rounded-xl border border-[#232326] bg-white flex items-center justify-center p-1.5 transition-colors duration-200 overflow-hidden">
-        {tool.logoUrl && !failed
-          ? <Image src={tool.logoUrl} alt={tool.name} fill className="object-contain p-0.5" onError={() => setFailed(true)} />
-          : <span className="text-sm font-bold text-neutral-900">{tool.name.charAt(0)}</span>}
+      className="group flex flex-col rounded-xl border border-[#232326] overflow-hidden transition-all duration-200 hover:border-[#6E56CF]/40 hover:shadow-xl hover:shadow-[#6E56CF]/8 hover:-translate-y-0.5 bg-[#0a0a0d]">
+
+      {/* Banner */}
+      <div className="relative h-24 shrink-0 overflow-hidden">
+        {/* Base tint */}
+        <div className={`absolute inset-0 bg-gradient-${style.dir} ${style.base}`} />
+        {/* Fade to card bg at bottom — eliminates harsh line */}
+        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#0a0a0d] to-transparent" />
+        {/* Glass sheen */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/3 via-transparent to-transparent" />
+        {/* Orb 1 */}
+        <div className={`absolute ${style.orb1} rounded-full blur-2xl pointer-events-none`} />
+        {/* Orb 2 */}
+        <div className={`absolute ${style.orb2} rounded-full blur-xl pointer-events-none`} />
+        {/* Noise texture overlay for depth */}
+        <div className="absolute inset-0 opacity-[0.03] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iLjc1IiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIzMDAiIGZpbHRlcj0idXJsKCNhKSIvPjwvc3ZnPg==')]" />
+        {/* Logo */}
+        <div className="absolute bottom-3 left-3">
+          <div className="relative h-14 w-14 rounded-xl border border-white/20 bg-white shadow-lg overflow-hidden flex items-center justify-center">
+            {tool.logoUrl && !failed
+              ? <Image src={tool.logoUrl} alt={tool.name} fill className="object-contain p-0.5" onError={() => setFailed(true)} />
+              : <span className="text-lg font-bold text-neutral-900">{tool.name.charAt(0)}</span>}
+          </div>
+        </div>
       </div>
-      <div className="min-w-0 flex-1">
-        <p data-altname className="text-[13px] font-bold text-white truncate transition-colors duration-200">{tool.name}</p>
-        <p className="text-[11px] text-[#71717A] line-clamp-2 mt-0.5 leading-snug">{tool.description}</p>
-        <div className="flex items-center gap-2 mt-2">
+
+      {/* Content */}
+      <div className="p-3 flex flex-col gap-0.5 flex-1">
+        <p className="text-[13px] font-bold text-white truncate group-hover:text-[#A78BFA] transition-colors leading-tight">{tool.name}</p>
+        {tool.company?.name && (
+          <p className="text-[11px] text-[#52525B] truncate">{tool.company.name}</p>
+        )}
+        <p className="text-[11px] text-[#71717A] line-clamp-2 leading-snug mt-1">{tool.description}</p>
+        <div className="flex flex-wrap items-center gap-1.5 mt-auto pt-2">
           {tool.categories?.[0]?.category?.name && (
-            <span className="rounded-full border border-[#232326] bg-[#131316] px-2 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+            <span className="rounded-md border border-white/10 bg-white/8 px-2 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
               {tool.categories[0].category.name}
             </span>
           )}
-          <PricingBadge pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} billingFrequency={tool.billingFrequency} />
+          <span className="hidden sm:inline-flex">
+            <PricingBadge pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} billingFrequency={tool.billingFrequency} />
+          </span>
         </div>
       </div>
     </Link>
@@ -354,10 +403,10 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
   const hasStats = tool.views > 0 || tool.saves > 0 || upvoteCount > 0 || tool.reviewCount > 0 || !!tool.avgRating;
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 py-5 md:px-6 md:py-8 text-white">
+        <main className="mx-auto max-w-[1400px] px-4 pt-2 pb-5 md:px-6 md:pt-3 md:pb-8 text-white">
 
       {/* Breadcrumb */}
-      <nav className="mb-4 text-xs font-semibold text-[#52525B] flex items-center gap-1.5 flex-wrap">
+      <nav className="mb-2 text-xs font-semibold text-[#52525B] flex items-center gap-1.5 flex-wrap">
         <Link href="/" className="hover:text-white transition-colors">Home</Link>
         <span>›</span>
         <Link href="/tools" className="hover:text-white transition-colors">AI Tools</Link>
@@ -372,7 +421,7 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
       </nav>
 
             {/* ── HERO ── */}
-      <header className="relative rounded-2xl border border-[#232326] bg-[#0A0A0C] overflow-hidden mb-5">
+      <header className="relative rounded-2xl border border-[#1e1e22] bg-[#09090c] overflow-hidden mb-5">
         {/* Layered background effects */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#6E56CF]/8 via-transparent to-transparent pointer-events-none" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/70 to-transparent" />
@@ -424,6 +473,26 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
             {/* Row 3: description */}
             <p className="text-[13px] text-[#A1A1AA] leading-relaxed">{tool.description}</p>
 
+            {/* Row 4: meta */}
+            {(tool.releasedBy || tool.releaseDate || tool.country) && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {tool.releasedBy && (
+                  <span className="text-[11px] text-[#52525B]">By <span className="text-[#A1A1AA] font-medium">{tool.releasedBy}</span></span>
+                )}
+                {tool.releaseDate && (
+                  <>
+                    {tool.releasedBy && <span className="text-[#2a2a2e] text-[11px]">·</span>}
+                    <span className="text-[11px] text-[#A1A1AA] font-medium">{formatDate(tool.releaseDate)}</span>
+                  </>
+                )}
+                {tool.country && (
+                  <>
+                    {(tool.releasedBy || tool.releaseDate) && <span className="text-[#2a2a2e] text-[11px]">·</span>}
+                    <span className="text-[11px] text-[#A1A1AA] font-medium">{tool.country}</span>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Row 5: best for + works on + tags */}
             <div className="flex flex-col gap-1.5">
@@ -448,6 +517,7 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
                 </div>
               )}
             </div>
+
 
             {/* Row 6: action buttons */}
             <div className="flex flex-col gap-2">
@@ -513,6 +583,25 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
                   ))}
                 </div>
                 <p className="text-[13px] md:text-sm text-[#A1A1AA] leading-relaxed mt-3 max-w-2xl">{tool.description}</p>
+                {(tool.releasedBy || tool.releaseDate || tool.country) && (
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    {tool.releasedBy && (
+                      <span className="text-[11px] text-[#52525B]">By <span className="text-[#A1A1AA] font-medium">{tool.releasedBy}</span></span>
+                    )}
+                    {tool.releaseDate && (
+                      <>
+                        {tool.releasedBy && <span className="text-[#2a2a2e] text-[11px]">·</span>}
+                        <span className="text-[11px] text-[#A1A1AA] font-medium">{formatDate(tool.releaseDate)}</span>
+                      </>
+                    )}
+                    {tool.country && (
+                      <>
+                        {(tool.releasedBy || tool.releaseDate) && <span className="text-[#2a2a2e] text-[11px]">·</span>}
+                        <span className="text-[11px] text-[#A1A1AA] font-medium">{tool.country}</span>
+                      </>
+                    )}
+                  </div>
+                )}
                 <div className="flex flex-col gap-1.5 mt-3">
                   {tool.targetUsers?.length > 0 && (
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -534,16 +623,7 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
                       ))}
                     </div>
                   )}
-                  {tool.tags?.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                      {tool.tags.slice(0, 5).map(({ tag }) => (
-                        <Link key={tag.slug} href={`/tools?tag=${tag.slug}`}
-                          className="inline-flex items-center gap-0.5 rounded-full border border-[#6E56CF]/25 bg-[#6E56CF]/8 px-2.5 py-0.5 text-[10px] font-mono font-bold text-[#A78BFA] hover:bg-[#6E56CF]/15 hover:border-[#6E56CF]/40 hover:text-white transition-all">
-                          <span className="text-[#6E56CF] opacity-70">#</span>{tag.name}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
+                  
                 </div>
               </div>
             </div>
@@ -600,18 +680,49 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
           <div className="space-y-4 min-w-0">
 
                         {/* Overview — always show with description + use cases */}
-            <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-3 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/30 to-transparent" />
-              <div className="absolute -top-10 -right-10 w-36 h-36 bg-[#6E56CF]/4 rounded-full blur-2xl pointer-events-none" />
+            <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-5 space-y-3 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-600/6 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-indigo-600/5 rounded-full blur-2xl pointer-events-none" />
               <SectionHeader icon={FileText} title="Overview" />
-              <div className="text-[13px] leading-relaxed text-[#A1A1AA] space-y-2.5">
+                            <div className="text-[13px] leading-relaxed text-[#A1A1AA] space-y-2.5">
                 {displayDescription.split("\n\n").map((p, i) => <p key={i}>{p}</p>)}
               </div>
+
+              {/* Categories + Tags inline divider */}
+              {(tool.categories.length > 0 || tool.tags?.length > 0) && (
+                <div className="pt-3 border-t border-[#232326]/60 space-y-2.5">
+                  {tool.categories.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] font-mono text-[#52525B] uppercase tracking-widest shrink-0">Categories</span>
+                      <span className="text-[#2a2a2e]">·</span>
+                      {tool.categories.map(({ category }) => (
+                        <Link key={category.slug} href={`/tools/${category.slug}`}
+                          className="inline-block rounded-md border border-[#232326] bg-[#131316] px-2.5 py-1 text-[11px] font-semibold text-[#A1A1AA] hover:border-[#6E56CF]/30 hover:text-white transition-all leading-none">
+                          {category.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                  {tool.tags?.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] font-mono text-[#52525B] uppercase tracking-widest shrink-0">Tags</span>
+                      <span className="text-[#2a2a2e]">·</span>
+                      {tool.tags.map(({ tag }) => (
+                        <Link key={tag.slug} href={`/tools?tag=${tag.slug}`}
+                          className="inline-block rounded-md border border-[#232326] bg-[#131316] px-2.5 py-1 text-[11px] font-mono font-semibold text-[#71717A] hover:border-[#6E56CF]/30 hover:text-[#A1A1AA] transition-all leading-none">
+                          #{tag.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
                       {/* Specs — mobile only, shows between Overview and rest of content */}
-            <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4 relative overflow-hidden lg:hidden">
-              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/30 to-transparent" />
-              <div className="absolute -top-10 -right-10 w-36 h-36 bg-[#6E56CF]/4 rounded-full blur-2xl pointer-events-none" />
+            <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 relative overflow-hidden lg:hidden">
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+              <div className="absolute -top-10 -right-10 w-36 h-36 bg-blue-600/6 rounded-full blur-2xl pointer-events-none" />
               <h3 className="text-sm font-bold text-foreground uppercase tracking-wide border-b border-[#232326]/50 pb-3 mb-1 flex items-center gap-2.5">
                 <FileText size={13} className="text-[#6E56CF]" /> Specifications
               </h3>
@@ -620,21 +731,19 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
 
             {/* Key Features */}
             {tool.features?.length > 0 && (
-              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-3 relative overflow-hidden">
+              <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-5 space-y-3 relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/30 to-transparent" />
                 <div className="absolute -top-10 -right-10 w-36 h-36 bg-[#6E56CF]/4 rounded-full blur-2xl pointer-events-none" />
                 <SectionHeader icon={Sparkles} title="Key Features" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10">
                   {tool.features.map((feat, i) => {
                     const p = parseFeature(feat);
                     return (
-                      <div key={i} className="group flex items-start gap-3 rounded-xl border border-[#6E56CF]/15 bg-[#6E56CF]/5 px-3.5 py-3 hover:border-[#6E56CF]/40 hover:bg-[#6E56CF]/10 transition-all">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#6E56CF]/20 border border-[#6E56CF]/40 mt-0.5 group-hover:bg-[#6E56CF]/30 transition-colors">
-                          <Sparkles size={10} className="text-[#A78BFA]" />
-                        </span>
+                      <div key={i} className="group/feat flex items-start gap-2.5 py-2.5 border-b border-[#ffffff08] last:border-0 sm:[&:nth-last-child(2):nth-child(odd)]:border-0 rounded-lg px-2 -mx-2 hover:bg-[#6E56CF]/5 transition-colors cursor-default">
+                        <svg className="shrink-0 mt-[3px] group-hover/feat:fill-[#A78BFA] transition-colors" width="9" height="9" viewBox="0 0 10 10" fill="none"><polygon points="0,0 10,5 0,10 3,5" fill="#6E56CF"/></svg>
                         <div className="min-w-0">
-                          <p className="text-[12px] font-bold text-white group-hover:text-[#A78BFA] transition-colors">{p.title}</p>
-                          {p.description && <p className="text-[11px] text-[#71717A] mt-0.5 leading-snug">{p.description}</p>}
+                          <p className="text-[13px] font-semibold text-white group-hover/feat:text-[#A78BFA] transition-colors leading-snug">{p.title}</p>
+                          {p.description && <p className="text-[11px] text-[#71717A] group-hover/feat:text-[#A1A1AA] mt-0.5 leading-snug transition-colors">{p.description}</p>}
                         </div>
                       </div>
                     );
@@ -645,33 +754,44 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
 
             {/* ── WHAT YOU CAN DO — below Key Features, distinct style: left-border accent rows ── */}
             {ttasks.length > 0 && (
-                            <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-3 relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/30 to-transparent" />
-                <div className="absolute -top-10 -left-10 w-36 h-36 bg-[#6E56CF]/4 rounded-full blur-2xl pointer-events-none" />
+                                <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-5 space-y-3 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
+                <div className="absolute -top-12 -right-12 w-40 h-40 bg-[#6E56CF]/4 rounded-full blur-3xl pointer-events-none" />
                 <SectionHeader icon={ListChecks} title="Use Cases" badge={`${ttasks.length} tasks`} />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10">
                   {visibleTasks.map((t: any) => (
                     <Link
                       key={t.task.slug}
                       href={`/tasks/${t.task.slug}`}
-                      className="group flex items-center gap-2.5 rounded-lg border border-[#232326] bg-[#131316]/60 px-3 py-2.5 hover:border-[#6E56CF]/40 hover:bg-[#6E56CF]/8 transition-all border-l-2 border-l-[#6E56CF]/40 hover:border-l-[#6E56CF]"
+                      className="group flex items-center gap-2.5 py-2.5 border-b border-[#ffffff08] last:border-0 sm:[&:nth-last-child(2):nth-child(odd)]:border-0"
                     >
-                      <Zap size={11} className="text-[#6E56CF] shrink-0 opacity-70 group-hover:opacity-100 transition-opacity" />
-                      <span className="text-[12px] font-semibold text-[#A1A1AA] group-hover:text-white transition-colors leading-snug truncate">
+                        <svg className="shrink-0 mt-[3px] group-hover:fill-[#A78BFA] transition-colors" width="9" height="9" viewBox="0 0 10 10" fill="none"><polygon points="0,0 10,5 0,10 3,5" fill="#6E56CF"/></svg>
+                      <span className="text-[13px] font-medium text-[#A1A1AA] group-hover:text-white transition-colors leading-snug truncate">
                         {t.task.title}
                       </span>
                     </Link>
                   ))}
                 </div>
-                {visibleCount < ttasks.length && (
-                  <button
-                    onClick={() => setVisibleCount(c => Math.min(c + 4, ttasks.length))}
-                    className="flex items-center gap-1.5 text-xs font-bold text-[#6E56CF] hover:text-[#A78BFA] transition-colors mt-1 group"
-                  >
-                    <ChevronDown size={13} className="group-hover:translate-y-0.5 transition-transform" />
-                    Show more
-                  </button>
-                )}
+                <div className="flex items-center gap-4 mt-1">
+                  {visibleCount < ttasks.length && (
+                    <button
+                      onClick={() => setVisibleCount(c => Math.min(c + 4, ttasks.length))}
+                      className="flex items-center gap-1.5 text-xs font-bold text-[#6E56CF] hover:text-[#A78BFA] transition-colors group"
+                    >
+                      <ChevronDown size={13} className="group-hover:translate-y-0.5 transition-transform" />
+                      Show more
+                    </button>
+                  )}
+                  {visibleCount > TASKS_VISIBLE && (
+                    <button
+                      onClick={() => setVisibleCount(TASKS_VISIBLE)}
+                      className="flex items-center gap-1.5 text-xs font-bold text-[#52525B] hover:text-[#A1A1AA] transition-colors group"
+                    >
+                      <ChevronUp size={13} className="group-hover:-translate-y-0.5 transition-transform" />
+                      Show less
+                    </button>
+                  )}
+                </div>
               </section>
             )}
 
@@ -681,83 +801,27 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
                 categories={tool.categories} pros={tool.pros} cons={tool.cons} />
             </section>
 
-            {/* Integrations */}
-            {tool.integrations?.length > 0 && (
-              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-5 space-y-3 relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/30 to-transparent" />
-                <div className="absolute -top-10 -right-10 w-36 h-36 bg-[#6E56CF]/4 rounded-full blur-2xl pointer-events-none" />
-                <SectionHeader icon={Layers} title="Integrations" />
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
-                                    {tool.integrations.map(({ integration }) => (
-                    <IntegrationLogo key={integration.slug} integration={integration} />
-                  ))}
-                </div>
-              </section>
-            )}
           </div>
 
           {/* RIGHT SIDEBAR */}
           <aside className="space-y-4">
 
             {/* Specs */}
-            <section className="hidden lg:block rounded-xl border border-[#232326] bg-[#0d0d10] p-4 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/30 to-transparent" />
-              <div className="absolute -top-10 -right-10 w-36 h-36 bg-[#6E56CF]/4 rounded-full blur-2xl pointer-events-none" />
+            <section className="hidden lg:block rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+              <div className="absolute -top-10 -right-10 w-36 h-36 bg-blue-600/6 rounded-full blur-2xl pointer-events-none" />
                             <h3 className="text-sm font-bold text-foreground uppercase tracking-wide border-b border-[#232326]/50 pb-3 mb-1 flex items-center gap-2.5">
                 <FileText size={13} className="text-[#6E56CF]" /> Specifications
               </h3>
               {specs.map(row => <SpecRow key={row.label} label={row.label} value={row.value} />)}
             </section>
 
-            {/* Categories + Tags — uniform pill height, no icon inside pill */}
-            {(tool.categories.length > 0 || tool.tags?.length > 0) && (
-              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4 space-y-3 relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/30 to-transparent" />
-                <div className="absolute -top-10 -left-10 w-36 h-36 bg-[#6E56CF]/4 rounded-full blur-2xl pointer-events-none" />
-                <h3 className="text-sm font-bold text-foreground uppercase tracking-wide border-b border-[#232326]/50 pb-3 flex items-center gap-2.5">
-                  <Tag size={13} className="text-[#6E56CF]" /> Categories & Tags
-                </h3>
-                {tool.categories.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-[9px] font-mono text-[#52525B] uppercase tracking-widest">Categories</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {tool.categories.map(({ category }) => (
-                        <Link
-                          key={category.slug}
-                          href={`/tools/${category.slug}`}
-                          className="inline-block rounded-md border border-[#6E56CF]/25 bg-[#6E56CF]/10 px-2.5 py-1 text-[11px] font-semibold text-[#A78BFA] hover:bg-[#6E56CF]/20 hover:border-[#6E56CF]/40 transition-all leading-none"
-                        >
-                          {category.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {tool.tags?.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-[9px] font-mono text-[#52525B] uppercase tracking-widest">Tags</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {tool.tags.map(({ tag }) => (
-                        <Link
-                          key={tag.slug}
-                          href={`/tools?tag=${tag.slug}`}
-                          className="inline-block rounded-md border border-[#232326] bg-[#131316] px-2.5 py-1 text-[11px] font-mono font-semibold text-[#71717A] hover:border-[#6E56CF]/30 hover:text-[#A1A1AA] transition-all leading-none"
-                        >
-                          #{tag.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </section>
-            )}
-
            
             {/* Company */}
             {tool.company && (
-              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4 space-y-3 relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/30 to-transparent" />
-                <div className="absolute -top-10 -left-10 w-36 h-36 bg-[#6E56CF]/4 rounded-full blur-2xl pointer-events-none" />
+              <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 space-y-3 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
+                <div className="absolute -top-12 -left-12 w-40 h-40 bg-[#6E56CF]/4 rounded-full blur-3xl pointer-events-none" />
                 <h3 className="text-sm font-bold text-foreground uppercase tracking-wide border-b border-[#232326]/50 pb-3 flex items-center gap-2.5">
                   <Building size={13} className="text-[#6E56CF]" /> Company
                 </h3>
@@ -775,11 +839,27 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
               </section>
             )}
 
-             {/* ROI Calculator — only show when there are enough tasks to justify it */}
+                        {/* Integrations — sidebar stacked */}
+            {tool.integrations?.length > 0 && (
+              <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 space-y-3 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
+                <div className="absolute -top-12 -right-12 w-40 h-40 bg-[#6E56CF]/4 rounded-full blur-3xl pointer-events-none" />
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wide border-b border-[#232326]/50 pb-3 flex items-center gap-2.5">
+                  <Layers size={13} className="text-[#6E56CF]" /> Integrations
+                </h3>
+                <div className="space-y-0">
+                  {tool.integrations.map(({ integration }) => (
+                    <SidebarIntegrationRow key={integration.slug} integration={integration} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* ROI Calculator — only show when there are enough tasks to justify it */}
             {ttasks.length >= 4 && (
-              <section className="rounded-xl border border-[#232326] bg-[#0d0d10] p-4 relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/30 to-transparent" />
-                <div className="absolute -top-10 -right-10 w-36 h-36 bg-[#6E56CF]/4 rounded-full blur-2xl pointer-events-none" />
+              <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
+                <div className="absolute -top-12 -right-12 w-40 h-40 bg-[#6E56CF]/4 rounded-full blur-3xl pointer-events-none" />
                 <ROICalculator pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} name={tool.name} />
               </section>
             )}
@@ -859,42 +939,15 @@ const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards
       {similarTools.length > 0 && activeTab === "overview" && (
         <section className="mt-7 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <Layers size={13} className="text-[#6E56CF]" /> Top Alternatives to {tool.name}
+            <h2 className="text-xs font-bold text-[#71717A] uppercase tracking-wider flex items-center gap-2">
+              <Layers size={13} className="text-[#6E56CF]/60" /> Top Alternatives to {tool.name}
             </h2>
             <Link href="/tools" className="inline-flex items-center gap-1 text-xs font-bold text-[#6E56CF] hover:underline">
               View all <ArrowRight size={11} />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {similarTools.map((s, i) => <AltCard key={s.id} tool={s} index={i} />)}
-          </div>
-        </section>
-      )}
-
-      {/* ── Related Topics ── */}
-      {activeTab === "overview" && (tool.categories.length > 0 || (tool.tags?.length ?? 0) > 0) && (
-        <section className="mt-5 mb-4">
-          <div className="flex items-center gap-3 mb-2.5">
-            <div className="h-px flex-1 bg-[#232326]" />
-            <span className="text-[10px] font-mono font-bold text-[#52525B] uppercase tracking-widest flex items-center gap-1">
-              <Tag size={10} className="text-[#6E56CF]" /> Related Topics
-            </span>
-            <div className="h-px flex-1 bg-[#232326]" />
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {tool.categories.map(({ category }) => (
-              <Link key={category.slug} href={`/tools/${category.slug}`}
-                className="inline-flex items-center gap-1 rounded-full border border-[#232326] bg-[#131316] px-3 py-1 text-[11px] font-semibold text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white hover:bg-[#6E56CF]/10 transition-all">
-                <Layers size={9} className="text-[#6E56CF]" />{category.name}
-              </Link>
-            ))}
-            {tool.tags?.slice(0, 8).map(({ tag }) => (
-              <Link key={tag.slug} href={`/tools?tag=${tag.slug}`}
-                className="rounded-full border border-[#232326] bg-[#131316] px-3 py-1 text-[11px] font-semibold text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white transition-all">
-                #{tag.name}
-              </Link>
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {similarTools.slice(0, 5).map((s, i) => <AltCard key={s.id} tool={s} index={i} />)}
           </div>
         </section>
       )}
