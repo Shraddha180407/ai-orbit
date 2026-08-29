@@ -291,7 +291,10 @@ export function TaskDetail({
 
         </div>
 
-        <TaskToolsList tools={filteredTools} />
+        <TaskToolsList
+  tools={filteredTools}
+  taskTitle={title}
+/>
 
       </main>
     </div>
