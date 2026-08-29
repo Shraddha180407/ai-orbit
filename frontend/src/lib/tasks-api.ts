@@ -14,7 +14,14 @@ const BASE_URL = resolveApiUrl();
 
 export type Difficulty = "EASY" | "MEDIUM" | "ADVANCED";
 export type PricingModel = "FREE" | "FREEMIUM" | "PAID" | "FREE_TRIAL";
-export type SortOption = "newest" | "oldest" | "alphabetical" | "popular";
+export type SortOption =
+  | "newest" | "oldest"
+  | "alphabetical" | "name-asc" | "name-desc"
+  | "popular" | "rating"
+  | "tools-asc" | "tools-desc"
+  | "models-asc" | "models-desc"
+  | "robots-asc" | "robots-desc"
+  | "devices-asc" | "devices-desc";
 export type FilterOption = "all" | "for-you" | "following";
 
 export type Category = {

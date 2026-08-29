@@ -153,11 +153,12 @@ export class TasksService {
     featuredOnly?: boolean;
     sort?: string;
     page?: number;
+    pageSize?: number;
     filterMode?: 'all' | 'for-you' | 'following';
     userId?: string;
   }) {
     const pageNum = Math.max(1, filters.page || 1);
-    const limit = 100;
+    const limit = Math.min(Math.max(1, filters.pageSize || 20), 100);
     const skip = (pageNum - 1) * limit;
 
     const where: Prisma.TaskWhereInput = {};
@@ -252,107 +253,85 @@ export class TasksService {
         };
       }
 
-      where.categoryId = {
-        in: categoryIds,
-      };
-
-      where.likes = {
-        none: {
-          userId: filters.userId,
-        },
-      };
+      where.categoryId = { in: categoryIds };
+      where.likes = { none: { userId: filters.userId } };
+      where.bookmarks = { none: { userId: filters.userId } };
     }
 
-    let orderBy: Prisma.TaskOrderByWithRelationInput;
+    let orderBy: Prisma.TaskOrderByWithRelationInput = { createdAt: 'desc' };
 
     switch (filters.sort) {
       case 'oldest':
-        orderBy = {
-          createdAt: 'asc',
-        };
+        orderBy = { createdAt: 'asc' };
         break;
-
+      case 'name-asc':
       case 'alphabetical':
-        orderBy = {
-          title: 'asc',
-        };
+        orderBy = { title: 'asc' };
         break;
-
+      case 'name-desc':
+        orderBy = { title: 'desc' };
+        break;
+      case 'rating':
       case 'popular':
-        orderBy = {
-          likeCount: 'desc',
-        };
+        orderBy = { likeCount: 'desc' };
         break;
-
+      case 'tools-asc':
+        orderBy = { toolCount: 'asc' };
+        break;
+      case 'tools-desc':
+        orderBy = { toolCount: 'desc' };
+        break;
+      case 'models-asc':
+        orderBy = { modelCount: 'asc' };
+        break;
+      case 'models-desc':
+        orderBy = { modelCount: 'desc' };
+        break;
+      case 'robots-asc':
+        orderBy = { robotCount: 'asc' };
+        break;
+      case 'robots-desc':
+        orderBy = { robotCount: 'desc' };
+        break;
+      case 'devices-asc':
+        orderBy = { deviceCount: 'asc' };
+        break;
+      case 'devices-desc':
+        orderBy = { deviceCount: 'desc' };
+        break;
       case 'newest':
       default:
-        orderBy = {
-          createdAt: 'desc',
-        };
-        break;
+        orderBy = { createdAt: 'desc' };
     }
 
+    const selectFields = {
+      id: true,
+      slug: true,
+      title: true,
+      description: true,
+      iconUrl: true,
+      difficulty: true,
+      pricingModel: true,
+      isFeatured: true,
+      category: { select: { id: true, slug: true, name: true } },
+      creator: { select: { id: true, name: true, image: true } },
+      createdAt: true,
+      toolCount: true,
+      modelCount: true,
+      robotCount: true,
+      deviceCount: true,
+      saveCount: true,
+      likeCount: true,
+      subscriberCount: true,
+      _count: { select: { resources: true } },
+    };
+
     const [tasks, total, categories] = await Promise.all([
-      this.prisma.task.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          description: true,
-          iconUrl: true,
-          difficulty: true,
-          pricingModel: true,
-          isFeatured: true,
-          createdAt: true,
-
-          category: {
-            select: {
-              id: true,
-              slug: true,
-              name: true,
-            },
-          },
-
-          creator: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
-
-          toolCount: true,
-          modelCount: true,
-          robotCount: true,
-          deviceCount: true,
-          saveCount: true,
-          likeCount: true,
-          subscriberCount: true,
-
-          _count: {
-            select: {
-              resources: true,
-            },
-          },
-        },
-      }),
-
-      this.prisma.task.count({
-        where,
-      }),
-
+      this.prisma.task.findMany({ where, orderBy, skip, take: limit, select: selectFields }),
+      this.prisma.task.count({ where }),
       this.prisma.taskCategory.findMany({
-        orderBy: {
-          name: 'asc',
-        },
-        select: {
-          slug: true,
-          name: true,
-        },
+        orderBy: { name: 'asc' },
+        select: { slug: true, name: true },
       }),
     ]);
 
@@ -368,37 +347,16 @@ export class TasksService {
     };
   }
 
-  async getTaskDetails(
-  slug: string,
-  userId?: string,
-) {
-  return this.getTaskBySlugWithUser(slug, userId);
-}
+  async getTaskDetails(slug: string, userId?: string) {
+    return this.getTaskBySlugWithUser(slug, userId);
+  }
 
-  async getTaskBySlug(slug: string) {
+  async getTaskBySlugWithUser(slug: string, userId?: string) {
     const task = await this.prisma.task.findUnique({
       where: {
         slug,
       },
       select: taskDetailSelect,
-    });
-
-    if (!task) {
-      return null;
-    }
-
-    return this.serializeTaskDetail(task);
-  }
-
-  async getTaskBySlugWithUser(
-    slug: string,
-    userId?: string,
-  ) {
-    const task = await this.prisma.task.findUnique({
-      where: {
-        slug,
-      },
-        select: taskDetailSelect,
     });
 
     if (!task) {
@@ -602,7 +560,9 @@ export class TasksService {
   /**
    * Toggles a user's join-table row (like/subscribe/bookmark) and keeps the
    * matching literal counter column on Task in sync, atomically, so the
-   * counter never drifts from the actual number of join rows.
+   * counter never drifts from the actual number of join rows. The counter
+   * is decremented with a floor of 0 to guard against double-processed
+   * requests (e.g. a retried network call) ever pushing it negative.
    */
   private async toggleWithCounter(args: {
     taskId: string;
@@ -632,6 +592,7 @@ export class TasksService {
           },
         });
 
+        // Clamp to 0 in case of any prior drift — never show a negative count.
         await tx.task.updateMany({
           where: {
             id: args.taskId,

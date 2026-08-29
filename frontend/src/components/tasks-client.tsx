@@ -2,6 +2,9 @@
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import ChevronUp from 'lucide-react/dist/esm/icons/chevron-up';
+import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down';
+import ChevronsUpDown from 'lucide-react/dist/esm/icons/chevrons-up-down';
 
 import {
   fetchTasks,
@@ -22,8 +25,17 @@ type TasksClientProps = {
   defaultCategory?: string;
 };
 
-const COLUMN_LABELS = ["TOOLS", "MODELS", "ROBOTS", "DEVICES"];
 const PAGE_SIZE = 100;
+
+type SortColumn = "name" | "tools" | "models" | "robots" | "devices";
+type SortDirection = "asc" | "desc";
+
+const COLUMNS: { key: SortColumn; label: string }[] = [
+  { key: "tools", label: "TOOLS" },
+  { key: "models", label: "MODELS" },
+  { key: "robots", label: "ROBOTS" },
+  { key: "devices", label: "DEVICES" },
+];
 
 const TASK_CATEGORIES = [
   { name: "All", slug: "" },
@@ -44,6 +56,28 @@ const TASK_CATEGORIES = [
   { name: "Website Building", slug: "website-building" }
 ];
 
+/** Maps a URL `sort` value to the {column, direction} the header UI needs, and back. */
+function parseSort(raw: string | null): { column: SortColumn | null; direction: SortDirection } {
+  switch (raw) {
+    case "name-asc": case "alphabetical": return { column: "name", direction: "asc" };
+    case "name-desc": return { column: "name", direction: "desc" };
+    case "tools-asc": return { column: "tools", direction: "asc" };
+    case "tools-desc": return { column: "tools", direction: "desc" };
+    case "models-asc": return { column: "models", direction: "asc" };
+    case "models-desc": return { column: "models", direction: "desc" };
+    case "robots-asc": return { column: "robots", direction: "asc" };
+    case "robots-desc": return { column: "robots", direction: "desc" };
+    case "devices-asc": return { column: "devices", direction: "asc" };
+    case "devices-desc": return { column: "devices", direction: "desc" };
+    default: return { column: null, direction: "desc" }; // "newest"/"oldest"/"popular"/unset
+  }
+}
+
+function buildSortValue(column: SortColumn, direction: SortDirection): SortOption {
+  if (column === "name") return direction === "asc" ? "name-asc" : "name-desc";
+  return `${column}-${direction}` as SortOption;
+}
+
 export function TasksClient({ initialData, defaultCategory = "" }: TasksClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -51,6 +85,10 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
 
   const activeCategory = defaultCategory || searchParams.get("category") || "";
   const currentPage = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+
+  const rawSort = searchParams.get("sort");
+  const { column: activeSortColumn, direction: activeSortDirection } = parseSort(rawSort);
+  const effectiveSort: SortOption = (rawSort as SortOption) || "newest";
 
   const [tasks, setTasks] = useState<Task[]>(initialData?.tasks ?? []);
   const [total, setTotal] = useState(initialData?.total ?? 0);
@@ -60,24 +98,15 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
   const [error, setError] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
 
-  // Guards against race conditions: only the most recently issued request
-  // is allowed to commit its result to state.
   const requestIdRef = useRef(0);
-
-  const rawSort = searchParams.get("sort") ?? "newest";
-  const mappedSort: SortOption =
-    rawSort === "oldest" ? "oldest" :
-    rawSort === "name-asc" || rawSort === "name-desc" ? "alphabetical" :
-    rawSort === "rating" ? "popular" :
-    "newest";
 
   const queryParams = useMemo(
     () => ({
-      sort: mappedSort as SortOption,
+      sort: effectiveSort,
       filter: "all" as FilterOption,
       category: activeCategory || undefined,
     }),
-    [activeCategory, mappedSort]
+    [activeCategory, effectiveSort]
   );
 
   const load = useCallback(
@@ -88,7 +117,7 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
       setAuthRequired(false);
       try {
         const data = await fetchTasks({ ...queryParams, page: pageNum, pageSize: PAGE_SIZE });
-        if (requestId !== requestIdRef.current) return; // stale response, ignore
+        if (requestId !== requestIdRef.current) return;
         setTasks(data.tasks);
         setTotal(data.total);
         setTotalPages(data.totalPages);
@@ -120,13 +149,19 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
   }, [queryParams.category, queryParams.sort, queryParams.filter, currentPage]);
 
   const navigate = useCallback(
-    (params: { category?: string; page?: number }) => {
+    (params: { category?: string; page?: number; sort?: SortOption }) => {
       const next = new URLSearchParams(searchParams.toString());
 
       if (params.category !== undefined) {
         if (params.category) next.set("category", params.category);
         else next.delete("category");
-        next.delete("page"); // reset to page 1 whenever category changes
+        next.delete("page");
+      }
+
+      if (params.sort !== undefined) {
+        if (params.sort && params.sort !== "newest") next.set("sort", params.sort);
+        else next.delete("sort");
+        next.delete("page"); // reset to page 1 whenever sort changes
       }
 
       if (params.page !== undefined) {
@@ -146,7 +181,31 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleSortClick = (column: SortColumn) => {
+    // Same column clicked again → flip direction. New column → default to descending
+    // (highest count / Z-A first, matching what people expect from a "most" click),
+    // except name, which defaults to A-Z.
+    let nextDirection: SortDirection;
+    if (activeSortColumn === column) {
+      nextDirection = activeSortDirection === "asc" ? "desc" : "asc";
+    } else {
+      nextDirection = column === "name" ? "asc" : "desc";
+    }
+    navigate({ sort: buildSortValue(column, nextDirection) });
+  };
+
   const isInitialLoading = isFetching && tasks.length === 0 && !error && !authRequired;
+
+  const SortIcon = ({ column }: { column: SortColumn }) => {
+    if (activeSortColumn !== column) {
+      return <ChevronsUpDown className="h-3 w-3 text-[#3A3A3E]" aria-hidden="true" />;
+    }
+    return activeSortDirection === "asc" ? (
+      <ChevronUp className="h-3 w-3 text-[#A78BFA]" aria-hidden="true" />
+    ) : (
+      <ChevronDown className="h-3 w-3 text-[#A78BFA]" aria-hidden="true" />
+    );
+  };
 
   return (
     <main className="w-full px-3 sm:px-6 lg:px-10 py-2 flex-1 selection:bg-neutral-800 selection:text-white">
@@ -193,14 +252,24 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
               <div className="min-w-[620px]">
                 <div className="grid grid-cols-[48px_minmax(220px,1.6fr)_repeat(4,minmax(90px,1fr))] items-center gap-4 px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
                   <span />
-                  <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A]">Task</span>
-                  {COLUMN_LABELS.map((label) => (
-                    <span
-                      key={label}
-                      className="text-right text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A]"
+                  <button
+                    type="button"
+                    onClick={() => handleSortClick("name")}
+                    className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A] hover:text-white transition-colors duration-150 cursor-pointer"
+                  >
+                    Task
+                    <SortIcon column="name" />
+                  </button>
+                  {COLUMNS.map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleSortClick(key)}
+                      className="flex items-center justify-end gap-1 text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A] hover:text-white transition-colors duration-150 cursor-pointer"
                     >
                       {label}
-                    </span>
+                      <SortIcon column={key} />
+                    </button>
                   ))}
                 </div>
 
@@ -275,7 +344,6 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
   );
 }
 
-/** Builds a compact page-number list with ellipses, e.g. [1, "…", 4, 5, 6, "…", 20] */
 function buildPageList(current: number, total: number): (number | "…")[] {
   const delta = 1;
   const range: (number | "…")[] = [];
