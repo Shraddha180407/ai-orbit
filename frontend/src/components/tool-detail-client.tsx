@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useParams, notFound } from "next/navigation";
+import { useParams, usePathname, notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -286,14 +286,38 @@ export function ToolDetailClient() {
   const [activeTab, setActiveTab] = useState<"overview" | "pricing" | "reviews">("overview");
 
 
+  const pathname = usePathname();
   const TASKS_VISIBLE = 8; // initial
-const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards (2 rows of 4 / 4 rows of 2) before "show all"
+  const [visibleCount, setVisibleCount] = useState(TASKS_VISIBLE); // show 8 cards (2 rows of 4 / 4 rows of 2) before "show all"
 
   const { data: detailData, isLoading, isError } = useQuery({
-    queryKey: ["tool-detail", slug],
+    queryKey: ["tool-detail", slug, pathname],
     queryFn: async () => {
       const sample = getSampleTool(slug);
       if (sample) return { tool: sample, similarTools: getSampleSimilarTools(slug), reviews: [], bookmarked: false };
+
+      if (pathname?.includes("/agents")) {
+        const agentRes = await fetch(`${API_URL}/api/v1/agents/${slug}`, { credentials: "include" });
+        if (agentRes.ok) {
+          const agent = await agentRes.json();
+          return {
+            tool: {
+              ...agent,
+              company: { name: agent.category, slug: agent.categorySlug },
+              categories: [{ category: { name: agent.category, slug: agent.categorySlug } }],
+              ttasks: agent.primaryTask ? [{ task: { slug: agent.categorySlug, title: agent.primaryTask } }] : [],
+            },
+            similarTools: (agent.similarAgents || []).map((sa: any) => ({
+              ...sa,
+              company: { name: sa.category, slug: sa.categorySlug },
+              categories: [{ category: { name: sa.category, slug: sa.categorySlug } }],
+            })),
+            reviews: [],
+            bookmarked: false,
+          };
+        }
+      }
+
       const res = await fetch(`${API_URL}/api/v1/tools/${slug}`, { credentials: "include" });
       if (!res.ok) throw new Error("Not found");
       return res.json();
