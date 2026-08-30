@@ -20,6 +20,7 @@ import { homepageRouter } from './modules/homepage/homepage.routes.js'
 import { toolsRouter } from './modules/tools/tools.routes.js'
 import { userRouter } from './modules/user/user.routes.js'
 import { mcpRouter } from './modules/mcp/mcp.routes.js'
+import { agentsRouter } from './modules/agents/agents.routes.js'
 import { searchRouter } from './modules/search/search.routes.js'
 import { getPrisma } from './lib/prisma.js'
 import { runIngestion } from './modules/ingestion/ingestion.service.js'
@@ -86,6 +87,7 @@ app.route('/api/v1/tools', toolsRouter)
 app.route('/api/user', userRouter)
 app.route('/api/bookmarks', bookmarksRouter)
 app.route('/api/v1/mcps', mcpRouter)
+app.route('/api/v1/agents', agentsRouter)
 app.route('/api/v1/search', searchRouter)
 
 app.get('/', (c) => {

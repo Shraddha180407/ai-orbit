@@ -18,38 +18,29 @@ export class FeedService {
     // All dates are normalized to DateTime so PostgreSQL can sort them perfectly.
     
     if (filters.includes('tools')) {
-      queries.push(Prisma.sql`SELECT id, COALESCE("releaseDate", "createdAt") as sort_date, 'TOOL' as "entityType", CASE WHEN "releaseDate" IS NOT NULL THEN 2 ELSE 1 END as quality_score FROM "Tool" WHERE "logoUrl" IS NOT NULL AND "logoUrl" != ''`);
+      queries.push(Prisma.sql`SELECT id, COALESCE("releaseDate", "createdAt") as sort_date, 'TOOL' as "entityType", (CASE WHEN "releaseDate" IS NOT NULL THEN 2 ELSE 1 END)::int as quality_score FROM "Tool" WHERE "logoUrl" IS NOT NULL AND "logoUrl" != ''`);
     }
     if (filters.includes('devices')) {
       // FIX: Devices don't have a releaseDate column in the database, so we default to 1!
-      queries.push(Prisma.sql`SELECT id, "createdAt" as sort_date, 'DEVICE' as "entityType", 1 as quality_score FROM "Device" WHERE "imageUrl" IS NOT NULL AND "imageUrl" != ''`);
+      queries.push(Prisma.sql`SELECT id, "createdAt" as sort_date, 'DEVICE' as "entityType", 1::int as quality_score FROM "Device" WHERE "imageUrl" IS NOT NULL AND "imageUrl" != ''`);
     }
     if (filters.includes('robots')) {
-      queries.push(Prisma.sql`SELECT id, "createdAt" as sort_date, 'ROBOT' as "entityType", CASE WHEN "releaseDate" IS NOT NULL AND "releaseDate" != '' THEN 2 ELSE 1 END as quality_score FROM "Robot" WHERE ("logoUrl" IS NOT NULL AND "logoUrl" != '') OR ("thumbnailUrl" IS NOT NULL AND "thumbnailUrl" != '')`);
+      queries.push(Prisma.sql`SELECT id, "createdAt" as sort_date, 'ROBOT' as "entityType", (CASE WHEN "releaseDate" IS NOT NULL AND "releaseDate" != '' THEN 2 ELSE 1 END)::int as quality_score FROM "Robot" WHERE ("logoUrl" IS NOT NULL AND "logoUrl" != '') OR ("thumbnailUrl" IS NOT NULL AND "thumbnailUrl" != '')`);
     }
     if (filters.includes('news')) {
-      queries.push(Prisma.sql`SELECT id, "publishedAt" as sort_date, 'NEWS' as "entityType", 2 as quality_score FROM "News"`);
+      queries.push(Prisma.sql`SELECT id, "publishedAt" as sort_date, 'NEWS' as "entityType", 2::int as quality_score FROM "News"`);
     }
     if (filters.includes('models')) {
-      queries.push(Prisma.sql`SELECT id, "createdAt" as sort_date, 'MODEL' as "entityType", CASE WHEN "releaseDate" IS NOT NULL AND "releaseDate" != '' AND "releaseDate" != 'Unknown' THEN 2 ELSE 1 END as quality_score FROM "AIModel"`);
+      queries.push(Prisma.sql`SELECT id, "createdAt" as sort_date, 'MODEL' as "entityType", (CASE WHEN "releaseDate" IS NOT NULL AND "releaseDate" != '' AND "releaseDate" != 'Unknown' THEN 2 ELSE 1 END)::int as quality_score FROM "AIModel"`);
     }
     if (filters.includes('companies')) {
-      queries.push(Prisma.sql`SELECT id, "createdAt" as sort_date, 'COMPANY' as "entityType", 1 as quality_score FROM "Company" WHERE "logoUrl" IS NOT NULL AND "logoUrl" != ''`);
+      queries.push(Prisma.sql`SELECT id, "createdAt" as sort_date, 'COMPANY' as "entityType", 1::int as quality_score FROM "Company" WHERE "logoUrl" IS NOT NULL AND "logoUrl" != ''`);
     }
     if (filters.includes('videos')) {
-      queries.push(Prisma.sql`SELECT id, "createdAt" as sort_date, 'VIDEO' as "entityType", 2 as quality_score FROM "Video" WHERE "thumbnail" IS NOT NULL AND "thumbnail" != ''`);
+      queries.push(Prisma.sql`SELECT id, "createdAt" as sort_date, 'VIDEO' as "entityType", 2::int as quality_score FROM "Video" WHERE "thumbnail" IS NOT NULL AND "thumbnail" != ''`);
     }
     if (filters.includes('repositories')) {
-      queries.push(Prisma.sql`SELECT id, "githubCreatedAt" as sort_date, 'REPOSITORY' as "entityType", 2 as quality_score FROM "Repository"`);
-    }
-    if (filters.includes('companies')) {
-      queries.push(Prisma.sql`SELECT id, "createdAt", 'COMPANY' as "entityType", 0 as task_count FROM "Company"`);
-    }
-    if (filters.includes('videos')) {
-      queries.push(Prisma.sql`SELECT id, "createdAt", 'VIDEO' as "entityType", 0 as task_count FROM "Video"`);
-    }
-    if (filters.includes('repositories')) {
-      queries.push(Prisma.sql`SELECT id, "createdAt", 'REPOSITORY' as "entityType", 0 as task_count FROM "Repository"`);
+      queries.push(Prisma.sql`SELECT id, "githubCreatedAt" as sort_date, 'REPOSITORY' as "entityType", 2::int as quality_score FROM "Repository"`);
     }
 
     if (queries.length === 0) return { items: [], page, totalPages: 0, hasNextPage: false };
@@ -132,16 +123,32 @@ export class FeedService {
       
       models.forEach((m: any) => {
         const isUnknown = m.releaseDate === 'Unknown' || !m.releaseDate;
+        const provider = m.provider ? {
+          ...m.provider,
+          valuation: m.provider.valuation != null ? Number(m.provider.valuation) : null,
+          fundingRaised: m.provider.fundingRaised != null ? Number(m.provider.fundingRaised) : null,
+        } : null;
         itemMap.set(`MODEL-${m.id}`, { 
-          ...m, entityType: 'MODEL', logoUrl: m.provider?.logoUrl || m.logoUrl, description: m.description, 
-          releaseDate: isUnknown ? null : m.releaseDate, pricingModel: m.openSource ? 'FREE' : 'FREEMIUM', hasApi: m.apiAvailable,
+          ...m,
+          provider,
+          entityType: 'MODEL',
+          logoUrl: provider?.logoUrl || m.logoUrl,
+          description: m.description, 
+          releaseDate: isUnknown ? null : m.releaseDate,
+          pricingModel: m.openSource ? 'FREE' : 'FREEMIUM',
+          hasApi: m.apiAvailable,
           ttasks: m.primaryTask ? [{ task: { title: m.primaryTask, slug: m.primaryTask } }] : []
         });
       });
 
       companies.forEach((c: any) => {
         itemMap.set(`COMPANY-${c.id}`, { 
-          ...c, entityType: 'COMPANY', pricingModel: 'FREE', hasApi: false,
+          ...c,
+          valuation: c.valuation != null ? Number(c.valuation) : null,
+          fundingRaised: c.fundingRaised != null ? Number(c.fundingRaised) : null,
+          entityType: 'COMPANY',
+          pricingModel: 'FREE',
+          hasApi: false,
           releaseDate: c.foundedYear ? `${c.foundedYear}-01-01` : null,
           ttasks: c.sector ? [{ task: { title: c.sector, slug: c.sector } }] : []
         });
