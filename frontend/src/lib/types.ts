@@ -442,6 +442,19 @@ export type Device = {
   buyUrl?: string | null;
   images?: string[];
   videoUrl?: string | null;
+  // extended fields
+  longDescription?: string | null;
+  processor?: string | null;
+  storage?: string | null;
+  battery?: string | null;
+  display?: string | null;
+  connectivity?: string[] | null;
+  weight?: string | null;
+  aiModel?: string | null;
+  processingType?: "On-device" | "Cloud" | "Hybrid" | null;
+  bestFor?: string[] | null;
+  score?: number | null;
+  verdict?: string | null;
 };
 
 // ---------------------------------------------------------------------------
