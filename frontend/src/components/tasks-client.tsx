@@ -182,9 +182,6 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
   };
 
   const handleSortClick = (column: SortColumn) => {
-    // Same column clicked again → flip direction. New column → default to descending
-    // (highest count / Z-A first, matching what people expect from a "most" click),
-    // except name, which defaults to A-Z.
     let nextDirection: SortDirection;
     if (activeSortColumn === column) {
       nextDirection = activeSortDirection === "asc" ? "desc" : "asc";
@@ -248,35 +245,36 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
       ) : (
         <>
           <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#131316]/60 to-[#0D0D10]/60 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_20px_60px_-30px_rgba(0,0,0,0.8)] ring-1 ring-[#232326]/70">
-            <div className="overflow-x-auto scrollbar-none">
-              <div className="min-w-[620px]">
-                <div className="grid grid-cols-[48px_minmax(220px,1.6fr)_repeat(4,minmax(90px,1fr))] items-center gap-4 px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
-                  <span />
+            <div className="w-full">
+              <div className="grid grid-cols-[40px_1fr_auto] sm:grid-cols-[44px_minmax(220px,1.5fr)_repeat(4,minmax(70px,0.8fr))_minmax(70px,0.8fr)] items-center gap-3 sm:gap-3 px-4 sm:px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
+                <span />
+                <button
+                  type="button"
+                  onClick={() => handleSortClick("name")}
+                  className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A] hover:text-white transition-colors duration-150 cursor-pointer"
+                >
+                  Task
+                  <SortIcon column="name" />
+                </button>
+                {COLUMNS.map(({ key, label }) => (
                   <button
+                    key={key}
                     type="button"
-                    onClick={() => handleSortClick("name")}
-                    className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A] hover:text-white transition-colors duration-150 cursor-pointer"
+                    onClick={() => handleSortClick(key)}
+                    className="hidden sm:flex items-center justify-center gap-1 text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A] hover:text-white transition-colors duration-150 cursor-pointer"
                   >
-                    Task
-                    <SortIcon column="name" />
+                    {label}
+                    <SortIcon column={key} />
                   </button>
-                  {COLUMNS.map(({ key, label }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => handleSortClick(key)}
-                      className="flex items-center justify-end gap-1 text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A] hover:text-white transition-colors duration-150 cursor-pointer"
-                    >
-                      {label}
-                      <SortIcon column={key} />
-                    </button>
-                  ))}
-                </div>
-
-                {tasks.map((task) => (
-                  <TaskCard key={task.id} task={task} />
                 ))}
+                <span className="hidden sm:block text-center text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A]">
+                  Actions
+                </span>
               </div>
+
+              {tasks.map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))}
             </div>
 
             {error && (
