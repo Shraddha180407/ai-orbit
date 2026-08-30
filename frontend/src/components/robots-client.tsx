@@ -177,7 +177,7 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
     staleTime: 10 * 60 * 1000,
   });
 
-  const robots = fetchedRobots || FALLBACK_ROBOTS;
+  const robots = (fetchedRobots && fetchedRobots.length > 0) ? fetchedRobots : FALLBACK_ROBOTS;
 
   useEffect(() => {
     if (defaultCategory !== undefined) {

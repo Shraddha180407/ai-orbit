@@ -126,6 +126,18 @@ export function ToolsClient({
   const pricing = searchParams.get("pricing") || undefined;
   const sort = (searchParams.get("sort") || undefined) as SortOption | undefined;
 
+  // Dynamic categories query for Agents mode
+  const { data: agentCategoriesData } = useQuery({
+    queryKey: ["agent-categories"],
+    queryFn: async () => {
+      const res = await fetch(`${API_URL}/api/v1/agents/categories`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: mode === "agents",
+    staleTime: 10 * 60 * 1000,
+  });
+
   // Single page Query
   const { data, isLoading, isPlaceholderData } = useQuery({
     queryKey: ["tools", mode, activeCategory, q, pricing, sort, currentPage],
@@ -135,6 +147,13 @@ export function ToolsClient({
       if (pricing) query.set("pricing", pricing);
       if (sort) query.set("sort", sort);
       query.set("page", String(currentPage));
+
+      if (mode === "agents") {
+        if (activeCategory) query.set("category", activeCategory);
+        const res = await fetch(`${API_URL}/api/v1/agents?${query.toString()}`);
+        if (!res.ok) return { tools: [], totalPages: 1 };
+        return res.json();
+      }
 
       const endpoint = activeCategory
         ? `${API_URL}/api/v1/tools/category/${activeCategory}`
@@ -151,7 +170,18 @@ export function ToolsClient({
   const tools = data?.tools || [];
   const totalPages = data?.totalPages || 1;
 
-  const categories = CATEGORY_MAP[mode] || CATEGORY_MAP.tools;
+  const categories = React.useMemo(() => {
+    if (mode === "agents" && Array.isArray(agentCategoriesData) && agentCategoriesData.length > 0) {
+      return [
+        { name: "All", slug: "" },
+        ...agentCategoriesData.map((c: { name: string; slug: string }) => ({
+          name: c.name,
+          slug: c.slug,
+        })),
+      ];
+    }
+    return CATEGORY_MAP[mode] || CATEGORY_MAP.tools;
+  }, [mode, agentCategoriesData]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;

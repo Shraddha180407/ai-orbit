@@ -192,7 +192,9 @@ export function DevicesClient({ defaultCategory }: { defaultCategory?: string })
     staleTime: 10 * 60 * 1000,
   });
 
-  const devices = fetchedDevices || DEVICES_DATA;
+  const devices = (fetchedDevices && fetchedDevices.length > 0) 
+    ? (fetchedDevices[0]?.slug && fetchedDevices[0]?.name ? fetchedDevices : mergeWithDummy(fetchedDevices as any)) 
+    : DEVICES_DATA;
   const [currentPage, setCurrentPage] = useState(1);
   const loaderRef = useRef<HTMLDivElement>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
