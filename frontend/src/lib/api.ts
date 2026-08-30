@@ -415,7 +415,9 @@ export async function fetchMCPItemBySlug(slug: string): Promise<MCPItem | null> 
   if (responseJson && responseJson.success && responseJson.data) {
     return responseJson.data;
   }
-  return null;
+  // Fall back to hardcoded data when API returns nothing (e.g. local dev with empty DB)
+  const { FALLBACK_MCP_ITEMS } = await import("@/data/mcp");
+  return FALLBACK_MCP_ITEMS.find((item) => item.slug === slug) ?? null;
 }
 
 export async function fetchMCPItemAlternatives(slug: string): Promise<MCPItem[]> {
