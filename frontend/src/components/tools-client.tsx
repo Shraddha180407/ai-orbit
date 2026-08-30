@@ -157,6 +157,8 @@ export function ToolsClient({
 
       const endpoint = activeCategory
         ? `${API_URL}/api/v1/tools/category/${activeCategory}`
+        : mode === "personal" || mode === "creativity"
+        ? `${API_URL}/api/v1/tools/category/${mode}`
         : `${API_URL}/api/v1/tools`;
 
       const res = await fetch(`${endpoint}?${query.toString()}`);
@@ -164,7 +166,7 @@ export function ToolsClient({
       return res.json();
     },
     placeholderData: keepPreviousData,
-    staleTime: 10 * 60 * 1000,
+    staleTime: 30 * 1000,
   });
 
   const tools = data?.tools || [];
