@@ -141,6 +141,9 @@ model User {
   mcpSavedItems     MCPDirectorySavedMCP[]
   mcpClaims         MCPDirectoryClaim[]
   mcpReports        MCPDirectoryReport[]
+
+  AgentBookmark     AgentBookmark[]
+  AgentReview       AgentReview[]
 }
 
 enum ToolCategoryEnum {
@@ -1603,3 +1606,71 @@ model MCPDirectoryClaim {
   @@index([mcpItemId])
   @@index([userId])
 }
+
+model Agent {
+  id            String          @id
+  slug          String          @unique
+  name          String
+  description   String
+  websiteUrl    String
+  logoUrl       String?
+  category      String
+  categorySlug  String
+  primaryTask   String
+  pricingModel  PricingModel
+  pricingRaw    String?
+  hasApi        Boolean         @default(false)
+  isOpenSource  Boolean         @default(false)
+  isTrending    Boolean         @default(false)
+  verified      Boolean         @default(false)
+  compatibility String[]        @default([])
+  source        String?
+  avgRating     Float           @default(0)
+  reviewCount   Int             @default(0)
+  upvoteCount   Int             @default(0)
+  views         Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @default(now())
+  AgentBookmark AgentBookmark[]
+  AgentReview   AgentReview[]
+
+  @@index([avgRating])
+  @@index([categorySlug])
+  @@index([category])
+  @@index([createdAt])
+  @@index([hasApi])
+  @@index([isOpenSource])
+  @@index([isTrending])
+  @@index([pricingModel])
+}
+
+model AgentBookmark {
+  id        String   @id
+  createdAt DateTime @default(now())
+  agentId   String
+  userId    String
+  Agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, userId])
+  @@index([agentId])
+  @@index([userId])
+}
+
+model AgentReview {
+  id        String   @id
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  agentId   String
+  userId    String
+  Agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, userId])
+  @@index([agentId])
+  @@index([rating])
+  @@index([userId])
+}
+
