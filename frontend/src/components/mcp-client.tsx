@@ -12,6 +12,7 @@ import Github from 'lucide-react/dist/esm/icons/github';
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 
 import { fetchMCPCategories, fetchMCPSubCategories, fetchMCPItems } from "@/lib/api";
+import { FALLBACK_MCP_ITEMS } from "@/data/mcp";
 import { EmptyState } from "@/components/EmptyState";
 import { CategoryChip } from "@/components/CategoryChip";
 import { PricingBadge } from "@/components/PricingBadge";
@@ -130,8 +131,11 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
 
   const items = React.useMemo(() => {
     const fetchedItems = data?.pages.flatMap((page) => page.items || []) || [];
-    
-    return fetchedItems.sort((a: any, b: any) => {
+
+    // Use fallback data when API returns nothing (e.g. local dev with empty DB)
+    const sourceItems = fetchedItems.length > 0 ? fetchedItems : FALLBACK_MCP_ITEMS;
+
+    return sourceItems.sort((a: any, b: any) => {
       const getScore = (item: any) => {
         if (item.logoUrl && item.shortDescription && item.shortDescription.trim() !== "") return 2;
         return 1;
