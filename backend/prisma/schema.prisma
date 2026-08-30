@@ -702,6 +702,18 @@ model Device {
   primaryUseCases     String[]     @default([])
   additionalInfo      String?
   buyUrl              String?
+  longDescription     String?
+  processor           String?
+  storage             String?
+  battery             String?
+  display             String?
+  connectivity        String[]
+  weight              String?
+  aiModel             String?
+  processingType      String?
+  bestFor             String[]
+  score               Int?
+  verdict             String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @default(now()) @updatedAt
   tasks               TaskDevice[]
