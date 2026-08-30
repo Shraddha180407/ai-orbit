@@ -80,7 +80,7 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
       description: `Details and specifications for ${formattedSlug}.`,
     };
   }
-  
+
   if (type === "mcp") {
     return {
       title: `${formattedSlug} — Model Context Protocol (MCP) | AI Orbit`,
@@ -125,16 +125,16 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
 export default async function UnifiedEntityPage({ params }: UnifiedEntityPageProps) {
   const resolvedParams = await params;
   const { type, slug } = resolvedParams;
-  
+
   if ((type === "tools" || type === "personal" || type === "creativity" || type === "agents") && VALID_CATEGORIES[type]?.has(slug)) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
         <Suspense fallback={
           <main className="mx-auto max-w-container px-6 py-10 flex-1">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {[1,2,3,4,5,6,7,8].map((i) => (
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
               ))}
             </div>
@@ -144,19 +144,19 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
             <ToolsClient defaultMode={type as any} defaultCategory={slug} />
           </div>
         </Suspense>
-        <Footer />
+
       </div>
     );
   }
   if (type === "mcp" && VALID_CATEGORIES.mcp.has(slug)) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
         <Suspense fallback={
           <main className="mx-auto max-w-container px-6 py-10 flex-1">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {[1,2,3,4,5,6,7,8].map((i) => (
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
               ))}
             </div>
@@ -166,114 +166,114 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
             <MCPClient defaultSubCategory={slug} />
           </div>
         </Suspense>
-        <Footer />
+
       </div>
     );
   }
   if (type === "tasks" && VALID_CATEGORIES.tasks.has(slug)) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
         <div className="flex-1">
           <TasksClient defaultCategory={slug} />
         </div>
-        <Footer />
+
       </div>
     );
   }
   if (type === "companies" && VALID_CATEGORIES.companies.has(slug)) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
         <div className="flex-1">
           <CompaniesClient defaultCategory={slug} />
         </div>
-        <Footer />
+
       </div>
     );
   }
   if (type === "news" && VALID_CATEGORIES.news.has(slug)) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
         <div className="flex-1">
           <NewsListingClient category={slug} />
         </div>
-        <Footer />
+
       </div>
     );
   }
   if (type === "videos" && VALID_CATEGORIES.videos.has(slug)) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
         <div className="flex-1">
           <VideosPageClient initialVideos={[]} initialTotal={0} pageSize={24} defaultCategory={slug} />
         </div>
-        <Footer />
+
       </div>
     );
   }
   if (type === "robots" && VALID_CATEGORIES.robots.has(slug)) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
         <div className="flex-1">
           <RobotsClient defaultCategory={slug} />
         </div>
-        <Footer />
+
       </div>
     );
   }
   if (type === "devices" && VALID_CATEGORIES.devices.has(slug)) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
         <div className="flex-1">
           <DevicesClient defaultCategory={slug} />
         </div>
-        <Footer />
+
       </div>
     );
   }
   if (type === "models" && VALID_CATEGORIES.models.has(slug)) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
         <div className="flex-1">
           <ModelsClient defaultSubCategory={slug} />
         </div>
-        <Footer />
+
       </div>
     );
   }
   if (type === "repositories" && VALID_CATEGORIES.repositories.has(slug)) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
         <div className="flex-1">
           <RepositoriesClient defaultCategory={slug} />
         </div>
-        <Footer />
+
       </div>
     );
   }
 
   if (type === "tools" || type === "personal" || type === "creativity" || type === "agents") return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-      <Header />
+    <div className="flex flex-col flex-1 bg-[#000000] text-white">
+
       <div className="flex-1">
         <ToolDetailClient />
       </div>
-      <Footer />
+
     </div>
   );
   if (type === "mcp") {
@@ -297,10 +297,10 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   if (type === "companies") return <CompanyDetailClient />;
   if (type === "models") {
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
+      <div className="flex flex-col flex-1">
+
         <ModelDetailClient />
-        <Footer />
+
       </div>
     );
   }
@@ -308,9 +308,9 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   if (type === "robots") {
     return (
       <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-        <Header />
+
         <RobotDetailClient id={slug} />
-        <Footer />
+
       </div>
     );
   }

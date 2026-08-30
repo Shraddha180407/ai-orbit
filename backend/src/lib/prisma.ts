@@ -23,12 +23,21 @@ export function getPrisma(env: unknown) {
     return _cachedWorkerPrisma;
   }
 
-  const adapter = new PrismaNeonHttp(dbUrl, {});
-  const client = new PrismaClient({ adapter });
-  client.$disconnect = async () => {};
+  let client: PrismaClient;
 
+  if (dbUrl.includes("localhost") || dbUrl.includes("127.0.0.1")) {
+    const pool = new Pool({ connectionString: dbUrl });
+    const adapter = new PrismaPg(pool);
+    client = new PrismaClient({ adapter });
+  } else {
+    const adapter = new PrismaNeonHttp(dbUrl, {});
+    client = new PrismaClient({ adapter });
+  }
+
+  client.$disconnect = async () => {};
   _cachedWorkerPrisma = client;
   _cachedDbUrl = dbUrl;
+
   return _cachedWorkerPrisma;
 }
 
@@ -57,7 +66,15 @@ export const prisma = new Proxy({} as PrismaClient, {
       if (!dbUrl) {
         throw new Error('DATABASE_URL is not configured');
       }
-      const adapter = new PrismaNeonHttp(dbUrl, {});
+            let adapter;
+
+      if (dbUrl.includes("localhost") || dbUrl.includes("127.0.0.1")) {
+        const pool = new Pool({ connectionString: dbUrl });
+        adapter = new PrismaPg(pool);
+      } else {
+        adapter = new PrismaNeonHttp(dbUrl, {});
+      }
+
       _fallbackPrisma = new PrismaClient({ adapter });
       _fallbackPrisma.$disconnect = async () => {};
     }

@@ -72,7 +72,7 @@ export function Header() {
   }, [mobileMenuOpen]);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/20 bg-background/80 backdrop-blur-md py-3 sm:py-4 relative">
+    <header className="sticky top-0 z-50 w-full border-b border-border/20 bg-background/80 backdrop-blur-md py-2 sm:py-3 relative">
       {/* Center: Nav links, centered against the full page width on lg+ */}
       <nav className="hidden lg:flex items-center gap-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
         <Link
@@ -115,7 +115,7 @@ export function Header() {
           </button>
 
           <Link href="/" className="flex items-center group shrink-0 min-w-0 -ml-2 relative z-30">
-            <AiOrbitLogo size="auto" className="h-14 sm:h-20 lg:h-24 text-white transition-transform group-hover:scale-105 active:scale-95" />
+            <AiOrbitLogo size="auto" className="h-10 sm:h-14 lg:h-16 text-white transition-transform group-hover:scale-105 active:scale-95" />
           </Link>
         </div>
 

@@ -89,8 +89,8 @@ export default function CreativityTasksPage() {
   }, [categoryTools, selectedTopic]);
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col justify-between">
-      <Header />
+    <div className="flex flex-col flex-1 justify-between">
+
 
       <main className="flex-1 mx-auto max-w-[1600px] w-full px-6 py-10">
         <Link
@@ -136,7 +136,7 @@ export default function CreativityTasksPage() {
         <ToolListView tools={filteredTools} loading={isLoading} />
       </main>
 
-      <Footer />
+
     </div>
   );
 }

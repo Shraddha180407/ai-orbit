@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function PersonalPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-      <Header />
+
       <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
       <Suspense fallback={
         <main className="mx-auto max-w-container px-6 py-10 flex-1">
@@ -28,7 +28,7 @@ export default function PersonalPage() {
           <ToolsClient defaultMode="personal" />
         </div>
       </Suspense>
-      <Footer />
+
     </div>
   );
 }

@@ -149,8 +149,8 @@ export function CompareClient() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#000000]">
-      <Header />
+    <div className="flex flex-col flex-1">
+
 
       <main className="mx-auto w-full max-w-[900px] flex-1 px-3 sm:px-6 py-6 sm:py-10">
         <button
@@ -231,7 +231,7 @@ export function CompareClient() {
         )}
       </main>
 
-      <Footer />
+
     </div>
   );
 }

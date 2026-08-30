@@ -28,8 +28,8 @@ export const metadata: Metadata = {
 
 export default function AgentsPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-      <Header />
+    <div className="flex flex-col flex-1">
+
       <Suspense fallback={<div className="h-[300px]" />}>
         <GlobalHero />
       </Suspense>
@@ -51,7 +51,7 @@ export default function AgentsPage() {
           <ToolsClient defaultMode="agents" />
         </div>
       </Suspense>
-      <Footer />
+
     </div>
   );
 }

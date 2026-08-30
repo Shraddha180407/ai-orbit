@@ -14,7 +14,14 @@ const BASE_URL = resolveApiUrl();
 
 export type Difficulty = "EASY" | "MEDIUM" | "ADVANCED";
 export type PricingModel = "FREE" | "FREEMIUM" | "PAID" | "FREE_TRIAL";
-export type SortOption = "newest" | "oldest" | "alphabetical" | "popular";
+export type SortOption =
+  | "newest" | "oldest"
+  | "alphabetical" | "name-asc" | "name-desc"
+  | "popular" | "rating"
+  | "tools-asc" | "tools-desc"
+  | "models-asc" | "models-desc"
+  | "robots-asc" | "robots-desc"
+  | "devices-asc" | "devices-desc";
 export type FilterOption = "all" | "for-you" | "following";
 
 export type Category = {
@@ -34,8 +41,17 @@ export type PopularTool = {
   logoUrl: string | null;
   tagline: string | null;
   pricingModel: string | null;
+  pricingAmount: number | null;
+  billingFrequency: string | null;
+
+  hasApi: boolean | null;
+  isOpenSource: boolean | null;
+  compatibility: string | null;
+  releaseDate: string | null;
+
   rating: number | null;
   bookmarkCount: number | null;
+
   visitUrl: string | null;
 };
 
@@ -176,7 +192,16 @@ export async function fetchTasks(params: FetchTasksParams = {}): Promise<TaskLis
 
 export async function fetchTask(slug: string): Promise<TaskDetailResponse | null> {
   const url = `${BASE_URL}/api/v1/tasks/${encodeURIComponent(slug)}`;
-  return cachedFetchJson<TaskDetailResponse | null>(url, null, { ttlMs: 15 * 60 * 1000 });
+
+  return cachedFetchJson<TaskDetailResponse | null>(
+    url,
+    null,
+    {
+      ttlMs: 15 * 60 * 1000,
+      forceRefresh: true,
+      swr: false,
+    }
+  );
 }
 
 export async function fetchCategories(): Promise<Category[]> {

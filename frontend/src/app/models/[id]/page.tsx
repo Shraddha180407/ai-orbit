@@ -29,9 +29,9 @@ export async function generateMetadata({ params }: ModelPageProps): Promise<Meta
 export default function ModelDetailPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-      <Header />
+
       <ModelDetailClient />
-      <Footer />
+
     </div>
   );
 }

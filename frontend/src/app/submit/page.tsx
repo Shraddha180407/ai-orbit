@@ -4,7 +4,7 @@ import { ArrowRight, PlusCircle } from "lucide-react";
 
 export default function SubmitAIPage() {
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-16 sm:pt-24 pb-12">
+    <div className="flex-1 bg-black text-white font-sans selection:bg-white/30 pt-16 sm:pt-24 pb-12">
       <div className="max-w-[800px] mx-auto px-4 sm:px-6 lg:px-12 text-center mt-8 sm:mt-20">
         <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#121212] border border-[#27272a] rounded-2xl flex items-center justify-center mx-auto mb-6 sm:mb-8">
           <PlusCircle size={28} className="text-white" />
