@@ -12,7 +12,7 @@ interface CacheEntry<T> {
 
 const memoryCache = new Map<string, CacheEntry<any>>();
 const inFlightRequests = new Map<string, Promise<any>>();
-const DEFAULT_TTL_MS = 15 * 60 * 1000; // 15 minutes default TTL
+const DEFAULT_TTL_MS = 60 * 1000; // 60 seconds default TTL
 const MAX_MEMORY_ENTRIES = 500;
 const STORAGE_PREFIX = "aiorbit_cache_";
 
@@ -28,17 +28,26 @@ function getStorage(): Storage | null {
   }
 }
 
+function isEmptyPayload(data: any): boolean {
+  if (data === null || data === undefined) return true;
+  if (Array.isArray(data) && data.length === 0) return true;
+  if (typeof data === "object") {
+    if (Array.isArray(data.companies) && data.companies.length === 0) return true;
+    if (Array.isArray(data.tools) && data.tools.length === 0) return true;
+    if (Array.isArray(data.agents) && data.agents.length === 0) return true;
+    if (Array.isArray(data.items) && data.items.length === 0) return true;
+    if (data.total === 0 && (!data.items || data.items.length === 0)) return true;
+  }
+  return false;
+}
+
 /** Retrieve item from memory or persistent session storage */
 export function getFromCache<T>(key: string): T | null {
   const now = Date.now();
   const entry = memoryCache.get(key);
 
   if (entry) {
-    if (entry.expiresAt > now) {
-      return entry.data as T;
-    }
-    // Stale entry - still return data for SWR if within 24h grace period
-    if (now - entry.timestamp < 24 * 60 * 60 * 1000) {
+    if (entry.expiresAt > now && !isEmptyPayload(entry.data)) {
       return entry.data as T;
     }
     memoryCache.delete(key);
@@ -51,10 +60,11 @@ export function getFromCache<T>(key: string): T | null {
       const raw = storage.getItem(STORAGE_PREFIX + key);
       if (raw) {
         const parsed: CacheEntry<T> = JSON.parse(raw);
-        if (parsed && (parsed.expiresAt > now || now - parsed.timestamp < 24 * 60 * 60 * 1000)) {
+        if (parsed && parsed.expiresAt > now && !isEmptyPayload(parsed.data)) {
           memoryCache.set(key, parsed);
           return parsed.data;
         }
+        storage.removeItem(STORAGE_PREFIX + key);
       }
     } catch {
       // Ignore storage errors
@@ -66,7 +76,7 @@ export function getFromCache<T>(key: string): T | null {
 
 /** Save item to memory and persistent session storage */
 export function setInCache<T>(key: string, data: T, ttlMs = DEFAULT_TTL_MS): void {
-  if (data === undefined || data === null) return;
+  if (isEmptyPayload(data)) return;
 
   const now = Date.now();
   const entry: CacheEntry<T> = {

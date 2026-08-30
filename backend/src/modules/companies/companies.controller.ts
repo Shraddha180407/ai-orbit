@@ -6,12 +6,25 @@ export class CompaniesController {
   async listCompanies(c: Context) {
     const prisma = getPrisma(c.env);
     const service = new CompaniesService(prisma);
-    const typeFilter = c.req.query('type');
+    const q = c.req.query('q');
+    const typeFilter = c.req.query('type') || c.req.query('category');
+    const country = c.req.query('country');
+    const sort = c.req.query('sort');
+    const page = Number.parseInt(c.req.query('page') || '1', 10);
+    const pageSize = Number.parseInt(c.req.query('pageSize') || c.req.query('limit') || '50', 10);
+
     const validTypeFilter = typeFilter && typeFilter in CompanyType ? typeFilter as CompanyType : undefined;
 
     try {
-      const companies = await service.listCompanies();
-      return c.json(companies);
+      const result = await service.listCompanies({
+        page,
+        pageSize,
+        q,
+        type: validTypeFilter,
+        country,
+        sort,
+      });
+      return c.json(result);
     } catch (error: unknown) {
       return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
     } finally {
