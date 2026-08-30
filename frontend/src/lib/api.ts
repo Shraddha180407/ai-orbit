@@ -61,18 +61,46 @@ export async function fetchLeaderboardCompanies(): Promise<any[]> {
   return cachedFetchJson<any[]>(`${API_URL}/api/v1/leaderboard/companies`, [], { ttlMs: 15 * 60 * 1000 });
 }
 
-export async function fetchAllCompanies(): Promise<any[]> {
-  const primaryUrl = `${API_URL}/api/v1/companies`;
-  const raw = await cachedFetchJson<any>(primaryUrl, null, { ttlMs: 15 * 60 * 1000 });
-  
-  let list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.companies)) ? raw.companies : [];
-  
-  if ((!list || list.length === 0) && API_URL !== "https://ai-orbit.palamrendra-pm.workers.dev") {
-    const fallbackRaw = await cachedFetchJson<any>("https://ai-orbit.palamrendra-pm.workers.dev/api/v1/companies", [], { ttlMs: 15 * 60 * 1000 });
-    list = Array.isArray(fallbackRaw) ? fallbackRaw : (fallbackRaw && Array.isArray(fallbackRaw.companies)) ? fallbackRaw.companies : [];
+export interface FetchCompaniesOptions {
+  page?: number;
+  pageSize?: number;
+  limit?: number;
+  q?: string;
+  type?: string;
+  category?: string;
+  country?: string;
+  sort?: string;
+}
+
+export interface CompaniesListResponse {
+  companies: any[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export async function fetchCompanies(options: FetchCompaniesOptions = {}): Promise<CompaniesListResponse> {
+  const url = new URL(`${API_URL}/api/v1/companies`);
+  if (options.page) url.searchParams.set("page", options.page.toString());
+  if (options.pageSize || options.limit) url.searchParams.set("pageSize", (options.pageSize || options.limit)!.toString());
+  if (options.q) url.searchParams.set("q", options.q);
+  if (options.type || options.category) url.searchParams.set("type", (options.type || options.category)!);
+  if (options.country && options.country !== "all") url.searchParams.set("country", options.country);
+  if (options.sort) url.searchParams.set("sort", options.sort);
+
+  const fallback: CompaniesListResponse = { companies: [], total: 0, page: 1, pageSize: 50, totalPages: 1 };
+  const raw = await cachedFetchJson<any>(url.toString(), fallback, { ttlMs: 60 * 1000 });
+
+  if (Array.isArray(raw)) {
+    return { companies: raw, total: raw.length, page: 1, pageSize: raw.length, totalPages: 1 };
   }
-  
-  return list;
+  return raw as CompaniesListResponse;
+}
+
+export async function fetchAllCompanies(): Promise<any[]> {
+  const data = await fetchCompanies({ page: 1, pageSize: 100 });
+  return data.companies || [];
 }
 
 function sanitizeSlug(raw: string): string {
