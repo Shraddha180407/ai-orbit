@@ -5,7 +5,6 @@ import { Footer } from "@/components/Footer";
 import { VideosPageClient } from "@/components/videos/VideosPageClient";
 
 import { getVideosPage, getVideosCount } from "@/lib/videos-data";
-export const runtime = "edge";
 
 export const dynamic = "force-dynamic";
 

@@ -1,5 +1,3 @@
-export const runtime = "edge";
-
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { ModelsCompareClient } from "@/components/ModelsCompareClient";
