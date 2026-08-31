@@ -206,7 +206,7 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
 
   return (
     <main className="w-full px-3 sm:px-6 lg:px-10 py-2 flex-1 selection:bg-neutral-800 selection:text-white">
-      <div className="mb-2 flex items-center justify-start sm:[justify-content:safe_center] gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-1">
+      <div className="mb-2 -mx-3 sm:mx-0 px-3 sm:px-0 flex items-center justify-start sm:justify-center gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
         {TASK_CATEGORIES.map((topic) => {
           const isSelected = activeCategory === topic.slug;
           return (
@@ -222,7 +222,7 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
                   inline: "center"
                 });
               }}
-              className={`rounded-full px-3 py-1 text-[11.5px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+              className={`rounded-full px-3.5 py-1 text-[11.5px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                 isSelected
                   ? "bg-white text-black border-white shadow-lg shadow-white/5"
                   : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"

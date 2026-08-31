@@ -72,7 +72,7 @@ export function CategoryNav() {
             {/* THE DROPDOWN BOX (Pure CSS positioning, no animations to break) */}
             {isDropdownOpen && (
               <div 
-                className="absolute left-0 top-[40px] w-56 bg-[#111113] rounded-xl border border-[#232326] p-4 flex flex-col gap-4 shadow-2xl z-[99999]"
+                className="absolute left-0 top-[40px] w-60 max-w-[calc(100vw-32px)] bg-[#111113] rounded-xl border border-[#232326] p-4 flex flex-col gap-4 shadow-2xl z-[99999]"
               >
                 <h3 className="text-[10px] font-bold tracking-widest text-[#71717A] uppercase">Show</h3>
                 {FILTER_OPTIONS.map((option) => {
@@ -85,7 +85,8 @@ export function CategoryNav() {
                         <button
                           type="button"
                           onClick={(e) => toggleFilter(option.id, e)}
-                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                          aria-label={`Toggle ${option.label}`}
+                          className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none cursor-pointer ${
                             isActive ? option.color : 'bg-[#232326]'
                           }`}
                         >
@@ -102,7 +103,7 @@ export function CategoryNav() {
           </div>
 
           {/* Scrollable Container for the rest of the categories */}
-          <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-none pb-1 w-full items-center">
+          <div className="flex flex-nowrap gap-1.5 sm:gap-2 touch-scroll-x scrollbar-none pb-1 w-full items-center">
             {CATEGORIES.map((cat) => {
               const isActive = activeCategory === cat.name;
               const className = `inline-flex items-center rounded-lg px-3.5 h-[30px] text-[11px] font-semibold border transition-all duration-200 active:scale-95 whitespace-nowrap ${

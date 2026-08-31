@@ -9,7 +9,7 @@ type ChipProps = {
 
 export function CategoryChip({ label, href, className }: ChipProps) {
   const classes = cn(
-    "inline-flex items-center rounded-md border border-border px-2 py-0.5 text-xs text-foreground-muted transition-colors hover:border-accent hover:text-foreground",
+    "inline-flex items-center rounded-md border border-border px-2 py-0.5 text-xs text-foreground-muted transition-all duration-150 hover:border-accent hover:text-foreground whitespace-nowrap active:scale-95",
     className
   );
 
@@ -26,7 +26,7 @@ export function CategoryChip({ label, href, className }: ChipProps) {
 
 export function TagChip({ label, href, className }: ChipProps) {
   const classes = cn(
-    "inline-flex items-center rounded-md bg-surface-raised px-2 py-0.5 text-xs text-foreground-faint",
+    "inline-flex items-center rounded-md bg-surface-raised px-2 py-0.5 text-xs text-foreground-faint transition-all duration-150 whitespace-nowrap active:scale-95",
     className
   );
 

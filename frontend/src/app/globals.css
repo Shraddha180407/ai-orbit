@@ -33,6 +33,10 @@
   --radius-card: 20px;
   --radius-full: 999px;
 
+  /* Responsive breakpoints */
+  --breakpoint-2xs: 375px;
+  --breakpoint-xs: 475px;
+
   /* Global navigation offset */
   --spacing-navbar: 68px;
 }
@@ -69,6 +73,14 @@
   &::-webkit-scrollbar {
     display: none;
   }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@utility touch-scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
 }
 
 /* ============================================================

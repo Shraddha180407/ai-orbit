@@ -554,7 +554,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
         <div className="w-full space-y-4">
           {/* Subcategories Horizontal Scrollbar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1 w-full">
+            <div className="flex items-center gap-1.5 touch-scroll-x scrollbar-none pb-1 md:pb-0 flex-1 w-auto sm:w-full -mx-3 sm:mx-0 px-3 sm:px-0">
               {COMPANY_TYPES.map((ct) => {
                 const isSelected = activeCategorySlug === ct.slug;
                 return (
@@ -563,7 +563,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                     type="button"
                     onClick={() => handleSubcategoryClick(ct.slug)}
                     className={cn(
-                      "rounded-full px-3 py-1 text-xs font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer",
+                      "rounded-full px-3.5 py-1 text-xs font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0",
                       isSelected
                         ? "bg-white text-black border-transparent font-bold shadow-sm"
                         : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/50 hover:text-white"
@@ -612,7 +612,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
             </div>
           ) : (
             <div className="w-full rounded-xl border border-[#232326] bg-[#0A0A0C] overflow-hidden shadow-xl">
-              <div className="overflow-x-auto relative">
+              <div className="overflow-x-auto touch-scroll-x relative">
                 {/* Header Row */}
                 <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2.5 bg-[#131316] border-b border-[#232326]/60 text-[10px] font-bold font-mono tracking-wider uppercase text-[#A1A1AA]`}>
                   <div></div>

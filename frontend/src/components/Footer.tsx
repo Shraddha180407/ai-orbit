@@ -104,12 +104,12 @@ export function Footer() {
               Discover the tools, companies, and technologies shaping the global AI ecosystem.
             </p>
 
-            <div className="flex items-center gap-5 sm:gap-6">
-              <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="X (Twitter)"><XIcon /></a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="LinkedIn"><LinkedInIcon /></a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="Instagram"><InstagramIcon /></a>
-              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="YouTube"><YouTubeIcon /></a>
-              <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="Discord"><DiscordIcon /></a>
+            <div className="flex items-center gap-4 sm:gap-6">
+              <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 active:scale-95 transition-all p-1" aria-label="X (Twitter)"><XIcon /></a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 active:scale-95 transition-all p-1" aria-label="LinkedIn"><LinkedInIcon /></a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 active:scale-95 transition-all p-1" aria-label="Instagram"><InstagramIcon /></a>
+              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 active:scale-95 transition-all p-1" aria-label="YouTube"><YouTubeIcon /></a>
+              <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 active:scale-95 transition-all p-1" aria-label="Discord"><DiscordIcon /></a>
             </div>
 
           </div>
@@ -150,7 +150,7 @@ export function Footer() {
 
           <button
             onClick={scrollToTop}
-            className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-[#3f3f46] hover:bg-white/5 transition-colors text-white cursor-pointer"
+            className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-[#3f3f46] hover:bg-white/5 active:scale-95 transition-all text-white cursor-pointer"
             aria-label="Scroll to top"
           >
             <ArrowUp size={18} strokeWidth={1.5} />
