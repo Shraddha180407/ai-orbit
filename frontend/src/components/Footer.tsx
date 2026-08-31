@@ -56,6 +56,7 @@ const LINK_GROUPS = [
       { label: "AI Videos", href: "/videos" },
       { label: "AI Trends", href: "/trends" },
       { label: "AI Comparisons", href: "/tools/compare" },
+      { label: "Leaderboard", href: "/leaderboard" },
     ]
   },
   {
@@ -73,12 +74,8 @@ const LINK_GROUPS = [
     links: [
       { label: "About", href: "/about" },
       { label: "Contact", href: "/contact" },
-<<<<<<< HEAD
       { label: "Write", href: "/write" },
       { label: "Press", href: "/press" },
-=======
-      { label: "Leaderboard", href: "/leaderboard" },
->>>>>>> main
       { label: "Privacy", href: "/privacy" },
       { label: "Terms", href: "/terms" },
     ]
