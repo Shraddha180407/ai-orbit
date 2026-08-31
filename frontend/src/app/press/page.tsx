@@ -9,6 +9,7 @@ import {
   Award,
   Download,
   Sparkles,
+  Camera,
 } from "lucide-react";
 
 export default function PressPage() {
@@ -51,21 +52,85 @@ export default function PressPage() {
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
           AI Orbit Press Room
         </h1>
-        <p className="text-sm sm:text-base text-zinc-300 leading-relaxed max-w-2xl">
-          Official announcements, updates, and brand assets for journalists and
-          community members covering AI Orbit.
+        <p className="text-sm sm:text-base text-purple-300 font-semibold">
+          The Home of Everything AI.
         </p>
-        <div className="pt-1">
+        <p className="text-sm sm:text-base text-zinc-300 leading-relaxed max-w-2xl">
+          AI Orbit is a discovery platform for the global AI ecosystem,
+          helping people discover and understand the tools, companies,
+          models, agents, technologies, and trends shaping artificial
+          intelligence.
+        </p>
+        <p className="text-xs sm:text-sm text-zinc-400 font-mono">
+          Press Contact:{" "}
           <a
-            href="mailto:press@aiorbit.club"
-            className="inline-flex items-center gap-2 bg-white text-black px-4.5 py-2 rounded-xl font-semibold hover:bg-zinc-200 transition-colors text-xs sm:text-sm shadow-sm"
+            href="mailto:ceo@aiorbit.club"
+            className="text-white hover:underline"
           >
-            Contact Press Team <ArrowRight size={14} />
+            ceo@aiorbit.club
           </a>
-        </div>
+        </p>
       </div>
 
-      {/* 2. Latest Announcements (Top-Down Flow, No Side-by-Side Boxes) */}
+      {/* 2. What is AI Orbit */}
+      <div className="space-y-3">
+        <h2 className="text-xs font-mono font-bold tracking-[0.2em] uppercase text-purple-400">
+          What is AI Orbit?
+        </h2>
+        <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">
+          AI Orbit brings the rapidly evolving world of AI into one place.
+        </p>
+        <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">
+          From AI tools and agents to companies, models, robots, devices,
+          open-source projects, MCP, news, videos, trends, and comparisons,
+          AI Orbit makes it easier to discover what's being built across
+          artificial intelligence.
+        </p>
+        <p className="text-sm sm:text-base text-white font-medium">
+          Our mission is simple: make AI easier to discover.
+        </p>
+      </div>
+
+      {/* 3. Why AI Orbit */}
+      <div className="space-y-3">
+        <h2 className="text-xs font-mono font-bold tracking-[0.2em] uppercase text-purple-400">
+          Why AI Orbit?
+        </h2>
+        <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">
+          The AI ecosystem is growing faster and becoming harder to navigate.
+        </p>
+        <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">
+          AI Orbit brings the products, companies, technologies, and ideas
+          shaping AI together in one place, giving people a simpler way to
+          discover what's out there.
+        </p>
+      </div>
+
+      {/* 4. For Media */}
+      <div className="p-6 rounded-xl bg-zinc-950 border border-zinc-800/90 space-y-3">
+        <h2 className="text-xs font-mono font-bold tracking-[0.2em] uppercase text-purple-400">
+          For Media
+        </h2>
+        <p className="text-sm sm:text-base text-white font-medium">
+          Covering AI? Start here.
+        </p>
+        <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">
+          AI Orbit is a resource for discovering AI products, companies,
+          technologies, and emerging trends.
+        </p>
+        <p className="text-xs sm:text-sm text-zinc-400">
+          For interviews, press inquiries, collaborations, or product
+          information:
+        </p>
+        <a
+          href="mailto:ceo@aiorbit.club"
+          className="inline-flex items-center gap-2 bg-white text-black px-4.5 py-2 rounded-xl font-semibold hover:bg-zinc-200 transition-colors text-xs sm:text-sm shadow-sm"
+        >
+          Contact Press <ArrowRight size={14} />
+        </a>
+      </div>
+
+      {/* 5. Latest Announcements (Top-Down Flow, No Side-by-Side Boxes) */}
       <div className="space-y-4">
         <h2 className="text-xs font-mono font-bold tracking-[0.2em] uppercase text-purple-400">
           Latest Announcements
@@ -107,11 +172,14 @@ export default function PressPage() {
         )}
       </div>
 
-      {/* 3. Media Kit & Brand Assets (Clean top-down structure) */}
+      {/* 6. Brand Assets */}
       <div className="space-y-4">
         <h2 className="text-xs font-mono font-bold tracking-[0.2em] uppercase text-purple-400">
-          Media Kit & Brand Assets
+          Brand Assets
         </h2>
+        <p className="text-xs sm:text-sm text-zinc-400">
+          Official AI Orbit assets for editorial and approved media use.
+        </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="flex flex-col justify-between p-5 rounded-xl bg-zinc-950 border border-zinc-800/90 hover:border-zinc-700 transition-all">
             <div className="space-y-2.5">
@@ -124,18 +192,18 @@ export default function PressPage() {
                 </span>
               </div>
               <h3 className="text-sm sm:text-base font-semibold text-white">
-                Logos & Marks
+                Logo & Marks
               </h3>
               <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-                Official AI Orbit vector logos and brand marks
+                Official AI Orbit logos and brand marks.
               </p>
             </div>
             <a
               href="/logo-full.png"
               download="AI-Orbit-Logo.png"
-              className="mt-5 w-full py-2 rounded-xl bg-white/10 hover:bg-white text-white hover:text-black text-xs font-semibold transition-colors border border-white/10 flex items-center justify-center"
+              className="mt-5 w-full py-2 rounded-xl bg-white/10 hover:bg-white text-white hover:text-black text-xs font-semibold transition-colors border border-white/10 flex items-center justify-center gap-1"
             >
-              Download Logo
+              Download Logo <ArrowRight size={12} />
             </a>
           </div>
 
@@ -153,14 +221,14 @@ export default function PressPage() {
                 Brand Guidelines
               </h3>
               <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-                Typography, color palettes, and usage rules
+                Typography, colors, and logo usage.
               </p>
             </div>
             <button
               onClick={() => handleAssetDownload("Brand Guidelines")}
-              className="mt-5 w-full py-2 rounded-xl bg-white/10 hover:bg-white text-white hover:text-black text-xs font-semibold transition-colors border border-white/10"
+              className="mt-5 w-full py-2 rounded-xl bg-white/10 hover:bg-white text-white hover:text-black text-xs font-semibold transition-colors border border-white/10 flex items-center justify-center gap-1"
             >
-              View Guidelines
+              View Guidelines <ArrowRight size={12} />
             </button>
           </div>
 
@@ -168,61 +236,56 @@ export default function PressPage() {
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="p-2 rounded-lg bg-white/5 border border-white/10 text-white">
-                  <Download size={18} strokeWidth={1.5} />
+                  <Camera size={18} strokeWidth={1.5} />
                 </div>
                 <span className="text-[11px] font-mono text-zinc-400 bg-zinc-900 px-2.5 py-1 rounded border border-zinc-800">
                   ZIP
                 </span>
               </div>
               <h3 className="text-sm sm:text-base font-semibold text-white">
-                Full Media Kit
+                Screenshots
               </h3>
               <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-                Product screenshots, visual assets, and overview
+                AI Orbit product visuals for editorial use.
               </p>
             </div>
             <button
-              onClick={() => handleAssetDownload("Media Kit")}
-              className="mt-5 w-full py-2 rounded-xl bg-white/10 hover:bg-white text-white hover:text-black text-xs font-semibold transition-colors border border-white/10"
+              onClick={() => handleAssetDownload("Screenshots")}
+              className="mt-5 w-full py-2 rounded-xl bg-white/10 hover:bg-white text-white hover:text-black text-xs font-semibold transition-colors border border-white/10 flex items-center justify-center gap-1"
             >
-              Download Package
+              Download Screenshots <ArrowRight size={12} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* 4. About AI Orbit */}
-      <div className="p-6 rounded-xl bg-zinc-950 border border-zinc-800/90 space-y-3">
-        <h2 className="text-xs font-mono font-bold tracking-[0.2em] uppercase text-purple-400">
-          About AI Orbit
+      {/* 7. Closing CTA */}
+      <div className="p-6 rounded-xl bg-zinc-950 border border-zinc-800/90 space-y-3 text-center">
+        <h2 className="text-lg sm:text-xl font-bold text-white">
+          Built for Discovery.
         </h2>
-        <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">
-          AI Orbit is a premier discovery platform for exploring AI tools,
-          companies, models, and technologies across the global artificial
-          intelligence ecosystem.
+        <p className="text-sm sm:text-base text-zinc-300">
+          One place to explore the evolving world of AI.
         </p>
-        <div className="pt-2 flex flex-wrap gap-6 text-xs text-zinc-400 font-mono">
-          <div>
-            <strong className="text-white">Focus:</strong> AI Discovery &
-            Ecosystem
-          </div>
-          <div>
-            <strong className="text-white">Platform:</strong> Global
-          </div>
-        </div>
+        <a
+          href="/"
+          className="inline-flex items-center gap-2 bg-white text-black px-4.5 py-2 rounded-xl font-semibold hover:bg-zinc-200 transition-colors text-xs sm:text-sm shadow-sm"
+        >
+          Explore AI Orbit <ArrowRight size={14} />
+        </a>
       </div>
 
-      {/* 5. Footer + Last Updated */}
+      {/* 8. Footer */}
       <div className="pt-4 border-t border-zinc-800/80 space-y-2">
         <div className="text-xs text-zinc-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <span>
             © {new Date().getFullYear()} AI Orbit. All rights reserved.
           </span>
           <a
-            href="mailto:press@aiorbit.club"
+            href="mailto:ceo@aiorbit.club"
             className="hover:text-white transition-colors font-mono"
           >
-            press@aiorbit.club
+            ceo@aiorbit.club
           </a>
         </div>
       </div>
