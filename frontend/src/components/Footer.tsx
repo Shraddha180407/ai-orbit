@@ -56,7 +56,6 @@ const LINK_GROUPS = [
       { label: "AI Videos", href: "/videos" },
       { label: "AI Trends", href: "/trends" },
       { label: "AI Comparisons", href: "/tools/compare" },
-      { label: "Leaderboard", href: "/leaderboard" },
     ]
   },
   {
@@ -70,10 +69,11 @@ const LINK_GROUPS = [
     ]
   },
   {
-    heading: "AI ORBIT",
+    heading: "COMPANY",
     links: [
       { label: "About", href: "/about" },
       { label: "Contact", href: "/contact" },
+      { label: "Leaderboard", href: "/leaderboard" },
       { label: "Privacy", href: "/privacy" },
       { label: "Terms", href: "/terms" },
     ]

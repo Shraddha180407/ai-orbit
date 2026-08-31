@@ -382,8 +382,8 @@ function ToolRow({
       {/* Col 3: Task */}
       <div className="min-w-0 pl-4 md:pl-0">
         {tool.ttasks && tool.ttasks.length > 0 ? (
-          <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] whitespace-nowrap">
-            {tool.ttasks[0].task.title.split(/[\s,;:&/]+/)[0]}
+          <span className="inline-flex items-center rounded-md border border-[#232326] bg-[#1A1A1E] px-2 py-0.5 text-[10px] font-medium text-[#D4D4D8] whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
+            {tool.ttasks[0].task.title}
           </span>
         ) : (
           <span className="text-[11px] text-[#71717A] font-mono">—</span>
