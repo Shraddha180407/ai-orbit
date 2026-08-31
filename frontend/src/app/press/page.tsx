@@ -78,12 +78,15 @@ export default function PressPage() {
         const apiUrl =
           process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
         const res = await fetch(`${apiUrl}/api/press`);
+        if (!res.ok) {
+          return; // Silently exit if the endpoint doesn't exist yet
+        }
         const json = await res.json();
         if (json.success) {
           setPressReleases(json.data);
         }
       } catch (err) {
-        console.error("Failed to fetch press releases from database", err);
+        // Silently ignore network errors so Next.js doesn't pop up an overlay
       } finally {
         setLoading(false);
       }

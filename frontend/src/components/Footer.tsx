@@ -74,7 +74,7 @@ const LINK_GROUPS = [
     links: [
       { label: "About", href: "/about" },
       { label: "Contact", href: "/contact" },
-      { label: "Write", href: "/write" },
+      { label: "Write", href: "/write-for-us" },
       { label: "Press", href: "/press" },
       { label: "Privacy", href: "/privacy" },
       { label: "Terms", href: "/terms" },
