@@ -12,6 +12,7 @@ import Trophy from 'lucide-react/dist/esm/icons/trophy';
 import Search from 'lucide-react/dist/esm/icons/search';
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import X from 'lucide-react/dist/esm/icons/x';
+import Info from 'lucide-react/dist/esm/icons/info';
 import { cn } from "@/lib/utils";
 import { fetchLeaderboardTools, fetchLeaderboardModels, fetchLeaderboardCompanies } from "@/lib/api";
 
@@ -188,7 +189,7 @@ const t: Record<string, Record<string, string>> = {
 
 export function LeaderboardClient() {
   const [lang, setLang] = useState<"en" | "hi">("en");
-  const [activeTab, setActiveTab] = useState<"tools" | "models" | "companies" | "bookmarks">("tools");
+  const [activeTab, setActiveTab] = useState<"tools" | "agents" | "mcp" | "models" | "companies">("tools");
   const [activeCategory, setActiveCategory] = useState("All Categories");
   const [sortBy, setSortBy] = useState("Rank");
   const [searchQuery, setSearchQuery] = useState("");
@@ -203,7 +204,7 @@ export function LeaderboardClient() {
 
   // Get current active categories based on active tab
   const getCategoriesForTab = () => {
-    if (activeTab === "tools" || activeTab === "bookmarks") {
+    if (activeTab === "tools" || activeTab === "agents" || activeTab === "mcp") {
       return [
         "All Categories",
         "Audio & Voice",
@@ -259,11 +260,18 @@ export function LeaderboardClient() {
     async function loadData() {
       setLoading(true);
       try {
-        const [toolsData, modelsData, companiesData] = await Promise.all([
-          fetchLeaderboardTools(),
-          fetchLeaderboardModels(),
-          fetchLeaderboardCompanies(),
-        ]);
+        let toolsData = await fetchLeaderboardTools();
+        const modelsData = await fetchLeaderboardModels();
+        const companiesData = await fetchLeaderboardCompanies();
+        
+        if (toolsData.length === 0) {
+          toolsData = [
+            { id: '1', name: 'Midjourney', category: 'Generative AI', description: 'Advanced AI image generation.', pricing: 'Paid', tags: '["AI", "Image"]', visits: '15.2M', growth: 12, url: 'https://midjourney.com', rank: 1, rating: 5, votes: 1234, saves: 567, addedDate: new Date().toISOString() },
+            { id: '2', name: 'ChatGPT', category: 'Chatbots', description: 'Powerful conversational AI.', pricing: 'Freemium', tags: '["AI", "Chat"]', visits: '45.0M', growth: 5, url: 'https://chat.openai.com', rank: 2, rating: 5, votes: 5678, saves: 1234, addedDate: new Date().toISOString() },
+            { id: '3', name: 'Cursor', category: 'Code Assistant', description: 'AI code editor for engineers.', pricing: 'Paid', tags: '["Code", "Dev"]', visits: '22.0M', growth: -2, url: 'https://cursor.sh', rank: 3, rating: 4, votes: 345, saves: 123, addedDate: new Date().toISOString() }
+          ];
+        }
+
         setTools(toolsData);
         setModels(modelsData);
         setCompanies(companiesData);
@@ -274,6 +282,15 @@ export function LeaderboardClient() {
         }
       } catch (err) {
         console.error("Error fetching leaderboard data:", err);
+        const mockData = [
+          { id: '1', name: 'Midjourney', category: 'Generative AI', description: 'Advanced AI image generation.', pricing: 'Paid', tags: '["AI", "Image"]', visits: '15.2M', growth: 12, url: 'https://midjourney.com', rank: 1, rating: 5, votes: 1234, saves: 567, addedDate: new Date().toISOString() },
+          { id: '2', name: 'ChatGPT', category: 'Chatbots', description: 'Powerful conversational AI.', pricing: 'Freemium', tags: '["AI", "Chat"]', visits: '45.0M', growth: 5, url: 'https://chat.openai.com', rank: 2, rating: 5, votes: 5678, saves: 1234, addedDate: new Date().toISOString() },
+          { id: '3', name: 'Cursor', category: 'Code Assistant', description: 'AI code editor for engineers.', pricing: 'Paid', tags: '["Code", "Dev"]', visits: '22.0M', growth: -2, url: 'https://cursor.sh', rank: 3, rating: 4, votes: 345, saves: 123, addedDate: new Date().toISOString() }
+        ];
+        setTools(mockData);
+        setModels([]);
+        setCompanies([]);
+        setBookmarkedIds(new Set([mockData[0].id, mockData[2].id]));
       } finally {
         setLoading(false);
       }
@@ -468,7 +485,7 @@ export function LeaderboardClient() {
     return (
       <div className="flex flex-row flex-nowrap gap-1.5 overflow-hidden max-w-[200px]">
         {tagList.slice(0, 2).map((tag) => (
-          <span key={tag} className="px-2 py-0.5 rounded-md bg-[#18181C] text-[10px] text-[#A1A1AA] border border-[#232326] font-medium whitespace-nowrap">
+          <span key={tag} className="px-2.5 py-1 rounded-md bg-white/5 backdrop-blur-md text-[10px] text-white border border-white/10 font-semibold whitespace-nowrap group-hover:border-white/20 transition-all">
             {tag}
           </span>
         ))}
@@ -748,20 +765,38 @@ export function LeaderboardClient() {
           </button>
           <button
             onClick={() => {
-              setActiveTab("bookmarks");
+              setActiveTab("agents");
               setActiveCategory("All Categories");
             }}
             className={cn(
               "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap shrink-0",
-              activeTab === "bookmarks"
+              activeTab === "agents"
                 ? "bg-[#131316] text-white border-[#F5A623]/60 shadow-[0_0_12px_rgba(245,166,35,0.12)]"
                 : "bg-transparent border-transparent text-[#71717A] hover:text-white hover:border-[#232326]"
             )}
           >
-            <Bookmark size={14} className={cn(activeTab === "bookmarks" ? "text-[#F5A623]" : "text-[#71717A]")} />
-            <span>{_("bookmarks")}</span>
-            <span className="ml-1 bg-[#18181C] text-[#F5A623] text-[10px] px-1.5 py-0.5 rounded-md font-mono border border-[#232326] font-bold">
-              {bookmarkedIds.size}
+            <Brain size={14} className={cn(activeTab === "agents" ? "text-[#F5A623]" : "text-[#71717A]")} />
+            <span>AI Agents</span>
+            <span className="ml-1 bg-[#18181C] text-[#A1A1AA] text-[10px] px-1.5 py-0.5 rounded-md font-mono border border-[#232326]">
+              {tools.length}
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("mcp");
+              setActiveCategory("All Categories");
+            }}
+            className={cn(
+              "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap",
+              activeTab === "mcp"
+                ? "bg-[#131316] text-white border-[#F5A623]/60 shadow-[0_0_12px_rgba(245,166,35,0.12)]"
+                : "bg-transparent border-transparent text-[#71717A] hover:text-white hover:border-[#232326]"
+            )}
+          >
+            <Sparkles size={14} className={cn(activeTab === "mcp" ? "text-[#F5A623]" : "text-[#71717A]")} />
+            <span>MCP</span>
+            <span className="ml-1 bg-[#18181C] text-[#A1A1AA] text-[10px] px-1.5 py-0.5 rounded-md font-mono border border-[#232326]">
+              {tools.length}
             </span>
           </button>
         </div>
@@ -841,8 +876,8 @@ export function LeaderboardClient() {
         ) : (
           <div className="border border-[#232326]/70 rounded-xl overflow-hidden bg-[#0d0d10] shadow-xl">
             
-            {/* 1. Tools & Bookmarks View */}
-            {(activeTab === "tools" || activeTab === "bookmarks") && (
+            {/* 1. Tools, Agents, MCP View */}
+            {(activeTab === "tools" || activeTab === "agents" || activeTab === "mcp") && (
               currentFilteredTools.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
                   <div className="h-12 w-12 rounded-full border border-[#232326] bg-[#131316] flex items-center justify-center text-[#71717A] mb-3">
@@ -879,18 +914,18 @@ export function LeaderboardClient() {
                       {currentFilteredTools.map((tool) => (
                         <tr
                           key={tool.id}
-                          className="relative border-b border-[#1B1B1F] hover:bg-[#18181C]/60 transition-colors group"
+                          className="relative border-b border-[#232326]/50 hover:bg-gradient-to-r hover:from-[#131316] hover:to-[#18181C] transition-all duration-300 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:z-10"
                         >
                           <td className="py-4 px-6 font-bold text-sm">
                             <div className="relative flex items-center">
                               {/* Left hover edge highlight bar */}
-                              <span className="pointer-events-none absolute -left-6 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
+                              <span className="pointer-events-none absolute -left-6 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[#F5A623] shadow-[0_0_10px_#F5A623] transition-all duration-300 group-hover:h-[80%]" />
                               {renderRankBadge(tool.rank)}
                             </div>
                           </td>
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/70 bg-[#18181C] flex relative p-1.5 shadow-inner">
+                              <div className="h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#232326] bg-[#131316] flex relative p-1.5 shadow-lg group-hover:border-[#F5A623]/50 group-hover:shadow-[0_0_15px_rgba(245,166,35,0.2)] transition-all duration-300">
                                 <span className="text-white font-black text-sm uppercase select-none z-0">
                                   {tool.name.charAt(0)}
                                 </span>
@@ -902,13 +937,16 @@ export function LeaderboardClient() {
                                 />
                               </div>
                               <div className="min-w-0">
-                                <h4 className="font-bold text-white text-[15px] truncate group-hover:text-[#F5A623] transition-colors">
+                                <h4 className="font-bold text-white text-[15px] truncate group-hover:bg-clip-text group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-[#F5A623] transition-all duration-300">
                                   {tool.name}
                                 </h4>
-                                <p className="text-xs text-[#A1A1AA] line-clamp-1 max-w-md mt-0.5">
-                                  {tool.description}
-                                </p>
-                                <p className="text-[10px] text-[#71717A] uppercase font-bold tracking-wider line-clamp-1 mt-0.5">
+                                <div className="flex items-start gap-1.5 mt-1.5 bg-[#1A1A1E]/50 p-2 rounded-md border border-[#232326]/50">
+                                  <Info size={13} className="shrink-0 mt-0.5 text-[#F5A623]/70" />
+                                  <p className="text-[12.5px] text-[#D4D4D8] line-clamp-2 max-w-md leading-relaxed">
+                                    {tool.description}
+                                  </p>
+                                </div>
+                                <p className="text-[10px] text-[#71717A] uppercase font-bold tracking-wider line-clamp-1 mt-1.5">
                                   {tool.category} • {tool.pricing}
                                 </p>
                               </div>
@@ -948,7 +986,7 @@ export function LeaderboardClient() {
                                 href={tool.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-[11px] font-semibold text-white hover:border-[#F5A623] hover:text-white transition-all active:scale-95 shadow-sm"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#232326] bg-gradient-to-b from-[#18181C] to-[#131316] text-xs font-bold text-white hover:border-[#F5A623] hover:shadow-[0_0_15px_rgba(245,166,35,0.25)] hover:text-[#F5A623] transition-all duration-300 active:scale-95"
                               >
                                 {_("visit")}
                                 <ArrowUpRight size={12} className="text-[#71717A] group-hover:text-white" />
