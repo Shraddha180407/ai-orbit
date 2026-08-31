@@ -70,10 +70,12 @@ const LINK_GROUPS = [
     ]
   },
   {
-    heading: "AI ORBIT",
+    heading: "COMPANY",
     links: [
       { label: "About", href: "/about" },
       { label: "Contact", href: "/contact" },
+      { label: "Write", href: "/write" },
+      { label: "Press", href: "/press" },
       { label: "Privacy", href: "/privacy" },
       { label: "Terms", href: "/terms" },
     ]
