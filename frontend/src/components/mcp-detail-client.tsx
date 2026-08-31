@@ -662,13 +662,13 @@ export function MCPDetailClient({ item, initialAlternatives }: MCPDetailClientPr
           </div>
 
           {/* 4. Primary Actions Block */}
-          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto md:self-start">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto md:self-start">
             {item.websiteUrl && (
               <a
                 href={item.websiteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 sm:py-2 text-sm font-semibold text-black shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4BF] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                className="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 sm:py-2 text-sm font-semibold text-black shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover active:scale-95 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4BF] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
                 <span>Use Tool</span>
                 <ExternalLink size={14} />

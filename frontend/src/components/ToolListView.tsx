@@ -667,7 +667,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     <>
       <div
         ref={dropdownRef}
-        className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
+        className="overflow-x-auto touch-scroll-x rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
       >
         <div className={`relative bg-[#000000] ${activeMinWidth}`}>
 
@@ -747,8 +747,8 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
 
       {/* ── Sticky compare bar ───────────────────────────────────────────────── */}
       {compareSet.length > 0 && (
-        <div className="fixed inset-x-0 bottom-2 sm:bottom-4 z-40 flex justify-center px-2 sm:px-4">
-          <div className="flex w-full max-w-xl items-center gap-2 sm:gap-3 rounded-xl border border-[#232326]/70 bg-[#111113]/95 backdrop-blur px-3 sm:px-4 py-2.5 sm:py-3 shadow-2xl shadow-black/60">
+        <div className="fixed inset-x-0 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 flex justify-center px-2 sm:px-4">
+          <div className="flex w-full max-w-xl items-center gap-2 sm:gap-3 rounded-xl border border-[#232326]/70 bg-[#111113]/95 backdrop-blur px-3 sm:px-4 py-2 sm:py-3 shadow-2xl shadow-black/60">
             <div className="flex flex-1 items-center gap-1.5 sm:gap-2 min-w-0">
               {Array.from({ length: MAX_COMPARE }).map((_, i) => {
                 const t = compareSet[i];
@@ -773,11 +773,11 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               onClick={goToCompare}
               disabled={compareSet.length !== MAX_COMPARE}
               className={`shrink-0 inline-flex items-center gap-1 sm:gap-1.5 rounded-lg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold transition-colors ${
-                compareSet.length === MAX_COMPARE ? "text-black" : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
+                compareSet.length === MAX_COMPARE ? "text-white shadow-md shadow-[#6E56CF]/30" : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
               }`}
               style={compareSet.length === MAX_COMPARE ? { backgroundColor: "#6E56CF" } : undefined}
             >
-              <GitCompare size={13} /> <span className="hidden xs:inline">Compare</span>
+              <GitCompare size={13} /> <span className="hidden 2xs:inline">Compare</span>
             </button>
             <button type="button" onClick={() => setCompareSet([])} className="shrink-0 text-[#71717A] hover:text-white p-1" aria-label="Clear compare">
               <X size={16} />

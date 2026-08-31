@@ -557,19 +557,19 @@ export function ToolDetailClient() {
               )}
               <div className="grid grid-cols-3 gap-2">
                 <button onClick={handleUpvote}
-                  className={cn("flex flex-col items-center justify-center gap-0.5 rounded-xl border px-2 py-2 text-xs font-bold transition-all",
+                  className={cn("flex flex-col items-center justify-center gap-0.5 rounded-xl border px-2 py-2.5 text-xs font-bold transition-all active:scale-95 cursor-pointer",
                     upvoted ? "bg-[#6E56CF] text-white border-[#6E56CF]" : "border-[#232326] bg-[#0d0d10] text-white")}>
-                  <ThumbsUp size={12} className={cn(upvoted && "fill-white")} />
-                  <span className="text-[9px] font-mono">{formatNum(upvoteCount)}</span>
+                  <ThumbsUp size={13} className={cn(upvoted && "fill-white")} />
+                  <span className="text-[10px] font-mono">{formatNum(upvoteCount)}</span>
                 </button>
                 <button onClick={() => setBookmarked(b => !b)}
-                  className={cn("flex items-center justify-center rounded-xl border py-2 transition-all",
+                  className={cn("flex items-center justify-center rounded-xl border py-2.5 transition-all active:scale-95 cursor-pointer",
                     bookmarked ? "bg-[#6E56CF] text-white border-[#6E56CF]" : "border-[#232326] bg-[#0d0d10] text-white")}>
-                  <Bookmark size={13} className={cn(bookmarked && "fill-white")} />
+                  <Bookmark size={14} className={cn(bookmarked && "fill-white")} />
                 </button>
                 <button onClick={handleShare}
-                  className="flex items-center justify-center rounded-xl border border-[#232326] bg-[#0d0d10] py-2 text-[#71717A]">
-                  <Share2 size={13} />
+                  className="flex items-center justify-center rounded-xl border border-[#232326] bg-[#0d0d10] py-2.5 text-[#71717A] hover:text-white transition-all active:scale-95 cursor-pointer">
+                  <Share2 size={14} />
                 </button>
               </div>
             </div>

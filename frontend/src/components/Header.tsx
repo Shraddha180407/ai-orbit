@@ -101,47 +101,48 @@ export function Header() {
         </Link>
       </nav>
 
-      <div className="mx-auto max-w-[1440px] px-3.5 sm:px-8 flex items-center justify-between relative gap-2 z-20">
+      <div className="mx-auto max-w-[1440px] px-3 sm:px-6 lg:px-8 flex items-center justify-between relative gap-1.5 sm:gap-2 z-20">
         {/* Left: The AI Orbit Logo */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           {/* Mobile hamburger button */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="flex md:hidden h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer relative z-20"
+            className="flex md:hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer relative z-20"
             aria-label="Open navigation menu"
           >
-            <Menu size={16} />
+            <Menu size={18} />
           </button>
 
-          <Link href="/" className="flex items-center group shrink-0 min-w-0 -ml-2 relative z-30">
-            <AiOrbitLogo size="auto" className="h-10 sm:h-14 lg:h-16 text-white transition-transform group-hover:scale-105 active:scale-95" />
+          <Link href="/" className="flex items-center group shrink-0 min-w-0 -ml-1 sm:-ml-2 relative z-30">
+            <AiOrbitLogo size="auto" className="h-9 sm:h-14 lg:h-16 text-white transition-transform group-hover:scale-105 active:scale-95" />
           </Link>
         </div>
 
         {/* Right: Action buttons */}
-        <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <Link
             href="/submit"
-            className="group inline-flex h-[30px] sm:h-[34px] items-center gap-1 sm:gap-1.5 rounded-full px-2.5 sm:px-4 text-[11px] sm:text-[13px] font-semibold transition-all duration-200 hover:brightness-110 active:scale-95 shrink-0 whitespace-nowrap bg-[#6E56CF] text-white"
+            className="group inline-flex h-[32px] sm:h-[34px] items-center gap-1 sm:gap-1.5 rounded-full px-2.5 sm:px-4 text-[11px] sm:text-[13px] font-semibold transition-all duration-200 hover:brightness-110 active:scale-95 shrink-0 whitespace-nowrap bg-[#6E56CF] text-white"
           >
             <Plus size={13} strokeWidth={2.5} className="shrink-0" />
-            Submit Tool
+            <span className="hidden 2xs:inline">Submit Tool</span>
+            <span className="2xs:hidden">Submit</span>
           </Link>
 
           {isLoading ? (
-            <div className="h-[30px] w-[50px] sm:h-[32px] sm:w-[80px] animate-pulse rounded-lg bg-white/10 shrink-0" />
+            <div className="h-[32px] w-[50px] sm:h-[32px] sm:w-[80px] animate-pulse rounded-lg bg-white/10 shrink-0" />
           ) : user ? (
             <Link
               href="/dashboard"
-              className="inline-flex h-[30px] sm:h-[32px] items-center justify-center rounded-lg bg-white px-2.5 sm:px-4 text-[11px] sm:text-[13px] font-bold text-black hover:bg-neutral-200 transition-colors shrink-0 whitespace-nowrap"
+              className="inline-flex h-[32px] items-center justify-center rounded-lg bg-white px-2.5 sm:px-4 text-[11px] sm:text-[13px] font-bold text-black hover:bg-neutral-200 active:scale-95 transition-all shrink-0 whitespace-nowrap"
             >
               Dashboard
             </Link>
           ) : (
             <Link
               href="/auth/signin"
-              className="inline-flex h-[30px] sm:h-[32px] items-center justify-center rounded-lg border border-white/20 bg-transparent px-2.5 sm:px-4 text-[11px] sm:text-[13px] font-semibold text-white/90 hover:bg-white/10 hover:text-white transition-colors shrink-0 whitespace-nowrap"
+              className="inline-flex h-[32px] items-center justify-center rounded-lg border border-white/20 bg-transparent px-2.5 sm:px-4 text-[11px] sm:text-[13px] font-semibold text-white/90 hover:bg-white/10 hover:text-white active:scale-95 transition-all shrink-0 whitespace-nowrap"
             >
               Log In
             </Link>

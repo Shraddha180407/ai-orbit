@@ -691,14 +691,14 @@ export function LeaderboardClient() {
         </section>
 
         {/* Navigation Tabs Bar */}
-        <div className="flex items-center gap-2.5 overflow-x-auto scrollbar-none border-b border-[#1B1B1F] pb-4 mb-6">
+        <div className="flex items-center gap-2.5 touch-scroll-x scrollbar-none border-b border-[#1B1B1F] pb-4 mb-6 -mx-4 sm:mx-0 px-4 sm:px-0">
           <button
             onClick={() => {
               setActiveTab("tools");
               setActiveCategory("All Categories");
             }}
             className={cn(
-              "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap",
+              "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap shrink-0",
               activeTab === "tools"
                 ? "bg-[#131316] text-white border-[#F5A623]/60 shadow-[0_0_12px_rgba(245,166,35,0.12)]"
                 : "bg-transparent border-transparent text-[#71717A] hover:text-white hover:border-[#232326]"
@@ -716,7 +716,7 @@ export function LeaderboardClient() {
               setActiveCategory("All Categories");
             }}
             className={cn(
-              "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap",
+              "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap shrink-0",
               activeTab === "models"
                 ? "bg-[#131316] text-white border-[#F5A623]/60 shadow-[0_0_12px_rgba(245,166,35,0.12)]"
                 : "bg-transparent border-transparent text-[#71717A] hover:text-white hover:border-[#232326]"
@@ -734,7 +734,7 @@ export function LeaderboardClient() {
               setActiveCategory("All Categories");
             }}
             className={cn(
-              "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap",
+              "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap shrink-0",
               activeTab === "companies"
                 ? "bg-[#131316] text-white border-[#F5A623]/60 shadow-[0_0_12px_rgba(245,166,35,0.12)]"
                 : "bg-transparent border-transparent text-[#71717A] hover:text-white hover:border-[#232326]"
@@ -752,7 +752,7 @@ export function LeaderboardClient() {
               setActiveCategory("All Categories");
             }}
             className={cn(
-              "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap",
+              "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap shrink-0",
               activeTab === "bookmarks"
                 ? "bg-[#131316] text-white border-[#F5A623]/60 shadow-[0_0_12px_rgba(245,166,35,0.12)]"
                 : "bg-transparent border-transparent text-[#71717A] hover:text-white hover:border-[#232326]"
@@ -768,8 +768,8 @@ export function LeaderboardClient() {
 
         {/* Dynamic Category Filtering & Sort Toolbar Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-2 md:pb-0 flex-1">
-            <span className="text-[10px] uppercase tracking-wider text-[#71717A] font-bold select-none pr-1">
+          <div className="flex items-center gap-2 touch-scroll-x scrollbar-none pb-2 md:pb-0 flex-1 -mx-4 sm:mx-0 px-4 sm:px-0">
+            <span className="text-[10px] uppercase tracking-wider text-[#71717A] font-bold select-none pr-1 shrink-0">
               {_("filter")}
             </span>
             {getCategoriesForTab().map((cat) => {
@@ -779,7 +779,7 @@ export function LeaderboardClient() {
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
                   className={cn(
-                    "rounded-full px-3 py-1 text-[12px] font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5",
+                    "rounded-full px-3.5 py-1 text-[12px] font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 shrink-0",
                     activeCategory === cat
                       ? "bg-white text-black border-transparent font-bold shadow-sm"
                       : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#F5A623]/50 hover:text-white"
@@ -800,7 +800,7 @@ export function LeaderboardClient() {
           </div>
 
           {/* Controls toolbar: Language and Sort dropdowns */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full md:w-auto shrink-0">
             {/* Language dropdown switch */}
             <div className="relative inline-flex items-center">
               <Globe size={13} className="absolute left-2.5 text-[#71717A] pointer-events-none" />
@@ -816,11 +816,11 @@ export function LeaderboardClient() {
             </div>
 
             {/* Sort select */}
-            <div className="relative inline-flex items-center">
+            <div className="relative inline-flex items-center flex-1 sm:flex-initial">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none rounded-lg border border-[#232326] bg-[#131316] pl-3 pr-8 py-1.5 text-[13px] font-semibold text-white hover:border-[#F5A623]/50 focus:outline-none transition-all cursor-pointer h-8"
+                className="w-full sm:w-auto appearance-none rounded-lg border border-[#232326] bg-[#131316] pl-3 pr-8 py-1.5 text-[13px] font-semibold text-white hover:border-[#F5A623]/50 focus:outline-none transition-all cursor-pointer h-8"
               >
                 <option value="Rank">{_("sortRank")}</option>
                 <option value="Monthly Visits">{_("sortVisits")}</option>
@@ -863,7 +863,7 @@ export function LeaderboardClient() {
                   )}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto touch-scroll-x">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-[#232326] text-[10px] font-bold tracking-wider text-[#71717A] uppercase bg-[#131316]/70">
@@ -985,7 +985,7 @@ export function LeaderboardClient() {
                   )}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto touch-scroll-x">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-[#232326] text-[10px] font-bold tracking-wider text-[#71717A] uppercase bg-[#131316]/70">
@@ -1098,7 +1098,7 @@ export function LeaderboardClient() {
                   )}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto touch-scroll-x">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-[#232326] text-[10px] font-bold tracking-wider text-[#71717A] uppercase bg-[#131316]/70">

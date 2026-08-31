@@ -258,7 +258,7 @@ export function ModelListView({
           compareSet.length > 0 ? "mb-24" : ""
         }`}
       >
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto touch-scroll-x">
           <div className="border-b border-[#232326]/60 bg-[#131316]/40">
             <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2`}>
               {COLUMN_HEADERS.map((h) => (
@@ -291,7 +291,7 @@ export function ModelListView({
       </div>
 
       {compareSet.length > 0 && (
-        <div className="fixed inset-x-0 bottom-2 sm:bottom-4 z-40 flex justify-center px-2 sm:px-4">
+        <div className="fixed inset-x-0 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 flex justify-center px-2 sm:px-4">
           <div className="flex w-full max-w-xl items-center gap-2 sm:gap-3 rounded-xl border border-[#232326]/70 bg-[#111113]/95 backdrop-blur px-3 sm:px-4 py-2.5 sm:py-3 shadow-2xl shadow-black/60">
             <div className="flex flex-1 items-center gap-1.5 sm:gap-2 min-w-0">
               {Array.from({ length: MAX_COMPARE }).map((_, i) => {
@@ -331,7 +331,7 @@ export function ModelListView({
               disabled={compareSet.length !== MAX_COMPARE}
               className={`shrink-0 inline-flex items-center gap-1 sm:gap-1.5 rounded-lg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold transition-colors ${
                 compareSet.length === MAX_COMPARE
-                  ? "text-black"
+                  ? "text-white shadow-md shadow-[#6E56CF]/30"
                   : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
               }`}
               style={
@@ -341,7 +341,7 @@ export function ModelListView({
               }
             >
               <GitCompare size={13} />
-              <span className="hidden xs:inline">Compare</span>
+              <span className="hidden 2xs:inline">Compare</span>
             </button>
 
             <button
