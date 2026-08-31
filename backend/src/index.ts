@@ -22,6 +22,7 @@ import { userRouter } from './modules/user/user.routes.js'
 import { mcpRouter } from './modules/mcp/mcp.routes.js'
 import { agentsRouter } from './modules/agents/agents.routes.js'
 import { searchRouter } from './modules/search/search.routes.js'
+import { writerSubmissionsRouter } from './modules/writer-submissions/writer-submissions.routes.js'
 import { getPrisma } from './lib/prisma.js'
 import { runIngestion } from './modules/ingestion/ingestion.service.js'
 import type { IngestionContext } from './modules/ingestion/pipeline.js'
@@ -89,6 +90,7 @@ app.route('/api/bookmarks', bookmarksRouter)
 app.route('/api/v1/mcps', mcpRouter)
 app.route('/api/v1/agents', agentsRouter)
 app.route('/api/v1/search', searchRouter)
+app.route('/api/v1/writer-submissions', writerSubmissionsRouter)
 
 app.get('/', (c) => {
   return c.json({
