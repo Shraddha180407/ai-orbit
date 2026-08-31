@@ -16,8 +16,12 @@ export const getFeed = async (c: Context) => {
 
     const result = await feedService.getUnifiedFeed(filters, page);
     return c.json(result);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Feed Error:', error);
-    return c.json({ error: 'Failed to fetch unified feed' }, 500);
+    return c.json({
+      error: 'Failed to fetch unified feed',
+      details: error?.message || String(error),
+      stack: error?.stack,
+    }, 500);
   }
 };

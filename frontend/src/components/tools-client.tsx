@@ -126,6 +126,18 @@ export function ToolsClient({
   const pricing = searchParams.get("pricing") || undefined;
   const sort = (searchParams.get("sort") || undefined) as SortOption | undefined;
 
+  // Dynamic categories query for Agents mode
+  const { data: agentCategoriesData } = useQuery({
+    queryKey: ["agent-categories"],
+    queryFn: async () => {
+      const res = await fetch(`${API_URL}/api/v1/agents/categories`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: mode === "agents",
+    staleTime: 10 * 60 * 1000,
+  });
+
   // Single page Query
   const { data, isLoading, isPlaceholderData } = useQuery({
     queryKey: ["tools", mode, activeCategory, q, pricing, sort, currentPage],
@@ -136,8 +148,17 @@ export function ToolsClient({
       if (sort) query.set("sort", sort);
       query.set("page", String(currentPage));
 
+      if (mode === "agents") {
+        if (activeCategory) query.set("category", activeCategory);
+        const res = await fetch(`${API_URL}/api/v1/agents?${query.toString()}`);
+        if (!res.ok) return { tools: [], totalPages: 1 };
+        return res.json();
+      }
+
       const endpoint = activeCategory
         ? `${API_URL}/api/v1/tools/category/${activeCategory}`
+        : mode === "personal" || mode === "creativity"
+        ? `${API_URL}/api/v1/tools/category/${mode}`
         : `${API_URL}/api/v1/tools`;
 
       const res = await fetch(`${endpoint}?${query.toString()}`);
@@ -145,13 +166,24 @@ export function ToolsClient({
       return res.json();
     },
     placeholderData: keepPreviousData,
-    staleTime: 10 * 60 * 1000,
+    staleTime: 30 * 1000,
   });
 
   const tools = data?.tools || [];
   const totalPages = data?.totalPages || 1;
 
-  const categories = CATEGORY_MAP[mode] || CATEGORY_MAP.tools;
+  const categories = React.useMemo(() => {
+    if (mode === "agents" && Array.isArray(agentCategoriesData) && agentCategoriesData.length > 0) {
+      return [
+        { name: "All", slug: "" },
+        ...agentCategoriesData.map((c: { name: string; slug: string }) => ({
+          name: c.name,
+          slug: c.slug,
+        })),
+      ];
+    }
+    return CATEGORY_MAP[mode] || CATEGORY_MAP.tools;
+  }, [mode, agentCategoriesData]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
@@ -169,7 +201,7 @@ export function ToolsClient({
       <div className={`mx-auto w-full max-w-[1600px] space-y-4 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
         
         {/* Category Row */}
-        <div className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-auto sm:w-full">
+        <div className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
@@ -183,7 +215,7 @@ export function ToolsClient({
                     inline: "center"
                   });
                 }}
-                className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
+                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"

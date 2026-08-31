@@ -277,17 +277,11 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     </div>
   );
   if (type === "mcp") {
-    // ONLY fetch the main item on the server. Do not wait for alternatives!
     const item = await fetchMCPItemBySlug(slug);
     if (!item) return notFound();
 
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
-        {/* Pass undefined for alternatives, letting the client fetch them in the background */}
-        <MCPDetailClient item={item} initialAlternatives={undefined} />
-        <Footer />
-      </div>
+      <MCPDetailClient item={item} initialAlternatives={undefined} />
     );
   }
   if (type === "videos") return <VideoDetailsClient />;

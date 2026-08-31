@@ -145,10 +145,10 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
         queryClient.prefetchQuery({ queryKey: ["companies"], queryFn: fetchAllCompanies, staleTime: 10 * 60 * 1000 }).catch(() => { });
         break;
       case "Robots":
-        queryClient.prefetchQuery({ queryKey: ["robots"], queryFn: fetchAllRobots, staleTime: 10 * 60 * 1000 }).catch(() => { });
+        queryClient.prefetchQuery({ queryKey: ["robots"], queryFn: async () => { const r = await fetchAllRobots(); return r && r.length > 0 ? r : null; }, staleTime: 10 * 60 * 1000 }).catch(() => { });
         break;
       case "Devices":
-        queryClient.prefetchQuery({ queryKey: ["devices"], queryFn: () => fetchAllDevices({}), staleTime: 10 * 60 * 1000 }).catch(() => { });
+        queryClient.prefetchQuery({ queryKey: ["devices"], queryFn: async () => { const d = await fetchAllDevices({}); return d && d.length > 0 ? d : null; }, staleTime: 10 * 60 * 1000 }).catch(() => { });
         break;
       case "Models":
         queryClient.prefetchInfiniteQuery({
@@ -584,7 +584,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
             </div>
 
             {/* 2. The rest of the categories (Safely scrollable) */}
-            <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none w-full">
+            <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 touch-scroll-x scrollbar-none w-full">
               {DIRECTORY_CARDS.slice(1).map(renderCard)}
             </div>
 

@@ -134,6 +134,20 @@ export function transformDeviceForDetail(device: Device & { tasks?: unknown[] })
     ram: device.ram,
     additionalInfo: device.additionalInfo,
     videoUrl: device.videoUrl || null,
-    tasks: device.tasks || []
+    tasks: device.tasks || [],
+    
+    // Extended fields (if present on device object)
+    longDescription: (device as any).longDescription || null,
+    processor: (device as any).processor || null,
+    storage: (device as any).storage || null,
+    battery: (device as any).battery || null,
+    display: (device as any).display || null,
+    connectivity: (device as any).connectivity || [],
+    weight: (device as any).weight || null,
+    aiModel: (device as any).aiModel || null,
+    processingType: (device as any).processingType || null,
+    bestFor: (device as any).bestFor || [],
+    score: (device as any).score || null,
+    verdict: (device as any).verdict || null,
   };
 }

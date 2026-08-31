@@ -26,8 +26,96 @@ import { PricingBadge } from "@/components/PricingBadge";
 import { CategoryChip } from "@/components/CategoryChip";
 import { Breadcrumb } from "@/components/news/Breadcrumb";
 import { RatingStars } from "@/components/RatingStars";
+import { preprocessReadmeHtml } from "@/components/repository-detail/RepositoryReadme";
 import { ExpandableContent } from "@/components/ui/ExpandableContent";
 import KeyFeatureCard from "@/components/ui/KeyFeatureCard";
+
+/* ── GitHub README fetcher + renderer ─────────────────────────────────────── */
+function MCPReadme({ repositoryUrl }: { repositoryUrl: string }) {
+  const [html, setHtml] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!repositoryUrl) { setLoading(false); return; }
+    const match = repositoryUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
+    if (!match) { setLoading(false); return; }
+    const owner = match[1];
+    const repo = match[2].replace(/\.git$/, "");
+
+    const tryFetch = async (branch: string) => {
+      const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/README.md`);
+      if (!res.ok) throw new Error("not found");
+      return res.text();
+    };
+
+    (async () => {
+      try {
+        const md = await tryFetch("main").catch(() => tryFetch("master"));
+        const converted = md
+          .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+          .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+          .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+          .replace(/```[\w]*\n([\s\S]*?)```/g, "<pre><code>$1</code></pre>")
+          .replace(/`([^`]+)`/g, "<code>$1</code>")
+          .replace(/^\s*[-*] (.+)$/gm, "<li>$1</li>")
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+          .replace(/\n\n/g, "</p><p>");
+        setHtml(preprocessReadmeHtml(converted, owner, repo, "main"));
+      } catch {
+        setHtml(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [repositoryUrl]);
+
+  if (loading) {
+    return (
+      <section className="rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6 space-y-3">
+        <h3 className="text-base font-bold text-white">README</h3>
+        <div className="space-y-2 animate-pulse">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className={`h-3 rounded bg-[#18181C] ${i % 2 === 0 ? "w-full" : "w-3/4"}`} />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (!html) return null;
+
+  return (
+    <section className="rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6 space-y-4">
+      <h3 className="text-base font-bold text-white border-b border-white/10 pb-4">README</h3>
+      <div className="readme-content" dangerouslySetInnerHTML={{ __html: html }} />
+      <style jsx global>{`
+        .readme-content{color:rgba(255,255,255,.75);line-height:1.65;font-size:.875rem}
+        .readme-content h1,.readme-content h2,.readme-content h3,.readme-content h4{color:#fff;font-weight:700;margin-top:1.5rem;margin-bottom:.75rem;line-height:1.3}
+        .readme-content h1{font-size:1.5rem;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:.4rem}
+        .readme-content h2{font-size:1.25rem;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:.4rem}
+        .readme-content h3{font-size:1.1rem}
+        .readme-content p{margin:0 0 1rem}
+        .readme-content a{color:#3b82f6;text-decoration:none}
+        .readme-content a:hover{color:#60a5fa;text-decoration:underline}
+        .readme-content ul,.readme-content ol{margin-bottom:1rem;padding-left:1.5rem}
+        .readme-content ul{list-style-type:disc}
+        .readme-content ol{list-style-type:decimal}
+        .readme-content li{margin:.25rem 0}
+        .readme-content pre{margin:1rem 0;padding:1rem;overflow-x:auto;font-family:monospace;font-size:.8rem;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.08);border-radius:.5rem}
+        .readme-content code{padding:.15em .35em;font-family:monospace;font-size:.8rem;background:rgba(255,255,255,.08);border-radius:.25rem;color:#e2e8f0}
+        .readme-content pre code{padding:0;background:transparent}
+        .readme-content img{max-width:100%;border-radius:.5rem}
+        .readme-content strong{color:#fff;font-weight:600}
+        .readme-content blockquote{margin:1rem 0;padding:.25rem 1rem;color:rgba(255,255,255,.55);border-left:4px solid #3b82f6;background:rgba(255,255,255,.02);border-radius:0 4px 4px 0}
+        .readme-content hr{height:1px;background:rgba(255,255,255,.08);border:0;margin:1.5rem 0}
+        .readme-content table{display:block;width:100%;overflow-x:auto;border-collapse:collapse;margin-bottom:1rem}
+        .readme-content th,.readme-content td{padding:6px 12px;border:1px solid rgba(255,255,255,.12)}
+        .readme-content th{background:rgba(255,255,255,.04);color:#fff;font-weight:600}
+      `}</style>
+    </section>
+  );
+}
 
 
 
@@ -574,13 +662,13 @@ export function MCPDetailClient({ item, initialAlternatives }: MCPDetailClientPr
           </div>
 
           {/* 4. Primary Actions Block */}
-          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto md:self-start">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto md:self-start">
             {item.websiteUrl && (
               <a
                 href={item.websiteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 sm:py-2 text-sm font-semibold text-black shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4BF] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                className="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 sm:py-2 text-sm font-semibold text-black shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover active:scale-95 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4BF] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
                 <span>Use Tool</span>
                 <ExternalLink size={14} />
@@ -689,6 +777,11 @@ export function MCPDetailClient({ item, initialAlternatives }: MCPDetailClientPr
 
           </section>
 
+          {/* GitHub README */}
+          {item.repositoryUrl && item.repositoryUrl.includes("github.com") && (
+            <MCPReadme repositoryUrl={item.repositoryUrl} />
+          )}
+
           {/* Supported Features & Interfaces */}
           <section id="supported-features-section" className="space-y-4 rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 md:p-6">
             <h3 className="text-base font-bold text-white">Supported Features & Interfaces</h3>
@@ -754,126 +847,6 @@ export function MCPDetailClient({ item, initialAlternatives }: MCPDetailClientPr
             </section>
           )}
 
-          {/* Bottom Action Bar (Phase 4) */}
-          <div className="rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 space-y-4 max-w-[850px] relative z-10">
-            <h3 className="text-xs font-mono font-semibold tracking-wider text-[#71717A] uppercase">Actions</h3>
-
-            {/* Primary CTA: Use Tool */}
-            {item.websiteUrl ? (
-              <a
-                href={item.websiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex w-full justify-center items-center gap-1.5 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-black shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4BF] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              >
-                <span>Use Tool</span>
-                <ExternalLink size={16} />
-              </a>
-            ) : (
-              <button
-                type="button"
-                disabled
-                className="inline-flex w-full justify-center items-center gap-1.5 rounded-lg bg-neutral-900 border border-neutral-800 px-4 py-3 text-sm font-semibold text-neutral-500 cursor-not-allowed"
-              >
-                <span>Use Tool</span>
-                <ExternalLink size={16} />
-              </button>
-            )}
-
-            {/* Secondary CTAs: Save & Copy Link */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <SaveButton
-                slug={item.slug}
-                initialCount={item.saveCount}
-                initialSaved={false}
-                className="w-full justify-center py-2.5 sm:py-3"
-              />
-              <CopyLinkButton
-                slug={item.slug}
-                name={item.name}
-                className="w-full justify-center py-2.5 sm:py-3"
-              />
-            </div>
-          </div>
-
-          {/* Also Used For Section (Phase 5) */}
-          {alsoUsedForItems.length > 0 && (
-            <div id="also-used-for-section" className="rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 space-y-4 max-w-[850px] relative z-10">
-              <h3 className="text-xs font-mono font-semibold tracking-wider text-[#71717A] uppercase">Also Used For</h3>
-              <div className="flex flex-wrap gap-2">
-                {alsoUsedForItems.map((chip, idx) => {
-                  const content = (
-                    <span className="rounded-full bg-[#131316]/50 border border-[#232326]/60 hover:border-white/[0.15] px-4 py-1.5 text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer">
-                      {chip.name}
-                    </span>
-                  );
-
-                  if (chip.href) {
-                    return (
-                      <Link
-                        key={idx}
-                        href={chip.href}
-                        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] rounded-full focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                      >
-                        {content}
-                      </Link>
-                    );
-                  }
-
-                  // Else click handler with TODO
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => console.log("TODO: Implement navigation route for use cases")}
-                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] rounded-full focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                    >
-                      {content}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Related Topics Section (Phase 7) */}
-          {relatedTopicsItems.length > 0 && (
-            <div id="related-topics-section" className="rounded-xl border border-[#232326]/60 bg-[#131316]/30 p-5 space-y-4 max-w-[850px] relative z-10">
-              <h3 className="text-xs font-mono font-semibold tracking-wider text-[#71717A] uppercase">Related Topics</h3>
-              <div className="flex flex-wrap gap-2">
-                {relatedTopicsItems.map((chip, idx) => {
-                  const content = (
-                    <span className="rounded-full bg-[#131316]/50 border border-[#232326]/60 hover:border-white/[0.15] px-4 py-1.5 text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer">
-                      {chip.name}
-                    </span>
-                  );
-
-                  if (chip.href) {
-                    return (
-                      <Link
-                        key={idx}
-                        href={chip.href}
-                        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] rounded-full focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                      >
-                        {content}
-                      </Link>
-                    );
-                  }
-
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => console.log("TODO: Implement navigation route for subcategories")}
-                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6E56CF] rounded-full focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                    >
-                      {content}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
 

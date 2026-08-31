@@ -192,7 +192,9 @@ export function DevicesClient({ defaultCategory }: { defaultCategory?: string })
     staleTime: 10 * 60 * 1000,
   });
 
-  const devices = fetchedDevices || DEVICES_DATA;
+  const devices = (fetchedDevices && fetchedDevices.length > 0) 
+    ? (fetchedDevices[0]?.slug && fetchedDevices[0]?.name ? fetchedDevices : mergeWithDummy(fetchedDevices as any)) 
+    : DEVICES_DATA;
   const [currentPage, setCurrentPage] = useState(1);
   const loaderRef = useRef<HTMLDivElement>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -442,14 +444,14 @@ useEffect(() => {
     <>
     <div className="w-full flex-1 flex flex-col">
       <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1">
-        <div className="flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-1 md:px-0">
+        <div className="flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full -mx-3 sm:mx-0 px-3 sm:px-0">
           <button
             onClick={() => {
               setSelectedCategory(ALL_CATEGORIES);
               setCurrentPage(1);
               router.push(`/devices`);
             }}
-            className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+            className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
               selectedCategory === ALL_CATEGORIES
                 ? "bg-white text-black border-white shadow-lg shadow-white/5"
                 : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
@@ -465,7 +467,7 @@ useEffect(() => {
                 setCurrentPage(1);
                 router.push(`/devices/${DEVICE_TO_SLUG[sub]}`);
               }}
-              className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+              className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                 selectedCategory === sub
                   ? "bg-white text-black border-white shadow-lg shadow-white/5"
                   : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
@@ -480,7 +482,7 @@ useEffect(() => {
       {/* ── LIST VIEW ── */}
       <div className="w-full px-3 sm:px-6 lg:px-8 pt-0.5 pb-8">
           {/*  Outer container matches ToolListView exactly */}
-          <div className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
+          <div className="overflow-x-auto touch-scroll-x rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
               <div ref={dropdownRef} style={{ minWidth: '1150px' }} className={`relative bg-[#000000] transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
 
                 {/* Header row matches ToolListView exactly */}

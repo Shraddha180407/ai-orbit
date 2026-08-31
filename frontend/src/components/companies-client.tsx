@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState, useRef, useCallback, useTransition
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Company } from "@/lib/types";
-import { API_URL, fetchAllCompanies, prefetchUrl } from "@/lib/api";
+import { API_URL, fetchCompanies, fetchAllCompanies, prefetchUrl } from "@/lib/api";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
@@ -375,14 +375,6 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const queryClient = useQueryClient();
   const isAdmin = user?.role === 'ADMIN';
 
-  const { data: companiesData, isLoading } = useQuery<Company[]>({
-    queryKey: ["companies"],
-    queryFn: () => fetchAllCompanies(),
-    placeholderData: keepPreviousData,
-    staleTime: 10 * 60 * 1000,
-  });
-
-  const allCompanies = companiesData || [];
   const searchParams = useSearchParams();
   const [query, setQuery] = useState((searchParams.get("q") || "").trim());
 
@@ -401,6 +393,40 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const [sortField, setSortField] = useState<SortField>('valuation');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const matchedTypeEnum = useMemo(() => {
+    if (!activeCategorySlug || activeCategorySlug === "all") return undefined;
+    const matched = COMPANY_TYPES.find(ct => ct.slug === activeCategorySlug);
+    return matched && matched.value !== "ALL" ? matched.value : activeCategorySlug;
+  }, [activeCategorySlug]);
+
+  const { data: companiesResponse, isLoading } = useQuery<any>({
+    queryKey: ["companies", currentPage, query, activeCategorySlug, selectedCountry, sortField, sortDir],
+    queryFn: () => fetchCompanies({
+      page: currentPage,
+      pageSize: PAGE_SIZE,
+      q: query || undefined,
+      type: matchedTypeEnum,
+      country: selectedCountry !== "all" ? selectedCountry : undefined,
+      sort: sortField === "valuation" ? (sortDir === "asc" ? "valuation-asc" : "valuation-desc")
+          : sortField === "name" ? (sortDir === "asc" ? "name-asc" : "name-desc")
+          : undefined,
+    }),
+    placeholderData: keepPreviousData,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const allCompanies: Company[] = Array.isArray(companiesResponse) 
+    ? companiesResponse 
+    : (companiesResponse?.companies || []);
+
+  const totalCount = typeof companiesResponse?.total === 'number' 
+    ? companiesResponse.total 
+    : allCompanies.length;
+
+  const totalPages = typeof companiesResponse?.totalPages === 'number'
+    ? companiesResponse.totalPages
+    : Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   useEffect(() => {
     if (urlSortParam) {
@@ -452,76 +478,11 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     return availableCountries.filter((c) => c.toLowerCase().includes(q));
   }, [availableCountries, countrySearch]);
 
-  const filteredAndSorted = useMemo(() => {
-    let list = allCompanies;
-
-    if (activeCategorySlug && activeCategorySlug !== "all") {
-      list = list.filter((c) => matchesSubcategory(c, activeCategorySlug));
-    }
-
-    if (selectedCountry && selectedCountry !== "all") {
-      list = list.filter((c) => (c.country || "").toLowerCase() === selectedCountry.toLowerCase());
-    }
-
-    if (query) {
-      const needle = query.toLowerCase();
-      list = list.filter((c) =>
-        c.name.toLowerCase().includes(needle) ||
-        (c.country || "").toLowerCase().includes(needle) ||
-        (c.sector || "").toLowerCase().includes(needle)
-      );
-    }
-
-    list = [...list].sort((a, b) => {
-      let cmp = 0;
-      switch (sortField) {
-        case 'name':
-          cmp = a.name.localeCompare(b.name);
-          break;
-        case 'country':
-          cmp = (a.country || "").localeCompare(b.country || "");
-          break;
-        case 'valuation':
-          cmp = getNumericValuation(a.valuation) - getNumericValuation(b.valuation);
-          break;
-        case 'valEmp':
-          cmp = getValEmpNumeric(a.valuation, a.employeeCount) - getValEmpNumeric(b.valuation, b.employeeCount);
-          break;
-        case 'aiNative':
-          const aNative = (a.type || []).includes('AI_NATIVE') ? 1 : 0;
-          const bNative = (b.type || []).includes('AI_NATIVE') ? 1 : 0;
-          cmp = aNative - bNative;
-          break;
-        case 'profitable':
-          const aProf = (a.type || []).includes('PROFITABLE') ? 1 : 0;
-          const bProf = (b.type || []).includes('PROFITABLE') ? 1 : 0;
-          cmp = aProf - bProf;
-          break;
-        case 'sector':
-          cmp = (a.sector || "").localeCompare(b.sector || "");
-          break;
-        case 'modelsCount':
-          cmp = (a._count?.aiModels || a.aiModels?.length || 0) - (b._count?.aiModels || b.aiModels?.length || 0);
-          break;
-        case 'toolsCount':
-          cmp = (a._count?.tools || a.tools?.length || 0) - (b._count?.tools || b.tools?.length || 0);
-          break;
-      }
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-
-    return list;
-  }, [allCompanies, activeCategorySlug, selectedCountry, query, sortField, sortDir]);
+  const paginatedCompanies = allCompanies;
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [query, activeCategorySlug, selectedCountry, sortField, sortDir]);
-
-  const totalPages = Math.ceil(filteredAndSorted.length / PAGE_SIZE) || 1;
-  const paginatedCompanies = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredAndSorted.slice(start, start + PAGE_SIZE);
-  }, [filteredAndSorted, currentPage]);
+  }, [query, activeCategorySlug, selectedCountry]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -593,7 +554,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
         <div className="w-full space-y-4">
           {/* Subcategories Horizontal Scrollbar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1 w-full">
+            <div className="flex items-center gap-1.5 touch-scroll-x scrollbar-none pb-1 md:pb-0 flex-1 w-auto sm:w-full -mx-3 sm:mx-0 px-3 sm:px-0">
               {COMPANY_TYPES.map((ct) => {
                 const isSelected = activeCategorySlug === ct.slug;
                 return (
@@ -602,7 +563,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                     type="button"
                     onClick={() => handleSubcategoryClick(ct.slug)}
                     className={cn(
-                      "rounded-full px-3 py-1 text-xs font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer",
+                      "rounded-full px-3.5 py-1 text-xs font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0",
                       isSelected
                         ? "bg-white text-black border-transparent font-bold shadow-sm"
                         : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/50 hover:text-white"
@@ -643,7 +604,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                 <div key={i} className="h-16 animate-pulse bg-[#131316]/50 rounded-xl border border-[#232326]/60" />
               ))}
             </div>
-          ) : filteredAndSorted.length === 0 ? (
+          ) : allCompanies.length === 0 ? (
             <div className="text-center py-20 bg-[#111113] rounded-xl border border-[#232326]">
               <p className="text-[#71717A] text-sm">
                 {query ? `No companies match "${query}".` : "No companies found."}
@@ -651,7 +612,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
             </div>
           ) : (
             <div className="w-full rounded-xl border border-[#232326] bg-[#0A0A0C] overflow-hidden shadow-xl">
-              <div className="overflow-x-auto relative">
+              <div className="overflow-x-auto touch-scroll-x relative">
                 {/* Header Row */}
                 <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2.5 bg-[#131316] border-b border-[#232326]/60 text-[10px] font-bold font-mono tracking-wider uppercase text-[#A1A1AA]`}>
                   <div></div>
@@ -729,7 +690,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
               {totalPages > 1 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-[#131316] border-t border-[#232326]/60 text-xs text-[#A1A1AA]">
                   <div>
-                    Showing <span className="font-bold text-white">{(currentPage - 1) * PAGE_SIZE + 1}</span>–<span className="font-bold text-white">{Math.min(currentPage * PAGE_SIZE, filteredAndSorted.length)}</span> of <span className="font-bold text-white">{filteredAndSorted.length.toLocaleString()}</span> companies
+                    Showing <span className="font-bold text-white">{(currentPage - 1) * PAGE_SIZE + 1}</span>–<span className="font-bold text-white">{Math.min(currentPage * PAGE_SIZE, totalCount)}</span> of <span className="font-bold text-white">{totalCount.toLocaleString()}</span> companies
                   </div>
 
                   <div className="flex items-center gap-1.5">

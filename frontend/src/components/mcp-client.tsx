@@ -12,13 +12,14 @@ import Github from 'lucide-react/dist/esm/icons/github';
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 
 import { fetchMCPCategories, fetchMCPSubCategories, fetchMCPItems } from "@/lib/api";
+import { FALLBACK_MCP_ITEMS } from "@/data/mcp";
 import { EmptyState } from "@/components/EmptyState";
 import { CategoryChip } from "@/components/CategoryChip";
 import { PricingBadge } from "@/components/PricingBadge";
 import type { MCPCategory, MCPSubCategory } from "@/lib/types";
 
-// 8-column layout template updated for mobile sticky columns
-const COL_TEMPLATE = "grid-cols-[48px_200px_minmax(130px,1.4fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)] md:grid-cols-[40px_minmax(200px,2.4fr)_minmax(130px,1.4fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)]";
+// FIXED: Adjusted desktop Grid 'fr' ratios. Shrank Name/Desc to 2.2fr and expanded Company to 1.2fr to perfectly balance the visual gaps.
+const COL_TEMPLATE = "grid-cols-[48px_70px_190px_minmax(130px,1.4fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)] md:grid-cols-[40px_minmax(220px,2.2fr)_minmax(130px,1.2fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)]";
 const COL_MIN_WIDTH = "min-w-fit md:min-w-[1220px]";
 const COLUMN_HEADERS = ["", "MCP ITEM", "COMPANY", "TYPE", "CLASSIFICATION", "PRICING", "RELEASED", "ACTIONS"];
 
@@ -130,8 +131,11 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
 
   const items = React.useMemo(() => {
     const fetchedItems = data?.pages.flatMap((page) => page.items || []) || [];
-    
-    return fetchedItems.sort((a: any, b: any) => {
+
+    // Use fallback data when API returns nothing (e.g. local dev with empty DB)
+    const sourceItems = fetchedItems.length > 0 ? fetchedItems : FALLBACK_MCP_ITEMS;
+
+    return sourceItems.sort((a: any, b: any) => {
       const getScore = (item: any) => {
         if (item.logoUrl && item.shortDescription && item.shortDescription.trim() !== "") return 2;
         return 1;
@@ -195,10 +199,10 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
         }
       `}</style>
       <div className="mx-auto w-full max-w-[1600px] space-y-4 animate-fade-in">
-        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+        <div className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
           <button
             onClick={() => handleSelectSubCategory(null)}
-            className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+            className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
               !activeSubCategory
                 ? "bg-white text-black border-white shadow-lg shadow-white/5"
                 : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
@@ -214,7 +218,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                 onClick={() => {
                   handleSelectSubCategory(sub.slug);
                 }}
-                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
@@ -228,15 +232,22 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
 
         <div className="pt-0">
           {isLoading && items.length === 0 ? (
-            <div className="overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10">
+            <div className="overflow-x-auto touch-scroll-x rounded-lg border border-[#232326]/60 bg-[#131316]/10">
               <div className="flex flex-col divide-y divide-[#232326]/60">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 py-2.5`}>
                     <div className="pl-4 md:pl-0"><div className="h-8 w-8 md:h-11 md:w-11 animate-pulse rounded-lg bg-[#18181C]" /></div>
-                    <div className="space-y-1.5 pr-4 md:pr-0">
-                      <div className="h-3 w-36 animate-pulse rounded bg-[#18181C]" />
-                      <div className="h-2.5 w-48 animate-pulse rounded bg-[#18181C]" />
+                    
+                    {/* Skeleton Mobile Name / Desktop Combined */}
+                    <div className="space-y-1.5 pr-2 md:pr-0">
+                      <div className="h-3 w-16 md:w-32 animate-pulse rounded bg-[#18181C]" />
+                      <div className="hidden md:block h-2.5 w-48 animate-pulse rounded bg-[#18181C]" />
                     </div>
+                    {/* Skeleton Mobile Description */}
+                    <div className="md:hidden pr-4">
+                      <div className="h-2 w-32 animate-pulse rounded bg-[#18181C]" />
+                    </div>
+                    
                     <div className="h-3 w-20 animate-pulse rounded bg-[#18181C] pl-4 md:pl-0" />
                     <div className="h-4.5 w-16 animate-pulse rounded-full bg-[#18181C]" />
                     <div className="h-4 w-24 animate-pulse rounded bg-[#18181C]" />
@@ -273,12 +284,16 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                 <div className="border-b border-[#232326]/60 bg-[#131316] sticky top-0 z-30">
                   <div className={`grid ${COL_TEMPLATE} items-center gap-4 py-2`}>
                     {COLUMN_HEADERS.map((h, i) => {
-                      if (i === 0) return <div key={i} className="sticky left-0 md:static z-40 bg-[#131316] md:bg-transparent h-full pl-4" />;
+                      if (i === 0) return <div key={i} className="sticky left-0 md:static z-40 bg-[#131316] md:bg-transparent h-full pl-4 shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none" />;
                       
                       if (i === 1) return (
-                        <div key={i} className="relative flex items-center gap-2 sticky left-[60px] md:static z-40 bg-[#131316] md:bg-transparent shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none h-full pr-4 md:pr-0 before:content-[''] before:absolute before:inset-y-0 before:-left-[12px] before:w-[12px] before:bg-[#131316] md:before:hidden">
-                          <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase">{h}</span>
-                        </div>
+                        <React.Fragment key={i}>
+                          <div className="relative flex items-center gap-2 sticky left-[64px] md:static z-40 bg-[#131316] md:bg-transparent shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none h-full pr-2 md:pr-0 before:content-[''] before:absolute before:inset-y-0 before:-left-[16px] before:w-[16px] before:bg-[#131316] md:before:hidden">
+                            <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase">{h}</span>
+                          </div>
+                          {/* DESCRIPTION col header (Mobile ONLY) */}
+                          <span className="md:hidden text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pr-2">DESCRIPTION</span>
+                        </React.Fragment>
                       );
                       
                       if (i === 2) return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase pl-4 md:pl-0">{h}</span>;
@@ -319,7 +334,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                         className={`group grid ${COL_TEMPLATE} items-center gap-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none relative cursor-pointer`}
                       >
                         {/* Column 1: Logo */}
-                        <div className="sticky left-0 md:static z-20 flex h-full items-center bg-[#000000] md:bg-transparent pl-4 md:pl-0 transition-all duration-200">
+                        <div className="sticky left-0 md:static z-20 flex h-full items-center bg-[#000000] md:bg-transparent pl-4 md:pl-0 transition-all duration-200 shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none">
                           <span className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%] z-30" />
                           <div className="flex h-8 w-8 md:h-11 md:w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white group-hover:border-[#6E56CF] transition-colors">
                             {item.logoUrl ? (
@@ -339,12 +354,19 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                           </div>
                         </div>
 
-                        {/* Column 2: Name */}
-                        <div className="min-w-0 sticky left-[60px] md:static z-20 bg-[#000000] group-hover:bg-[#18181C] md:bg-transparent md:group-hover:bg-transparent h-full flex flex-col justify-center before:content-[''] before:absolute before:inset-y-0 before:-left-[12px] before:w-[12px] before:bg-[#000000] group-hover:before:bg-[#18181C] md:before:hidden shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none pr-4 md:pr-0 transition-colors">
-                          <span className="truncate text-[13px] font-semibold text-white group-hover:text-white transition-colors">
+                        {/* Column 2a: Name */}
+                        <div className="min-w-0 sticky left-[64px] md:static z-20 bg-[#000000] group-hover:bg-[#18181C] md:bg-transparent md:group-hover:bg-transparent h-full flex flex-col justify-center before:content-[''] before:absolute before:inset-y-0 before:-left-[16px] before:w-[16px] before:bg-[#000000] group-hover:before:bg-[#18181C] md:before:hidden shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none pr-1 md:pr-0 transition-colors">
+                          <span className="text-[11.5px] md:text-[13px] line-clamp-2 md:truncate font-semibold text-white transition-colors duration-200 leading-tight break-words">
                             {item.name}
                           </span>
-                          <p className="mt-0.5 line-clamp-1 text-[11.5px] text-[#A1A1AA] leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis md:text-clip md:whitespace-normal">
+                          <p className="hidden md:block mt-0.5 text-[11px] text-[#A1A1AA] leading-relaxed pr-2 truncate">
+                            {item.shortDescription}
+                          </p>
+                        </div>
+
+                        {/* Column 2b: Description (Scrollable on mobile) */}
+                        <div className="md:hidden min-w-0 flex flex-col justify-center pr-2 h-full">
+                          <p className="text-[11px] text-[#A1A1AA] leading-relaxed pr-2 whitespace-nowrap overflow-hidden text-ellipsis">
                             {item.shortDescription}
                           </p>
                         </div>

@@ -7,7 +7,11 @@ export { BLUR_DATA_URL, formatDuration, formatViews, formatRelativeDate } from "
 function resolveApiUrl(): string {
   const url = process.env.NEXT_PUBLIC_API_URL;
   if (url && url.startsWith("http") && url !== "undefined") {
-    return url.replace(/\/$/, "");
+    const isLocalUrl = url.includes("localhost") || url.includes("127.0.0.1");
+    const isNonLocalClient = typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+    if (!(isLocalUrl && isNonLocalClient)) {
+      return url.replace(/\/$/, "");
+    }
   }
   if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
     return "http://localhost:8787";

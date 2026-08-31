@@ -109,7 +109,7 @@ export function TopFilters({ categories, params }: TopFiltersProps) {
             </button>
           )}
         </div>
-        <div className="flex flex-nowrap gap-3 overflow-x-auto scrollbar-none pb-1">
+        <div className="flex flex-nowrap gap-2 sm:gap-3 touch-scroll-x scrollbar-none pb-1 -mx-3 sm:mx-0 px-3 sm:px-0">
           {/* "All" category chip */}
           <Link
             href={buildToolsUrl(params, { category: null })}

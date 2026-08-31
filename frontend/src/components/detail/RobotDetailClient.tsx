@@ -484,7 +484,6 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
         )}
 
       </div>
-      <StickyCTA robot={robot} />
     </main>
   );
 }

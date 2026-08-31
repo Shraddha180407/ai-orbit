@@ -177,7 +177,7 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
     staleTime: 10 * 60 * 1000,
   });
 
-  const robots = fetchedRobots || FALLBACK_ROBOTS;
+  const robots = (fetchedRobots && fetchedRobots.length > 0) ? fetchedRobots : FALLBACK_ROBOTS;
 
   useEffect(() => {
     if (defaultCategory !== undefined) {
@@ -266,7 +266,7 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
     <main className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-6 flex-1">
       <div className="mx-auto w-full max-w-[1440px] space-y-3">
         {/* Category Row */}
-        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2 scrollbar-none w-full">
+        <div className="mb-2 -mx-3 sm:mx-0 px-3 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2 scrollbar-none w-auto sm:w-full">
           {ROBOT_CATEGORIES.map((cat) => {
             const isSelected = activeCategory === cat;
             const slug = ROBOT_TO_SLUG[cat];
@@ -287,7 +287,7 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
                     inline: "center"
                   });
                 }}
-                className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
@@ -315,7 +315,7 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
         ) : (
           <div className={`flex flex-col rounded-lg border border-[#232326]/50 bg-[#0F0F12]/30 overflow-hidden transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
             {/* Scroll Container */}
-            <div className="w-full overflow-x-auto scrollbar-none">
+            <div className="w-full overflow-x-auto touch-scroll-x scrollbar-none">
               {/* Table Headers */}
               <div className="border-b border-[#232326]/60 bg-[#131316]/40">
                 <div className={`grid ${COL_TEMPLATE} ${TABLE_MIN_WIDTH} items-center gap-4 px-4 py-2`}>

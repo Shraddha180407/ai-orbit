@@ -145,7 +145,7 @@ export function ProsConsVerdict({ name, categories, pros: dbPros, cons: dbCons }
         <div className="flex items-center gap-2.5 mb-3">
           <Sparkles className="text-accent h-4 w-4" />
           <h4 className="text-sm font-bold text-foreground uppercase tracking-wide">
-            Antigravity Verdict
+            AI Verdict
           </h4>
         </div>
         <p className="text-sm leading-relaxed text-foreground-muted">
