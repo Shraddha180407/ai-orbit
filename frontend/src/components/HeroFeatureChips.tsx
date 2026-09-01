@@ -125,16 +125,16 @@ export function HeroFeatureChips() {
                   toolsEl.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
               }}
-              className="group inline-flex shrink-0 whitespace-nowrap items-center rounded-full border font-medium transition-all duration-150 active:scale-95 cursor-pointer h-7 sm:h-[30px] px-2.5 sm:px-3.5 gap-1.5 text-xs shadow-sm"
+              className="group inline-flex shrink-0 whitespace-nowrap items-center rounded-full border font-medium transition-all duration-150 active:scale-95 cursor-pointer h-6 sm:h-[25px] px-2 sm:px-2.5 gap-1.5 text-[10.5px] sm:text-[11px] shadow-sm"
               style={{
                 borderColor: filled ? f.color : `${f.color}40`,
                 backgroundColor: filled ? `${f.color}15` : "#0d0d10",
                 color: filled ? "#ffffff" : "#a1a1aa",
-                boxShadow: filled ? `0 0 12px ${f.color}25` : undefined,
+                boxShadow: filled ? `0 0 10px ${f.color}20` : undefined,
               }}
             >
               <span
-                className="flex shrink-0 items-center justify-center rounded-full border transition-colors duration-150 h-4 w-4"
+                className="flex shrink-0 items-center justify-center rounded-full border transition-colors duration-150 h-3.5 w-3.5"
                 style={{
                   backgroundColor: filled ? f.color : "transparent",
                   borderColor: f.color,
@@ -142,7 +142,7 @@ export function HeroFeatureChips() {
               >
                 <Icon
                   strokeWidth={2.25}
-                  className="h-2.5 w-2.5"
+                  className="h-2 w-2"
                   style={{
                     color: filled ? "#000000" : f.color,
                   }}
