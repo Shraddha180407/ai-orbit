@@ -559,39 +559,37 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
             <HeroFeatureChips />
           </div>
         </div>
-      </section>
 
-      <div className="border-b border-[#232326]/40 w-full z-10 relative" />
-
-      {/* Sort control */}
-      <div className="w-full px-3 sm:px-6 lg:px-8 pt-3 sm:pt-4">
-        <div className="mx-auto w-full max-w-[1600px] flex justify-end">
-          <SortDropdown />
+        {/* Sort control */}
+        <div className="w-full px-3 sm:px-6 lg:px-8 pt-3 sm:pt-4">
+          <div className="mx-auto w-full max-w-[1600px] flex justify-end">
+            <SortDropdown />
+          </div>
         </div>
-      </div>
 
-      {/* Directory nav strip */}
-      <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1">
-        <div className="mx-auto w-full max-w-[1600px]">
+        {/* Directory nav strip */}
+        <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1 relative z-20">
+          <div className="mx-auto w-full max-w-[1600px]">
 
-          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 w-full">
+            <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 w-full">
 
-            {/* 1. The "New" Button wrapped in the Dropdown (Escaping overflow!) */}
-            <div className="shrink-0 relative z-20 overflow-visible">
-              <UnifiedFilterDropdown>
-                {renderCard(DIRECTORY_CARDS[0])}
-              </UnifiedFilterDropdown>
-            </div>
+              {/* 1. The "New" Button wrapped in the Dropdown (Escaping overflow!) */}
+              <div className="shrink-0 relative z-20 overflow-visible">
+                <UnifiedFilterDropdown>
+                  {renderCard(DIRECTORY_CARDS[0])}
+                </UnifiedFilterDropdown>
+              </div>
 
-            {/* 2. The rest of the categories (Safely scrollable) */}
-            <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 touch-scroll-x scrollbar-none w-full">
-              {DIRECTORY_CARDS.slice(1).map(renderCard)}
+              {/* 2. The rest of the categories (Safely scrollable) */}
+              <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 touch-scroll-x scrollbar-none w-full">
+                {DIRECTORY_CARDS.slice(1).map(renderCard)}
+              </div>
+
             </div>
 
           </div>
-
         </div>
-      </div>
+      </section>
     </>
   );
 }
