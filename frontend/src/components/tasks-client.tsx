@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import ChevronUp from 'lucide-react/dist/esm/icons/chevron-up';
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down';
 import ChevronsUpDown from 'lucide-react/dist/esm/icons/chevrons-up-down';
+import {Pagination} from "./Pagination";
 
 import {
   fetchTasks,
