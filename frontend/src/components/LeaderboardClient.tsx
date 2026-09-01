@@ -15,6 +15,7 @@ import X from 'lucide-react/dist/esm/icons/x';
 import Info from 'lucide-react/dist/esm/icons/info';
 import { cn } from "@/lib/utils";
 import { fetchLeaderboardTools, fetchLeaderboardModels, fetchLeaderboardCompanies } from "@/lib/api";
+import { Pagination } from "@/components/Pagination";
 
 type LeaderboardTool = {
   id: string;
@@ -193,11 +194,17 @@ export function LeaderboardClient() {
   const [activeCategory, setActiveCategory] = useState("All Categories");
   const [sortBy, setSortBy] = useState("Rank");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(100);
 
   const [tools, setTools] = useState<LeaderboardTool[]>([]);
   const [models, setModels] = useState<LeaderboardModel[]>([]);
   const [companies, setCompanies] = useState<LeaderboardCompany[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, activeCategory, sortBy, searchQuery]);
 
   // Local bookmarks set
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
@@ -650,6 +657,22 @@ export function LeaderboardClient() {
   const currentFilteredModels = getFilteredModels();
   const currentFilteredCompanies = getFilteredCompanies();
 
+  const totalTools = currentFilteredTools.length;
+  const totalModels = currentFilteredModels.length;
+  const totalCompanies = currentFilteredCompanies.length;
+
+  const currentTotal = activeTab === "tools" || activeTab === "agents" || activeTab === "mcp"
+    ? totalTools
+    : activeTab === "models"
+    ? totalModels
+    : totalCompanies;
+
+  const totalPages = Math.max(1, Math.ceil(currentTotal / pageSize));
+
+  const visibleTools = currentFilteredTools.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const visibleModels = currentFilteredModels.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const visibleCompanies = currentFilteredCompanies.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
     <div className="w-full flex flex-col flex-1 bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       {/* Main Leaderboard Content Frame */}
@@ -911,12 +934,12 @@ export function LeaderboardClient() {
                       </tr>
                     </thead>
                     <tbody>
-                      {currentFilteredTools.map((tool) => (
+                      {visibleTools.map((tool) => (
                         <tr
                           key={tool.id}
                           className="relative border-b border-[#232326]/50 hover:bg-gradient-to-r hover:from-[#131316] hover:to-[#18181C] transition-all duration-300 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:z-10"
                         >
-                          <td className="py-4 px-6 font-bold text-sm">
+                          <td className="py-4 px-6 font-bold text-base">
                             <div className="relative flex items-center">
                               {/* Left hover edge highlight bar */}
                               <span className="pointer-events-none absolute -left-6 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[#F5A623] shadow-[0_0_10px_#F5A623] transition-all duration-300 group-hover:h-[80%]" />
@@ -926,7 +949,7 @@ export function LeaderboardClient() {
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
                               <div className="h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#232326] bg-[#131316] flex relative p-1.5 shadow-lg group-hover:border-[#F5A623]/50 group-hover:shadow-[0_0_15px_rgba(245,166,35,0.2)] transition-all duration-300">
-                                <span className="text-white font-black text-sm uppercase select-none z-0">
+                                <span className="text-white font-black text-base uppercase select-none z-0">
                                   {tool.name.charAt(0)}
                                 </span>
                                 <img
@@ -941,7 +964,7 @@ export function LeaderboardClient() {
                                   {tool.name}
                                 </h4>
                                 <div className="flex items-start gap-1.5 mt-1.5 bg-[#1A1A1E]/50 p-2 rounded-md border border-[#232326]/50">
-                                  <Info size={13} className="shrink-0 mt-0.5 text-[#F5A623]/70" />
+                                  <Info size={14} className="shrink-0 mt-0.5 text-[#F5A623]/70" />
                                   <p className="text-[12.5px] text-[#D4D4D8] line-clamp-2 max-w-md leading-relaxed">
                                     {tool.description}
                                   </p>
@@ -980,7 +1003,7 @@ export function LeaderboardClient() {
                                 )}
                                 title={bookmarkedIds.has(tool.id) ? "Bookmarked" : "Bookmark tool"}
                               >
-                                <Bookmark size={15} className={cn(bookmarkedIds.has(tool.id) && "fill-[#F5A623]")} />
+                                <Bookmark size={16} className={cn(bookmarkedIds.has(tool.id) && "fill-[#F5A623]")} />
                               </button>
                               <a
                                 href={tool.url}
@@ -989,7 +1012,7 @@ export function LeaderboardClient() {
                                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#232326] bg-gradient-to-b from-[#18181C] to-[#131316] text-xs font-bold text-white hover:border-[#F5A623] hover:shadow-[0_0_15px_rgba(245,166,35,0.25)] hover:text-[#F5A623] transition-all duration-300 active:scale-95"
                               >
                                 {_("visit")}
-                                <ArrowUpRight size={12} className="text-[#71717A] group-hover:text-white" />
+                                <ArrowUpRight size={13} className="text-[#71717A] group-hover:text-white" />
                               </a>
                             </div>
                           </td>
@@ -1036,12 +1059,12 @@ export function LeaderboardClient() {
                       </tr>
                     </thead>
                     <tbody>
-                      {currentFilteredModels.map((model) => (
+                      {visibleModels.map((model) => (
                         <tr
                           key={model.id}
                           className="relative border-b border-[#1B1B1F] hover:bg-[#18181C]/60 transition-colors group"
                         >
-                          <td className="py-4 px-6 font-bold text-sm">
+                          <td className="py-4 px-6 font-bold text-base">
                             <div className="relative flex items-center">
                               <span className="pointer-events-none absolute -left-6 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
                               {renderRankBadge(model.rank)}
@@ -1103,10 +1126,10 @@ export function LeaderboardClient() {
                               href={model.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-[11px] font-semibold text-white hover:border-[#F5A623] hover:text-white transition-all active:scale-95 shadow-sm"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-xs font-semibold text-white hover:border-[#F5A623] hover:text-white transition-all active:scale-95 shadow-sm"
                             >
                               {_("visit")}
-                              <ArrowUpRight size={12} className="text-[#71717A] group-hover:text-white" />
+                              <ArrowUpRight size={13} className="text-[#71717A] group-hover:text-white" />
                             </a>
                           </td>
                         </tr>
@@ -1149,12 +1172,12 @@ export function LeaderboardClient() {
                       </tr>
                     </thead>
                     <tbody>
-                      {currentFilteredCompanies.map((company) => (
+                      {visibleCompanies.map((company) => (
                         <tr
                           key={company.id}
                           className="relative border-b border-[#1B1B1F] hover:bg-[#18181C]/60 transition-colors group"
                         >
-                          <td className="py-4 px-6 font-bold text-sm">
+                          <td className="py-4 px-6 font-bold text-base">
                             <div className="relative flex items-center">
                               <span className="pointer-events-none absolute -left-6 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
                               {renderRankBadge(company.rank)}
@@ -1209,10 +1232,10 @@ export function LeaderboardClient() {
                               href={company.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-[11px] font-semibold text-white hover:border-[#F5A623] hover:text-white transition-all active:scale-95 shadow-sm"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-xs font-semibold text-white hover:border-[#F5A623] hover:text-white transition-all active:scale-95 shadow-sm"
                             >
                               {_("visit")}
-                              <ArrowUpRight size={12} className="text-[#71717A] group-hover:text-white" />
+                              <ArrowUpRight size={13} className="text-[#71717A] group-hover:text-white" />
                             </a>
                           </td>
                         </tr>
@@ -1223,6 +1246,24 @@ export function LeaderboardClient() {
               )
             )}
           </div>
+        )}
+
+        {/* Unified Floating Pill Pagination */}
+        {!loading && currentTotal > 0 && (
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalCount={currentTotal}
+            onPageChange={(p) => {
+              setCurrentPage(p);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setCurrentPage(1);
+            }}
+          />
         )}
       </div>
     </div>

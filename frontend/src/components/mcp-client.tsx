@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useQuery, useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 // Lucide icons
 import Globe from 'lucide-react/dist/esm/icons/globe';
@@ -16,6 +16,7 @@ import { FALLBACK_MCP_ITEMS } from "@/data/mcp";
 import { EmptyState } from "@/components/EmptyState";
 import { CategoryChip } from "@/components/CategoryChip";
 import { PricingBadge } from "@/components/PricingBadge";
+import { Pagination } from "@/components/Pagination";
 import type { MCPCategory, MCPSubCategory } from "@/lib/types";
 
 // FIXED: Adjusted desktop Grid 'fr' ratios. Shrank Name/Desc to 2.2fr and expanded Company to 1.2fr to perfectly balance the visual gaps.
@@ -62,11 +63,14 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
 
   const initialSub = defaultSubCategory || defaultCategory || searchParams.get("subCategory") || searchParams.get("category") || "";
   const [activeSubCategory, setActiveSubCategory] = useState<string>(initialSub);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(100);
 
   useEffect(() => {
     const currentParam = searchParams.get("subCategory") || searchParams.get("category") || "";
     if (currentParam !== activeSubCategory) {
       setActiveSubCategory(currentParam);
+      setCurrentPage(1);
     }
   }, [searchParams]);
 
@@ -74,6 +78,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
     const newSlug = slug === activeSubCategory ? "" : (slug || "");
     
     setActiveSubCategory(newSlug);
+    setCurrentPage(1);
 
     const currentSearch = typeof window !== "undefined" ? window.location.search : searchParams.toString();
     const params = new URLSearchParams(currentSearch);
@@ -94,24 +99,23 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
 
   const {
     data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
     isLoading,
     isPlaceholderData,
     error,
-  } = useInfiniteQuery({
+  } = useQuery({
     queryKey: [
       "mcpItems",
       {
+        page: currentPage,
+        pageSize,
         q,
         subCategory: activeSubCategory,
       },
     ],
-    queryFn: async ({ pageParam }) => {
+    queryFn: async () => {
       const apiParams: any = {
-        page: pageParam as number,
-        limit: 20,
+        page: currentPage,
+        limit: pageSize,
       };
       
       if (q) apiParams.search = q;
@@ -121,54 +125,30 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
     },
     retry: false,
     refetchOnWindowFocus: false,
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      return lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined;
-    },
     placeholderData: keepPreviousData,
     staleTime: 10 * 60 * 1000,
   });
 
+  const totalCount = (data as any)?.totalCount || (data as any)?.total || ((data as any)?.items && (data as any).items.length > 0 ? (data as any).items.length : FALLBACK_MCP_ITEMS.length);
+  const totalPages = (data as any)?.totalPages || Math.max(1, Math.ceil(totalCount / pageSize));
+
   const items = React.useMemo(() => {
-    const fetchedItems = data?.pages.flatMap((page) => page.items || []) || [];
+    const fetchedItems = (data as any)?.items || [];
 
     // Use fallback data when API returns nothing (e.g. local dev with empty DB)
-    const sourceItems = fetchedItems.length > 0 ? fetchedItems : FALLBACK_MCP_ITEMS;
+    const sourceItems = fetchedItems.length > 0
+      ? fetchedItems
+      : FALLBACK_MCP_ITEMS.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
     return sourceItems.sort((a: any, b: any) => {
       const getScore = (item: any) => {
         if (item.logoUrl && item.shortDescription && item.shortDescription.trim() !== "") return 2;
-        return 1;
+        if (item.logoUrl) return 1;
+        return 0;
       };
       return getScore(b) - getScore(a);
     });
   }, [data]);
-
-  const sentinelRef = React.useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (isLoading || isFetchingNextPage || !hasNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          fetchNextPage();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    const currentSentinel = sentinelRef.current;
-    if (currentSentinel) {
-      observer.observe(currentSentinel);
-    }
-
-    return () => {
-      if (currentSentinel) {
-        observer.unobserve(currentSentinel);
-      }
-    };
-  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   return (
     <div id="mcp" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
@@ -347,7 +327,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                                 unoptimized
                               />
                             ) : (
-                              <span className="text-[10px] md:text-sm font-bold text-neutral-900">
+                              <span className="text-[12px] md:text-base font-bold text-neutral-900">
                                 {item.name.charAt(0)}
                               </span>
                             )}
@@ -380,7 +360,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
 
                         {/* Column 4: Type */}
                         <div className="flex items-center justify-center w-full">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold border ${
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-bold border ${
                             item.itemType === "SERVER"
                               ? "bg-[#6E56CF]/10 text-[#6E56CF] border-[#6E56CF]/30"
                               : "bg-[#FFC53D]/10 text-[#FFC53D] border-[#FFC53D]/30"
@@ -459,11 +439,21 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
           )}
         </div>
 
-        {items.length > 0 && hasNextPage && (
-          <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-          </div>
-        )}
+        {/* Unified Floating Pill Pagination */}
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalCount={totalCount}
+          onPageChange={(p) => {
+            setCurrentPage(p);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setCurrentPage(1);
+          }}
+        />
       </div>
     </div>
   );

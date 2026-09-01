@@ -34,7 +34,7 @@ const VIDEO_CATEGORIES = [
 export function VideosPageClient({
   initialVideos,
   initialTotal,
-  pageSize,
+  pageSize: initialPageSize = 100,
   defaultCategory,
 }: {
   initialVideos: Video[];
@@ -46,6 +46,7 @@ export function VideosPageClient({
   const searchParams = useSearchParams();
 
   const [videos, setVideos] = useState<Video[]>(initialVideos);
+  const [currentPageSize, setCurrentPageSize] = useState<number>(initialPageSize || 100);
 
   const [activeCategory, setActiveCategory] = useState<string>(
     defaultCategory || searchParams?.get("category") || ""
@@ -70,7 +71,7 @@ export function VideosPageClient({
 
   const didMountRef = useRef(false);
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = Math.max(1, Math.ceil(total / currentPageSize));
 
   // Whenever category or sort changes, jump back to page 1 — a filter/sort
   // change on page 5 of the old result set doesn't make sense on the new one.
@@ -94,9 +95,9 @@ export function VideosPageClient({
       setLoading(true);
 
       try {
-        const offset = (page - 1) * pageSize;
+        const offset = (page - 1) * currentPageSize;
         const [pageVideos, count] = await Promise.all([
-          getVideosPage(pageSize, offset, activeCategory || undefined, sortBy, sortDir),
+          getVideosPage(currentPageSize, offset, activeCategory || undefined, sortBy, sortDir),
           getVideosCount(activeCategory || undefined),
         ]);
 
@@ -112,7 +113,7 @@ export function VideosPageClient({
     return () => {
       cancelled = true;
     };
-  }, [activeCategory, sortBy, sortDir, page, pageSize]);
+  }, [activeCategory, sortBy, sortDir, page, currentPageSize]);
 
   function handleSortChange(key: VideoSortBy) {
     if (key === sortBy) {
@@ -211,7 +212,17 @@ export function VideosPageClient({
         )}
 
         {!loading && videos.length > 0 && (
-          <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            pageSize={currentPageSize}
+            totalCount={total}
+            onPageChange={goToPage}
+            onPageSizeChange={(s) => {
+              setCurrentPageSize(s);
+              setPage(1);
+            }}
+          />
         )}
       </div>
     </div>

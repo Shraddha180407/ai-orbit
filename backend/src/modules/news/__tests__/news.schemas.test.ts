@@ -44,11 +44,11 @@ describe('newsListingQuerySchema', () => {
     }
   });
 
-  it('caps perPage at 50', () => {
-    const result = newsListingQuerySchema.safeParse({ perPage: '100' });
+  it('caps perPage at 100', () => {
+    const result = newsListingQuerySchema.safeParse({ perPage: '200' });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.perPage).toBe(50);
+      expect(result.data.perPage).toBe(100);
     }
   });
 

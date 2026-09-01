@@ -14,6 +14,7 @@ import {
   Bookmark, Share2, ExternalLink, BadgeCheck, Check
 } from "lucide-react";
 import { Button } from "@/components/ui/shadcn-button";
+import { Pagination } from "@/components/Pagination";
 import { cn } from "@/lib/utils";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 
@@ -38,40 +39,27 @@ const COMPANY_TYPES: { label: string; value: string; slug: string }[] = [
   { label: "Open Source", value: "OPEN_SOURCE", slug: "open-source" },
   { label: "Finance", value: "FINANCE", slug: "finance" },
   { label: "AI Native", value: "AI_NATIVE", slug: "ai-native" },
-  { label: "Model Companies", value: "MODEL_COMPANIES", slug: "model-companies" },
-  { label: "Unicorns", value: "UNICORNS", slug: "unicorns" }
+  { label: "Profitable", value: "PROFITABLE", slug: "profitable" },
 ];
 
-type SortField = 'name' | 'country' | 'valuation' | 'valEmp' | 'aiNative' | 'profitable' | 'sector' | 'modelsCount' | 'toolsCount';
+type SortField = 'valuation' | 'valEmp' | 'name' | 'country' | 'sector' | 'modelsCount' | 'toolsCount' | 'aiNative' | 'profitable';
 type SortDir = 'asc' | 'desc';
 
-const COL_TEMPLATE =
-  "grid-cols-[44px_minmax(200px,2.2fr)_minmax(110px,1fr)_minmax(100px,1fr)_minmax(90px,0.9fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(120px,1.1fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_44px_44px]";
-const COL_MIN_WIDTH = "min-w-[1150px]";
+const COL_TEMPLATE = "grid-cols-[44px_minmax(180px,2fr)_minmax(90px,1fr)_minmax(90px,1fr)_minmax(90px,1fr)_minmax(75px,0.8fr)_minmax(75px,0.8fr)_minmax(120px,1.2fr)_minmax(65px,0.7fr)_minmax(65px,0.7fr)_44px_44px]";
+const COL_MIN_WIDTH = "min-w-[1050px]";
 
 function formatCompanyName(name: string): string {
   if (!name) return "";
-  const cleaned = name.replace(/^!\[+/, '').replace(/\]\(.*?\)/g, '').replace(/[\!\[\]]/g, '').trim();
-  return cleaned || name;
+  return name.replace(/^!\[+/, '').replace(/\]\(.*?\)/g, '').replace(/[\!\[\]]/g, '').trim();
 }
 
 function cleanCompanySlug(slug: string): string {
   if (!slug) return "";
-  return slug.replace(/^!\[+/, '').replace(/[\]\(\)]/g, '').trim();
+  return slug.replace(/^!\[+/, '').replace(/\]\(.*?\)/g, '').replace(/[\!\[\]]/g, '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 function getCompanyLogo(company: Company): string | null {
-  if (company.logoUrl && company.logoUrl.trim() && !company.logoUrl.startsWith('![')) return company.logoUrl.trim();
-  if (company.tools && company.tools.length > 0) {
-    const firstWithLogo = company.tools.find(t => t.logoUrl && t.logoUrl.trim() && !t.logoUrl.startsWith('!['));
-    if (firstWithLogo?.logoUrl) return firstWithLogo.logoUrl.trim();
-  }
-  if (company.website) {
-    try {
-      const hostname = new URL(company.website.startsWith('http') ? company.website : `https://${company.website}`).hostname;
-      if (hostname) return `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`;
-    } catch {}
-  }
+  if (company.logoUrl && company.logoUrl.trim()) return company.logoUrl;
   return null;
 }
 
@@ -112,7 +100,7 @@ function getValEmpNumeric(valuation: string | number | null | undefined, employe
 function BoolPill({ value, trueLabel = "YES", falseLabel = "NO" }: { value: boolean | null; trueLabel?: string; falseLabel?: string }) {
   if (value === null) return <span className="text-[11px] text-[#71717A] font-mono">—</span>;
   return (
-    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
+    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
       {value ? trueLabel : falseLabel}
     </span>
   );
@@ -121,7 +109,7 @@ function BoolPill({ value, trueLabel = "YES", falseLabel = "NO" }: { value: bool
 function LogoCell({ name, logoUrl }: { name: string; logoUrl: string | null }) {
   const [failed, setFailed] = useState(false);
   if (!logoUrl || failed) {
-    return <span className="text-xs font-bold text-neutral-900">{name.charAt(0)}</span>;
+    return <span className="text-sm font-bold text-neutral-900">{name.charAt(0)}</span>;
   }
   return (
     <img
@@ -178,45 +166,17 @@ function BookmarkBtn({ companyId, companyName }: { companyId: string; companyNam
 function matchesSubcategory(c: Company, slug: string): boolean {
   if (!slug || slug === "all") return true;
   const slugLower = slug.toLowerCase().replace(/[-_]/g, " ");
-  const typeLower = (c.type || []).join(" ").toLowerCase().replace(/[-_]/g, " ");
-  const sectorLower = (c.sector || "").toLowerCase();
-  const nameLower = (c.name || "").toLowerCase();
-  const descLower = (c.description || "").toLowerCase();
-  const modelsLower = (c.aiModels || []).map(m => m.name).join(" ").toLowerCase();
 
-  const fullText = `${typeLower} ${sectorLower} ${nameLower} ${descLower} ${modelsLower}`;
-
-  switch (slug) {
-    case "ai-model-providers":
-    case "model-companies":
-      return fullText.includes("model") || fullText.includes("provider") || (c.aiModels && c.aiModels.length > 0) || typeLower.includes("model");
-    case "infrastructure":
-      return fullText.includes("infra") || fullText.includes("cloud") || fullText.includes("compute") || fullText.includes("chip") || typeLower.includes("infra");
-    case "enterprise":
-      return fullText.includes("enterprise") || fullText.includes("b2b") || fullText.includes("business") || typeLower.includes("enterprise");
-    case "healthcare":
-      return fullText.includes("health") || fullText.includes("med") || fullText.includes("bio") || typeLower.includes("health");
-    case "generative-ai":
-      return fullText.includes("generative") || fullText.includes("genai") || fullText.includes("llm") || fullText.includes("gpt") || typeLower.includes("generative");
-    case "marketing":
-      return fullText.includes("market") || fullText.includes("seo") || fullText.includes("ad") || typeLower.includes("market");
-    case "developer-tools":
-      return fullText.includes("dev") || fullText.includes("code") || fullText.includes("git") || typeLower.includes("developer");
-    case "robotics":
-      return fullText.includes("robot") || fullText.includes("hardware") || typeLower.includes("robot");
-    case "education":
-      return fullText.includes("edu") || fullText.includes("learn") || typeLower.includes("education");
-    case "open-source":
-      return fullText.includes("open") || fullText.includes("source") || typeLower.includes("open");
-    case "finance":
-      return fullText.includes("fin") || fullText.includes("bank") || fullText.includes("trad") || typeLower.includes("finance");
-    case "ai-native":
-      return typeLower.includes("native") || fullText.includes("ai native");
-    case "unicorns":
-      return fullText.includes("unicorn") || Boolean(c.valuation && Number(c.valuation) >= 1_000_000_000);
-    default:
-      return fullText.includes(slugLower);
+  const types = Array.isArray(c.type) ? c.type : [];
+  for (const t of types) {
+    if (t && t.toLowerCase().replace(/[-_]/g, " ").includes(slugLower)) return true;
   }
+
+  if (c.sector && c.sector.toLowerCase().replace(/[-_]/g, " ").includes(slugLower)) return true;
+  if (c.industry && c.industry.toLowerCase().replace(/[-_]/g, " ").includes(slugLower)) return true;
+  if (c.description && c.description.toLowerCase().includes(slugLower)) return true;
+
+  return false;
 }
 
 function CompanyRow({
@@ -284,7 +244,7 @@ function CompanyRow({
             {cleanName}
           </h3>
           {company.verified && (
-            <BadgeCheck size={13} className="shrink-0 text-blue-400" aria-label="Verified" />
+            <BadgeCheck size={14} className="shrink-0 text-blue-400" aria-label="Verified" />
           )}
           {company.website && (
             <a
@@ -294,14 +254,14 @@ function CompanyRow({
               onClick={(e) => e.stopPropagation()}
               className="text-[#71717A] hover:text-white transition-colors shrink-0"
             >
-              <ExternalLink size={13} />
+              <ExternalLink size={14} />
             </a>
           )}
         </div>
         {authenticModels.length > 0 ? (
           <div className="flex items-center gap-1 mt-0.5 flex-wrap">
             {authenticModels.slice(0, 2).map((m) => (
-              <span key={m.id} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[9px] font-mono text-[#A1A1AA] truncate max-w-[90px]">
+              <span key={m.id} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[9px] font-mono text-[#A1A1AA] truncate max-w-[100px]">
                 {m.name}
               </span>
             ))}
@@ -393,6 +353,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const [sortField, setSortField] = useState<SortField>('valuation');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(100);
 
   const matchedTypeEnum = useMemo(() => {
     if (!activeCategorySlug || activeCategorySlug === "all") return undefined;
@@ -401,10 +362,10 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   }, [activeCategorySlug]);
 
   const { data: companiesResponse, isLoading } = useQuery<any>({
-    queryKey: ["companies", currentPage, query, activeCategorySlug, selectedCountry, sortField, sortDir],
+    queryKey: ["companies", currentPage, pageSize, query, activeCategorySlug, selectedCountry, sortField, sortDir],
     queryFn: () => fetchCompanies({
       page: currentPage,
-      pageSize: PAGE_SIZE,
+      pageSize,
       q: query || undefined,
       type: matchedTypeEnum,
       country: selectedCountry !== "all" ? selectedCountry : undefined,
@@ -426,7 +387,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
 
   const totalPages = typeof companiesResponse?.totalPages === 'number'
     ? companiesResponse.totalPages
-    : Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+    : Math.max(1, Math.ceil(totalCount / pageSize));
 
   useEffect(() => {
     if (urlSortParam) {
@@ -627,7 +588,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                         }`}
                       >
                         <span>COUNTRY</span>
-                        <Filter size={10} className="ml-0.5" />
+                        <Filter size={12} className="ml-0.5" />
                       </button>
 
                       {isCountryPopoverOpen && (
@@ -686,65 +647,22 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                 </div>
               </div>
 
-              {/* 100 Rows Pagination Bar */}
-              {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-[#131316] border-t border-[#232326]/60 text-xs text-[#A1A1AA]">
-                  <div>
-                    Showing <span className="font-bold text-white">{(currentPage - 1) * PAGE_SIZE + 1}</span>–<span className="font-bold text-white">{Math.min(currentPage * PAGE_SIZE, totalCount)}</span> of <span className="font-bold text-white">{totalCount.toLocaleString()}</span> companies
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="h-8 px-2.5 text-xs font-semibold border-[#232326] bg-[#0A0A0C] hover:bg-[#1A1A1E] text-[#A1A1AA] hover:text-white disabled:opacity-40"
-                    >
-                      <ChevronLeft size={14} className="mr-1" /> Prev
-                    </Button>
-
-                    <div className="flex items-center gap-1 px-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum = currentPage;
-                        if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
-                        if (pageNum < 1 || pageNum > totalPages) return null;
-
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() => handlePageChange(pageNum)}
-                            className={cn(
-                              "h-8 w-8 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center cursor-pointer",
-                              currentPage === pageNum
-                                ? "bg-white text-black font-bold shadow-sm"
-                                : "bg-[#0A0A0C] text-[#A1A1AA] hover:text-white hover:bg-[#1A1A1E] border border-[#232326]"
-                            )}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="h-8 px-2.5 text-xs font-semibold border-[#232326] bg-[#0A0A0C] hover:bg-[#1A1A1E] text-[#A1A1AA] hover:text-[#A1A1AA] disabled:opacity-40"
-                    >
-                      Next <ChevronRight size={14} className="ml-1" />
-                    </Button>
-                  </div>
-                </div>
-              )}
+              {/* Unified Floating Pill Pagination */}
+              <Pagination
+                page={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                totalCount={totalCount}
+                onPageChange={(p) => {
+                  handlePageChange(p);
+                  const target = document.getElementById("companies-container");
+                  if (target) target.scrollIntoView({ behavior: "smooth" });
+                }}
+                onPageSizeChange={(s) => {
+                  setPageSize(s);
+                  setCurrentPage(1);
+                }}
+              />
             </div>
           )}
         </div>

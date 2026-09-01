@@ -17,7 +17,7 @@ export const GetTasksQuerySchema = z.object({
     "devices-asc", "devices-desc",
   ]).optional().default('newest'),
   page: z.string().optional().default('1'),
-  pageSize: z.string().optional().default('20'),
+  pageSize: z.string().optional().default('100'),
   filter: z.enum(['all', 'for-you', 'following']).optional().default('all'),
 });
 

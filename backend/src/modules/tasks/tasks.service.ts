@@ -158,7 +158,7 @@ export class TasksService {
     userId?: string;
   }) {
     const pageNum = Math.max(1, filters.page || 1);
-    const limit = Math.min(Math.max(1, filters.pageSize || 20), 100);
+    const limit = Math.min(Math.max(1, filters.pageSize || 100), 100);
     const skip = (pageNum - 1) * limit;
 
     const where: Prisma.TaskWhereInput = {};
@@ -329,10 +329,12 @@ export class TasksService {
     const [tasks, total, categories] = await Promise.all([
       this.prisma.task.findMany({ where, orderBy, skip, take: limit, select: selectFields }),
       this.prisma.task.count({ where }),
-      this.prisma.taskCategory.findMany({
-        orderBy: { name: 'asc' },
-        select: { slug: true, name: true },
-      }),
+      this.prisma.taskCategory?.findMany
+        ? this.prisma.taskCategory.findMany({
+            orderBy: { name: 'asc' },
+            select: { slug: true, name: true },
+          })
+        : Promise.resolve([]),
     ]);
 
     const totalPages = Math.max(1, Math.ceil(total / limit));

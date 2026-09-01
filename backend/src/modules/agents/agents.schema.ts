@@ -7,7 +7,7 @@ export const GetAgentsQuerySchema = z.object({
   sort: z.enum(['newest', 'oldest', 'name-asc', 'name-desc', 'rating', 'popular', 'trending']).optional().default('newest'),
   page: z.string().optional().default('1'),
   limit: z.string().optional(),
-  pageSize: z.string().optional().default('12'),
+  pageSize: z.string().optional().default('100'),
 });
 
 export type GetAgentsQuery = z.infer<typeof GetAgentsQuerySchema>;
