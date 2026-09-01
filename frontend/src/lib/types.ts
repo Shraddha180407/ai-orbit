@@ -453,8 +453,17 @@ export type Device = {
   aiModel?: string | null;
   processingType?: "On-device" | "Cloud" | "Hybrid" | null;
   bestFor?: string[] | null;
-  score?: number | null;
+  qualityScore?: number | null;
   verdict?: string | null;
+  subcategory?: string | null;
+  platform?: string | null;
+  officialWebsite?: string | null;
+  officialProductUrl?: string | null;
+  regionsSupported?: string[] | null;
+  officialSource?: string | null;
+  secondarySource?: string | null;
+  lastVerifiedDate?: string | null;
+  verificationNotes?: string | null;
 };
 
 // ---------------------------------------------------------------------------
