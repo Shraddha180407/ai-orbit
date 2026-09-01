@@ -34,8 +34,17 @@ export type DeviceData = {
   aiModel?: string | null;
   processingType?: "On-device" | "Cloud" | "Hybrid" | null;
   bestFor?: string[] | null;
-  score?: number | null;
+  qualityScore?: number | null;
   verdict?: string | null;
+  subcategory?: string | null;
+  platform?: string | null;
+  officialWebsite?: string | null;
+  officialProductUrl?: string | null;
+  regionsSupported?: string[] | null;
+  officialSource?: string | null;
+  secondarySource?: string | null;
+  lastVerifiedDate?: string | null;
+  verificationNotes?: string | null;
 };
 
 export const DEVICES_DATA: DeviceData[] = [
@@ -45,7 +54,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Rabbit r1",
     manufacturer: "Rabbit Inc.",
     manufacturerSlug: "rabbit-inc",
-    category: "AI Pocket Assistant",
+    category: "Wearables",
+    subcategory: "Pocket AI Companion",
     availability: "Available",
     price: "$199.00",
     year: "2024",
@@ -96,7 +106,9 @@ export const DEVICES_DATA: DeviceData[] = [
     aiModel: "Large Action Model (LAM) — proprietary by Rabbit Inc.",
     processingType: "Cloud",
     bestFor: ["Early Adopters", "Tech Enthusiasts", "Minimalists"],
-    score: 72,
+        qualityScore: 72,
+    subcategory: "Pocket AI Companion",
+    platform: "RabbitOS (Custom Linux)",
     verdict: "The Rabbit r1 is a genuinely interesting experiment in rethinking how we interact with AI. The LAM concept is novel and the hardware is charming, but real-world performance still lags behind the promise. Worth watching as the platform matures, but not yet a daily driver replacement.",
   },
   {
@@ -105,7 +117,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Humane AI Pin",
     manufacturer: "Humane",
     manufacturerSlug: "humane",
-    category: "Wearable Projector Pin",
+    category: "Wearables",
+    subcategory: "AI Pin",
     availability: "Discontinued",
     price: "$699.00",
     year: "2024",
@@ -130,7 +143,7 @@ export const DEVICES_DATA: DeviceData[] = [
     aiModel: "GPT-4 + proprietary Cosmos AI",
     processingType: "Cloud",
     bestFor: ["Minimalists", "Tech Pioneers"],
-    score: 48,
+    qualityScore: 48,
     verdict: "A product ahead of its time — or simply ahead of the technology needed to make it viable. The AI Pin was discontinued less than a year after launch, a cautionary tale about shipping bold hardware before the underlying AI is ready.",
   },
   {
@@ -139,7 +152,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Meta Ray-Ban Smart Glasses",
     manufacturer: "Meta",
     manufacturerSlug: "meta",
-    category: "Smart Glasses",
+    category: "AR / VR / Spatial Computing",
+    subcategory: "AI Smart Glasses",
     availability: "Available",
     price: "$299.00",
     year: "2024",
@@ -166,7 +180,7 @@ export const DEVICES_DATA: DeviceData[] = [
     aiModel: "Meta AI (Llama-based)",
     processingType: "Cloud",
     bestFor: ["Everyday Users", "Content Creators", "Travelers"],
-    score: 81,
+    qualityScore: 81,
     verdict: "The best mainstream AI glasses available today. They look normal, sound great, and Meta AI is genuinely useful for on-the-go queries. The camera quality and live AI view are impressive. Battery life is the main limitation.",
   },
   {
@@ -175,7 +189,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Apple Vision Pro",
     manufacturer: "Apple",
     manufacturerSlug: "apple",
-    category: "Mixed Reality Headset",
+    category: "AR / VR / Spatial Computing",
+    subcategory: "Mixed Reality Headset",
     availability: "Available",
     price: "$3,499.00",
     year: "2024",
@@ -200,7 +215,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Google Home Speaker",
     manufacturer: "Google",
     manufacturerSlug: "google",
-    category: "Smart Speaker",
+    category: "Smart Home",
+    subcategory: "Smart Speaker",
     availability: "Available",
     price: "$99.00",
     year: "2024",
@@ -225,7 +241,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Oura Ring 4",
     manufacturer: "Oura",
     manufacturerSlug: "oura",
-    category: "AI Wearable",
+    category: "Wearables",
+    subcategory: "AI Ring",
     availability: "Available",
     price: "$349.00",
     year: "2024",
@@ -250,7 +267,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Amazon Echo Show 10",
     manufacturer: "Amazon",
     manufacturerSlug: "amazon",
-    category: "Smart Display",
+    category: "Smart Home",
+    subcategory: "Smart Display",
     availability: "Available",
     price: "$249.00",
     year: "2023",
@@ -275,7 +293,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Samsung Galaxy Ring",
     manufacturer: "Samsung",
     manufacturerSlug: "samsung",
-    category: "AI Wearable",
+    category: "Wearables",
+    subcategory: "AI Ring",
     availability: "Available",
     price: "$399.00",
     year: "2024",
@@ -300,7 +319,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "MSI EdgeXpert",
     manufacturer: "MSI",
     manufacturerSlug: "msi",
-    category: "Other",
+        category: "Edge AI Hardware",
+    subcategory: "AI Dev Kit",
     availability: "Available",
     price: "$311.00",
     year: "2026",
@@ -325,7 +345,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Mentra Live",
     manufacturer: "Mentra",
     manufacturerSlug: "mentra",
-    category: "Smart Glasses",
+    category: "AR / VR / Spatial Computing",
+    subcategory: "AI Smart Glasses",
     availability: "Available",
     price: "$349.00",
     year: "2024",
