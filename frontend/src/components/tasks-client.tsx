@@ -254,13 +254,13 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
                     key={key}
                     type="button"
                     onClick={() => handleSortClick(key)}
-                    className="hidden sm:flex items-center justify-end gap-1 text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A] hover:text-white transition-colors duration-150 cursor-pointer text-right"
+                    className="hidden sm:flex items-center justify-center gap-1 text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A] hover:text-white transition-colors duration-150 cursor-pointer text-right"
                   >
                     <span>{label}</span>
                     <SortIcon column={key} />
                   </button>
                 ))}
-                <span className="text-right text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A] pr-1">
+                <span className="text-center text-[10px] font-mono uppercase tracking-[0.12em] text-[#71717A] pr-1">
                   Actions
                 </span>
               </div>
