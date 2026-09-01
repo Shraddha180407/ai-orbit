@@ -352,21 +352,22 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
   };
 
   return (
-    <>
-      <section
-        className="relative z-20 w-full flex flex-col items-center pt-4 pb-6 px-3 sm:px-6"
-        style={{
-          backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-        }}
-      >
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-[0.12] blur-[100px]"
-            style={{ backgroundColor: 'var(--color-signal)' }}
-          />
-        </div>
+    <section
+      className="relative z-20 w-full flex flex-col items-center pb-2"
+      style={{
+        backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
+        backgroundSize: '32px 32px',
+      }}
+    >
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] sm:w-[900px] h-[350px] sm:h-[450px] rounded-full opacity-[0.11] blur-[100px] sm:blur-[130px]"
+          style={{ backgroundColor: 'var(--color-signal)' }}
+        />
+      </div>
 
+      {/* Hero Header & Search Section */}
+      <div className="w-full flex flex-col items-center pt-4 pb-4 px-3 sm:px-6">
         <div className="mx-auto max-w-[1440px] w-full flex flex-col items-center text-center relative z-10">
           <h1 className="max-w-[820px] text-2xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.15] mb-3.5 sm:mb-6 select-none text-white text-balance">
             The Home of Everything AI
@@ -559,19 +560,12 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
             <HeroFeatureChips />
           </div>
         </div>
-      </section>
+      </div>
 
       <div className="border-b border-[#232326]/40 w-full z-10 relative" />
 
-      {/* Sort control */}
-      <div className="w-full px-3 sm:px-6 lg:px-8 pt-3 sm:pt-4">
-        <div className="mx-auto w-full max-w-[1600px] flex justify-end">
-          <SortDropdown />
-        </div>
-      </div>
-
       {/* Directory nav strip */}
-      <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1">
+      <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1 relative z-10">
         <div className="mx-auto w-full max-w-[1600px]">
 
           <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 w-full">
@@ -592,6 +586,6 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
 
         </div>
       </div>
-    </>
+    </section>
   );
 }
