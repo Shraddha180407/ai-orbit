@@ -38,8 +38,10 @@ export default function VideosPage() {
   return (
     <div className="flex flex-col flex-1 bg-[#000000] text-white">
 
-      <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-      <main className="flex-1 w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 pb-8 pt-2">
+      <div className="relative z-[60]">
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+      </div>
+      <main className="relative z-10 flex-1 w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 pb-8 pt-2">
         <Suspense fallback={
           <div className="flex-1 flex items-center justify-center py-24">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
