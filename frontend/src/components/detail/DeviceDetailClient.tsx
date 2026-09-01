@@ -49,7 +49,7 @@ function mergeDevice(api: Device | null, slug: string): DeviceData | null {
     name: api.name,
     manufacturer,
     manufacturerSlug: dummy?.manufacturerSlug || "",
-    category: api.category || dummy?.category || "Other",
+    category: dummy?.category || api.category || "Other",
     availability: api.availability || dummy?.availability || "Announced",
     price: api.price || dummy?.price || null,
     year: api.year || dummy?.year || "—",
@@ -78,7 +78,12 @@ function mergeDevice(api: Device | null, slug: string): DeviceData | null {
     aiModel: api.aiModel || dummy?.aiModel || null,
     processingType: api.processingType || dummy?.processingType || null,
     bestFor: api.bestFor || dummy?.bestFor || null,
-    score: api.score ?? dummy?.score ?? null,
+    qualityScore: api.qualityScore ?? dummy?.qualityScore ?? null,
+    subcategory: dummy?.subcategory || api.subcategory || null,
+    platform: api.platform || dummy?.platform || null,
+    officialWebsite: api.officialWebsite || dummy?.officialWebsite || null,
+    officialProductUrl: api.officialProductUrl || dummy?.officialProductUrl || null,
+    regionsSupported: api.regionsSupported || dummy?.regionsSupported || null,
     verdict: api.verdict || dummy?.verdict || null,
   } as DeviceData;
 }
@@ -237,10 +242,12 @@ function DeviceGallery({ name, imageUrl, images, videoUrl, color }: {
     return m ? `https://www.youtube.com/embed/${m[1]}` : url;
   }
 
-  const active = mediaItems[activeIdx];
+    const active = mediaItems[activeIdx];
+  const isSingle = mediaItems.length === 1;
   return (
-          <div className="w-full flex flex-col">
-      <div className="relative rounded-xl border border-[#232326] bg-white overflow-hidden flex items-center justify-center" style={{ height: 350, maxHeight: 350 }}>
+    <div className="w-full flex flex-col h-full">
+      <div className={`relative rounded-xl border border-[#232326] bg-white overflow-hidden flex items-center justify-center ${isSingle ? "flex-1" : ""}`}
+        style={isSingle ? { minHeight: 350 } : { height: 350, maxHeight: 350 }}>
         {active.type === "video" ? (
           <iframe src={getYoutubeEmbedUrl(active.src)} className="w-full" style={{ minHeight: 340 }}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
@@ -306,43 +313,50 @@ export function DeviceDetailClient() {
 
         const allApiDevices = await fetchAllDevices().catch(() => []);
         let similarDevices: DeviceData[] = [];
+
         if (allApiDevices?.length > 0) {
           similarDevices = allApiDevices
-            .filter((d: Device) => d.id !== merged.id && d.category === merged.category)
+            .filter((d: Device) =>
+              d.slug !== merged.slug &&
+              d.id !== merged.id &&
+              d.category === merged.category
+            )
             .slice(0, 5)
-            .map((api: Device) => {
-              const dummy = DEVICES_DATA.find(d => d.id === api.id || d.slug === api.slug);
-              const mainTask = api.mainTask || dummy?.mainTask || "Device";
-              const dSlug = dummy?.slug || api.slug || api.id;
-              const manufacturer = api.manufacturer || dummy?.manufacturer || "—";
+            .map((d: Device): DeviceData => {
+              const manufacturer = d.manufacturer || "—";
+              const dSlug = d.slug || d.id;
+              const mainTask = d.mainTask || "Device";
               return {
-                id: api.id, slug: dSlug, name: api.name, manufacturer,
-                manufacturerSlug: dummy?.manufacturerSlug || "",
-                category: api.category || dummy?.category || "Other",
-                availability: api.availability || dummy?.availability || "Announced",
-                price: api.price || dummy?.price || null,
-                year: api.year || dummy?.year || "—",
-                month: dummy?.month || api.month || api.year || "—",
-                description: api.description || dummy?.description || "",
-                imageUrl: api.imageUrl || dummy?.imageUrl || "",
-                manufacturerLogoUrl: dummy?.manufacturerLogoUrl || getFaviconUrl(manufacturer, dSlug),
-                mainTask, mainTaskColor: getMainTaskColor(mainTask),
-                formFactor: api.formFactor || dummy?.formFactor || null,
-                country: api.country || dummy?.country || null,
-                ram: api.ram || dummy?.ram || null,
-                aiFeatures: api.aiFeatures || dummy?.aiFeatures || [],
-                primaryUseCases: api.primaryUseCases || dummy?.primaryUseCases || [],
-                additionalInfo: api.additionalInfo || dummy?.additionalInfo || null,
-                buyUrl: api.buyUrl || dummy?.buyUrl || null,
-              } as DeviceData;
+                id: d.id,
+                slug: dSlug,
+                name: d.name,
+                manufacturer,
+                manufacturerSlug: d.manufacturerSlug || "",
+                category: d.category || "Other",
+                availability: (d.availability as DeviceData["availability"]) || "Available",
+                price: d.price || null,
+                year: d.year || "—",
+                month: d.month || d.year || "—",
+                description: d.description || "",
+                imageUrl: d.imageUrl === "Unknown" ? "" : (d.imageUrl || ""),
+                manufacturerLogoUrl: `https://www.google.com/s2/favicons?sz=64&domain=${manufacturer.toLowerCase().replace(/\s+/g, "")}.com`,
+                mainTask,
+                mainTaskColor: getMainTaskColor(mainTask),
+                formFactor: d.formFactor || null,
+                country: d.country || null,
+                ram: d.ram || null,
+                aiFeatures: d.aiFeatures || [],
+                primaryUseCases: d.primaryUseCases || [],
+                additionalInfo: d.additionalInfo || null,
+                buyUrl: d.buyUrl || null,
+              };
             });
-        } else {
-          similarDevices = getSimilarDevices(merged, 5);
         }
+
         return { device: merged, similar: similarDevices };
       } catch {
         const dummy = getDeviceBySlug(slug);
-        return { device: dummy, similar: dummy ? getSimilarDevices(dummy, 5) : [] };
+        return { device: dummy, similar: [] };
       }
     },
     staleTime: 10 * 60 * 1000,
@@ -392,6 +406,7 @@ export function DeviceDetailClient() {
     { label: "Released", value: device.month || device.year || "—" },
     device.processingType ? { label: "Processing", value: device.processingType } : null,
     device.aiModel ? { label: "AI Model", value: device.aiModel } : null,
+    device.platform ? { label: "Platform / OS", value: device.platform } : null,
     device.price ? { label: "Price", value: device.price } : null,
   ].filter(Boolean) as { label: string; value: string }[];
 
@@ -438,35 +453,24 @@ export function DeviceDetailClient() {
             {/* RIGHT — info */}
             <div className="flex flex-col gap-4 lg:pl-6">
 
-              {/* Category badge + actions */}
-<div className="flex items-center justify-between">
-  
-  {/* Category badge */}
-  <span
-    className="text-[10px] font-mono font-bold tracking-widest uppercase px-2.5 py-1 rounded-full border"
-    style={{
-      color: accentColor,
-      borderColor: `${accentColor}40`,
-      background: `${accentColor}12`,
-    }}
-  >
-    {device.category || "Device"}
-  </span>
-
-  {/* Bookmark + Share */}
-  <div className="flex items-center gap-3">
-    <BookmarkButton
-      slug={device.slug || device.id}
-      name={device.name}
-    />
-
-    <ShareButton
-      slug={device.slug || device.id}
-      name={device.name}
-    />
-  </div>
-
-</div>
+              {/* Category + subcategory badge + actions */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {device.subcategory && (
+                    <span className="text-[10px] font-mono font-bold tracking-widest uppercase px-2.5 py-1 rounded-full border"
+                      style={{ color: accentColor, borderColor: `${accentColor}40`, background: `${accentColor}12` }}>
+                      {device.subcategory}
+                    </span>
+                  )}
+                  <span className="text-[10px] font-mono px-2.5 py-1 rounded-full border border-[#232326] bg-[#131316] text-[#71717A] cursor-default transition-colors duration-200 hover:text-white hover:border-[#52525B]">
+                    {device.category || "Device"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <BookmarkButton slug={device.slug || device.id} name={device.name} />
+                  <ShareButton slug={device.slug || device.id} name={device.name} />
+                </div>
+              </div>
 
               {/* Name + manufacturer */}
               <div>
@@ -674,10 +678,10 @@ export function DeviceDetailClient() {
                 </span>
                 <div className="flex items-center justify-between flex-1">
                   <h4 className="text-sm font-bold text-white uppercase tracking-wide">AI Verdict</h4>
-                  {device.score != null && (
+                  {device.qualityScore != null && (
                     <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full text-[#6E56CF]"
                       style={{ background: "#6E56CF18", border: "1px solid #6E56CF30" }}>
-                      Score: {device.score}/100
+                      Score: {device.qualityScore}/100
                     </span>
                   )}
                 </div>

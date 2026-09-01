@@ -127,7 +127,7 @@ import { Pagination } from "@/components/Pagination";
 const PAGE_SIZE = 100;
 
 // Matches ToolListView column template exactly
-const COL_TEMPLATE = "grid-cols-[40px_minmax(200px,2.4fr)_minmax(120px,1.2fr)_minmax(120px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)] sm:grid-cols-[40px_minmax(200px,2.4fr)_minmax(120px,1.2fr)_minmax(120px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)_80px]";
+const COL_TEMPLATE = "grid-cols-[40px_minmax(220px,2.4fr)_minmax(140px,1.2fr)_minmax(140px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)] sm:grid-cols-[40px_minmax(220px,2.4fr)_minmax(140px,1.2fr)_minmax(140px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)_80px]";
 const COL_MIN_WIDTH = "min-w-[1050px]";
 
 const COLUMN_HEADERS = [
@@ -516,7 +516,7 @@ useEffect(() => {
                     </div>
 
                     {/* COMPANY col */}
-                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">COMPANY</span>
+                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pl-4">COMPANY</span>
 
                     {/* CATEGORY col — with filter dropdown */}
                     <div className="relative flex items-center gap-2">
@@ -613,7 +613,7 @@ useEffect(() => {
                     <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] sm:pr-0 pr-4">MAIN TASK</span>
 
                     {/* ACTIONS col */}
-                    <span className="hidden sm:block text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">ACTIONS</span>
+                    <span className="hidden sm:block text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pl-0">ACTIONS</span>
                   </div>
                 </div>
 
@@ -696,13 +696,13 @@ useEffect(() => {
 >
   {device.name}
 </h3>
-                          <p className="mt-0.5 line-clamp-1 text-[11px] text-[#A1A1AA] leading-snug">
+                          <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug overflow-hidden whitespace-nowrap" style={{ textOverflow: 'clip' }}>
                             {device.description}
                           </p>
                         </div>
 
                         {/* Col 3: Company */}
-                        <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="flex items-center gap-1.5 min-w-0 pl-4">
                           <div className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded bg-white">
                             <LogoCell name={device.manufacturer || device.name} logoUrl={device.manufacturerLogoUrl} color={device.mainTaskColor} />
                           </div>
@@ -741,16 +741,16 @@ useEffect(() => {
                         </div>
 
                         {/* Col 8: Main Task */}
-<div className="sm:pr-0 pr-4">
-  {device.mainTask ? (
-    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors whitespace-nowrap">
-      {device.mainTask}
-    </span>
-  ) : <span className="text-[12px] font-mono text-[#71717A]">—</span>}
-</div>
+                        <div className="sm:pr-0 pr-4 min-w-0 max-w-[160px]">
+                          {device.mainTask ? (
+                            <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors max-w-full">
+                              <span className="truncate">{device.mainTask}</span>
+                            </span>
+                          ) : <span className="text-[12px] font-mono text-[#71717A]">—</span>}
+                        </div>
 
                         {/* Col 9: Actions */}
-                        <div className="hidden sm:flex items-center gap-2" onClick={(e) => e.preventDefault()}>
+                        <div className="hidden sm:flex items-center gap-2 pl-0 -ml-2" onClick={(e) => e.preventDefault()}>
                           <button
                             onClick={(e) => toggleBookmark(e, device.id)}
                             className={`p-1.5 rounded-md transition-colors ${bookmarked.has(device.id) ? "text-[#6E56CF]" : "text-[#52525B] hover:text-white"}`}
