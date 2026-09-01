@@ -39,24 +39,16 @@ function BoolPill({
   value,
   trueLabel,
   falseLabel,
-  trueColor = "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
-  falseColor = "text-[#71717A] bg-[#18181C] border-[#232326]/60",
 }: {
-  value: boolean | null | undefined;
+  value: boolean | undefined;
   trueLabel: string;
   falseLabel: string;
-  trueColor?: string;
-  falseColor?: string;
 }) {
-  if (value === null || value === undefined) {
-    return <span className="text-[11px] text-[#71717A]">—</span>;
+  if (value === undefined) {
+    return <span className="text-[11px] text-[#71717A] font-mono">—</span>;
   }
   return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-mono font-semibold ${
-        value ? trueColor : falseColor
-      }`}
-    >
+    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
       {value ? trueLabel : falseLabel}
     </span>
   );
@@ -124,7 +116,7 @@ function ModelRow({
             className="h-8 w-8 object-contain"
           />
         ) : (
-          <span className="text-sm font-bold text-neutral-900">{model.name.charAt(0)}</span>
+          <span className="text-base font-bold text-neutral-900">{model.name.charAt(0)}</span>
         )}
       </div>
 
@@ -166,7 +158,7 @@ function ModelRow({
             e.stopPropagation();
             onToggleCompare(model);
           }}
-          className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-mono font-semibold transition-colors ${
+          className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-0.5 text-[10px] font-mono font-semibold transition-colors ${
             isSelected
               ? "border-transparent text-black"
               : !isSelected && isCompareFull
@@ -177,7 +169,7 @@ function ModelRow({
           aria-label={isSelected ? `Remove ${model.name} from compare` : `Add ${model.name} to compare`}
           aria-pressed={isSelected}
         >
-          {isSelected ? <Check size={10} /> : <GitCompare size={10} />}
+          {isSelected ? <Check size={11} /> : <GitCompare size={11} />}
           {isSelected ? "Added" : "Compare"}
         </button>
       </div>

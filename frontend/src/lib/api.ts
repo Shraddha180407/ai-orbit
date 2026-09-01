@@ -89,7 +89,7 @@ export async function fetchCompanies(options: FetchCompaniesOptions = {}): Promi
   if (options.country && options.country !== "all") url.searchParams.set("country", options.country);
   if (options.sort) url.searchParams.set("sort", options.sort);
 
-  const fallback: CompaniesListResponse = { companies: [], total: 0, page: 1, pageSize: 50, totalPages: 1 };
+  const fallback: CompaniesListResponse = { companies: [], total: 0, page: 1, pageSize: 100, totalPages: 1 };
   const raw = await cachedFetchJson<any>(url.toString(), fallback, { ttlMs: 60 * 1000 });
 
   if (Array.isArray(raw)) {
@@ -172,7 +172,7 @@ export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListR
     items: [],
     pagination: {
       page: params.page ?? 1,
-      limit: params.limit ?? 20,
+      limit: params.limit ?? 100,
       total: 0,
       totalPages: 1,
       hasMore: false,
@@ -217,7 +217,9 @@ import { Repository, RepositoryListResponse, RepositoryDetailResponse, Repositor
 import type { ModelSubCategory } from "./types";
 
 export interface FetchRepositoriesOptions {
+  page?: number;
   limit?: number;
+  pageSize?: number;
   cursor?: string | null;
   sort?: string;
   language?: string;
@@ -228,10 +230,11 @@ export interface FetchRepositoriesOptions {
 }
 
 export async function fetchRepositories(options: FetchRepositoriesOptions = {}): Promise<RepositoryListResponse> {
-  const { limit, cursor, sort, language, topic, q, owner, subCategory } = options;
+  const { page, limit, pageSize, cursor, sort, language, topic, q, owner, subCategory } = options;
 
   const url = new URL(`${API_URL}/api/v1/repositories`);
-  if (limit) url.searchParams.set("limit", limit.toString());
+  if (page) url.searchParams.set("page", page.toString());
+  if (limit || pageSize) url.searchParams.set("limit", (limit || pageSize)!.toString());
   if (cursor) url.searchParams.set("cursor", cursor);
   if (sort) url.searchParams.set("sort", sort);
   if (language) url.searchParams.set("language", language);
@@ -346,11 +349,36 @@ function resolveServerApiUrl(): string {
 
 export const SERVER_API_URL = resolveServerApiUrl();
 
+export interface FetchTasksOptions {
+  category?: string;
+  q?: string;
+  sort?: string;
+  filter?: string;
+  difficulty?: string;
+  pricing?: string;
+  page?: number;
+  pageSize?: number;
+  limit?: number;
+}
+
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-export async function fetchTasks(category?: string): Promise<any> {
+export async function fetchTasks(optionsOrCategory?: string | FetchTasksOptions): Promise<any> {
   const url = new URL(`${API_URL}/api/v1/tasks`);
-  if (category) url.searchParams.set("category", category);
-  return cachedFetchJson(url.toString(), { tasks: [], total: 0 }, { ttlMs: 15 * 60 * 1000 });
+  if (typeof optionsOrCategory === "string") {
+    if (optionsOrCategory) url.searchParams.set("category", optionsOrCategory);
+  } else if (optionsOrCategory && typeof optionsOrCategory === "object") {
+    if (optionsOrCategory.category) url.searchParams.set("category", optionsOrCategory.category);
+    if (optionsOrCategory.q) url.searchParams.set("q", optionsOrCategory.q);
+    if (optionsOrCategory.sort) url.searchParams.set("sort", optionsOrCategory.sort);
+    if (optionsOrCategory.filter) url.searchParams.set("filter", optionsOrCategory.filter);
+    if (optionsOrCategory.difficulty) url.searchParams.set("difficulty", optionsOrCategory.difficulty);
+    if (optionsOrCategory.pricing) url.searchParams.set("pricing", optionsOrCategory.pricing);
+    if (optionsOrCategory.page) url.searchParams.set("page", String(optionsOrCategory.page));
+    if (optionsOrCategory.pageSize || optionsOrCategory.limit) {
+      url.searchParams.set("pageSize", String(optionsOrCategory.pageSize || optionsOrCategory.limit));
+    }
+  }
+  return cachedFetchJson(url.toString(), { tasks: [], total: 0, totalPages: 1 }, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function toggleTaskSubscription(slug: string): Promise<boolean> {

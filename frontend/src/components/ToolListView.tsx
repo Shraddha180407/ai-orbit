@@ -111,7 +111,7 @@ function LogoCell({ name, logoUrl }: { name: string; logoUrl: string | null }) {
 
 function BoolPill({ value, trueLabel, falseLabel }: { value: boolean; trueLabel: string; falseLabel: string }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">      
+    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">      
       {value ? trueLabel : falseLabel}
     </span>
   );
@@ -309,10 +309,10 @@ function ToolRow({
               {tool.name}
             </h3>
             {tool.isVerified && (
-              <BadgeCheck size={13} className="shrink-0 text-blue-400" aria-label="Verified" />
+              <BadgeCheck size={14} className="shrink-0 text-blue-400" aria-label="Verified" />
             )}
             {tool.isFeatured && (
-              <Sparkles size={13} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
+              <Sparkles size={14} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
             )}
             {tool.websiteUrl ? (
               <a
@@ -323,10 +323,10 @@ function ToolRow({
                 className="text-[#71717A] hover:text-white transition-colors shrink-0 hidden md:inline-flex"
                 aria-label={`Visit ${tool.name} website`}
               >
-                <ExternalLink size={13} />
+                <ExternalLink size={14} />
               </a>
             ) : (
-              <span className="text-[#71717A] opacity-30 shrink-0 hidden md:inline-flex"><ExternalLink size={13} /></span>
+              <span className="text-[#71717A] opacity-30 shrink-0 hidden md:inline-flex"><ExternalLink size={14} /></span>
             )}
           </div>
           <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis md:text-clip">
@@ -345,10 +345,10 @@ function ToolRow({
               </h3>
               <div className="flex items-center gap-1 shrink-0">
                 {tool.isVerified && (
-                  <BadgeCheck size={12} className="shrink-0 text-blue-400" aria-label="Verified" />
+                  <BadgeCheck size={13} className="shrink-0 text-blue-400" aria-label="Verified" />
                 )}
                 {tool.isFeatured && (
-                  <Sparkles size={12} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
+                  <Sparkles size={13} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
                 )}
                 {tool.websiteUrl ? (
                   <a
@@ -382,7 +382,7 @@ function ToolRow({
       {/* Col 3: Task */}
       <div className="min-w-0 pl-4 md:pl-0">
         {tool.ttasks && tool.ttasks.length > 0 ? (
-          <span className="inline-flex items-center rounded-md border border-[#232326] bg-[#1A1A1E] px-2 py-0.5 text-[10px] font-medium text-[#D4D4D8] whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
+          <span className="inline-flex items-center rounded-md border border-[#232326] bg-[#1A1A1E] px-2.5 py-0.5 text-[10px] font-medium text-[#D4D4D8] whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]">
             {tool.ttasks[0].task.title}
           </span>
         ) : (
@@ -396,7 +396,7 @@ function ToolRow({
           pricingModel={tool.pricingModel}
           pricingAmount={tool.pricingAmount}
           billingFrequency={tool.billingFrequency}
-          className="text-[10px] px-2 py-0.5"
+          className="text-[10px] px-2.5 py-0.5"
         />
       </div>
 
@@ -416,12 +416,12 @@ function ToolRow({
           {tool.compatibility && tool.compatibility.length > 0 ? (
             <div className="flex gap-1 flex-wrap">
               {tool.compatibility.slice(0, 2).map((c, i) => (
-                <span key={i} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+                <span key={i} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
                   {c}
                 </span>
               ))}
               {tool.compatibility.length > 2 && (
-                <span className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+                <span className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
                   +{tool.compatibility.length - 2}
                 </span>
               )}
@@ -659,12 +659,12 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
           <div className="flex gap-2 mt-2">
             <button
               onClick={() => { setNameSearch(nameInput); setOpenDropdown(null); }}
-              className="flex-1 text-[10px] bg-[#6E56CF] hover:bg-[#7C66DF] text-white py-1.5 rounded transition-colors font-semibold"
+              className="flex-1 text-[12px] bg-[#6E56CF] hover:bg-[#7C66DF] text-white py-1.5 rounded transition-colors font-semibold"
             >Apply</button>
             {nameSearch && (
               <button
                 onClick={() => { setNameSearch(""); setNameInput(""); setOpenDropdown(null); }}
-                className="flex-1 text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors"
+                className="flex-1 text-[12px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors"
               >Clear</button>
             )}
           </div>
@@ -733,7 +733,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">SAVE</span>
 
               {/* COMPARE */}
-              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pr-4">CMP</span>
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pr-4">COMPARE</span>
             </div>
           </div>
 

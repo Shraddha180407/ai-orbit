@@ -2,13 +2,14 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Repository, RepositoryOwnerListItem, RepositorySubCategory } from "@/lib/types";
 import { fetchRepositories, fetchRepositoryOwners, fetchRepositorySubCategories } from "@/lib/api";
 
 import { RepositoryTable } from "@/components/ui/RepositoryTable";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 import { RepositoryRow } from "@/components/ui/RepositoryRow";
+import { Pagination } from "@/components/Pagination";
 
 const getBackendSortValue = (field: string | null, order: "asc" | "desc"): string | undefined => {
   if (field === "stars" && order === "desc") return "stars_desc";
@@ -24,6 +25,9 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
   
   const [sortField, setSortField] = useState<"stars" | "forks" | "size" | "updated" | null>("stars");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(100);
+
   useEffect(() => {
   const s = searchParams.get("sort") ?? "newest";
   if (s === "name-asc")       { setSortField("updated"); setSortOrder("asc");  }
@@ -67,8 +71,6 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
     return owners.find((o) => o.owner === selectedOwnerSlug)?.displayName || null;
   }, [selectedOwnerSlug, owners]);
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
   // Fetch all repository owners once on mount and precompute searchText
   useEffect(() => {
     async function loadOwners() {
@@ -86,19 +88,16 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
     loadOwners();
   }, []);
 
-  // Static subcategories list is used as the source of truth to match the prompt specifications
-
   const {
     data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
     isLoading,
     isPlaceholderData,
-  } = useInfiniteQuery({
+  } = useQuery({
     queryKey: [
       "repositories",
       {
+        page: currentPage,
+        pageSize,
         q: activeRepoSearch,
         sort: sortField,
         order: sortOrder,
@@ -107,7 +106,7 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
         subCategory: selectedSubCategorySlug,
       },
     ],
-    queryFn: async ({ pageParam }) => {
+    queryFn: async () => {
       const backendSort = getBackendSortValue(sortField, sortOrder);
       return fetchRepositories({
         q: activeRepoSearch || undefined,
@@ -115,43 +114,20 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
         topic: selectedTopic || undefined,
         owner: selectedOwnerSlug || undefined,
         subCategory: selectedSubCategorySlug || undefined,
-        cursor: pageParam || null,
-        limit: 15,
+        page: currentPage,
+        limit: pageSize,
       });
     },
-    initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => lastPage.nextCursor || null,
     placeholderData: keepPreviousData,
     staleTime: 10 * 60 * 1000,
   });
 
   const repos = React.useMemo(() => {
-    return data?.pages.flatMap((page) => page.items || []) || [];
+    return data?.items || [];
   }, [data]);
 
-  const total = data?.pages[0]?.total ?? 0;
-
-  // IntersectionObserver for server-side infinite scroll
-  useEffect(() => {
-    if (isLoading || isFetchingNextPage || !hasNextPage) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        fetchNextPage();
-      }
-    }, { threshold: 0.1 });
-
-    const currentSentinel = sentinelRef.current;
-    if (currentSentinel) {
-      observer.observe(currentSentinel);
-    }
-
-    return () => {
-      if (currentSentinel) {
-        observer.unobserve(currentSentinel);
-      }
-    };
-  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   function handleSort(field: "stars" | "forks" | "size" | "updated") {
     let newOrder: "asc" | "desc" = "desc";
@@ -426,15 +402,24 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
                 <RepositoryRow key={repo.id} repo={repo} />
               ))
             )}
-
-            {/* Sentinel for infinite scroll */}
-            {hasNextPage && sortedRepos.length > 0 && (
-              <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-              </div>
-            )}
           </RepositoryTable>
         )}
+
+        {/* Unified Floating Pill Pagination */}
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalCount={total}
+          onPageChange={(p) => {
+            setCurrentPage(p);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setCurrentPage(1);
+          }}
+        />
       </div>
     </main>
     <ScrollToTopButton />

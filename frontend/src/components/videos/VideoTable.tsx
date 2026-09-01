@@ -94,7 +94,7 @@ return (
 <button
 key={opt.key}
 onClick={() => onSortChange(opt.key)}
-className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 font-mono text-[11.5px] font-medium transition-colors ${
+className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 font-mono text-[9.5px] font-medium transition-colors ${
 active
 ? "border-[var(--brand-accent,theme(colors.accent.DEFAULT))] bg-accent-soft text-accent-hover"
 : "border-border text-secondary"

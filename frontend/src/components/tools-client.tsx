@@ -5,6 +5,7 @@ import { useSearchParams, usePathname } from "next/navigation";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { ToolListView } from "@/components/ToolListView";
+import { Pagination } from "@/components/Pagination";
 import { API_URL } from "@/lib/api";
 import type { SortOption } from "@/lib/types";
 
@@ -96,6 +97,7 @@ export function ToolsClient({
     const pageFromUrl = searchParams.get("page");
     return pageFromUrl ? parseInt(pageFromUrl, 10) : 1;
   });
+  const [pageSize, setPageSize] = useState<number>(100);
 
   const [mode, setMode] = useState<DirectoryMode>(() => {
     if (defaultMode) return defaultMode;
@@ -140,13 +142,15 @@ export function ToolsClient({
 
   // Single page Query
   const { data, isLoading, isPlaceholderData } = useQuery({
-    queryKey: ["tools", mode, activeCategory, q, pricing, sort, currentPage],
+    queryKey: ["tools", mode, activeCategory, q, pricing, sort, currentPage, pageSize],
     queryFn: async () => {
       const query = new URLSearchParams();
       if (q) query.set("q", q);
       if (pricing) query.set("pricing", pricing);
       if (sort) query.set("sort", sort);
       query.set("page", String(currentPage));
+      query.set("pageSize", String(pageSize));
+      query.set("limit", String(pageSize));
 
       if (mode === "agents") {
         if (activeCategory) query.set("category", activeCategory);
@@ -171,6 +175,7 @@ export function ToolsClient({
 
   const tools = data?.tools || [];
   const totalPages = data?.totalPages || 1;
+  const totalCount = data?.total;
 
   const categories = React.useMemo(() => {
     if (mode === "agents" && Array.isArray(agentCategoriesData) && agentCategoriesData.length > 0) {
@@ -194,6 +199,11 @@ export function ToolsClient({
     if (target) {
       target.scrollIntoView({ behavior: "smooth" });
     }
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
   };
 
   return (
@@ -230,35 +240,15 @@ export function ToolsClient({
         {/* List Grid */}
         <ToolListView tools={tools} loading={isLoading} />
 
-        {/* Pagination Bar */}
-        {totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-2 pt-4 border-t border-[#232326]">
-            {/* Prev Button */}
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium border border-[#232326] bg-[#131316] text-neutral-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-
-            {/* Page Indicator */}
-            <div className="flex items-center gap-1 px-2">
-              <span className="text-xs text-neutral-400">
-                Page <strong className="text-white">{currentPage}</strong> of <strong className="text-white">{totalPages}</strong>
-              </span>
-            </div>
-
-            {/* Next Button */}
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium border border-[#232326] bg-[#131316] text-neutral-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        )}
+        {/* Unified Pagination Bar */}
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalCount={totalCount}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
 
       </div>
     </div>

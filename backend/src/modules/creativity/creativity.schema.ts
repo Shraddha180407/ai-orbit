@@ -20,7 +20,7 @@ export const CREATIVITY_CATEGORY_VALUES = [
 
 export const creativityListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+  limit: z.coerce.number().int().min(1).max(100).default(100),
   sort: z.enum(["newest", "oldest", "alphabetical", "topRated"]).default("newest"),
   search: z.string().trim().min(1).max(100).optional(),
 

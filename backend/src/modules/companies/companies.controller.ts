@@ -11,7 +11,7 @@ export class CompaniesController {
     const country = c.req.query('country');
     const sort = c.req.query('sort');
     const page = Number.parseInt(c.req.query('page') || '1', 10);
-    const pageSize = Number.parseInt(c.req.query('pageSize') || c.req.query('limit') || '50', 10);
+    const pageSize = Number.parseInt(c.req.query('pageSize') || c.req.query('limit') || '100', 10);
 
     const validTypeFilter = typeFilter && typeFilter in CompanyType ? typeFilter as CompanyType : undefined;
 
