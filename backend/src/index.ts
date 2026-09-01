@@ -27,7 +27,7 @@ import { runIngestion } from './modules/ingestion/ingestion.service.js'
 import type { IngestionContext } from './modules/ingestion/pipeline.js'
 import { adminRouter } from './modules/admin/admin.routes.js'
 import { bookmarksRouter } from './modules/bookmarks/bookmarks.routes.js'
-import { pressModule } from './modules/press/index.js';
+import press from './modules/press/index.js';
 
 type Bindings = {
   DATABASE_URL: string
@@ -90,7 +90,7 @@ app.route('/api/bookmarks', bookmarksRouter)
 app.route('/api/v1/mcps', mcpRouter)
 app.route('/api/v1/agents', agentsRouter)
 app.route('/api/v1/search', searchRouter)
-app.route('/api/press', pressModule);
+app.route('/api/press', press);
 
 app.get('/', (c) => {
   return c.json({
