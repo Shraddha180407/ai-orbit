@@ -180,6 +180,25 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
 
   const robots = (fetchedRobots && fetchedRobots.length > 0) ? fetchedRobots : FALLBACK_ROBOTS;
 
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const target = subCatRefs.current[activeCategory];
+    if (!target) return;
+
+    const targetLeft = target.offsetLeft;
+    const targetWidth = target.offsetWidth;
+    const containerWidth = container.clientWidth;
+
+    container.scrollTo({
+      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
+      behavior: "smooth",
+    });
+  }, [activeCategory]);
+
   useEffect(() => {
     if (defaultCategory !== undefined) {
       setActiveCategory(defaultCategory && ROBOT_SLUGS[defaultCategory] ? ROBOT_SLUGS[defaultCategory] : "All");
@@ -249,26 +268,25 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
     <main className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-6 flex-1">
       <div className="mx-auto w-full max-w-[1440px] space-y-3">
         {/* Category Row */}
-        <div className="mb-2 -mx-3 sm:mx-0 px-3 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2 scrollbar-none w-auto sm:w-full">
+        <div
+          ref={subCatContainerRef}
+          className="mb-2 -mx-3 sm:mx-0 px-3 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+        >
           {ROBOT_CATEGORIES.map((cat) => {
             const isSelected = activeCategory === cat;
             const slug = ROBOT_TO_SLUG[cat];
             return (
               <button
                 key={cat}
+                ref={(el) => { subCatRefs.current[cat] = el; }}
                 type="button"
-                onClick={(e) => {
+                onClick={() => {
                   setActiveCategory(cat);
                   if (cat === "All") {
                     router.push(`/robots`);
                   } else {
                     router.push(`/robots/${slug}`);
                   }
-                  e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center"
-                  });
                 }}
                 className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                   isSelected

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
@@ -109,6 +109,25 @@ export function ToolsClient({
     return defaultCategory || searchParams.get("category") || "";
   });
 
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const target = subCatRefs.current[activeCategory || ""];
+    if (!target) return;
+
+    const targetLeft = target.offsetLeft;
+    const targetWidth = target.offsetWidth;
+    const containerWidth = container.clientWidth;
+
+    container.scrollTo({
+      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
+      behavior: "smooth",
+    });
+  }, [activeCategory]);
+
   // FIXED: If the mode changes (e.g. going from Agents to Tools), force the category and page to reset 
   // so the new page doesn't try to query the old page's categories.
   useEffect(() => {
@@ -204,19 +223,18 @@ export function ToolsClient({
       <div className={`mx-auto w-full max-w-[1600px] space-y-4 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
         
         {/* Category Row */}
-        <div className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
+        <div
+          ref={subCatContainerRef}
+          className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+        >
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
               <button
                 key={topic.name}
-                onClick={(e) => {
+                ref={(el) => { subCatRefs.current[topic.slug] = el; }}
+                onClick={() => {
                   handleCategoryChange(topic.slug);
-                  e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center"
-                  });
                 }}
                 className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                   isSelected

@@ -52,6 +52,25 @@ export function VideosPageClient({
     defaultCategory || searchParams?.get("category") || ""
   );
 
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const target = subCatRefs.current[activeCategory || ""];
+    if (!target) return;
+
+    const targetLeft = target.offsetLeft;
+    const targetWidth = target.offsetWidth;
+    const containerWidth = container.clientWidth;
+
+    container.scrollTo({
+      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
+      behavior: "smooth",
+    });
+  }, [activeCategory]);
+
   const [sortBy, setSortBy] = useState<VideoSortBy>("posted");
   const [sortDir, setSortDir] = useState<VideoSortDir>("desc");
 
@@ -145,23 +164,21 @@ export function VideosPageClient({
   return (
     <div className="w-full">
       <div className="w-full flex flex-col gap-0.5">
-        <div id="videos-list-top" className="mb-2 flex flex-nowrap items-center justify-start gap-2 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+        <div
+          id="videos-list-top"
+          ref={subCatContainerRef}
+          className="mb-2 flex flex-nowrap items-center justify-start gap-2 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0 scroll-smooth touch-scroll-x"
+        >
           {VIDEO_CATEGORIES.map((topic) => {
             const isSelected = activeCategory === topic.slug;
 
             return (
               <button
                 key={topic.name}
-                onClick={(e) => {
+                ref={(el) => { subCatRefs.current[topic.slug] = el; }}
+                onClick={() => {
                   setActiveCategory(topic.slug);
 
-                  // Query-param navigation on the SAME /videos route — not
-                  // a path segment (/videos/<slug>), since there is no
-                  // app/videos/[category]/page.tsx route to match that. A
-                  // path-based push forced a full remount of this page,
-                  // which wiped the activeCategory state set just above,
-                  // right before it could take effect — that was the
-                  // sub-category filter bug (URL changed, list didn't).
                   const params = new URLSearchParams(searchParams?.toString());
                   if (topic.slug) {
                     params.set("category", topic.slug);
@@ -171,14 +188,8 @@ export function VideosPageClient({
                   params.delete("page"); // category change resets to page 1
                   const qs = params.toString();
                   router.push(`/videos${qs ? `?${qs}` : ""}`, { scroll: false });
-
-                  e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center",
-                  });
                 }}
-                className={`rounded-full px-4 py-2 text-[11.5px] font-medium whitespace-nowrap transition-all duration-200 border ${
+                className={`rounded-full px-4 py-2 text-[11.5px] font-medium whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"

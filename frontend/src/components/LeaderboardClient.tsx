@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ArrowUpRight from 'lucide-react/dist/esm/icons/arrow-up-right';
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down';
 import Bookmark from 'lucide-react/dist/esm/icons/bookmark';
@@ -196,6 +196,25 @@ export function LeaderboardClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(100);
+
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const target = subCatRefs.current[activeCategory];
+    if (!target) return;
+
+    const targetLeft = target.offsetLeft;
+    const targetWidth = target.offsetWidth;
+    const containerWidth = container.clientWidth;
+
+    container.scrollTo({
+      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
+      behavior: "smooth",
+    });
+  }, [activeCategory, activeTab]);
 
   const [tools, setTools] = useState<LeaderboardTool[]>([]);
   const [models, setModels] = useState<LeaderboardModel[]>([]);
@@ -680,19 +699,18 @@ export function LeaderboardClient() {
         <div className="mx-auto w-full max-w-[1600px] flex-1 flex flex-col">
 
           {/* Subcategories Row - EXACT MATCH TO TOOLS PAGE */}
-          <div className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
+          <div
+            ref={subCatContainerRef}
+            className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+          >
             {getCategoriesForTab().map((cat) => {
               const isSelected = activeCategory === cat;
               return (
                 <button
                   key={cat}
-                  onClick={(e) => {
+                  ref={(el) => { subCatRefs.current[cat] = el; }}
+                  onClick={() => {
                     setActiveCategory(cat);
-                    e.currentTarget.scrollIntoView({
-                      behavior: "smooth",
-                      block: "nearest",
-                      inline: "center",
-                    });
                   }}
                   className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                     isSelected

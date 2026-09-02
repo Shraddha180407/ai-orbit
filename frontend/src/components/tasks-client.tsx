@@ -90,6 +90,26 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
   const searchParams = useSearchParams();
 
   const activeCategory = defaultCategory || searchParams.get("category") || "";
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const activeKey = activeCategory || "all";
+    const target = subCatRefs.current[activeKey];
+    if (!target) return;
+
+    const targetLeft = target.offsetLeft;
+    const targetWidth = target.offsetWidth;
+    const containerWidth = container.clientWidth;
+
+    container.scrollTo({
+      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
+      behavior: "smooth",
+    });
+  }, [activeCategory]);
+
   const currentPage = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
   const [pageSize, setPageSize] = useState<number>(100);
 
@@ -199,21 +219,20 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
 
   return (
     <main id="tasks-container" className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 py-6">
-      <div className="mb-4 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
+      <div
+        ref={subCatContainerRef}
+        className="mb-4 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+      >
         {TASK_CATEGORIES.map((topic) => {
           const isSelected = activeCategory === topic.slug;
           return (
             <button
               key={topic.name}
+              ref={(el) => { subCatRefs.current[topic.slug] = el; }}
               type="button"
               aria-current={isSelected ? "true" : undefined}
-              onClick={(e) => {
+              onClick={() => {
                 navigate({ category: topic.slug, page: 1 });
-                e.currentTarget.scrollIntoView({
-                  behavior: "smooth",
-                  block: "nearest",
-                  inline: "center"
-                });
               }}
               className={`rounded-full px-3.5 py-1 text-[12px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                 isSelected
