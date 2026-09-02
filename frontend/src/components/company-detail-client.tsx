@@ -186,9 +186,9 @@ export function CompanyDetailClient() {
 
   return (
     <div className="flex flex-col flex-1 bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      <main className="w-full max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-10 py-4 sm:py-6 flex-1">
+      <main className="w-full max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-10 py-3 sm:py-4 flex-1">
         {/* Top Breadcrumb Navigation */}
-        <nav aria-label="Breadcrumb" className="mb-5 sm:mb-6 flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-medium text-[#71717A] flex-wrap">
+        <nav aria-label="Breadcrumb" className="mb-3 sm:mb-4 flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-medium text-[#71717A] flex-wrap">
           <Link href="/" className="inline-flex items-center gap-1 hover:text-white transition-colors">
             <Home size={13} />
             <span>Home</span>
@@ -218,49 +218,39 @@ export function CompanyDetailClient() {
               </span>
             )}
             <span className="truncate">{cleanName}</span>
-            <span className="text-[10px] bg-[#1A1A1E] px-1.5 py-0.5 rounded text-[#A1A1AA] shrink-0">
-              {toolsCount} Tools
-            </span>
           </div>
         </nav>
 
         {/* Desktop: main content + right company sidebar. The page container provides the outer left/right breathing room. */}
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 lg:gap-7 items-start">
           {/* LEFT / MAIN COLUMN */}
-          <div className="min-w-0 space-y-6 sm:space-y-7 lg:col-start-1 lg:row-start-1">
+          <div className="min-w-0 space-y-4 sm:space-y-5 lg:col-start-1 lg:row-start-1">
             {/* Company Hero */}
-            <section className="bg-[#0D0D10] border border-[#1F1F24] rounded-xl sm:rounded-2xl p-5 sm:p-7 lg:p-8 shadow-2xl relative overflow-hidden">
-              <div className="absolute -top-24 -right-20 w-80 h-80 bg-[#F5A623]/10 rounded-full blur-3xl pointer-events-none" />
+            <section className="bg-[#0D0D10] border border-[#1F1F24] rounded-xl sm:rounded-2xl p-5 sm:p-6 lg:p-7 shadow-2xl relative overflow-hidden">
+              <div className="absolute -top-24 -right-20 w-80 h-80 bg-[#F5C84C]/10 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute top-0 right-0 w-1/2 h-full opacity-40 pointer-events-none overflow-hidden">
                 <div className="absolute -top-8 right-8 w-80 h-44 bg-[radial-gradient(circle_at_center,_rgba(110,86,207,0.35)_1px,_transparent_1px)] [background-size:14px_14px] [mask-image:linear-gradient(to_bottom_left,black,transparent_75%)]" />
               </div>
 
               <div className="relative z-10">
-                {/* Industry */}
-                <div className="flex items-center gap-2 flex-wrap mb-6">
-                  <span className="text-[#A1A1AA] text-xs font-semibold">Industry</span>
-                  <Link
-                    href={`/companies?filter=${encodeURIComponent(sectorName.toLowerCase())}`}
-                    className="text-white text-xs font-bold bg-[#1C1C20] border border-[#2B2B30] px-3 py-1.5 rounded-lg hover:border-[#6E56CF] hover:text-[#A78BFA] transition-colors no-underline"
-                  >
-                    {sectorName}
-                  </Link>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#F5C84C] bg-[#1A1A1E] border border-[#2A2A2E] px-2.5 py-1.5 rounded-lg">
-                    <Layers size={12} />
-                    {toolsCount} AI Tools
-                  </span>
-                </div>
+                <div className="flex items-end gap-3 flex-wrap mb-4">
+  <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-black text-white tracking-tight leading-none">
+    {cleanName}
+  </h1>
 
-                <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-black text-white tracking-tight leading-none mb-5">
-                  {cleanName}
-                </h1>
+  <Link
+    href={`/companies?filter=${encodeURIComponent(sectorName.toLowerCase())}`}
+className="text-white text-xs font-bold bg-[#1C1C20] border border-[#2B2B30] px-2.5 py-1 rounded-lg hover:border-[#6E56CF] hover:text-[#A78BFA] transition-colors no-underline"  >
+    {sectorName}
+  </Link>
+</div>
 
-                <p className="text-[#A1A1AA] text-sm sm:text-[15px] leading-7 max-w-3xl mb-8">
+                <p className="text-[#A1A1AA] text-sm sm:text-[15px] leading-7 max-w-3xl mb-6">
                   {companyDesc}
                 </p>
 
                 {/* Existing company statistics only */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-x-4 gap-y-5 pt-6 border-t border-[#1F1F24]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-x-4 gap-y-4 pt-5 border-t border-[#1F1F24]">
                   <div>
                     <div className="text-[#71717A] text-[11px] font-semibold mb-1.5">AI Native</div>
                     <div className="text-sm font-bold">
@@ -337,18 +327,15 @@ export function CompanyDetailClient() {
             <div className="space-y-6">
               {activeTab === 'tools' && (
                 <div>
-                  <div className="flex items-center justify-between gap-4 mb-4 sm:mb-5">
+                  <div className="flex items-center justify-between gap-4 mb-3 sm:mb-4">
                     <h2 className="text-xl sm:text-2xl font-extrabold text-white">Tools ({toolsCount})</h2>
-                    {toolsCount > 0 && (
-                      <span className="text-[11px] text-[#71717A]">{toolsCount} listed</span>
-                    )}
                   </div>
                   {company.tools && company.tools.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                       {company.tools.map((tool) => (
                         <Link key={tool.id} href={`/p/tools/${tool.slug}`} className="block group no-underline">
-                          <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-4 sm:p-5 hover:border-[#6E56CF]/50 hover:bg-[#111116] transition-all">
-                            <div className="flex items-center gap-4">
+                          <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-4 hover:border-[#6E56CF]/50 hover:bg-[#111116] transition-all h-full">
+                            <div className="flex items-start gap-3">
                               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-[#18181C] border border-[#26262B] flex items-center justify-center overflow-hidden shrink-0 p-1.5">
                                 {tool.logoUrl ? (
                                   <img src={tool.logoUrl} alt={tool.name} className="object-cover w-full h-full rounded-lg" />
@@ -357,14 +344,26 @@ export function CompanyDetailClient() {
                                 )}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2 mb-1.5">
-                                  <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#A78BFA] transition-colors truncate">{tool.name}</h3>
-                                  <ExternalLink size={13} className="text-[#52525B] shrink-0" />
-                                </div>
-                                <span className="inline-flex text-[10px] sm:text-[11px] text-[#A1A1AA] bg-[#1A1A1E] px-2 py-0.5 rounded border border-[#28282E]">
-                                  {tool.pricingModel || "Freemium"}
-                                </span>
-                                <p className="text-xs text-[#8A8F98] leading-relaxed mt-2 line-clamp-2">
+                                <div className="flex items-center justify-between gap-2 mb-1.5">
+  <div className="flex items-center gap-2 min-w-0">
+    <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#A78BFA] transition-colors truncate">
+      {tool.name}
+    </h3>
+    <ExternalLink size={13} className="text-[#52525B] shrink-0" />
+  </div>
+
+  <span
+    className={`inline-flex shrink-0 text-[10px] font-bold px-2 py-1 rounded border ${
+      (tool.pricingModel || "").toLowerCase().includes("paid")
+        ? "text-[#F5C84C] bg-[#F5C84C]/10 border-[#F5C84C]/30"
+        : "text-emerald-400 bg-emerald-400/10 border-emerald-400/30"
+    }`}
+  >
+    {tool.pricingModel || "Freemium"}
+  </span>
+</div>
+                                
+                                <p className="text-xs text-[#8A8F98] leading-relaxed mt-2 line-clamp-3">
                                   {tool.description || "AI solution listed on AIOrbit."}
                                 </p>
                               </div>
@@ -385,10 +384,10 @@ export function CompanyDetailClient() {
                 <div>
                   <h2 className="text-xl sm:text-2xl font-extrabold text-white mb-4 sm:mb-5">Models ({modelsCount})</h2>
                   {company.aiModels && company.aiModels.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                       {company.aiModels.map((model) => (
                         <Link key={model.id} href={`/models/${model.slug}`} className="block group no-underline">
-                          <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-4 sm:p-5 hover:border-[#6E56CF]/50 hover:bg-[#111116] transition-all">
+                          <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-4 sm:p-5 hover:border-[#6E56CF]/50 hover:bg-[#111116] transition-all h-full">
                             <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#A78BFA] transition-colors mb-2">{model.name}</h3>
                             <p className="text-xs text-[#8A8F98] leading-relaxed mb-3 line-clamp-2">
                               {model.description || "AI model listed on AIOrbit."}
@@ -418,9 +417,11 @@ export function CompanyDetailClient() {
               )}
 
               {activeTab !== 'tools' && activeTab !== 'models' && (
-                <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-8 sm:p-12 text-center text-[#71717A] text-xs sm:text-sm">
-                  <p className="font-semibold text-white mb-1">No {activeTab} listed yet</p>
-                  <p className="text-xs text-[#52525B]">There are currently no public {activeTab} records indexed for {cleanName}.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-8 sm:p-12 text-center text-[#71717A] text-xs sm:text-sm md:col-span-2 xl:col-span-3">
+                    <p className="font-semibold text-white mb-1">No {activeTab} listed yet</p>
+                    <p className="text-xs text-[#52525B]">There are currently no public {activeTab} records indexed for {cleanName}.</p>
+                  </div>
                 </div>
               )}
             </div>
