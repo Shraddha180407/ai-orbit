@@ -97,6 +97,20 @@ export function NewReleasesList({ items, startRank }: NewReleasesListProps) {
   const [timeFilter, setTimeFilter] = useState(TIME_FILTERS[0]);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const filteredItems = items.filter((entity) => {
+    const { daysAgo } = deriveReleaseSignals(entity);
+    if (timeFilter === "Just released") return daysAgo <= 2;
+    if (timeFilter === "This week") return daysAgo <= 7;
+    if (timeFilter === "This month") return daysAgo <= 30;
+    return true;
+  });
+
+  const displayItems = (filteredItems.length > 0 ? filteredItems : items).slice().sort((a, b) => {
+    const timeA = new Date(a.createdAt).getTime();
+    const timeB = new Date(b.createdAt).getTime();
+    return timeB - timeA;
+  });
+
   return (
     <div>
       {/* Header */}
@@ -145,7 +159,7 @@ export function NewReleasesList({ items, startRank }: NewReleasesListProps) {
 
       {/* List */}
       <div className="flex flex-col gap-3">
-        {items.map((entity, index) => {
+        {displayItems.map((entity, index) => {
           const meta = ENTITY_META[entity.type];
           const href = `${meta.basePath}/${entity.slug}`;
           const { thumbsUp, hearts, saves, reviewer, quote, hasQuote, hasThumbnail, thumbnail, daysAgo } =

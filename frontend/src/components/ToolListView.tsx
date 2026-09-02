@@ -67,10 +67,43 @@ const COL_MIN_WIDTH_SPLIT = "min-w-fit md:min-w-[1150px]";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
+function getReleaseTimestamp(item: ListTool): number {
+  const val = item.releaseDate || (item as any).launchDate || (item as any).publishedAt || (item as any).githubCreatedAt;
+  if (!val || val === '—' || val === 'Unknown' || val === 'null' || val === 'undefined') return 0;
+  
+  const str = String(val).trim();
+  if (/^\d{4}$/.test(str)) {
+    const d = new Date(`${str}-01-01T00:00:00Z`);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+  }
+  if (/^[a-zA-Z]{3,9}\s+\d{4}$/.test(str)) {
+    const d = new Date(`${str} 1`);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+  }
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
 function formatReleased(value?: string | null): string {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return "—";
+  if (!value || value === "—" || value === "Unknown" || value === "null" || value === "undefined") return "—";
+  const str = String(value).trim();
+  if (!str) return "—";
+
+  if (/^\d{4}$/.test(str)) return str;
+  if (/^[a-zA-Z]{3,9}\s+\d{4}$/.test(str)) return str;
+
+  const d = new Date(str);
+  if (isNaN(d.getTime())) return str;
+
+  const now = Date.now();
+  const diffMs = now - d.getTime();
+  const diffHours = Math.floor(diffMs / (3600 * 1000));
+  
+  if (diffHours >= 0 && diffHours < 1) return "Just now";
+  if (diffHours >= 1 && diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours >= 24 && diffHours < 48) return "Yesterday";
+  if (diffHours >= 48 && diffHours < 24 * 7) return `${Math.floor(diffHours / 24)}d ago`;
+
   return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
@@ -94,15 +127,16 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
   return <span className="text-[#6E56CF] text-[10px]">{dir === "desc" ? "↓" : "↑"}</span>;
 }
 
-function LogoCell({ name, logoUrl }: { name: string; logoUrl: string | null }) {
+function LogoCell({ name, logoUrl }: { name?: string; logoUrl?: string | null }) {
   const [failed, setFailed] = React.useState(false);
   if (!logoUrl || failed) {
-    return <span className="text-[10px] md:text-xs font-bold text-neutral-900">{name.charAt(0)}</span>;
+    const initial = (name || "").trim().charAt(0).toUpperCase() || "?";
+    return <span className="text-[10px] md:text-xs font-bold text-neutral-900">{initial}</span>;
   }
   return (
     <img
       src={logoUrl}
-      alt={name}
+      alt={name || "Tool"}
       className="h-6 w-6 md:h-8 md:w-8 object-contain"
       onError={() => setFailed(true)}
     />
@@ -381,9 +415,17 @@ function ToolRow({
 
       {/* Col 3: Task */}
       <div className="min-w-0 pl-4 md:pl-0">
-        {tool.ttasks && tool.ttasks.length > 0 ? (
+        {tool.ttasks && tool.ttasks.length > 0 && tool.ttasks[0]?.task?.title ? (
           <span className="inline-flex items-center rounded-md border border-[#232326] bg-[#1A1A1E] px-2.5 py-0.5 text-[10px] font-medium text-[#D4D4D8] whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]">
             {tool.ttasks[0].task.title}
+          </span>
+        ) : (tool as any).primaryTask ? (
+          <span className="inline-flex items-center rounded-md border border-[#232326] bg-[#1A1A1E] px-2.5 py-0.5 text-[10px] font-medium text-[#D4D4D8] whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]">
+            {(tool as any).primaryTask}
+          </span>
+        ) : tool.categories && tool.categories.length > 0 && tool.categories[0]?.category?.name ? (
+          <span className="inline-flex items-center rounded-md border border-[#232326] bg-[#1A1A1E] px-2.5 py-0.5 text-[10px] font-medium text-[#D4D4D8] whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]">
+            {tool.categories[0].category.name}
           </span>
         ) : (
           <span className="text-[11px] text-[#71717A] font-mono">—</span>
@@ -434,7 +476,7 @@ function ToolRow({
 
       {/* Col 8: Released */}
       <div className="text-[10px] font-mono text-[#A1A1AA]">
-        {formatReleased(tool.releaseDate)}
+        {formatReleased(tool.releaseDate || (tool as any).launchDate || (tool as any).publishedAt)}
       </div>
 
       {/* Col 9: Share */}
@@ -522,43 +564,40 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     router.push(`/tools/compare?slugs=${slugs}`);
   };
 
+  const isMixedFeed = tools.some(t => 
+    t.entityType === 'NEWS' || t.entityType === 'VIDEO' || t.entityType === 'ROBOT' || 
+    t.entityType === 'COMPANY' || t.entityType === 'DEVICE' || t.entityType === 'MODEL' || t.entityType === 'REPOSITORY'
+  );
+
   const filtered = React.useMemo(() => {
     let list = [...tools];
     if (nameSearch.trim()) {
       const q = nameSearch.toLowerCase();
       list = list.filter((t) =>
-        t.name.toLowerCase().includes(q) ||
-        t.description?.toLowerCase().includes(q) ||
-        t.company?.name?.toLowerCase().includes(q)
+        (t.name || "").toLowerCase().includes(q) ||
+        (t.description || "").toLowerCase().includes(q) ||
+        (t.company?.name || "").toLowerCase().includes(q)
       );
     }
-    list.sort((a, b) => {
-      const getScore = (t: ListTool) => {
-        if (t.ttasks && t.ttasks.length > 0) return 3; 
-        if (t.logoUrl && t.description && t.description.trim() !== "") return 2; 
-        return 1; 
-      };
-
-      const scoreA = getScore(a);
-      const scoreB = getScore(b);
-
-      if (scoreA !== scoreB) {
-        return scoreB - scoreA; 
-      }
-
-      let cmp = 0;
-      if (sortKey === "name") cmp = a.name.localeCompare(b.name);
-      else cmp = ((b as any).releaseDate || b.createdAt || "").localeCompare((a as any).releaseDate || a.createdAt || "");
-      
-      return sortDir === "asc" ? cmp : -cmp;
-    });
+    if (sortKey === "name") {
+      list.sort((a, b) => {
+        const cmp = (a.name || "").localeCompare(b.name || "");
+        return sortDir === "asc" ? cmp : -cmp;
+      });
+    } else if (sortKey === "released") {
+      list.sort((a, b) => {
+        const timeA = getReleaseTimestamp(a);
+        const timeB = getReleaseTimestamp(b);
+        if (timeA > 0 && timeB > 0) {
+          return sortDir === "asc" ? timeA - timeB : timeB - timeA;
+        }
+        if (timeA > 0) return sortDir === "asc" ? 1 : -1;
+        if (timeB > 0) return sortDir === "asc" ? -1 : 1;
+        return (a.name || "").localeCompare(b.name || "");
+      });
+    }
     return list;
-  }, [tools, nameSearch, sortKey, sortDir]);
-
-  const isMixedFeed = tools.some(t => 
-    t.entityType === 'NEWS' || t.entityType === 'VIDEO' || t.entityType === 'ROBOT' || 
-    t.entityType === 'COMPANY' || t.entityType === 'DEVICE' || t.entityType === 'MODEL' || t.entityType === 'REPOSITORY'
-  );
+  }, [tools, nameSearch, sortKey, sortDir, isMixedFeed]);
   
   const activeTemplate = isMixedFeed ? COL_TEMPLATE_MIXED : COL_TEMPLATE_SPLIT;
   const activeMinWidth = isMixedFeed ? COL_MIN_WIDTH_MIXED : COL_MIN_WIDTH_SPLIT;
@@ -610,16 +649,6 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
         </div>
       </div>
     );
-  }
-
-  if (tools.length === 0) {
-    const mockFeed = [
-      { id: '1', name: 'Midjourney', category: 'Generative AI', description: 'Advanced AI image generation.', pricing: 'Paid', tags: '["AI", "Image"]', visits: '15.2M', growth: 12, url: 'https://midjourney.com', rank: 1, rating: 5, votes: 1234, saves: 567, addedDate: new Date().toISOString(), entityType: 'TOOL', slug: 'midjourney' },
-      { id: '2', name: 'ChatGPT', category: 'Chatbots', description: 'Powerful conversational AI.', pricing: 'Freemium', tags: '["AI", "Chat"]', visits: '45.0M', growth: 5, url: 'https://chat.openai.com', rank: 2, rating: 5, votes: 5678, saves: 1234, addedDate: new Date().toISOString(), entityType: 'TOOL', slug: 'chatgpt' },
-      { id: '3', name: 'Cursor', category: 'Code Assistant', description: 'AI code editor for engineers.', pricing: 'Paid', tags: '["Code", "Dev"]', visits: '22.0M', growth: -2, url: 'https://cursor.sh', rank: 3, rating: 4, votes: 345, saves: 123, addedDate: new Date().toISOString(), entityType: 'TOOL', slug: 'cursor' }
-    ];
-    // Use mock feed if the actual tools array is completely empty to prevent empty state on Vercel preview
-    tools = mockFeed as any; return <ToolListViewInner tools={tools} loading={false} skeletonRows={6} />;
   }
 
   if (tools.length === 0) {
@@ -772,7 +801,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
                         </button>
                       </>
                     ) : (
-                      <span className="text-[10px] sm:text-[11px] text-[#71717A] truncate">Select tool…</span>
+                      <span className="text-[10px] sm:text-[11px] text-[#71717A] truncate">Select another tool…</span>
                     )}
                   </div>
                 );
