@@ -112,26 +112,26 @@ export function TaskCard({ task }: TaskCardProps) {
           {task.title}
         </span>
         {task.description && (
-          <span className="text-xs text-[#71717A] truncate block mt-0.5">
+          <span className="text-xs text-[#A1A1AA] truncate block mt-0.5">
             {task.description}
           </span>
         )}
       </div>
 
-      <span className="hidden sm:flex items-center justify-center gap-2 text-xs text-[#A1A1AA] font-mono tabular-nums">
-        <Wrench className="h-4 w-4 text-[#71717A] shrink-0" aria-hidden="true" />
+      <span className="hidden sm:flex items-center justify-center gap-1.5 text-xs text-[#D4D4D8] font-mono tabular-nums">
+        <Wrench className="h-3.5 w-3.5 text-[#71717A] shrink-0" aria-hidden="true" />
         {formatCount(task.tools)}
       </span>
-      <span className="hidden sm:flex items-center justify-center gap-2 text-xs text-[#A1A1AA] font-mono tabular-nums">
-        <Brain className="h-4 w-4 text-[#71717A] shrink-0" aria-hidden="true" />
+      <span className="hidden sm:flex items-center justify-center gap-1.5 text-xs text-[#D4D4D8] font-mono tabular-nums">
+        <Brain className="h-3.5 w-3.5 text-[#71717A] shrink-0" aria-hidden="true" />
         {formatCount(task.models)}
       </span>
-      <span className="hidden sm:flex items-center justify-center gap-2 text-xs text-[#A1A1AA] font-mono tabular-nums">
-        <Bot className="h-4 w-4 text-[#71717A] shrink-0" aria-hidden="true" />
+      <span className="hidden sm:flex items-center justify-center gap-1.5 text-xs text-[#D4D4D8] font-mono tabular-nums">
+        <Bot className="h-3.5 w-3.5 text-[#71717A] shrink-0" aria-hidden="true" />
         {formatCount(task.robots)}
       </span>
-      <span className="hidden sm:flex items-center justify-center gap-2 text-xs text-[#A1A1AA] font-mono tabular-nums">
-        <Monitor className="h-4 w-4 text-[#71717A] shrink-0" aria-hidden="true" />
+      <span className="hidden sm:flex items-center justify-center gap-1.5 text-xs text-[#D4D4D8] font-mono tabular-nums">
+        <Monitor className="h-3.5 w-3.5 text-[#71717A] shrink-0" aria-hidden="true" />
         {formatCount(task.devices)}
       </span>
 

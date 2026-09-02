@@ -16,7 +16,7 @@ export class CompaniesService {
     sort?: string;
   } = {}) {
     const page = Math.max(1, filters.page || 1);
-    const limit = Math.min(200, Math.max(1, filters.pageSize || 50));
+    const limit = Math.min(200, Math.max(1, filters.pageSize || 100));
     const skip = (page - 1) * limit;
 
     const where: Prisma.CompanyWhereInput = {};

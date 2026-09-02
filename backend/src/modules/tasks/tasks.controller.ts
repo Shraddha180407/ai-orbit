@@ -35,7 +35,7 @@ export class TasksController {
       prisma = getPrisma(c.env);
       const service = new TasksService(prisma);
       const pageNum = Number.parseInt(parsed.data.page, 10) || 1;
-      const pageSizeNum = Number.parseInt(parsed.data.pageSize, 10) || 20;
+      const pageSizeNum = Number.parseInt(parsed.data.pageSize, 10) || 100;
       const result = await service.listTasks({
         q: parsed.data.q,
         category: parsed.data.category,

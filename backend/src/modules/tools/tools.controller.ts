@@ -17,12 +17,14 @@ export class ToolsController {
 
     try {
       const pageNum = Number.parseInt(parsed.data.page, 10) || 1;
+      const pageSizeNum = Number.parseInt(parsed.data.pageSize, 10) || 100;
       const result = await service.listTools({
         q: parsed.data.q,
         category: parsed.data.category,
         pricing: parsed.data.pricing,
         sort: parsed.data.sort,
         page: pageNum,
+        pageSize: pageSizeNum,
       });
       return c.json(result);
     } catch (error: unknown) {
@@ -47,12 +49,14 @@ export class ToolsController {
 
     try {
       const pageNum = Number.parseInt(parsed.data.page, 10) || 1;
+      const pageSizeNum = Number.parseInt(parsed.data.pageSize, 10) || 100;
       const result = await service.listTools({
         q: parsed.data.q,
         category: category,
         pricing: parsed.data.pricing,
         sort: parsed.data.sort,
         page: pageNum,
+        pageSize: pageSizeNum,
       });
       return c.json(result);
     } catch (error: unknown) {

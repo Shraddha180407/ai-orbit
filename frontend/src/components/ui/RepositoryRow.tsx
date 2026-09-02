@@ -131,7 +131,7 @@ export const RepositoryRow = React.memo(function RepositoryRow({ repo }: Reposit
         {/* Column 6: License Badge */}
         <div className="hidden md:flex justify-center items-center h-full w-full">
           {licenseText ? (
-            <span className="text-[11px] font-semibold text-[#A1A1AA] px-[8px] py-[2px] h-[20px] leading-[14px] flex items-center rounded-full border border-[#444c5b] bg-[#292932] whitespace-nowrap">
+            <span className="text-[11px] font-semibold text-[#A1A1AA] px-[8px] py-[2px] h-[22px] leading-[16px] flex items-center rounded-full border border-[#444c5b] bg-[#292932] whitespace-nowrap">
               {licenseText}
             </span>
           ) : (

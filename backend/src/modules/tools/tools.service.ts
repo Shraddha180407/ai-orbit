@@ -85,7 +85,7 @@ export class ToolsService {
     pageSize?: number;
   }) {
     const pageNum = Math.max(1, filters.page || 1);
-    const limit = filters.pageSize || 12;
+    const limit = filters.pageSize || 100;
     const skip = (pageNum - 1) * limit;
 
     const where: Prisma.ToolWhereInput = {};

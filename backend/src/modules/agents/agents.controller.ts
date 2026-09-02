@@ -17,7 +17,7 @@ export class AgentsController {
 
     try {
       const pageNum = Number.parseInt(parsed.data.page, 10) || 1;
-      const pageSize = Number.parseInt(parsed.data.limit || parsed.data.pageSize, 10) || 12;
+      const pageSize = Number.parseInt(parsed.data.limit || parsed.data.pageSize, 10) || 100;
       const result = await service.listAgents({
         q: parsed.data.q,
         category: parsed.data.category,

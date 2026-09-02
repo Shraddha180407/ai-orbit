@@ -91,28 +91,31 @@ export function ToolsClient({
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  // Page state for pagination
+  // FIXED: Mode is now dynamically derived every render. It will instantly swap back to "tools" 
+  // when navigating away from the "agents" page, completely bypassing the Next.js cache trap.
+  const mode: DirectoryMode = defaultMode || (
+    pathname?.includes("personal") ? "personal" : 
+    pathname?.includes("creativity") ? "creativity" : 
+    pathname?.includes("agents") ? "agents" : 
+    "tools"
+  );
+
   const [currentPage, setCurrentPage] = useState<number>(() => {
     const pageFromUrl = searchParams.get("page");
     return pageFromUrl ? parseInt(pageFromUrl, 10) : 1;
-  });
-
-  const [mode, setMode] = useState<DirectoryMode>(() => {
-    if (defaultMode) return defaultMode;
-    if (typeof window !== "undefined") {
-      const path = window.location.pathname;
-      if (path.includes("personal")) return "personal";
-      if (path.includes("creativity")) return "creativity";
-      if (path.includes("agents")) return "agents";
-    }
-    return "tools";
   });
 
   const [activeCategory, setActiveCategory] = useState<string>(() => {
     return defaultCategory || searchParams.get("category") || "";
   });
 
-  // Reset to page 1 whenever active category or mode changes
+  // FIXED: If the mode changes (e.g. going from Agents to Tools), force the category and page to reset 
+  // so the new page doesn't try to query the old page's categories.
+  useEffect(() => {
+    setActiveCategory(defaultCategory || searchParams.get("category") || "");
+    setCurrentPage(Number(searchParams.get("page")) || 1);
+  }, [mode, defaultCategory, searchParams]);
+
   const handleCategoryChange = (slug: string) => {
     setActiveCategory(slug);
     setCurrentPage(1);

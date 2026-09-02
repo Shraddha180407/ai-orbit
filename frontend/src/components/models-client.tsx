@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/shadcn-button";
 import { toast } from "sonner";
 
-import { useInfiniteQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { Pagination } from "@/components/Pagination";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 
 const MODEL_SUBCATEGORIES: ModelSubCategory[] = [
   { id: "1", name: "LLM", slug: "llm" },
@@ -51,7 +52,8 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
     ? "releaseDate"
     : "newest";
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(100);
 
   // Admin modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,6 +70,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSelectSubCategory = (slug: string | null) => {
+    setCurrentPage(1);
     if (slug) {
       router.push(`/models/${slug}`);
     } else {
@@ -77,44 +80,19 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
 
   const {
     data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
     isLoading,
     isPlaceholderData,
-  } = useInfiniteQuery({
-    queryKey: ["models", { subCategory: selectedSubCategorySlug, sort: selectedSort }],
-    queryFn: async ({ pageParam = 1 }) => {
-      return fetchModels({ page: pageParam, subCategory: selectedSubCategorySlug || undefined, sort: selectedSort as any });
-    },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage: any) => {
-      if (lastPage?.pagination?.hasMore) {
-        return (lastPage?.pagination?.page || 1) + 1;
-      }
-      return undefined;
+  } = useQuery({
+    queryKey: ["models", { subCategory: selectedSubCategorySlug, sort: selectedSort, page: currentPage, limit: pageSize }],
+    queryFn: async () => {
+      return fetchModels({ page: currentPage, limit: pageSize, subCategory: selectedSubCategorySlug || undefined, sort: selectedSort as any });
     },
     placeholderData: keepPreviousData,
     staleTime: 10 * 60 * 1000,
   });
 
-  const models = data?.pages.flatMap((p: any) => p.items || []) || [];
-
-  // Infinite scroll
-  useEffect(() => {
-    if (isLoading || isFetchingNextPage || !hasNextPage) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) fetchNextPage();
-      },
-      { threshold: 0.1 }
-    );
-    const el = sentinelRef.current;
-    if (el) observer.observe(el);
-    return () => {
-      if (el) observer.unobserve(el);
-    };
-  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
+  const models = data?.items || [];
+  const totalPages = data?.pagination?.totalPages || 1;
 
   const reloadFirstPage = async () => {
     queryClient.invalidateQueries({ queryKey: ["models"] });
@@ -268,11 +246,21 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
             </div>
           )}
 
-          {models.length > 0 && hasNextPage && (
-            <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-            </div>
-          )}
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalCount={data?.pagination?.total}
+            onPageChange={(p) => {
+              setCurrentPage(p);
+              const target = document.getElementById("models-grid");
+              if (target) target.scrollIntoView({ behavior: "smooth" });
+            }}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       </div>
 

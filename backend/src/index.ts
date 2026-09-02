@@ -22,10 +22,12 @@ import { userRouter } from './modules/user/user.routes.js'
 import { mcpRouter } from './modules/mcp/mcp.routes.js'
 import { agentsRouter } from './modules/agents/agents.routes.js'
 import { searchRouter } from './modules/search/search.routes.js'
-import { writerSubmissionsRouter } from './modules/writer-submissions/writer-submissions.routes.js'
 import { getPrisma } from './lib/prisma.js'
 import { runIngestion } from './modules/ingestion/ingestion.service.js'
 import type { IngestionContext } from './modules/ingestion/pipeline.js'
+import { adminRouter } from './modules/admin/admin.routes.js'
+import { bookmarksRouter } from './modules/bookmarks/bookmarks.routes.js'
+import press from './modules/press/index.js';
 
 type Bindings = {
   DATABASE_URL: string
@@ -70,8 +72,6 @@ app.route('/api/videos', videosRouter)
 app.route('/api/news', newsRouter)
 app.route('/api/ingestion', ingestionRouter)
 app.route('/logos/publishers', logosRouter)
-import { adminRouter } from './modules/admin/admin.routes.js'
-import { bookmarksRouter } from './modules/bookmarks/bookmarks.routes.js'
 
 app.route('/api/auth', authRoutes)
 app.route('/api/v1/leaderboard', leaderboardRouter)
@@ -90,7 +90,7 @@ app.route('/api/bookmarks', bookmarksRouter)
 app.route('/api/v1/mcps', mcpRouter)
 app.route('/api/v1/agents', agentsRouter)
 app.route('/api/v1/search', searchRouter)
-app.route('/api/v1/writer-submissions', writerSubmissionsRouter)
+app.route('/api/press', press);
 
 app.get('/', (c) => {
   return c.json({
