@@ -75,6 +75,7 @@ const LINK_GROUPS = [
       { label: "About", href: "/about" },
       { label: "Contact", href: "/contact" },
       { label: "Write", href: "/write-for-us" },
+      { label: "Press", href: "/press" },
       { label: "Privacy", href: "/privacy" },
       { label: "Terms", href: "/terms" },
     ]
@@ -116,7 +117,7 @@ export function Footer() {
           </div>
 
           {/* Links Grid */}
-          <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-x-4 sm:gap-x-8 gap-y-8 sm:gap-y-14 pt-2">
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-x-4 sm:gap-x-8 gap-y-8 sm:gap-y-14 pt-2">
             {LINK_GROUPS.map((group) => (
               <div key={group.heading} className="flex flex-col">
                 <div className="mb-3 sm:mb-4">
