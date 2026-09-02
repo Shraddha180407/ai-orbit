@@ -43,6 +43,26 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   const router = useRouter();
 
   const selectedSubCategorySlug = defaultSubCategory || searchParams.get("subCategory") || null;
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const activeKey = selectedSubCategorySlug || "all";
+    const target = subCatRefs.current[activeKey];
+    if (!target) return;
+
+    const targetLeft = target.offsetLeft;
+    const targetWidth = target.offsetWidth;
+    const containerWidth = container.clientWidth;
+
+    container.scrollTo({
+      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
+      behavior: "smooth",
+    });
+  }, [selectedSubCategorySlug]);
+
   const rawSort = searchParams.get("sort") || "newest";
   const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
     ? "alphabetical"
@@ -180,8 +200,12 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
 
           {/* Subcategory Filter Chips */}
           {MODEL_SUBCATEGORIES.length > 0 && (
-            <div className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
+            <div
+              ref={subCatContainerRef}
+              className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+            >
               <button
+                ref={(el) => { subCatRefs.current["all"] = el; }}
                 onClick={() => handleSelectSubCategory(null)}
                 className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                   !selectedSubCategorySlug
@@ -194,6 +218,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
               {MODEL_SUBCATEGORIES.map((sub) => (
                 <button
                   key={sub.id}
+                  ref={(el) => { subCatRefs.current[sub.slug] = el; }}
                   onClick={() => handleSelectSubCategory(sub.slug)}
                   className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                     selectedSubCategorySlug === sub.slug

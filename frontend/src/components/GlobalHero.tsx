@@ -285,31 +285,88 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     return () => document.removeEventListener("keydown", handleShortcut);
   }, []);
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const isCardActive = (card: (typeof DIRECTORY_CARDS)[number]) => {
+    if (!pathname) return false;
+    if (card.name === "New") {
+      return pathname === "/";
+    }
+    const categoryParam = searchParams.get("category");
+    if (card.name === "Tools") {
+      return (
+        (pathname === "/tools" || (pathname.startsWith("/tools") && !pathname.startsWith("/tools/mcp") && !pathname.startsWith("/tools/compare") && categoryParam !== "agents")) ||
+        pathname.startsWith("/p/tools/")
+      );
+    }
+    if (card.name === "Agents") {
+      return pathname === "/agents" || pathname.startsWith("/agents") || pathname.startsWith("/p/agents/") || (pathname.startsWith("/tools") && categoryParam === "agents");
+    }
+    if (card.name === "Tasks") {
+      return (pathname === "/tasks" || pathname.startsWith("/p/tasks/")) && pathname !== "/tasks/personal" && pathname !== "/tasks/creativity";
+    }
+    if (card.name === "Personal") {
+      return pathname === "/tasks/personal" || pathname === "/personal" || pathname.startsWith("/personal") || pathname.startsWith("/p/personal/");
+    }
+    if (card.name === "Creativity") {
+      return pathname === "/tasks/creativity" || pathname === "/creativity" || pathname.startsWith("/creativity") || pathname.startsWith("/p/creativity/");
+    }
+    const entityName = card.href.replace("/", "");
+    return pathname.startsWith(card.href) || pathname.startsWith(`/p/${entityName}`);
+  };
+
+  const scrollToActiveCard = (smooth: boolean = true) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // Only scroll if content actually overflows the container (mobile / small screens)
+    if (container.scrollWidth <= container.clientWidth) return;
+
+    const activeIndex = DIRECTORY_CARDS.findIndex((c) => isCardActive(c));
+    if (activeIndex === -1) return;
+    const target = cardRefs.current[activeIndex];
+    if (!target) return;
+
+    const targetLeft = target.offsetLeft;
+    const targetWidth = target.offsetWidth;
+    const containerWidth = container.clientWidth;
+
+    const targetScrollLeft = targetLeft - (containerWidth / 2) + (targetWidth / 2);
+    container.scrollTo({
+      left: Math.max(0, targetScrollLeft),
+      behavior: smooth ? "smooth" : "auto",
+    });
+  };
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      scrollToActiveCard(false);
+    });
+    const timer = setTimeout(() => {
+      scrollToActiveCard(false);
+    }, 120);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
+  }, [pathname, searchParams]);
+
   // Helper to render the actual pill card UI
-  const renderCard = (card: typeof DIRECTORY_CARDS[number]) => {
+  const renderCard = (card: typeof DIRECTORY_CARDS[number], index: number) => {
     const Icon = card.icon;
-    const isSelected =
-      card.href === "/"
-        ? pathname === "/"
-        : card.name === "Tools"
-          ? pathname === "/tools" || (pathname?.startsWith("/tools") && !pathname?.startsWith("/tools/mcp") && !pathname?.startsWith("/tools/compare"))
-          : card.name === "Agents"
-            ? pathname === "/agents" || pathname?.startsWith("/agents")
-            : card.name === "Tasks"
-              ? pathname === "/tasks"
-              : card.name === "Personal"
-                ? pathname === "/tasks/personal" || pathname === "/personal"
-                : card.name === "Creativity"
-                  ? pathname === "/tasks/creativity" || pathname?.startsWith("/creativity")
-                  : pathname?.startsWith(card.href);
+    const isSelected = isCardActive(card);
     const isNew = card.name === "New";
 
     return (
       <Link
-        key={card.name}
         href={card.href}
-        className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
-          }`}
+        onClick={() => {
+          setTimeout(() => scrollToActiveCard(true), 50);
+        }}
+        className={`group flex min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden h-full ${
+          isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
+        }`}
         onPointerEnter={(e) => {
           handlePointerEnter(card.name, card.href);
           if (!(isNew && isSelected)) e.currentTarget.style.borderColor = card.color;
@@ -353,7 +410,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
 
   return (
     <section
-      className="relative z-30 w-full flex flex-col items-center pb-2"
+      className="relative z-30 w-full flex flex-col items-center pb-2 max-w-full overflow-x-clip"
       style={{
         backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
         backgroundSize: '32px 32px',
@@ -565,25 +622,38 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
       <div className="border-b border-[#232326]/40 w-full z-10 relative" />
 
       {/* Directory nav strip */}
-      <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1 relative z-10">
-        <div className="mx-auto w-full max-w-[1600px]">
-
-          <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 w-full">
-
-            {/* 1. The "New" Button wrapped in the Dropdown (Escaping overflow!) */}
-            <div className="shrink-0 relative z-10 overflow-visible">
-              <UnifiedFilterDropdown>
-                {renderCard(DIRECTORY_CARDS[0])}
-              </UnifiedFilterDropdown>
-            </div>
-
-            {/* 2. The rest of the categories (Safely scrollable) */}
-            <div className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 touch-scroll-x scrollbar-none w-full">
-              {DIRECTORY_CARDS.slice(1).map(renderCard)}
-            </div>
-
+      <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1 relative z-10 max-w-full overflow-hidden flex justify-center">
+        <div className="mx-auto w-full max-w-[1600px] overflow-hidden flex justify-center">
+          <div
+            ref={scrollContainerRef}
+            className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 touch-scroll-x scrollbar-none w-max max-w-full overflow-x-auto py-1 scroll-smooth mx-auto"
+          >
+            {DIRECTORY_CARDS.map((card, index) => {
+              const cardEl = renderCard(card, index);
+              if (card.name === "New") {
+                return (
+                  <div
+                    key={card.name}
+                    ref={(el) => { cardRefs.current[index] = el; }}
+                    className="shrink-0 flex items-stretch"
+                  >
+                    <UnifiedFilterDropdown>
+                      {cardEl}
+                    </UnifiedFilterDropdown>
+                  </div>
+                );
+              }
+              return (
+                <div
+                  key={card.name}
+                  ref={(el) => { cardRefs.current[index] = el; }}
+                  className="shrink-0 flex items-stretch"
+                >
+                  {cardEl}
+                </div>
+              );
+            })}
           </div>
-
         </div>
       </div>
     </section>

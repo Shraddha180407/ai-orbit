@@ -210,6 +210,26 @@ export function DevicesClient({ defaultCategory }: { defaultCategory?: string })
     return ALL_CATEGORIES;
   });
 
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const activeKey = selectedCategory || ALL_CATEGORIES;
+    const target = subCatRefs.current[activeKey];
+    if (!target) return;
+
+    const targetLeft = target.offsetLeft;
+    const targetWidth = target.offsetWidth;
+    const containerWidth = container.clientWidth;
+
+    container.scrollTo({
+      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
+      behavior: "smooth",
+    });
+  }, [selectedCategory]);
+
   useEffect(() => {
     if (defaultCategory !== undefined) {
       setSelectedCategory(defaultCategory && DEVICE_SLUGS[defaultCategory] ? DEVICE_SLUGS[defaultCategory] : ALL_CATEGORIES);
@@ -439,8 +459,12 @@ useEffect(() => {
     <>
     <div className="w-full flex-1 flex flex-col">
       <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1">
-        <div className="flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full -mx-3 sm:mx-0 px-3 sm:px-0">
+        <div
+          ref={subCatContainerRef}
+          className="flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full -mx-3 sm:mx-0 px-3 sm:px-0 overflow-x-auto scroll-smooth"
+        >
           <button
+            ref={(el) => { subCatRefs.current[ALL_CATEGORIES] = el; }}
             onClick={() => {
               setSelectedCategory(ALL_CATEGORIES);
               setCurrentPage(1);
@@ -457,6 +481,7 @@ useEffect(() => {
           {DEVICE_SUBCATEGORIES.map((sub) => (
             <button
               key={sub}
+              ref={(el) => { subCatRefs.current[sub] = el; }}
               onClick={() => {
                 setSelectedCategory(sub);
                 setCurrentPage(1);

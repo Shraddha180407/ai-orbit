@@ -345,6 +345,26 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     return defaultCategory || urlFilterParam || "all";
   });
 
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const activeKey = activeCategorySlug || "all";
+    const target = subCatRefs.current[activeKey];
+    if (!target) return;
+
+    const targetLeft = target.offsetLeft;
+    const targetWidth = target.offsetWidth;
+    const containerWidth = container.clientWidth;
+
+    container.scrollTo({
+      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
+      behavior: "smooth",
+    });
+  }, [activeCategorySlug]);
+
   const [selectedCountry, setSelectedCountry] = useState<string>("all");
   const [isCountryPopoverOpen, setIsCountryPopoverOpen] = useState<boolean>(false);
   const [countrySearch, setCountrySearch] = useState<string>("");
@@ -515,12 +535,16 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
         <div className="w-full space-y-4">
           {/* Subcategories Horizontal Scrollbar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-1.5 touch-scroll-x scrollbar-none pb-1 md:pb-0 flex-1 w-auto sm:w-full -mx-3 sm:mx-0 px-3 sm:px-0">
+            <div
+              ref={subCatContainerRef}
+              className="flex items-center gap-1.5 touch-scroll-x scrollbar-none pb-1 md:pb-0 flex-1 w-auto sm:w-full -mx-3 sm:mx-0 px-3 sm:px-0 overflow-x-auto scroll-smooth"
+            >
               {COMPANY_TYPES.map((ct) => {
                 const isSelected = activeCategorySlug === ct.slug;
                 return (
                   <button
                     key={ct.slug}
+                    ref={(el) => { subCatRefs.current[ct.slug] = el; }}
                     type="button"
                     onClick={() => handleSubcategoryClick(ct.slug)}
                     className={cn(

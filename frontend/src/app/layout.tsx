@@ -31,9 +31,9 @@ export default function RootLayout({
     <html lang="en" className="dark" data-scroll-behavior="smooth">
       <body className="font-sans bg-black text-white selection:bg-white/30">
         <ReactQueryProvider>
-          <main className="relative flex flex-col min-h-screen w-full">
+          <main className="relative flex flex-col min-h-screen w-full max-w-full overflow-x-clip">
             <Header />
-            <div className="flex-1 flex flex-col w-full">
+            <div className="flex-1 flex flex-col w-full max-w-full overflow-x-clip">
               {children}
             </div>
             <Footer />

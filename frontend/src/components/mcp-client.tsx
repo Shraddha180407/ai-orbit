@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
@@ -65,6 +65,26 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
   const [activeSubCategory, setActiveSubCategory] = useState<string>(initialSub);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(100);
+
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const activeKey = activeSubCategory || "all";
+    const target = subCatRefs.current[activeKey];
+    if (!target) return;
+
+    const targetLeft = target.offsetLeft;
+    const targetWidth = target.offsetWidth;
+    const containerWidth = container.clientWidth;
+
+    container.scrollTo({
+      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
+      behavior: "smooth",
+    });
+  }, [activeSubCategory]);
 
   useEffect(() => {
     const currentParam = searchParams.get("subCategory") || searchParams.get("category") || "";
@@ -179,8 +199,12 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
         }
       `}</style>
       <div className="mx-auto w-full max-w-[1600px] space-y-4 animate-fade-in">
-        <div className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
+        <div
+          ref={subCatContainerRef}
+          className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+        >
           <button
+            ref={(el) => { subCatRefs.current["all"] = el; }}
             onClick={() => handleSelectSubCategory(null)}
             className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
               !activeSubCategory
@@ -195,6 +219,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
             return (
               <button
                 key={sub.id}
+                ref={(el) => { subCatRefs.current[sub.slug] = el; }}
                 onClick={() => {
                   handleSelectSubCategory(sub.slug);
                 }}
