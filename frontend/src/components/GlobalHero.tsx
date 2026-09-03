@@ -114,6 +114,26 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
   const q = searchParams.get("q") || "";
   const hoverTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
 
+  // Scroll active nav tab to center on mobile when pathname changes
+  const navStripRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
+    // Double rAF: wait for React to paint the new active tab before measuring
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const container = navStripRef.current;
+        if (!container) return;
+        const activeBtn = container.querySelector<HTMLElement>('[data-active="true"]');
+        if (!activeBtn) return;
+        const cRect = container.getBoundingClientRect();
+        const bRect = activeBtn.getBoundingClientRect();
+        const bLeft = bRect.left - cRect.left + container.scrollLeft;
+        const scrollTarget = bLeft - (container.clientWidth / 2) + (bRect.width / 2);
+        container.scrollTo({ left: Math.max(0, scrollTarget), behavior: 'smooth' });
+      });
+    });
+  }, [pathname]);
+
   const prefetchCategory = (cardName: string, href: string) => {
     // ... [Prefetch logic remains identical]
     switch (cardName) {
@@ -351,12 +371,9 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     return (
       <Link
         href={card.href}
-        onClick={() => {
-          setTimeout(() => scrollToActiveCard(true), 50);
-        }}
-        className={`group flex min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden h-full ${
-          isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
-        }`}
+        className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
+          }`}
+        data-active={isSelected ? "true" : undefined}
         onPointerEnter={(e) => {
           handlePointerEnter(card.name, card.href);
           if (!(isNew && isSelected)) e.currentTarget.style.borderColor = card.color;

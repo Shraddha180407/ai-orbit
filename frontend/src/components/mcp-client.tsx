@@ -59,7 +59,7 @@ export const MCP_SUBCATEGORIES: MCPSubCategory[] = [
 export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { defaultCategory?: string; defaultSubCategory?: string }) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
+
   const q = searchParams.get("q") ?? "";
 
   const initialSub = defaultSubCategory || defaultCategory || searchParams.get("subCategory") || searchParams.get("category") || "";
@@ -90,7 +90,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
 
   const handleSelectSubCategory = (slug: string | null) => {
     const newSlug = slug === activeSubCategory ? "" : (slug || "");
-    
+
     setActiveSubCategory(newSlug);
     setCurrentPage(1);
 
@@ -98,14 +98,14 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
     const params = new URLSearchParams(currentSearch);
     params.delete("category");
     params.delete("subCategory");
-    
+
     if (newSlug) {
       params.set("subCategory", newSlug);
     }
 
     const queryString = params.toString();
     const newUrl = queryString ? `/mcp?${queryString}` : `/mcp`;
-    
+
     if (typeof window !== "undefined") {
       window.history.constructor.prototype.replaceState.call(window.history, null, "", newUrl);
     }
@@ -131,7 +131,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
         page: currentPage,
         limit: pageSize,
       };
-      
+
       if (q) apiParams.search = q;
       if (activeSubCategory) apiParams.subCategory = activeSubCategory;
 
@@ -200,11 +200,10 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
           <button
             ref={(el) => { subCatRefs.current["all"] = el; }}
             onClick={() => handleSelectSubCategory(null)}
-            className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
-              !activeSubCategory
+            className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${!activeSubCategory
                 ? "bg-white text-black border-white shadow-lg shadow-white/5"
                 : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-            }`}
+              }`}
           >
             All
           </button>
@@ -213,15 +212,30 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
             return (
               <button
                 key={sub.id}
-                ref={(el) => { subCatRefs.current[sub.slug] = el; }}
-                onClick={() => {
+                onClick={(e) => {
                   handleSelectSubCategory(sub.slug);
+
+                  const btn = e.currentTarget;
+                  const container = btn.parentElement;
+                  if (container && window.innerWidth < 768) {
+                    requestAnimationFrame(() => {
+                      const cRect = container.getBoundingClientRect();
+                      const bRect = btn.getBoundingClientRect();
+                      const bLeft = bRect.left - cRect.left + container.scrollLeft;
+                      const bRight = bLeft + bRect.width;
+
+                      if (bLeft < container.scrollLeft) {
+                        container.scrollTo({ left: bLeft - 16, behavior: "smooth" });
+                      } else if (bRight > container.scrollLeft + container.clientWidth) {
+                        container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: "smooth" });
+                      }
+                    });
+                  }
                 }}
-                className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
-                  isSelected
+                className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                }`}
+                  }`}
               >
                 {sub.name}
               </button>
@@ -236,7 +250,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 py-2.5`}>
                     <div className="pl-4 md:pl-0"><div className="h-8 w-8 md:h-11 md:w-11 animate-pulse rounded-lg bg-[#18181C]" /></div>
-                    
+
                     {/* Skeleton Mobile Name / Desktop Combined */}
                     <div className="space-y-1.5 pr-2 md:pr-0">
                       <div className="h-3 w-16 md:w-32 animate-pulse rounded bg-[#18181C]" />
@@ -246,7 +260,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                     <div className="md:hidden pr-4">
                       <div className="h-2 w-32 animate-pulse rounded bg-[#18181C]" />
                     </div>
-                    
+
                     <div className="h-3 w-20 animate-pulse rounded bg-[#18181C] pl-4 md:pl-0" />
                     <div className="h-4.5 w-16 animate-pulse rounded-full bg-[#18181C]" />
                     <div className="h-4 w-24 animate-pulse rounded bg-[#18181C]" />
@@ -278,13 +292,13 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
           ) : (
             <div className={`overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
               <div className={`flex flex-col relative bg-[#000000] ${COL_MIN_WIDTH}`}>
-                
+
                 {/* Column Headers */}
                 <div className="border-b border-[#232326]/60 bg-[#131316] sticky top-0 z-30">
                   <div className={`grid ${COL_TEMPLATE} items-center gap-4 py-2`}>
                     {COLUMN_HEADERS.map((h, i) => {
                       if (i === 0) return <div key={i} className="sticky left-0 md:static z-40 bg-[#131316] md:bg-transparent h-full pl-4 shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none" />;
-                      
+
                       if (i === 1) return (
                         <React.Fragment key={i}>
                           <div className="relative flex items-center gap-2 sticky left-[64px] md:static z-40 bg-[#131316] md:bg-transparent shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none h-full pr-2 md:pr-0 before:content-[''] before:absolute before:inset-y-0 before:-left-[16px] before:w-[16px] before:bg-[#131316] md:before:hidden">
@@ -294,11 +308,11 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                           <span className="md:hidden text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pr-2">DESCRIPTION</span>
                         </React.Fragment>
                       );
-                      
+
                       if (i === 2) return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase pl-4 md:pl-0">{h}</span>;
                       if (i >= 3 && i <= 6) return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase text-center block w-full">{h}</span>;
                       if (i === COLUMN_HEADERS.length - 1) return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase pr-4 md:pr-0 text-center block w-full">{h}</span>;
-                      
+
                       return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase">{h}</span>;
                     })}
                   </div>
@@ -312,7 +326,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                     const prefetchRow = () => {
                       try {
                         router.prefetch(targetUrl);
-                      } catch {}
+                      } catch { }
                     };
 
                     return (
@@ -379,11 +393,10 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
 
                         {/* Column 4: Type */}
                         <div className="flex items-center justify-center w-full">
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-bold border ${
-                            item.itemType === "SERVER"
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-bold border ${item.itemType === "SERVER"
                               ? "bg-[#6E56CF]/10 text-[#6E56CF] border-[#6E56CF]/30"
                               : "bg-[#FFC53D]/10 text-[#FFC53D] border-[#FFC53D]/30"
-                          }`}>
+                            }`}>
                             {item.itemType}
                           </span>
                         </div>

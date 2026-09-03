@@ -82,10 +82,10 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
     ? "alphabetical"
     : rawSort === "oldest"
-    ? "oldest"
-    : rawSort === "rating"
-    ? "releaseDate"
-    : "newest";
+      ? "oldest"
+      : rawSort === "rating"
+        ? "releaseDate"
+        : "newest";
 
   // Driven by the global search bar, which writes `?q=` to the URL — same
   // convention as ToolsClient. The Models API's own query param is named
@@ -120,20 +120,20 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   });
   const [isSaving, setIsSaving] = useState(false);
 
-      const updateParams = (updates: Record<string, string | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
+  const updateParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
 
-      for (const [key, value] of Object.entries(updates)) {
-        if (value) {
-          params.set(key, value);
-        } else {
-          params.delete(key);
-        }
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
       }
+    }
 
-      const query = params.toString();
-      router.push(query ? `?${query}` : "?");
-    };
+    const query = params.toString();
+    router.push(query ? `?${query}` : "?");
+  };
 
   const handleSelectSubCategory = (slug: string | null) => {
     setCurrentPage(1);
@@ -289,24 +289,28 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
               <button
                 ref={(el) => { subCatRefs.current["all"] = el; }}
                 onClick={() => handleSelectSubCategory(null)}
-                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
-                  !selectedSubCategorySlug
+                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${!selectedSubCategorySlug
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                }`}
+                  }`}
               >
                 All
               </button>
               {subCategories.map((sub) => (
                 <button
                   key={sub.id}
-                  ref={(el) => { subCatRefs.current[sub.slug] = el; }}
-                  onClick={() => handleSelectSubCategory(sub.slug)}
-                  className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
-                    selectedSubCategorySlug === sub.slug
+                  onClick={(e) => {
+                    handleSelectSubCategory(sub.slug);
+                    e.currentTarget.scrollIntoView({
+                      behavior: "smooth",
+                      block: "nearest",
+                      inline: "nearest"
+                    });
+                  }}
+                  className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${selectedSubCategorySlug === sub.slug
                       ? "bg-white text-black border-white shadow-lg shadow-white/5"
                       : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                  }`}
+                    }`}
                 >
                   {sub.name}
                 </button>

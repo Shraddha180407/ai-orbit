@@ -182,12 +182,28 @@ export function VideosPageClient({
                   params.delete("page"); // category change resets to page 1
                   const qs = params.toString();
                   router.push(`/videos${qs ? `?${qs}` : ""}`, { scroll: false });
+
+                  const btn = e.currentTarget;
+                  const container = btn.parentElement;
+                  if (container && window.innerWidth < 768) {
+                    requestAnimationFrame(() => {
+                      const cRect = container.getBoundingClientRect();
+                      const bRect = btn.getBoundingClientRect();
+                      const bLeft = bRect.left - cRect.left + container.scrollLeft;
+                      const bRight = bLeft + bRect.width;
+
+                      if (bLeft < container.scrollLeft) {
+                        container.scrollTo({ left: bLeft - 16, behavior: "smooth" });
+                      } else if (bRight > container.scrollLeft + container.clientWidth) {
+                        container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: "smooth" });
+                      }
+                    });
+                  }
                 }}
-                className={`rounded-full px-4 py-2 text-[11.5px] font-medium whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
-                  isSelected
+                className={`rounded-full px-4 py-2 text-[11.5px] font-medium whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                }`}
+                  }`}
               >
                 {topic.name}
               </button>
