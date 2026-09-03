@@ -39,16 +39,24 @@ function BoolPill({
   value,
   trueLabel,
   falseLabel,
+  trueColor = "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+  falseColor = "text-[#71717A] bg-[#18181C] border-[#232326]/60",
 }: {
-  value: boolean | undefined;
+  value: boolean | null | undefined;
   trueLabel: string;
   falseLabel: string;
+  trueColor?: string;
+  falseColor?: string;
 }) {
-  if (value === undefined) {
-    return <span className="text-[11px] text-[#71717A] font-mono">—</span>;
+  if (value === null || value === undefined) {
+    return <span className="text-[11px] text-[#71717A]">—</span>;
   }
   return (
-    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-mono font-semibold ${
+        value ? trueColor : falseColor
+      }`}
+    >
       {value ? trueLabel : falseLabel}
     </span>
   );
@@ -83,6 +91,7 @@ function ModelRow({
   isCompareFull: boolean;
   onToggleCompare: (model: AIModel) => void;
 }) {
+  const [logoFailed, setLogoFailed] = useState(false);
   const companyName = model.provider?.name || model.creator || "—";
   const companyLogo = model.provider?.logoUrl ?? null;
   const typeLabel = model.type || model.modality || null;
@@ -107,16 +116,19 @@ function ModelRow({
       <span className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal,#6E56CF)] transition-all duration-200 group-hover:h-[70%]" />
 
       <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
-        {companyLogo ? (
+        {companyLogo && !logoFailed ? (
           <Image
             src={companyLogo}
             alt={`${companyName} logo`}
             width={36}
             height={36}
             className="h-8 w-8 object-contain"
+            onError={() => setLogoFailed(true)}
           />
         ) : (
-          <span className="text-base font-bold text-neutral-900">{model.name.charAt(0)}</span>
+          <span className="text-sm font-bold text-neutral-900">
+            {model.name.charAt(0).toUpperCase()}
+          </span>
         )}
       </div>
 
@@ -158,7 +170,7 @@ function ModelRow({
             e.stopPropagation();
             onToggleCompare(model);
           }}
-          className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-0.5 text-[10px] font-mono font-semibold transition-colors ${
+          className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-mono font-semibold transition-colors ${
             isSelected
               ? "border-transparent text-black"
               : !isSelected && isCompareFull
@@ -169,7 +181,7 @@ function ModelRow({
           aria-label={isSelected ? `Remove ${model.name} from compare` : `Add ${model.name} to compare`}
           aria-pressed={isSelected}
         >
-          {isSelected ? <Check size={11} /> : <GitCompare size={11} />}
+          {isSelected ? <Check size={10} /> : <GitCompare size={10} />}
           {isSelected ? "Added" : "Compare"}
         </button>
       </div>
@@ -250,7 +262,7 @@ export function ModelListView({
           compareSet.length > 0 ? "mb-24" : ""
         }`}
       >
-        <div className="overflow-x-auto touch-scroll-x">
+        <div className="overflow-x-auto">
           <div className="border-b border-[#232326]/60 bg-[#131316]/40">
             <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2`}>
               {COLUMN_HEADERS.map((h) => (
@@ -283,7 +295,7 @@ export function ModelListView({
       </div>
 
       {compareSet.length > 0 && (
-        <div className="fixed inset-x-0 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 flex justify-center px-2 sm:px-4">
+        <div className="fixed inset-x-0 bottom-2 sm:bottom-4 z-40 flex justify-center px-2 sm:px-4">
           <div className="flex w-full max-w-xl items-center gap-2 sm:gap-3 rounded-xl border border-[#232326]/70 bg-[#111113]/95 backdrop-blur px-3 sm:px-4 py-2.5 sm:py-3 shadow-2xl shadow-black/60">
             <div className="flex flex-1 items-center gap-1.5 sm:gap-2 min-w-0">
               {Array.from({ length: MAX_COMPARE }).map((_, i) => {
@@ -323,7 +335,7 @@ export function ModelListView({
               disabled={compareSet.length !== MAX_COMPARE}
               className={`shrink-0 inline-flex items-center gap-1 sm:gap-1.5 rounded-lg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold transition-colors ${
                 compareSet.length === MAX_COMPARE
-                  ? "text-white shadow-md shadow-[#6E56CF]/30"
+                  ? "text-black"
                   : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
               }`}
               style={
@@ -333,7 +345,7 @@ export function ModelListView({
               }
             >
               <GitCompare size={13} />
-              <span className="hidden 2xs:inline">Compare</span>
+              <span className="hidden xs:inline">Compare</span>
             </button>
 
             <button
