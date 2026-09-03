@@ -190,6 +190,9 @@ export type Company = {
   views?: number;
   upvotes?: number;
   impressions?: number;
+  devices?: any[];
+repositories?: any[];
+robots?: any[];
   tools?: {
     id: string;
     slug: string;
