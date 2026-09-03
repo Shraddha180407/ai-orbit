@@ -144,7 +144,7 @@ export async function fetchCompanyDetails(slug: string): Promise<any> {
   return (res && !res.error) ? res : null;
 }
 
-import type { AIModel, ModelsListResponse, ModelsSortOption } from "./types";
+import type { AIModel, ModelsListResponse, ModelsSortOption, ModelFilterOptions, ModelType } from "./types";
 
 export interface ModelsQuery {
   search?: string;
@@ -152,6 +152,9 @@ export interface ModelsQuery {
   modality?: string;
   creator?: string;
   subCategory?: string;
+  modelType?: ModelType;
+  openSource?: boolean;
+  primaryTask?: string;
   sort?: ModelsSortOption;
   page?: number;
   limit?: number;
@@ -164,6 +167,9 @@ export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListR
   if (params.modality) url.searchParams.set("modality", params.modality);
   if (params.creator) url.searchParams.set("creator", params.creator);
   if (params.subCategory) url.searchParams.set("subCategory", params.subCategory);
+  if (params.modelType) url.searchParams.set("modelType", params.modelType);
+  if (params.openSource !== undefined) url.searchParams.set("openSource", String(params.openSource));
+  if (params.primaryTask) url.searchParams.set("primaryTask", params.primaryTask);
   if (params.sort) url.searchParams.set("sort", params.sort);
   if (params.page) url.searchParams.set("page", String(params.page));
   if (params.limit) url.searchParams.set("limit", String(params.limit));
@@ -207,6 +213,25 @@ export async function fetchAllModels(): Promise<AIModel[]> {
 export async function fetchModelById(id: string): Promise<import("./types").ModelDetail | null> {
   const url = `${API_URL}/api/v1/models/${encodeURIComponent(id)}`;
   return cachedFetchJson(url, null, { ttlMs: 15 * 60 * 1000 });
+}
+
+/** Provider / primary-task / model-type options for the models filter UI. */
+export async function fetchModelFilters(): Promise<ModelFilterOptions> {
+  const url = `${API_URL}/api/v1/models/filters`;
+  const empty: ModelFilterOptions = { providers: [], primaryTasks: [], modelTypes: [] };
+  return cachedFetchJson<ModelFilterOptions>(url, empty, { ttlMs: 30 * 60 * 1000 });
+}
+
+export interface ModelsCompareResponse {
+  items: import("./types").ModelDetail[];
+}
+
+/** Uses the backend's dedicated compare endpoint (validates count, 404s on missing ids, preserves order). */
+export async function fetchModelsCompare(ids: string[]): Promise<import("./types").ModelDetail[]> {
+  if (ids.length === 0) return [];
+  const url = `${API_URL}/api/v1/models/compare?ids=${encodeURIComponent(ids.join(","))}`;
+  const data = await cachedFetchJson<ModelsCompareResponse | null>(url, null, { ttlMs: 5 * 60 * 1000 });
+  return data?.items ?? [];
 }
 
 export async function fetchAllNews(): Promise<any[]> {
