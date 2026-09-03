@@ -16,6 +16,7 @@ import { toast } from "sonner";
 
 import { Pagination } from "@/components/Pagination";
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { scrollChipIntoView } from "@/lib/utils";
 
 const MODEL_SUBCATEGORIES: ModelSubCategory[] = [
   { id: "1", name: "LLM", slug: "llm" },
@@ -53,14 +54,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
     const target = subCatRefs.current[activeKey];
     if (!target) return;
 
-    const targetLeft = target.offsetLeft;
-    const targetWidth = target.offsetWidth;
-    const containerWidth = container.clientWidth;
-
-    container.scrollTo({
-      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
-      behavior: "smooth",
-    });
+    scrollChipIntoView(container, target);
   }, [selectedSubCategorySlug]);
 
   const rawSort = searchParams.get("sort") || "newest";

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Device, DeviceSubCategory } from "@/lib/types";
 import { fetchAllDevices } from "@/lib/api";
+import { scrollChipIntoView } from "@/lib/utils";
 import { DEVICES_DATA, DeviceData, getMainTaskColor } from "@/data/devices";
 import Flame    from 'lucide-react/dist/esm/icons/flame';
 import Wrench      from 'lucide-react/dist/esm/icons/wrench';
@@ -220,14 +221,7 @@ export function DevicesClient({ defaultCategory }: { defaultCategory?: string })
     const target = subCatRefs.current[activeKey];
     if (!target) return;
 
-    const targetLeft = target.offsetLeft;
-    const targetWidth = target.offsetWidth;
-    const containerWidth = container.clientWidth;
-
-    container.scrollTo({
-      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
-      behavior: "smooth",
-    });
+    scrollChipIntoView(container, target);
   }, [selectedCategory]);
 
   useEffect(() => {

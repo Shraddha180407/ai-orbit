@@ -33,6 +33,7 @@ import { fetchTasks as fetchTasksApi } from "@/lib/tasks-api";
 
 // NEW: Import the unified filter dropdown
 import { UnifiedFilterDropdown } from "@/components/UnifiedFilterDropdown";
+import { scrollChipIntoView } from "@/lib/utils";
 
 function getSuggestionHref(s: RealSearchSuggestion): string {
   const meta = ENTITY_META[s.type];
@@ -320,23 +321,12 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Only scroll if content actually overflows the container (mobile / small screens)
-    if (container.scrollWidth <= container.clientWidth) return;
-
     const activeIndex = DIRECTORY_CARDS.findIndex((c) => isCardActive(c));
     if (activeIndex === -1) return;
     const target = cardRefs.current[activeIndex];
     if (!target) return;
 
-    const targetLeft = target.offsetLeft;
-    const targetWidth = target.offsetWidth;
-    const containerWidth = container.clientWidth;
-
-    const targetScrollLeft = targetLeft - (containerWidth / 2) + (targetWidth / 2);
-    container.scrollTo({
-      left: Math.max(0, targetScrollLeft),
-      behavior: smooth ? "smooth" : "auto",
-    });
+    scrollChipIntoView(container, target, smooth);
   };
 
   useEffect(() => {

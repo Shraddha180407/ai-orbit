@@ -7,6 +7,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { ToolListView } from "@/components/ToolListView";
 import { API_URL } from "@/lib/api";
 import type { SortOption } from "@/lib/types";
+import { scrollChipIntoView } from "@/lib/utils";
 
 type DirectoryMode = "tools" | "personal" | "creativity" | "agents";
 
@@ -118,14 +119,7 @@ export function ToolsClient({
     const target = subCatRefs.current[activeCategory || ""];
     if (!target) return;
 
-    const targetLeft = target.offsetLeft;
-    const targetWidth = target.offsetWidth;
-    const containerWidth = container.clientWidth;
-
-    container.scrollTo({
-      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
-      behavior: "smooth",
-    });
+    scrollChipIntoView(container, target);
   }, [activeCategory]);
 
   // FIXED: If the mode changes (e.g. going from Agents to Tools), force the category and page to reset 

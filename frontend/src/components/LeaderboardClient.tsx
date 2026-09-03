@@ -13,7 +13,7 @@ import Search from 'lucide-react/dist/esm/icons/search';
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import X from 'lucide-react/dist/esm/icons/x';
 import Info from 'lucide-react/dist/esm/icons/info';
-import { cn } from "@/lib/utils";
+import { cn, scrollChipIntoView } from "@/lib/utils";
 import { fetchLeaderboardTools, fetchLeaderboardModels, fetchLeaderboardCompanies } from "@/lib/api";
 import { Pagination } from "@/components/Pagination";
 
@@ -206,14 +206,7 @@ export function LeaderboardClient() {
     const target = subCatRefs.current[activeCategory];
     if (!target) return;
 
-    const targetLeft = target.offsetLeft;
-    const targetWidth = target.offsetWidth;
-    const containerWidth = container.clientWidth;
-
-    container.scrollTo({
-      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
-      behavior: "smooth",
-    });
+    scrollChipIntoView(container, target);
   }, [activeCategory, activeTab]);
 
   const [tools, setTools] = useState<LeaderboardTool[]>([]);

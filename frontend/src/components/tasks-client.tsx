@@ -20,6 +20,7 @@ import { TaskSkeleton } from "./TaskSkeleton";
 import { EmptyTasks } from "./EmptyTasks";
 import { TaskErrorState } from "./TaskErrorState";
 import { TaskAuthRequired } from "./TaskAuthRequired";
+import { scrollChipIntoView } from "@/lib/utils";
 
 type TasksClientProps = {
   initialData?: TaskListResponse;
@@ -100,14 +101,7 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
     const target = subCatRefs.current[activeKey];
     if (!target) return;
 
-    const targetLeft = target.offsetLeft;
-    const targetWidth = target.offsetWidth;
-    const containerWidth = container.clientWidth;
-
-    container.scrollTo({
-      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
-      behavior: "smooth",
-    });
+    scrollChipIntoView(container, target);
   }, [activeCategory]);
 
   const currentPage = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);

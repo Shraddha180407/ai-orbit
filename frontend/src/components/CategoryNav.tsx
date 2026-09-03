@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { scrollChipIntoView } from "@/lib/utils";
 
 
 const FILTER_OPTIONS = [
@@ -59,14 +60,7 @@ export function CategoryNav() {
     const target = itemRefs.current[activeIdx];
     if (!target) return;
 
-    const targetLeft = target.offsetLeft;
-    const targetWidth = target.offsetWidth;
-    const containerWidth = container.clientWidth;
-
-    container.scrollTo({
-      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
-      behavior: smooth ? "smooth" : "auto",
-    });
+    scrollChipIntoView(container, target, smooth);
   };
 
   useEffect(() => {

@@ -18,6 +18,7 @@ import { CategoryChip } from "@/components/CategoryChip";
 import { PricingBadge } from "@/components/PricingBadge";
 import { Pagination } from "@/components/Pagination";
 import type { MCPCategory, MCPSubCategory } from "@/lib/types";
+import { scrollChipIntoView } from "@/lib/utils";
 
 // FIXED: Adjusted desktop Grid 'fr' ratios. Shrank Name/Desc to 2.2fr and expanded Company to 1.2fr to perfectly balance the visual gaps.
 const COL_TEMPLATE = "grid-cols-[48px_70px_190px_minmax(130px,1.4fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)] md:grid-cols-[40px_minmax(220px,2.2fr)_minmax(130px,1.2fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)]";
@@ -76,14 +77,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
     const target = subCatRefs.current[activeKey];
     if (!target) return;
 
-    const targetLeft = target.offsetLeft;
-    const targetWidth = target.offsetWidth;
-    const containerWidth = container.clientWidth;
-
-    container.scrollTo({
-      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
-      behavior: "smooth",
-    });
+    scrollChipIntoView(container, target);
   }, [activeSubCategory]);
 
   useEffect(() => {
