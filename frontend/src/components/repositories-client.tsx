@@ -291,7 +291,14 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
             {subCategories.map((sub) => (
               <button
                 key={sub.id}
-                onClick={() => handleSelectSubCategory(sub.slug)}
+                onClick={(e) => {
+                  handleSelectSubCategory(sub.slug);
+                  e.currentTarget.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "nearest"
+                  });
+                }}
                 className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                   selectedSubCategorySlug === sub.slug
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"

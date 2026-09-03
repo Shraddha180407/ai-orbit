@@ -107,6 +107,25 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
 
   const requestIdRef = useRef(0);
 
+  // Scroll active category pill into view on mobile whenever activeCategory changes
+  const categoryRowRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
+    const container = categoryRowRef.current;
+    if (!container) return;
+    const activeBtn = container.querySelector<HTMLElement>('[data-active="true"]');
+    if (!activeBtn) return;
+    const cRect = container.getBoundingClientRect();
+    const bRect = activeBtn.getBoundingClientRect();
+    const bLeft = bRect.left - cRect.left + container.scrollLeft;
+    const bRight = bLeft + bRect.width;
+    if (bLeft < container.scrollLeft) {
+      container.scrollTo({ left: bLeft - 16, behavior: 'smooth' });
+    } else if (bRight > container.scrollLeft + container.clientWidth) {
+      container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: 'smooth' });
+    }
+  }, [activeCategory]);
+
   const queryParams = useMemo(
     () => ({
       sort: effectiveSort,
@@ -199,7 +218,7 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
 
   return (
     <main id="tasks-container" className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 py-6">
-      <div className="mb-4 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
+      <div ref={categoryRowRef} className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
         {TASK_CATEGORIES.map((topic) => {
           const isSelected = activeCategory === topic.slug;
           return (
@@ -207,13 +226,9 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
               key={topic.name}
               type="button"
               aria-current={isSelected ? "true" : undefined}
-              onClick={(e) => {
+              data-active={isSelected ? "true" : undefined}
+              onClick={() => {
                 navigate({ category: topic.slug, page: 1 });
-                e.currentTarget.scrollIntoView({
-                  behavior: "smooth",
-                  block: "nearest",
-                  inline: "center"
-                });
               }}
               className={`rounded-full px-3.5 py-1 text-[12px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                 isSelected

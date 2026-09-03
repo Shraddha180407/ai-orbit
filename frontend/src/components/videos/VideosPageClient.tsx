@@ -172,11 +172,22 @@ export function VideosPageClient({
                   const qs = params.toString();
                   router.push(`/videos${qs ? `?${qs}` : ""}`, { scroll: false });
 
-                  e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center",
-                  });
+                  const btn = e.currentTarget;
+                  const container = btn.parentElement;
+                  if (container && window.innerWidth < 768) {
+                    requestAnimationFrame(() => {
+                      const cRect = container.getBoundingClientRect();
+                      const bRect = btn.getBoundingClientRect();
+                      const bLeft = bRect.left - cRect.left + container.scrollLeft;
+                      const bRight = bLeft + bRect.width;
+
+                      if (bLeft < container.scrollLeft) {
+                        container.scrollTo({ left: bLeft - 16, behavior: "smooth" });
+                      } else if (bRight > container.scrollLeft + container.clientWidth) {
+                        container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: "smooth" });
+                      }
+                    });
+                  }
                 }}
                 className={`rounded-full px-4 py-2 text-[11.5px] font-medium whitespace-nowrap transition-all duration-200 border ${
                   isSelected

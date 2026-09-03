@@ -172,8 +172,8 @@ export function HeroSearchBar({ defaultValue }: { defaultValue?: string }) {
   const recentToShow = useMemo(() => recent.slice(0, 5), [recent]);
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-[900px] mx-auto mb-[22px] px-1 sm:px-0">
-      <div className="relative w-full rounded-lg border border-[#232326] bg-[#111113] h-[44px] sm:h-[48px] flex items-center px-3.5 sm:px-5 pr-16 sm:pr-20 focus-within:border-neutral-500 transition-all duration-300">
+    <div ref={containerRef} className="relative w-full max-w-[900px] mx-auto mb-[14px] sm:mb-[22px] px-1 sm:px-0">
+      <div className="relative w-full rounded-lg border border-[#232326] bg-[#111113] h-[38px] sm:h-[48px] flex items-center px-3.5 sm:px-5 pr-16 sm:pr-20 focus-within:border-neutral-500 transition-all duration-300">
         <input
           ref={inputRef}
           type="text"

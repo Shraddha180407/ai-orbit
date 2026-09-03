@@ -125,7 +125,7 @@ export function HeroFeatureChips() {
                   toolsEl.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
               }}
-              className="group inline-flex shrink-0 whitespace-nowrap items-center rounded-full border font-medium transition-all duration-150 active:scale-95 cursor-pointer h-6 sm:h-[25px] px-2 sm:px-2.5 gap-1.5 text-[10.5px] sm:text-[11px] shadow-sm"
+              className="group inline-flex shrink-0 whitespace-nowrap items-center rounded-full border font-medium transition-all duration-150 active:scale-95 cursor-pointer h-[22px] sm:h-[25px] px-1.5 sm:px-2.5 gap-1 sm:gap-1.5 text-[9px] sm:text-[11px] shadow-sm"
               style={{
                 borderColor: filled ? f.color : `${f.color}40`,
                 backgroundColor: filled ? `${f.color}15` : "#0d0d10",

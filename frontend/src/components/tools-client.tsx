@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
@@ -116,6 +116,27 @@ export function ToolsClient({
     setCurrentPage(Number(searchParams.get("page")) || 1);
   }, [mode, defaultCategory, searchParams]);
 
+  // Scroll the active category pill into view on mobile after every category change
+  const categoryRowRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
+    const container = categoryRowRef.current;
+    if (!container) return;
+    const activeBtn = container.querySelector<HTMLElement>('[data-active="true"]');
+    if (!activeBtn) return;
+    const cRect = container.getBoundingClientRect();
+    const bRect = activeBtn.getBoundingClientRect();
+    const bLeft = bRect.left - cRect.left + container.scrollLeft;
+    const bRight = bLeft + bRect.width;
+    if (bLeft < container.scrollLeft) {
+      container.scrollTo({ left: bLeft - 16, behavior: 'smooth' });
+    } else if (bRight > container.scrollLeft + container.clientWidth) {
+      container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: 'smooth' });
+    }
+  }, [activeCategory]);
+
+
+
   const handleCategoryChange = (slug: string) => {
     setActiveCategory(slug);
     setCurrentPage(1);
@@ -204,20 +225,16 @@ export function ToolsClient({
       <div className={`mx-auto w-full max-w-[1600px] space-y-4 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
         
         {/* Category Row */}
-        <div className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
+        <div ref={categoryRowRef} className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
               <button
                 key={topic.name}
-                onClick={(e) => {
+                onClick={() => {
                   handleCategoryChange(topic.slug);
-                  e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center"
-                  });
                 }}
+                data-active={isSelected ? "true" : undefined}
                 className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                   isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
