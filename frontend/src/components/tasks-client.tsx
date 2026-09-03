@@ -5,7 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import ChevronUp from 'lucide-react/dist/esm/icons/chevron-up';
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down';
 import ChevronsUpDown from 'lucide-react/dist/esm/icons/chevrons-up-down';
-import {Pagination} from "./Pagination";
+import { Pagination } from "./Pagination";
 
 import {
   fetchTasks,
@@ -20,6 +20,7 @@ import { TaskSkeleton } from "./TaskSkeleton";
 import { EmptyTasks } from "./EmptyTasks";
 import { TaskErrorState } from "./TaskErrorState";
 import { TaskAuthRequired } from "./TaskAuthRequired";
+import { scrollChipIntoView } from "@/lib/utils";
 
 type TasksClientProps = {
   initialData?: TaskListResponse;
@@ -90,6 +91,19 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
   const searchParams = useSearchParams();
 
   const activeCategory = defaultCategory || searchParams.get("category") || "";
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const activeKey = activeCategory || "all";
+    const target = subCatRefs.current[activeKey];
+    if (!target) return;
+
+    scrollChipIntoView(container, target);
+  }, [activeCategory]);
+
   const currentPage = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
   const [pageSize, setPageSize] = useState<number>(100);
 
@@ -224,17 +238,17 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
           return (
             <button
               key={topic.name}
+              ref={(el) => { subCatRefs.current[topic.slug] = el; }}
               type="button"
               aria-current={isSelected ? "true" : undefined}
               data-active={isSelected ? "true" : undefined}
               onClick={() => {
                 navigate({ category: topic.slug, page: 1 });
               }}
-              className={`rounded-full px-3.5 py-1 text-[12px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
-                isSelected
+              className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${isSelected
                   ? "bg-white text-black border-white shadow-lg shadow-white/5"
                   : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-              }`}
+                }`}
             >
               {topic.name}
             </button>
@@ -254,7 +268,7 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
         <>
           <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#131316]/60 to-[#0D0D10]/60 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_20px_60px_-30px_rgba(0,0,0,0.8)] ring-1 ring-[#232326]/70">
             <div className="w-full">
-              <div className="grid grid-cols-[40px_1fr_auto] sm:grid-cols-[44px_minmax(220px,1.5fr)_repeat(4,minmax(70px,0.8fr))_minmax(70px,0.8fr)] items-center gap-3 sm:gap-3 px-4 sm:px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
+              <div className="grid grid-cols-[40px_minmax(0,1fr)_auto] sm:grid-cols-[44px_minmax(0,2fr)_repeat(4,minmax(0,1fr))_100px] items-center gap-3 px-4 sm:px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
                 <span />
                 <button
                   type="button"

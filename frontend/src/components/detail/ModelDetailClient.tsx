@@ -15,6 +15,7 @@ import { fetchModelById, API_URL, getFromCache } from "@/lib/api";
 import { isModelBookmarked, toggleModelBookmark } from "@/lib/model-bookmarks";
 import { CategoryChip } from "@/components/CategoryChip";
 import type { ModelDetail, AIModel } from "@/lib/types";
+import { formatModelType } from "@/lib/types";
 
 function Spec({ label, value }: { label: string; value: string }) {
   return (
@@ -128,7 +129,7 @@ export function ModelDetailClient() {
   }
 
   const companyName = model.provider?.name || model.creator;
-  const typeLabel = model.type || model.modality || "—";
+  const typeLabel = formatModelType(model.modelType) || model.modality || "—";
   const tasks = (model.tasks ?? []).map((t) => t.task).filter(Boolean);
   const related = model.relatedModels ?? [];
 

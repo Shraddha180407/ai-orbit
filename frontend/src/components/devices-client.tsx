@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Device, DeviceSubCategory } from "@/lib/types";
 import { fetchAllDevices } from "@/lib/api";
+import { scrollChipIntoView } from "@/lib/utils";
 import { DEVICES_DATA, DeviceData, getMainTaskColor } from "@/data/devices";
 import Flame    from 'lucide-react/dist/esm/icons/flame';
 import Wrench      from 'lucide-react/dist/esm/icons/wrench';
@@ -209,6 +210,19 @@ export function DevicesClient({ defaultCategory }: { defaultCategory?: string })
     }
     return ALL_CATEGORIES;
   });
+
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const activeKey = selectedCategory || ALL_CATEGORIES;
+    const target = subCatRefs.current[activeKey];
+    if (!target) return;
+
+    scrollChipIntoView(container, target);
+  }, [selectedCategory]);
 
   useEffect(() => {
     if (defaultCategory !== undefined) {
@@ -439,8 +453,12 @@ useEffect(() => {
     <>
     <div className="w-full flex-1 flex flex-col">
       <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1">
-        <div className="flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full -mx-3 sm:mx-0 px-3 sm:px-0">
+        <div
+          ref={subCatContainerRef}
+          className="flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full -mx-3 sm:mx-0 px-3 sm:px-0 overflow-x-auto scroll-smooth"
+        >
           <button
+            ref={(el) => { subCatRefs.current[ALL_CATEGORIES] = el; }}
             onClick={() => {
               setSelectedCategory(ALL_CATEGORIES);
               setCurrentPage(1);
@@ -457,6 +475,7 @@ useEffect(() => {
           {DEVICE_SUBCATEGORIES.map((sub) => (
             <button
               key={sub}
+              ref={(el) => { subCatRefs.current[sub] = el; }}
               onClick={() => {
                 setSelectedCategory(sub);
                 setCurrentPage(1);

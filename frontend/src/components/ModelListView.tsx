@@ -10,6 +10,7 @@ import Check from 'lucide-react/dist/esm/icons/check';
 import X from 'lucide-react/dist/esm/icons/x';
 import { CategoryChip } from "@/components/CategoryChip";
 import type { AIModel } from "@/lib/types";
+import { formatModelType } from "@/lib/types";
 import { API_URL, prefetchUrl } from "@/lib/api";
 
 const MAX_COMPARE = 2;
@@ -85,7 +86,7 @@ function ModelRow({
 }) {
   const companyName = model.provider?.name || model.creator || "—";
   const companyLogo = model.provider?.logoUrl ?? null;
-  const typeLabel = model.type || model.modality || null;
+  const typeLabel = formatModelType(model.modelType) || model.modality || null;
   const primaryTask = model.primaryTask ?? null;
   const openSource =
     model.openSource === undefined ? undefined : isTruthy(model.openSource);

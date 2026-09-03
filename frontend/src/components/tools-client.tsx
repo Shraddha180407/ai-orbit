@@ -7,6 +7,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { ToolListView } from "@/components/ToolListView";
 import { API_URL } from "@/lib/api";
 import type { SortOption } from "@/lib/types";
+import { scrollChipIntoView } from "@/lib/utils";
 
 type DirectoryMode = "tools" | "personal" | "creativity" | "agents";
 
@@ -81,12 +82,12 @@ const CATEGORY_MAP = {
   ]
 } as const;
 
-export function ToolsClient({ 
-  defaultMode, 
-  defaultCategory 
-}: { 
-  defaultMode?: DirectoryMode; 
-  defaultCategory?: string; 
+export function ToolsClient({
+  defaultMode,
+  defaultCategory
+}: {
+  defaultMode?: DirectoryMode;
+  defaultCategory?: string;
 }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -94,10 +95,10 @@ export function ToolsClient({
   // FIXED: Mode is now dynamically derived every render. It will instantly swap back to "tools" 
   // when navigating away from the "agents" page, completely bypassing the Next.js cache trap.
   const mode: DirectoryMode = defaultMode || (
-    pathname?.includes("personal") ? "personal" : 
-    pathname?.includes("creativity") ? "creativity" : 
-    pathname?.includes("agents") ? "agents" : 
-    "tools"
+    pathname?.includes("personal") ? "personal" :
+      pathname?.includes("creativity") ? "creativity" :
+        pathname?.includes("agents") ? "agents" :
+          "tools"
   );
 
   const [currentPage, setCurrentPage] = useState<number>(() => {
@@ -108,6 +109,18 @@ export function ToolsClient({
   const [activeCategory, setActiveCategory] = useState<string>(() => {
     return defaultCategory || searchParams.get("category") || "";
   });
+
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const target = subCatRefs.current[activeCategory || ""];
+    if (!target) return;
+
+    scrollChipIntoView(container, target);
+  }, [activeCategory]);
 
   // FIXED: If the mode changes (e.g. going from Agents to Tools), force the category and page to reset 
   // so the new page doesn't try to query the old page's categories.
@@ -182,8 +195,8 @@ export function ToolsClient({
       const endpoint = activeCategory
         ? `${API_URL}/api/v1/tools/category/${activeCategory}`
         : mode === "personal" || mode === "creativity"
-        ? `${API_URL}/api/v1/tools/category/${mode}`
-        : `${API_URL}/api/v1/tools`;
+          ? `${API_URL}/api/v1/tools/category/${mode}`
+          : `${API_URL}/api/v1/tools`;
 
       const res = await fetch(`${endpoint}?${query.toString()}`);
       if (!res.ok) return { tools: [], totalPages: 1 };
@@ -212,7 +225,7 @@ export function ToolsClient({
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     setCurrentPage(newPage);
-    
+
     // Scroll smoothly to top of grid
     const target = document.getElementById("tools");
     if (target) {
@@ -223,23 +236,26 @@ export function ToolsClient({
   return (
     <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-6">
       <div className={`mx-auto w-full max-w-[1600px] space-y-4 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
-        
+
         {/* Category Row */}
-        <div ref={categoryRowRef} className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
+        <div
+          ref={subCatContainerRef}
+          className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+        >
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
             return (
               <button
                 key={topic.name}
+                ref={(el) => { subCatRefs.current[topic.slug] = el; }}
                 onClick={() => {
                   handleCategoryChange(topic.slug);
                 }}
                 data-active={isSelected ? "true" : undefined}
-                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
-                  isSelected
+                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                }`}
+                  }`}
               >
                 {topic.name}
               </button>
@@ -247,40 +263,40 @@ export function ToolsClient({
           })}
         </div>
 
-        {/* List Grid */}
-        <ToolListView tools={tools} loading={isLoading} />
+    {/* List Grid */}
+    <ToolListView tools={tools} loading={isLoading} />
 
-        {/* Pagination Bar */}
-        {totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-2 pt-4 border-t border-[#232326]">
-            {/* Prev Button */}
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium border border-[#232326] bg-[#131316] text-neutral-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
+    {/* Pagination Bar */}
+    {totalPages > 1 && (
+      <div className="mt-8 flex items-center justify-center gap-2 pt-4 border-t border-[#232326]">
+        {/* Prev Button */}
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="rounded-lg px-3 py-1.5 text-xs font-medium border border-[#232326] bg-[#131316] text-neutral-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Previous
+        </button>
 
-            {/* Page Indicator */}
-            <div className="flex items-center gap-1 px-2">
-              <span className="text-xs text-neutral-400">
-                Page <strong className="text-white">{currentPage}</strong> of <strong className="text-white">{totalPages}</strong>
-              </span>
-            </div>
+        {/* Page Indicator */}
+        <div className="flex items-center gap-1 px-2">
+          <span className="text-xs text-neutral-400">
+            Page <strong className="text-white">{currentPage}</strong> of <strong className="text-white">{totalPages}</strong>
+          </span>
+        </div>
 
-            {/* Next Button */}
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium border border-[#232326] bg-[#131316] text-neutral-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        )}
-
+        {/* Next Button */}
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage >= totalPages}
+          className="rounded-lg px-3 py-1.5 text-xs font-medium border border-[#232326] bg-[#131316] text-neutral-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
       </div>
-    </div>
+    )}
+
+  </div>
+    </div >
   );
 }

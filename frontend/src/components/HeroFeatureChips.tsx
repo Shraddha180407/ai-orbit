@@ -54,7 +54,7 @@ export function HeroFeatureChips() {
       },
       initialPageParam: 1,
       staleTime: 10 * 60 * 1000,
-    }).catch(() => {});
+    }).catch(() => { });
 
     queryClient.prefetchInfiniteQuery({
       queryKey: ["tools", { q, category, pricing: targetPricing, sort: targetSort }],
@@ -73,7 +73,7 @@ export function HeroFeatureChips() {
       },
       initialPageParam: 1,
       staleTime: 10 * 60 * 1000,
-    }).catch(() => {});
+    }).catch(() => { });
   }, [searchParams, queryClient]);
 
   const handlePointerEnter = (f: typeof FILTERS[number]) => {
@@ -93,8 +93,8 @@ export function HeroFeatureChips() {
   };
 
   return (
-    <div className="w-full max-w-4xl relative z-10 flex items-center justify-start sm:justify-center touch-scroll-x scrollbar-none px-3 sm:px-2 select-none">
-      <div className="flex flex-nowrap items-center mx-auto sm:mx-auto min-w-max sm:min-w-0 gap-2 sm:gap-2.5">
+    <div className="w-full max-w-4xl relative z-10 flex items-center justify-center touch-scroll-x scrollbar-none px-2 sm:px-2 select-none">
+      <div className="flex flex-nowrap items-center justify-center mx-auto gap-1 sm:gap-2.5 max-w-full">
         {FILTERS.map((f) => {
           const currentVal = searchParams.get(f.param);
           const isActive = currentVal === f.value;
@@ -130,11 +130,11 @@ export function HeroFeatureChips() {
                 borderColor: filled ? f.color : `${f.color}40`,
                 backgroundColor: filled ? `${f.color}15` : "#0d0d10",
                 color: filled ? "#ffffff" : "#a1a1aa",
-                boxShadow: filled ? `0 0 10px ${f.color}20` : undefined,
+                boxShadow: filled ? `0 0 8px ${f.color}18` : undefined,
               }}
             >
               <span
-                className="flex shrink-0 items-center justify-center rounded-full border transition-colors duration-150 h-3.5 w-3.5"
+                className="flex shrink-0 items-center justify-center rounded-full border transition-colors duration-150 h-3 w-3 sm:h-3.5 sm:w-3.5"
                 style={{
                   backgroundColor: filled ? f.color : "transparent",
                   borderColor: f.color,
@@ -142,7 +142,7 @@ export function HeroFeatureChips() {
               >
                 <Icon
                   strokeWidth={2.25}
-                  className="h-2 w-2"
+                  className="h-1.5 w-1.5 sm:h-2 sm:w-2"
                   style={{
                     color: filled ? "#000000" : f.color,
                   }}

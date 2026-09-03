@@ -11,6 +11,7 @@ import { fetchAllRobots } from "@/lib/api";
 import { FALLBACK_ROBOTS } from "@/data/robots";
 import { CategoryChip } from "@/components/CategoryChip";
 import { Pagination } from "@/components/Pagination";
+import { scrollChipIntoView } from "@/lib/utils";
 
 // Fixed-width template to preserve all 8 columns across mobile and desktop
 const COL_TEMPLATE = "grid-cols-[44px_minmax(200px,2fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(90px,0.8fr)_minmax(140px,1fr)_minmax(80px,0.6fr)_minmax(80px,0.6fr)]";
@@ -180,6 +181,18 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
 
   const robots = (fetchedRobots && fetchedRobots.length > 0) ? fetchedRobots : FALLBACK_ROBOTS;
 
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const target = subCatRefs.current[activeCategory];
+    if (!target) return;
+
+    scrollChipIntoView(container, target);
+  }, [activeCategory]);
+
   useEffect(() => {
     if (defaultCategory !== undefined) {
       setActiveCategory(defaultCategory && ROBOT_SLUGS[defaultCategory] ? ROBOT_SLUGS[defaultCategory] : "All");
@@ -231,9 +244,9 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
       );
     }
     return list.slice().sort((a, b) => {
-      if (rawSort === "name-asc")  return a.name.localeCompare(b.name);
+      if (rawSort === "name-asc") return a.name.localeCompare(b.name);
       if (rawSort === "name-desc") return b.name.localeCompare(a.name);
-      if (rawSort === "oldest")    return (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "");
+      if (rawSort === "oldest") return (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "");
       return (b.releaseDate ?? "").localeCompare(a.releaseDate ?? "");
     });
   }, [robots, query, activeCategory, rawSort]);
@@ -275,6 +288,7 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
             return (
               <button
                 key={cat}
+                ref={(el) => { subCatRefs.current[cat] = el; }}
                 type="button"
                 data-active={isSelected ? "true" : undefined}
                 onClick={() => {
@@ -285,11 +299,10 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
                     router.push(`/robots/${slug}`);
                   }
                 }}
-                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
-                  isSelected
+                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                }`}
+                  }`}
               >
                 {cat}
               </button>

@@ -10,6 +10,7 @@ import { RepositoryTable } from "@/components/ui/RepositoryTable";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 import { RepositoryRow } from "@/components/ui/RepositoryRow";
 import { Pagination } from "@/components/Pagination";
+import { scrollChipIntoView } from "@/lib/utils";
 
 const getBackendSortValue = (field: string | null, order: "asc" | "desc"): string | undefined => {
   if (field === "stars" && order === "desc") return "stars_desc";
@@ -22,19 +23,19 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const router = useRouter();
-  
+
   const [sortField, setSortField] = useState<"stars" | "forks" | "size" | "updated" | null>("stars");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(100);
 
   useEffect(() => {
-  const s = searchParams.get("sort") ?? "newest";
-  if (s === "name-asc")       { setSortField("updated"); setSortOrder("asc");  }
-  else if (s === "name-desc") { setSortField("updated"); setSortOrder("desc"); }
-  else if (s === "oldest")    { setSortField("updated"); setSortOrder("asc");  }
-  else                        { setSortField("updated"); setSortOrder("desc"); }
-}, [searchParams]);
+    const s = searchParams.get("sort") ?? "newest";
+    if (s === "name-asc") { setSortField("updated"); setSortOrder("asc"); }
+    else if (s === "name-desc") { setSortField("updated"); setSortOrder("desc"); }
+    else if (s === "oldest") { setSortField("updated"); setSortOrder("asc"); }
+    else { setSortField("updated"); setSortOrder("desc"); }
+  }, [searchParams]);
   const [selectedLicense, setSelectedLicense] = useState<string | null>(null);
   const [isLicenseDropdownOpen, setIsLicenseDropdownOpen] = useState(false);
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
@@ -42,7 +43,7 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
   const [activeRepoSearch, setActiveRepoSearch] = useState(initialQuery);
   const [isRepoFilterOpen, setIsRepoFilterOpen] = useState(false);
   const [owners, setOwners] = useState<RepositoryOwnerListItem[]>([]);
-  
+
   const REPO_SUBCATEGORIES: RepositorySubCategory[] = [
     { id: "1", name: "LLMs", slug: "llms" },
     { id: "2", name: "Generative AI", slug: "generative-ai" },
@@ -64,6 +65,19 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
   const selectedTopic = searchParams.get("topic") || null;
   const selectedOwnerSlug = searchParams.get("owner") || null;
   const selectedSubCategorySlug = defaultCategory || searchParams.get("subCategory") || null;
+
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    if (!container) return;
+    const activeKey = selectedSubCategorySlug || "all";
+    const target = subCatRefs.current[activeKey];
+    if (!target) return;
+
+    scrollChipIntoView(container, target);
+  }, [selectedSubCategorySlug]);
 
   // Derive selectedCompany from URL query parameter
   const selectedCompany = React.useMemo(() => {
@@ -259,177 +273,179 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
     <div className="flex flex-col flex-1 bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       <main className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-12 flex-1">
         <div className={`mx-auto w-full max-w-[1440px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
-        {/* Active Topic Filter Chip */}
-        {selectedTopic && (
-          <div className="flex items-center gap-2 mb-6 bg-white/[0.02] border border-white/[0.08] px-3.5 py-2 rounded-lg w-fit shadow-md animate-fade-in">
-            <span className="text-xs text-white/50">Active Topic:</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white/[0.08] text-white">
-              {selectedTopic}
-            </span>
-            <button
-              onClick={handleClearTopic}
-              className="text-xs text-red-400 hover:text-red-300 transition-colors ml-2 cursor-pointer font-medium"
-            >
-              Clear
-            </button>
-          </div>
-        )}
-
-        {/* Subcategory Filter Chips */}
-        {subCategories.length > 0 && (
-          <div className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
-            <button
-              onClick={() => handleSelectSubCategory(null)}
-              className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
-                !selectedSubCategorySlug
-                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
-                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-              }`}
-            >
-              All
-            </button>
-            {subCategories.map((sub) => (
+          {/* Active Topic Filter Chip */}
+          {selectedTopic && (
+            <div className="flex items-center gap-2 mb-6 bg-white/[0.02] border border-white/[0.08] px-3.5 py-2 rounded-lg w-fit shadow-md animate-fade-in">
+              <span className="text-xs text-white/50">Active Topic:</span>
+              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white/[0.08] text-white">
+                {selectedTopic}
+              </span>
               <button
-                key={sub.id}
-                onClick={(e) => {
-                  handleSelectSubCategory(sub.slug);
-                  e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "nearest"
-                  });
-                }}
-                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
-                  selectedSubCategorySlug === sub.slug
+                onClick={handleClearTopic}
+                className="text-xs text-red-400 hover:text-red-300 transition-colors ml-2 cursor-pointer font-medium"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
+          {/* Subcategory Filter Chips */}
+          {subCategories.length > 0 && (
+            <div
+              ref={subCatContainerRef}
+              className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+            >
+              <button
+                ref={(el) => { subCatRefs.current["all"] = el; }}
+                onClick={() => handleSelectSubCategory(null)}
+                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${!selectedSubCategorySlug
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                }`}
+                  }`}
               >
-                {sub.name}
+                All
               </button>
-            ))}
-          </div>
-        )}
-
-        {isLoading ? (
-          <RepositoryTable
-            sortField={sortField}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-            selectedLicense={selectedLicense}
-            onSelectLicense={setSelectedLicense}
-            licenseCounts={licenseCounts}
-            selectedCompany={selectedCompany}
-            onSelectCompany={handleSelectCompany}
-            companyCounts={companyCounts}
-            companySearchKeys={companySearchKeys}
-            totalCount={total}
-            isLicenseDropdownOpen={isLicenseDropdownOpen}
-            onToggleLicenseDropdown={() => setIsLicenseDropdownOpen(prev => !prev)}
-            onCloseLicenseDropdown={() => setIsLicenseDropdownOpen(false)}
-            isCompanyDropdownOpen={isCompanyDropdownOpen}
-            onToggleCompanyDropdown={() => setIsCompanyDropdownOpen(prev => !prev)}
-            onCloseCompanyDropdown={() => setIsCompanyDropdownOpen(false)}
-            activeRepoSearch={activeRepoSearch}
-            repoSearchQuery={repoSearchQuery}
-            onChangeRepoSearchQuery={setRepoSearchQuery}
-            onApplyRepoSearch={handleApplyRepoSearch}
-            onResetRepoSearch={handleResetRepoSearch}
-            isRepoFilterOpen={isRepoFilterOpen}
-            onToggleRepoFilter={() => setIsRepoFilterOpen(prev => !prev)}
-            onCloseRepoFilter={() => setIsRepoFilterOpen(false)}
-          >
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className="grid grid-cols-[minmax(0,2.5fr)_minmax(0,1.8fr)_minmax(0,1.5fr)_60px] md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] lg:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] w-full animate-pulse border-b border-white/[0.06] last:border-b-0"
-              >
-                {/* Col 2 */}
-                <div className="pl-5">
-                  <div className="h-3 w-1/3 rounded bg-white/[0.04]" />
-                </div>
-                {/* Col 3 */}
-                <div className="h-3 w-1/2 rounded bg-white/[0.04] hidden md:block" />
-                {/* Col 4 */}
-                <div className="h-3 w-10 rounded bg-white/[0.04] mx-auto" />
-                {/* Col 5 */}
-                <div className="h-3 w-10 rounded bg-white/[0.04] mx-auto hidden lg:block" />
-                {/* Col 6 */}
-                <div className="h-4 w-12 rounded-full bg-white/[0.04] mx-auto hidden md:block" />
-                {/* Col 7 */}
-                <div className="h-3 w-8 rounded bg-white/[0.04] mx-auto hidden xl:block" />
-                {/* Col 8 */}
-                <div className="h-3 w-8 rounded bg-white/[0.04] mx-auto block md:hidden lg:block" />
-                {/* Col 9 */}
-                <div className="h-7 w-7 rounded-full bg-white/[0.04] mx-auto" />
-              </div>
-            ))}
-          </RepositoryTable>
-        ) : (
-          <RepositoryTable
-            sortField={sortField}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-            selectedLicense={selectedLicense}
-            onSelectLicense={setSelectedLicense}
-            licenseCounts={licenseCounts}
-            selectedCompany={selectedCompany}
-            onSelectCompany={handleSelectCompany}
-            companyCounts={companyCounts}
-            companySearchKeys={companySearchKeys}
-            totalCount={total}
-            isLicenseDropdownOpen={isLicenseDropdownOpen}
-            onToggleLicenseDropdown={() => setIsLicenseDropdownOpen(prev => !prev)}
-            onCloseLicenseDropdown={() => setIsLicenseDropdownOpen(false)}
-            isCompanyDropdownOpen={isCompanyDropdownOpen}
-            onToggleCompanyDropdown={() => setIsCompanyDropdownOpen(prev => !prev)}
-            onCloseCompanyDropdown={() => setIsCompanyDropdownOpen(false)}
-            activeRepoSearch={activeRepoSearch}
-            repoSearchQuery={repoSearchQuery}
-            onChangeRepoSearchQuery={setRepoSearchQuery}
-            onApplyRepoSearch={handleApplyRepoSearch}
-            onResetRepoSearch={handleResetRepoSearch}
-            isRepoFilterOpen={isRepoFilterOpen}
-            onToggleRepoFilter={() => setIsRepoFilterOpen(prev => !prev)}
-            onCloseRepoFilter={() => setIsRepoFilterOpen(false)}
-          >
-            {sortedRepos.length === 0 ? (
-              <div className="text-center py-16 px-4 bg-[#131316]/20 rounded-b-xl w-full flex flex-col items-center">
-                <p className="text-[#A1A1AA] text-sm font-medium mb-1">No repositories found.</p>
-                <p className="text-white/40 text-xs mb-5">Try adjusting or clearing your filters.</p>
+              {subCategories.map((sub) => (
                 <button
-                  onClick={handleResetFilters}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-white/[0.08] hover:bg-white/[0.12] active:bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.12] rounded-lg transition-colors cursor-pointer focus:outline-none"
+                  key={sub.id}
+                  onClick={(e) => {
+                    handleSelectSubCategory(sub.slug);
+                    e.currentTarget.scrollIntoView({
+                      behavior: "smooth",
+                      block: "nearest",
+                      inline: "nearest"
+                    });
+                  }}
+                  className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${selectedSubCategorySlug === sub.slug
+                      ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                      : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+                    }`}
                 >
-                  Reset Filters
+                  {sub.name}
                 </button>
-              </div>
-            ) : (
-              sortedRepos.map((repo: Repository) => (
-                <RepositoryRow key={repo.id} repo={repo} />
-              ))
-            )}
-          </RepositoryTable>
-        )}
+              ))}
+            </div>
+          )}
 
-        {/* Unified Floating Pill Pagination */}
-        <Pagination
-          page={currentPage}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalCount={total}
-          onPageChange={(p) => {
-            setCurrentPage(p);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          onPageSizeChange={(s) => {
-            setPageSize(s);
-            setCurrentPage(1);
-          }}
-        />
-      </div>
-    </main>
-    <ScrollToTopButton />
-  </div>
+          {isLoading ? (
+            <RepositoryTable
+              sortField={sortField}
+              sortOrder={sortOrder}
+              onSort={handleSort}
+              selectedLicense={selectedLicense}
+              onSelectLicense={setSelectedLicense}
+              licenseCounts={licenseCounts}
+              selectedCompany={selectedCompany}
+              onSelectCompany={handleSelectCompany}
+              companyCounts={companyCounts}
+              companySearchKeys={companySearchKeys}
+              totalCount={total}
+              isLicenseDropdownOpen={isLicenseDropdownOpen}
+              onToggleLicenseDropdown={() => setIsLicenseDropdownOpen(prev => !prev)}
+              onCloseLicenseDropdown={() => setIsLicenseDropdownOpen(false)}
+              isCompanyDropdownOpen={isCompanyDropdownOpen}
+              onToggleCompanyDropdown={() => setIsCompanyDropdownOpen(prev => !prev)}
+              onCloseCompanyDropdown={() => setIsCompanyDropdownOpen(false)}
+              activeRepoSearch={activeRepoSearch}
+              repoSearchQuery={repoSearchQuery}
+              onChangeRepoSearchQuery={setRepoSearchQuery}
+              onApplyRepoSearch={handleApplyRepoSearch}
+              onResetRepoSearch={handleResetRepoSearch}
+              isRepoFilterOpen={isRepoFilterOpen}
+              onToggleRepoFilter={() => setIsRepoFilterOpen(prev => !prev)}
+              onCloseRepoFilter={() => setIsRepoFilterOpen(false)}
+            >
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-[minmax(0,2.5fr)_minmax(0,1.8fr)_minmax(0,1.5fr)_60px] md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] lg:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_60px] xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_60px] gap-[10px] items-center py-[7px] px-[9px] h-[65px] w-full animate-pulse border-b border-white/[0.06] last:border-b-0"
+                >
+                  {/* Col 2 */}
+                  <div className="pl-5">
+                    <div className="h-3 w-1/3 rounded bg-white/[0.04]" />
+                  </div>
+                  {/* Col 3 */}
+                  <div className="h-3 w-1/2 rounded bg-white/[0.04] hidden md:block" />
+                  {/* Col 4 */}
+                  <div className="h-3 w-10 rounded bg-white/[0.04] mx-auto" />
+                  {/* Col 5 */}
+                  <div className="h-3 w-10 rounded bg-white/[0.04] mx-auto hidden lg:block" />
+                  {/* Col 6 */}
+                  <div className="h-4 w-12 rounded-full bg-white/[0.04] mx-auto hidden md:block" />
+                  {/* Col 7 */}
+                  <div className="h-3 w-8 rounded bg-white/[0.04] mx-auto hidden xl:block" />
+                  {/* Col 8 */}
+                  <div className="h-3 w-8 rounded bg-white/[0.04] mx-auto block md:hidden lg:block" />
+                  {/* Col 9 */}
+                  <div className="h-7 w-7 rounded-full bg-white/[0.04] mx-auto" />
+                </div>
+              ))}
+            </RepositoryTable>
+          ) : (
+            <RepositoryTable
+              sortField={sortField}
+              sortOrder={sortOrder}
+              onSort={handleSort}
+              selectedLicense={selectedLicense}
+              onSelectLicense={setSelectedLicense}
+              licenseCounts={licenseCounts}
+              selectedCompany={selectedCompany}
+              onSelectCompany={handleSelectCompany}
+              companyCounts={companyCounts}
+              companySearchKeys={companySearchKeys}
+              totalCount={total}
+              isLicenseDropdownOpen={isLicenseDropdownOpen}
+              onToggleLicenseDropdown={() => setIsLicenseDropdownOpen(prev => !prev)}
+              onCloseLicenseDropdown={() => setIsLicenseDropdownOpen(false)}
+              isCompanyDropdownOpen={isCompanyDropdownOpen}
+              onToggleCompanyDropdown={() => setIsCompanyDropdownOpen(prev => !prev)}
+              onCloseCompanyDropdown={() => setIsCompanyDropdownOpen(false)}
+              activeRepoSearch={activeRepoSearch}
+              repoSearchQuery={repoSearchQuery}
+              onChangeRepoSearchQuery={setRepoSearchQuery}
+              onApplyRepoSearch={handleApplyRepoSearch}
+              onResetRepoSearch={handleResetRepoSearch}
+              isRepoFilterOpen={isRepoFilterOpen}
+              onToggleRepoFilter={() => setIsRepoFilterOpen(prev => !prev)}
+              onCloseRepoFilter={() => setIsRepoFilterOpen(false)}
+            >
+              {sortedRepos.length === 0 ? (
+                <div className="text-center py-16 px-4 bg-[#131316]/20 rounded-b-xl w-full flex flex-col items-center">
+                  <p className="text-[#A1A1AA] text-sm font-medium mb-1">No repositories found.</p>
+                  <p className="text-white/40 text-xs mb-5">Try adjusting or clearing your filters.</p>
+                  <button
+                    onClick={handleResetFilters}
+                    className="px-4 py-2 text-xs font-semibold text-white bg-white/[0.08] hover:bg-white/[0.12] active:bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.12] rounded-lg transition-colors cursor-pointer focus:outline-none"
+                  >
+                    Reset Filters
+                  </button>
+                </div>
+              ) : (
+                sortedRepos.map((repo: Repository) => (
+                  <RepositoryRow key={repo.id} repo={repo} />
+                ))
+              )}
+            </RepositoryTable>
+          )}
+
+          {/* Unified Floating Pill Pagination */}
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalCount={total}
+            onPageChange={(p) => {
+              setCurrentPage(p);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
+      </main>
+      <ScrollToTopButton />
+    </div>
   );
 }
