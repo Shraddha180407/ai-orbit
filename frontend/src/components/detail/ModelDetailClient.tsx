@@ -19,6 +19,7 @@ import {
   toggleModelBookmark,
 } from "@/lib/model-bookmarks";
 import type { ModelDetail, AIModel } from "@/lib/types";
+import { MOCK_MODELS_BY_ID } from "@/lib/mock/models";
 import { formatModelType } from "@/lib/types";
 
 function Spec({
@@ -156,6 +157,7 @@ function RelatedCard({ model }: { model: AIModel }) {
 export function ModelDetailClient() {
   const params = useParams();
   const id = (params?.id || params?.slug) as string;
+  const mockModel = id ? MOCK_MODELS_BY_ID[id] : undefined;
 
   /*
    * IMPORTANT:
@@ -164,15 +166,19 @@ export function ModelDetailClient() {
    * cached data during the initial render can cause a hydration mismatch.
    */
   const {
-    data: model = null,
-    isLoading: loading,
+    data: apiModel = null,
+    isLoading: apiLoading,
     isError,
   } = useQuery<ModelDetail | null>({
     queryKey: ["model-detail", id],
     queryFn: () => fetchModelById(id),
     staleTime: 15 * 60 * 1000,
-    enabled: Boolean(id),
+    enabled: Boolean(id) && !mockModel,
   });
+
+  // Mock entries are used for design review without changing the real API flow.
+  const model = mockModel ?? apiModel;
+  const loading = Boolean(id) && !mockModel && apiLoading;
 
   const [bookmarked, setBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -247,9 +253,13 @@ export function ModelDetailClient() {
   const typeLabel =
     formatModelType(model.modelType) || model.modality || "—";
 
+  // API shape is { task: { id, title, slug } }; keep the UI flat.
   const tasks = (model.tasks ?? [])
-    .map((t) => t.task)
-    .filter(Boolean);
+    .map((entry) => entry?.task)
+    .filter(
+      (task): task is { id: string; title: string; slug: string } =>
+        Boolean(task?.id && task?.title && task?.slug)
+    );
 
   const related = model.relatedModels ?? [];
   const subCategories = model.subCategories ?? [];
@@ -587,52 +597,27 @@ export function ModelDetailClient() {
               </section>
             )}
 
-            {/* Tasks */}
-            {tasks.length > 0 && (
-              <section>
-                <h2 className="mb-4 text-lg font-bold text-white">
-                  Tasks using this model{" "}
-                  <span className="text-sm font-normal text-[#71717A]">
-                    ({tasks.length})
-                  </span>
-                </h2>
-
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {tasks.map((task) => (
-                    <Link
-                      key={task.id}
-                      href={`/tasks/${task.slug}`}
-                      className="group rounded-lg border border-[#232326]/60 bg-[#131316]/20 px-4 py-3 transition-colors hover:border-[#34343A] hover:bg-[#18181C]/40"
-                    >
-                      <p className="text-[13px] font-semibold text-white group-hover:text-[#DCD5FF]">
-                        {task.title}
-                      </p>
-
-                      <p className="mt-1 text-[10px] text-[#52525B]">
-                        Explore task →
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
-
             {/* Related Models */}
             {related.length > 0 && (
-              <section>
-                <div className="mb-4">
-                  <h2 className="text-lg font-bold text-white">
-                    Related models
-                  </h2>
+              <section className="min-w-0">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="text-lg font-bold text-white">
+                      Related Models
+                    </h2>
 
-                  <p className="mt-1 text-[11px] text-[#71717A]">
-                    Models with similar provider, modality, or creator
-                    context.
-                  </p>
+                    <p className="mt-1 text-[11px] text-[#71717A]">
+                      Models with similar provider, modality, or creator context.
+                    </p>
+                  </div>
+
+                  <span className="shrink-0 text-sm font-normal text-[#71717A]">
+                    {related.length}
+                  </span>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-2">
-                  {related.slice(0, 6).map((m) => (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {related.slice(0, 4).map((m) => (
                     <RelatedCard
                       key={m.id}
                       model={m}
@@ -896,6 +881,45 @@ export function ModelDetailClient() {
                     {companyName} ·{" "}
                     {model.modality || typeLabel}
                   </p>
+                </div>
+              </section>
+            )}
+
+            {/* Tasks */}
+            {tasks.length > 0 && (
+              <section className="rounded-xl border border-[#232326]/60 bg-[#131316]/25 p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-bold text-white">
+                      Tasks using this model
+                    </h2>
+
+                    <p className="mt-1 text-[10px] leading-4 text-[#71717A]">
+                      Tasks this model can be used for.
+                    </p>
+                  </div>
+
+                  <span className="shrink-0 text-sm font-normal text-[#71717A]">
+                    {tasks.length}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {tasks.map((task) => (
+                    <Link
+                      key={task.id}
+                      href={`/tasks/${task.slug}`}
+                      className="group flex items-center justify-between rounded-lg border border-[#24242B] bg-[#111114] px-3.5 py-3 transition hover:border-[#34343D]"
+                    >
+                      <p className="min-w-0 truncate text-[11px] font-medium text-[#E8E8EC]">
+                        {task.title}
+                      </p>
+
+                      <span className="ml-3 shrink-0 text-[#66666F] transition group-hover:text-white">
+                        ↗
+                      </span>
+                    </Link>
+                  ))}
                 </div>
               </section>
             )}
