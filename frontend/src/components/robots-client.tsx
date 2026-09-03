@@ -11,6 +11,7 @@ import { fetchAllRobots } from "@/lib/api";
 import { FALLBACK_ROBOTS } from "@/data/robots";
 import { CategoryChip } from "@/components/CategoryChip";
 import { Pagination } from "@/components/Pagination";
+import { scrollChipIntoView } from "@/lib/utils";
 
 // Fixed-width template to preserve all 8 columns across mobile and desktop
 const COL_TEMPLATE = "grid-cols-[44px_minmax(200px,2fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(90px,0.8fr)_minmax(140px,1fr)_minmax(80px,0.6fr)_minmax(80px,0.6fr)]";
@@ -189,14 +190,7 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
     const target = subCatRefs.current[activeCategory];
     if (!target) return;
 
-    const targetLeft = target.offsetLeft;
-    const targetWidth = target.offsetWidth;
-    const containerWidth = container.clientWidth;
-
-    container.scrollTo({
-      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
-      behavior: "smooth",
-    });
+    scrollChipIntoView(container, target);
   }, [activeCategory]);
 
   useEffect(() => {

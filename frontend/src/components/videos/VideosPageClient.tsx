@@ -11,6 +11,7 @@ import {
 } from "@/lib/videos-data";
 import { VideoTable } from "./VideoTable";
 import { Pagination } from "./Pagination";
+import { scrollChipIntoView } from "@/lib/utils";
 
 const VIDEO_CATEGORIES = [
   { name: "All", slug: "" },
@@ -61,14 +62,7 @@ export function VideosPageClient({
     const target = subCatRefs.current[activeCategory || ""];
     if (!target) return;
 
-    const targetLeft = target.offsetLeft;
-    const targetWidth = target.offsetWidth;
-    const containerWidth = container.clientWidth;
-
-    container.scrollTo({
-      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
-      behavior: "smooth",
-    });
+    scrollChipIntoView(container, target);
   }, [activeCategory]);
 
   const [sortBy, setSortBy] = useState<VideoSortBy>("posted");

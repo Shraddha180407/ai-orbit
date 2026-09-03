@@ -10,6 +10,7 @@ import { RepositoryTable } from "@/components/ui/RepositoryTable";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 import { RepositoryRow } from "@/components/ui/RepositoryRow";
 import { Pagination } from "@/components/Pagination";
+import { scrollChipIntoView } from "@/lib/utils";
 
 const getBackendSortValue = (field: string | null, order: "asc" | "desc"): string | undefined => {
   if (field === "stars" && order === "desc") return "stars_desc";
@@ -75,14 +76,7 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
     const target = subCatRefs.current[activeKey];
     if (!target) return;
 
-    const targetLeft = target.offsetLeft;
-    const targetWidth = target.offsetWidth;
-    const containerWidth = container.clientWidth;
-
-    container.scrollTo({
-      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
-      behavior: "smooth",
-    });
+    scrollChipIntoView(container, target);
   }, [selectedSubCategorySlug]);
 
   // Derive selectedCompany from URL query parameter

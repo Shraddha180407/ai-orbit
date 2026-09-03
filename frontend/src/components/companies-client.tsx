@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/shadcn-button";
 import { Pagination } from "@/components/Pagination";
-import { cn } from "@/lib/utils";
+import { cn, scrollChipIntoView } from "@/lib/utils";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 
 const PAGE_SIZE = 100;
@@ -355,14 +355,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     const target = subCatRefs.current[activeKey];
     if (!target) return;
 
-    const targetLeft = target.offsetLeft;
-    const targetWidth = target.offsetWidth;
-    const containerWidth = container.clientWidth;
-
-    container.scrollTo({
-      left: Math.max(0, targetLeft - containerWidth / 2 + targetWidth / 2),
-      behavior: "smooth",
-    });
+    scrollChipIntoView(container, target);
   }, [activeCategorySlug]);
 
   const [selectedCountry, setSelectedCountry] = useState<string>("all");
