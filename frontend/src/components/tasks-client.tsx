@@ -218,10 +218,10 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
   };
 
   return (
-    <main id="tasks-container" className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 py-6">
+    <main id="tasks-container" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-6">
       <div
         ref={subCatContainerRef}
-        className="mb-4 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+        className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
       >
         {TASK_CATEGORIES.map((topic) => {
           const isSelected = activeCategory === topic.slug;
@@ -234,7 +234,7 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
               onClick={() => {
                 navigate({ category: topic.slug, page: 1 });
               }}
-              className={`rounded-full px-3.5 py-1 text-[12px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
+              className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
                 isSelected
                   ? "bg-white text-black border-white shadow-lg shadow-white/5"
                   : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
@@ -258,7 +258,7 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
         <>
           <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-b from-[#131316]/60 to-[#0D0D10]/60 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_20px_60px_-30px_rgba(0,0,0,0.8)] ring-1 ring-[#232326]/70">
             <div className="w-full">
-              <div className="grid grid-cols-[40px_1fr_auto] sm:grid-cols-[44px_minmax(220px,1.5fr)_repeat(4,minmax(70px,0.8fr))_minmax(70px,0.8fr)] items-center gap-3 sm:gap-3 px-4 sm:px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
+              <div className="grid grid-cols-[40px_minmax(0,1fr)_auto] sm:grid-cols-[44px_minmax(0,2fr)_repeat(4,minmax(0,1fr))_100px] items-center gap-3 px-4 sm:px-5 py-2.5 border-b border-[#232326]/70 bg-[#0A0A0C]/90 backdrop-blur-sm sticky top-0 z-10">
                 <span />
                 <button
                   type="button"
