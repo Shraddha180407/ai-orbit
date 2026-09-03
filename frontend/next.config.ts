@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
         destination: "/tools",
       },
       {
-        source: "/:type(companies|countries|devices|fundraises|investors|news|repositories|robots|tasks|tools|videos|personal|creativity|models|agents)/:slug",
+        source: "/:type(companies|countries|devices|fundraises|investors|news|repositories|robots|tasks|tools|videos|personal|creativity|agents)/:slug",
         destination: "/p/:type/:slug",
       },
     ];
@@ -50,3 +50,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
