@@ -14,12 +14,21 @@ import Cpu from "lucide-react/dist/esm/icons/cpu";
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw";
 import Share2 from "lucide-react/dist/esm/icons/share-2";
 import Sparkles from "lucide-react/dist/esm/icons/sparkles";
+import PlayCircle from "lucide-react/dist/esm/icons/play-circle";
+import Wrench from "lucide-react/dist/esm/icons/wrench";
 import { toast } from "sonner";
 import { fetchModelById, API_URL, getFromCache } from "@/lib/api";
 import { isModelBookmarked, toggleModelBookmark } from "@/lib/model-bookmarks";
 import { CategoryChip } from "@/components/CategoryChip";
 import type { ModelDetail, AIModel } from "@/lib/types";
-import { formatModelType } from "@/lib/types";
+
+function formatModelType(value?: string | null) {
+  if (!value) return "";
+  return value
+    .replace(/[_-]+/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
 
 function cleanValue(value?: string | null) {
   const normalized = value?.trim();
@@ -47,7 +56,10 @@ function ProviderLogo({
   size?: "small" | "large";
 }) {
   const [failed, setFailed] = useState(false);
-  const boxClass = size === "large" ? "h-20 w-20 rounded-2xl" : "h-11 w-11 rounded-xl";
+  const boxClass =
+    size === "large"
+      ? "h-16 w-16 rounded-xl sm:h-20 sm:w-20 sm:rounded-2xl"
+      : "h-11 w-11 rounded-xl";
   const imageSize = size === "large" ? 64 : 36;
 
   return (
@@ -63,6 +75,7 @@ function ProviderLogo({
           className="h-[78%] w-[78%] object-contain"
           onError={() => setFailed(true)}
           priority={size === "large"}
+          unoptimized
         />
       ) : (
         <span className={size === "large" ? "text-2xl font-black text-neutral-900" : "text-base font-black text-neutral-900"}>
@@ -105,7 +118,7 @@ function RelatedCard({ model }: { model: AIModel }) {
       href={`/models/${model.id}`}
       className="group flex items-start gap-3 rounded-xl border border-white/[0.07] bg-[#111114] p-3.5 transition-all hover:-translate-y-0.5 hover:border-[#6E56CF]/50 hover:bg-[#151519]"
     >
-      <ProviderLogo src={model.provider?.logoUrl} name={model.name} size="small" />
+      <ProviderLogo src={model.provider?.logoUrl} name={company} size="small" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-sm font-bold text-white">{model.name}</p>
@@ -218,7 +231,8 @@ export function ModelDetailClient() {
   if (!model) return null;
 
   const companyName = model.provider?.name || model.creator || "Unknown provider";
-  const typeLabel = formatModelType(model.modelType) || model.modality || "Not available";
+  const modelType = (model as ModelDetail & { modelType?: string | null }).modelType;
+  const typeLabel = formatModelType(modelType) || model.type || model.modality || "Not available";
   const tasks = (model.tasks ?? []).map((item) => item.task).filter(Boolean);
   const related = model.relatedModels ?? [];
   const tags = Array.from(new Set((model.tags ?? []).filter(Boolean)));
@@ -266,17 +280,17 @@ export function ModelDetailClient() {
         </nav>
 
         <header className="overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#151519] via-[#101012] to-[#0d0d10] shadow-2xl shadow-black/25">
-          <div className="relative p-5 sm:p-7 lg:p-8">
+          <div className="relative p-4 sm:p-7 lg:p-8">
             <div className="pointer-events-none absolute right-0 top-0 h-52 w-52 rounded-full bg-[#6E56CF]/10 blur-3xl" />
             <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
-              <div className="flex min-w-0 flex-col gap-5 sm:flex-row">
-                <ProviderLogo src={model.provider?.logoUrl} name={model.name} />
+              <div className="flex min-w-0 items-start gap-4 sm:gap-5">
+                <ProviderLogo src={model.provider?.logoUrl} name={companyName} />
                 <div className="min-w-0">
                   <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#6E56CF]/30 bg-[#6E56CF]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#B8A7FF]">
                     <Sparkles size={11} />
                     AI model
                   </div>
-                  <h1 className="break-words text-3xl font-black tracking-tight text-white sm:text-4xl">{model.name}</h1>
+                  <h1 className="break-words text-2xl font-black tracking-tight text-white sm:text-4xl">{model.name}</h1>
                   <p className="mt-2 text-sm text-[#A1A1AA]">
                     Built by{" "}
                     {model.provider?.slug ? (
@@ -327,7 +341,7 @@ export function ModelDetailClient() {
             </div>
 
             {model.description && (
-              <p className="relative mt-6 max-w-3xl text-sm leading-7 text-[#C4C4CC] sm:text-[15px]">{model.description}</p>
+              <p className="relative mt-5 max-w-4xl text-sm leading-6 text-[#C4C4CC] sm:mt-6 sm:text-[15px] sm:leading-7">{model.description}</p>
             )}
           </div>
 
@@ -350,6 +364,24 @@ export function ModelDetailClient() {
 
         <div className="mt-7 grid gap-7 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
           <div className="min-w-0 space-y-8">
+            <section>
+              <SectionTitle title="Overview" />
+              <div className="rounded-xl border border-white/[0.08] bg-[#111114] p-4 sm:p-5">
+                <p className="text-sm leading-7 text-[#C4C4CC]">
+                  {model.description || `${model.name} is an AI model developed by ${companyName}.`}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {[typeLabel, cleanValue(model.modality), model.openSource === true ? "Open source" : model.openSource === false ? "Closed source" : "Source status unknown", `Released ${formatDate(model.releaseDate)}`]
+                    .filter((value, index, values) => value !== "Not available" && values.indexOf(value) === index)
+                    .map((value) => (
+                      <span key={value} className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-[#D4D4D8]">
+                        {value}
+                      </span>
+                    ))}
+                </div>
+              </div>
+            </section>
+
             <section>
               <SectionTitle title="Technical specifications" />
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -400,9 +432,41 @@ export function ModelDetailClient() {
               </section>
             )}
 
+            <section>
+              <SectionTitle title="Model ecosystem" />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Link
+                  href={`/tools?q=${encodeURIComponent(model.name)}`}
+                  className="group flex items-center gap-4 rounded-xl border border-white/[0.08] bg-[#111114] p-4 transition hover:border-[#6E56CF]/45 hover:bg-[#151519]"
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#6E56CF]/25 bg-[#6E56CF]/10 text-[#B8A7FF]">
+                    <Wrench size={18} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-white">Tools using this model</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-[#71717A]">Explore products and workflows connected to {model.name}.</span>
+                  </span>
+                  <ArrowRight size={15} className="shrink-0 text-[#52525B] transition group-hover:translate-x-0.5 group-hover:text-[#B8A7FF]" />
+                </Link>
+                <Link
+                  href={`/videos?q=${encodeURIComponent(model.name)}`}
+                  className="group flex items-center gap-4 rounded-xl border border-white/[0.08] bg-[#111114] p-4 transition hover:border-[#6E56CF]/45 hover:bg-[#151519]"
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#6E56CF]/25 bg-[#6E56CF]/10 text-[#B8A7FF]">
+                    <PlayCircle size={19} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-white">Videos and demos</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-[#71717A]">Watch explainers, releases, and demonstrations of {model.name}.</span>
+                  </span>
+                  <ArrowRight size={15} className="shrink-0 text-[#52525B] transition group-hover:translate-x-0.5 group-hover:text-[#B8A7FF]" />
+                </Link>
+              </div>
+            </section>
+
             {related.length > 0 && (
               <section>
-                <SectionTitle title="Related models" count={related.length} />
+                <SectionTitle title={`More models from ${companyName}`} count={related.length} />
                 <div className="grid gap-3 sm:grid-cols-2">
                   {related.map((relatedModel) => (
                     <RelatedCard key={relatedModel.id} model={relatedModel} />

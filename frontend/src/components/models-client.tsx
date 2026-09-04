@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Plus from 'lucide-react/dist/esm/icons/plus';
 import Pencil from 'lucide-react/dist/esm/icons/pencil';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
-import { AIModel, ModelSubCategory, ModelType, formatModelType } from "@/lib/types";
-import { API_URL, fetchModels, fetchModelSubCategories, fetchModelFilters } from "@/lib/api";
+import { AIModel, ModelSubCategory } from "@/lib/types";
+import { API_URL, fetchModels, fetchModelSubCategories } from "@/lib/api";
 import { ModelListView } from "@/components/ModelListView";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
@@ -14,45 +14,25 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/shadcn-button";
 import { toast } from "sonner";
 
-import { Pagination } from "@/components/Pagination";
-import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
-import { scrollChipIntoView } from "@/lib/utils";
+import { useInfiniteQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 
-const MODEL_TYPE_OPTIONS: ModelType[] = [
-  "TEXT",
-  "IMAGE",
-  "VIDEO",
-  "MULTIMODAL",
-  "AUDIO",
-  "CODE",
-  "THREE_D",
-  "STRUCTURED_DATA",
+const MODEL_SUBCATEGORIES: ModelSubCategory[] = [
+  { id: "1", name: "LLM", slug: "llm" },
+  { id: "2", name: "Image Generation", slug: "image-generation" },
+  { id: "3", name: "Video Generation", slug: "video-generation" },
+  { id: "4", name: "Speech", slug: "speech" },
+  { id: "5", name: "Multimodal", slug: "multimodal" },
+  { id: "6", name: "Code Generation", slug: "code-generation" },
+  { id: "7", name: "Embedding", slug: "embedding" },
+  { id: "8", name: "Reasoning", slug: "reasoning" },
+  { id: "9", name: "Vision Models", slug: "vision-models" },
+  { id: "10", name: "Open Source Models", slug: "open-source-models" },
+  { id: "11", name: "Testing", slug: "testing" },
+  { id: "12", name: "E-commerce", slug: "e-commerce" },
+  { id: "13", name: "Recruitment", slug: "recruitment" },
+  { id: "14", name: "Translation", slug: "translation" },
+  { id: "15", name: "Project Management", slug: "project-management" },
 ];
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  children,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="flex items-center gap-1.5 text-[12px]">
-      <span className="text-[#71717A] whitespace-nowrap">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-[#232326]/60 bg-[#131316]/50 px-2.5 py-1.5 text-[12px] text-white outline-none transition-colors focus:border-white/[0.15] cursor-pointer"
-      >
-        {children}
-      </select>
-    </label>
-  );
-}
 
 export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: string }) {
   const { user } = useUser();
@@ -62,49 +42,17 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   const router = useRouter();
 
   const selectedSubCategorySlug = defaultSubCategory || searchParams.get("subCategory") || null;
-
-  // Auto-scrolls the active subcategory chip into view (centered) within
-  // its horizontally-scrolling row when the selection changes.
-  const subCatContainerRef = useRef<HTMLDivElement>(null);
-  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    if (!container) return;
-    const activeKey = selectedSubCategorySlug || "all";
-    const target = subCatRefs.current[activeKey];
-    if (!target) return;
-
-    scrollChipIntoView(container, target);
-  }, [selectedSubCategorySlug]);
-
   const rawSort = searchParams.get("sort") || "newest";
   const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
     ? "alphabetical"
     : rawSort === "oldest"
-      ? "oldest"
-      : rawSort === "rating"
-        ? "releaseDate"
-        : "newest";
+    ? "oldest"
+    : rawSort === "rating"
+    ? "releaseDate"
+    : "newest";
 
-  // Driven by the global search bar, which writes `?q=` to the URL — same
-  // convention as ToolsClient. The Models API's own query param is named
-  // `search`; we translate at the fetch call only.
-  const q = searchParams.get("q") || undefined;
-
-  const selectedProvider = searchParams.get("provider") || "";
-  const selectedModelType = (searchParams.get("modelType") || "") as ModelType | "";
-
-  const [currentPage, setCurrentPage] = useState<number>(() => {
-    const pageFromUrl = searchParams.get("page");
-    return pageFromUrl ? parseInt(pageFromUrl, 10) : 1;
-  });
-  const [pageSize, setPageSize] = useState<number>(100);
-
-  // Reset to page 1 whenever search or filters change.
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [q, selectedProvider, selectedModelType, selectedSubCategorySlug]);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const subcategoryNavRef = useRef<HTMLDivElement>(null);
 
   // Admin modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -120,81 +68,68 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  const updateParams = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    for (const [key, value] of Object.entries(updates)) {
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-    }
-
-    const query = params.toString();
-    router.push(query ? `?${query}` : "?");
-  };
-
   const handleSelectSubCategory = (slug: string | null) => {
-    setCurrentPage(1);
-    const params = new URLSearchParams(searchParams.toString());
     if (slug) {
-      params.set("subCategory", slug);
+      router.push(`/models/${slug}`);
     } else {
-      params.delete("subCategory");
+      router.push(`/models`);
     }
-    params.delete("page");
-    const query = params.toString();
-    router.push(query ? `/models?${query}` : "/models");
   };
-
-  const { data: subCategories = [] } = useQuery<ModelSubCategory[]>({
-    queryKey: ["model-subcategories"],
-    queryFn: fetchModelSubCategories,
-    staleTime: 30 * 60 * 1000,
-  });
-
-  const { data: filterOptions } = useQuery({
-    queryKey: ["model-filters"],
-    queryFn: fetchModelFilters,
-    staleTime: 30 * 60 * 1000,
-  });
 
   const {
     data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
     isLoading,
     isPlaceholderData,
-  } = useQuery({
-    queryKey: [
-      "models",
-      {
-        subCategory: selectedSubCategorySlug,
-        sort: selectedSort,
-        page: currentPage,
-        limit: pageSize,
-        search: q,
-        provider: selectedProvider,
-        modelType: selectedModelType,
-      },
-    ],
-    queryFn: async () => {
-      return fetchModels({
-        page: currentPage,
-        limit: pageSize,
-        subCategory: selectedSubCategorySlug || undefined,
-        sort: selectedSort as any,
-        search: q,
-        provider: selectedProvider || undefined,
-        modelType: (selectedModelType || undefined) as ModelType | undefined,
-      });
+  } = useInfiniteQuery({
+    queryKey: ["models", { subCategory: selectedSubCategorySlug, sort: selectedSort }],
+    queryFn: async ({ pageParam = 1 }) => {
+      return fetchModels({ page: pageParam, subCategory: selectedSubCategorySlug || undefined, sort: selectedSort as any });
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      if (lastPage?.pagination?.hasMore) {
+        return (lastPage?.pagination?.page || 1) + 1;
+      }
+      return undefined;
     },
     placeholderData: keepPreviousData,
     staleTime: 10 * 60 * 1000,
   });
 
-  const models = data?.items || [];
-  const totalPages = data?.pagination?.totalPages || 1;
-  const hasActiveFilters = Boolean(q || selectedProvider || selectedModelType);
+  const models = data?.pages.flatMap((p: any) => p.items || []) || [];
+
+  // Keep the active filter visible when navigating between model categories.
+  useEffect(() => {
+    const container = subcategoryNavRef.current;
+    const activeButton = container?.querySelector<HTMLButtonElement>('[aria-pressed="true"]');
+    if (!container || !activeButton) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const left = activeButton.offsetLeft - (container.clientWidth - activeButton.clientWidth) / 2;
+      container.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [selectedSubCategorySlug]);
+
+  // Infinite scroll
+  useEffect(() => {
+    if (isLoading || isFetchingNextPage || !hasNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) fetchNextPage();
+      },
+      { threshold: 0.1 }
+    );
+    const el = sentinelRef.current;
+    if (el) observer.observe(el);
+    return () => {
+      if (el) observer.unobserve(el);
+    };
+  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   const reloadFirstPage = async () => {
     queryClient.invalidateQueries({ queryKey: ["models"] });
@@ -281,36 +216,32 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
           )}
 
           {/* Subcategory Filter Chips */}
-          {subCategories.length > 0 && (
+          {MODEL_SUBCATEGORIES.length > 0 && (
             <div
-              ref={subCatContainerRef}
-              className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+              ref={subcategoryNavRef}
+              className="mb-2 flex w-full flex-nowrap items-center justify-start gap-1.5 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-2.5 scrollbar-none md:px-0"
             >
               <button
-                ref={(el) => { subCatRefs.current["all"] = el; }}
                 onClick={() => handleSelectSubCategory(null)}
-                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${!selectedSubCategorySlug
+                aria-pressed={!selectedSubCategorySlug}
+                  className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                  !selectedSubCategorySlug
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                  }`}
+                }`}
               >
                 All
               </button>
-              {subCategories.map((sub) => (
+              {MODEL_SUBCATEGORIES.map((sub) => (
                 <button
                   key={sub.id}
-                  onClick={(e) => {
-                    handleSelectSubCategory(sub.slug);
-                    e.currentTarget.scrollIntoView({
-                      behavior: "smooth",
-                      block: "nearest",
-                      inline: "nearest"
-                    });
-                  }}
-                  className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${selectedSubCategorySlug === sub.slug
+                  onClick={() => handleSelectSubCategory(sub.slug)}
+                  aria-pressed={selectedSubCategorySlug === sub.slug}
+                    className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                    selectedSubCategorySlug === sub.slug
                       ? "bg-white text-black border-white shadow-lg shadow-white/5"
                       : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                    }`}
+                  }`}
                 >
                   {sub.name}
                 </button>
@@ -318,61 +249,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
             </div>
           )}
 
-          {/* Provider / Type filters — backed by /api/v1/models/filters */}
-          {filterOptions && (filterOptions.providers.length > 0 || filterOptions.modelTypes.length > 0) && (
-            <div className="flex flex-wrap items-center gap-2.5">
-              {filterOptions.providers.length > 0 && (
-                <FilterSelect
-                  label="Provider"
-                  value={selectedProvider}
-                  onChange={(v) => updateParams({ provider: v || null })}
-                >
-                  <option value="">All providers</option>
-                  {filterOptions.providers.map((p) => (
-                    <option key={p.slug} value={p.slug}>
-                      {p.name}
-                    </option>
-                  ))}
-                </FilterSelect>
-              )}
-
-              {filterOptions.modelTypes.length > 0 && (
-                <FilterSelect
-                  label="Type"
-                  value={selectedModelType}
-                  onChange={(v) => updateParams({ modelType: v || null })}
-                >
-                  <option value="">All types</option>
-                  {MODEL_TYPE_OPTIONS.map((t) => (
-                    <option key={t} value={t}>
-                      {formatModelType(t)}
-                    </option>
-                  ))}
-                </FilterSelect>
-              )}
-
-              {(selectedProvider || selectedModelType) && (
-                <button
-                  type="button"
-                  onClick={() => updateParams({
-                    provider: null,
-                    modelType: null,
-                  })}
-                  className="text-[11px] font-semibold text-[#71717A] hover:text-white transition-colors"
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
-          )}
-
           <ModelListView models={models} loading={isLoading && models.length === 0} />
-
-          {!isLoading && models.length === 0 && hasActiveFilters && (
-            <p className="text-center text-[12px] text-[#71717A]">
-              {q ? `No models match “${q}”.` : "No models match the selected filters."}
-            </p>
-          )}
 
           {/* Admin quick-edit strip (kept out of row chrome) */}
           {isAdmin && !isLoading && models.length > 0 && (
@@ -411,21 +288,11 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
             </div>
           )}
 
-          <Pagination
-            page={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalCount={data?.pagination?.total}
-            onPageChange={(p) => {
-              setCurrentPage(p);
-              const target = document.getElementById("models-grid");
-              if (target) target.scrollIntoView({ behavior: "smooth" });
-            }}
-            onPageSizeChange={(s) => {
-              setPageSize(s);
-              setCurrentPage(1);
-            }}
-          />
+          {models.length > 0 && hasNextPage && (
+            <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+            </div>
+          )}
         </div>
       </div>
 
