@@ -238,13 +238,19 @@ export class CompaniesService {
           },
         },
 
-        _count: {
-          select: {
-            tools: true,
-            aiModels: true,
-            collectionCompanies: true,
-          },
-        },
+         news: true,
+
+        videos: true,
+
+       _count: {
+  select: {
+    tools: true,
+    aiModels: true,
+    collectionCompanies: true,
+    news: true,
+    videos: true,
+  },
+},
       },
     });
 
