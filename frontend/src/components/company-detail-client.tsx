@@ -56,6 +56,39 @@ function formatJoinedDate(value: string | Date | null | undefined): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function formatVideoDuration(seconds: number | null | undefined): string {
+  if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds < 0) return "—";
+  const total = Math.floor(seconds);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  }
+
+  return `${minutes}:${secs.toString().padStart(2, "0")}`;
+}
+
+function formatVideoViews(views: number | null | undefined): string {
+  if (typeof views !== "number" || !Number.isFinite(views)) return "—";
+  if (views >= 1_000_000_000) return `${(views / 1_000_000_000).toFixed(1)}B`;
+  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
+  if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`;
+  return views.toLocaleString();
+}
+
+function formatVideoDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 const formatRobotTag = (value: string) =>
   value
     .toLowerCase()
@@ -169,6 +202,8 @@ export function CompanyDetailClient() {
 
   const toolsCount = company.tools?.length || company._count?.tools || 0;
   const modelsCount = company.aiModels?.length || company._count?.aiModels || 0;
+  const companyVideos = ((company as any).videos || []) as any[];
+  const videosCount = companyVideos.length || (company as any)._count?.videos || 0;
   const firstTool = company.tools && company.tools.length > 0 ? company.tools[0] : null;
   const sectorName = company.sector || (firstTool as any)?.category || (firstTool as any)?.tags?.[0] || "Artificial Intelligence";
   const companyDesc = company.description || (firstTool as any)?.description || `${cleanName} is an artificial intelligence entity building software solutions.`;
@@ -186,7 +221,7 @@ export function CompanyDetailClient() {
   { id: 'repositories', label: 'Repositories', count: company.repositories?.length || 0, icon: <Code size={13} /> },
   { id: 'robots', label: 'Robots', count: company.robots?.length || 0, icon: <Briefcase size={13} /> },
     { id: 'news', label: 'News', count: 0, icon: <Newspaper size={13} /> },
-    { id: 'videos', label: 'Videos', count: 0, icon: <Video size={13} /> },
+    { id: 'videos', label: 'Videos', count: videosCount, icon: <Video size={13} /> },
     { id: 'fundraises', label: 'Fundraises', count: 0, icon: <DollarSign size={13} /> },
     { id: 'investments', label: 'Investments', count: 0, icon: <Award size={13} /> },
   ];
@@ -751,11 +786,179 @@ className="text-white text-xs font-bold bg-[#1C1C20] border border-[#2B2B30] px-
 )}
 
 {activeTab === 'videos' && (
-  <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-8 sm:p-12 text-center text-[#71717A] text-xs sm:text-sm">
-    <p className="font-semibold text-white mb-1">No videos listed yet</p>
-    <p className="text-xs text-[#52525B]">
-      There are currently no public videos indexed for {cleanName}.
-    </p>
+  <div>
+    <div className="flex items-center justify-between gap-4 mb-3 sm:mb-4">
+      <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+        Videos ({videosCount})
+      </h2>
+    </div>
+
+    {companyVideos.length > 0 ? (
+      <div className="w-full overflow-x-auto rounded-2xl border border-[#1F1F24] bg-[#0D0D10]">
+        <div className="min-w-[1080px]">
+          <div className="grid grid-cols-[minmax(390px,2.4fr)_125px_95px_75px_105px_135px_minmax(180px,1fr)_76px] items-center gap-4 px-5 py-3 border-b border-[#1F1F24] text-[10px] sm:text-[11px] font-bold uppercase tracking-wide text-white">
+            <div>Name</div>
+            <div>Posted <span className="text-[#52525B]">⌄</span></div>
+            <div>Duration</div>
+            <div>Views</div>
+            <div>Level</div>
+            <div>CATEGORY</div>
+            <div>CHANNEL</div>
+            <div className="text-right">Actions</div>
+          </div>
+
+          <div>
+            {companyVideos.map((video: any) => {
+              const videoUrl = video.youtubeId
+                ? `https://www.youtube.com/watch?v=${video.youtubeId}`
+                : video.url || "#";
+
+              const category = video.toolCategory
+                ? video.toolCategory
+                    .replace(/[-_]/g, " ")
+                    .replace(/\b\w/g, (char: string) => char.toUpperCase())
+                : "—";
+
+              const level = video.level || video.difficulty || "—";
+
+              return (
+                <div
+                  key={video.id}
+                  className="grid grid-cols-[minmax(390px,2.4fr)_125px_95px_75px_105px_135px_minmax(180px,1fr)_76px] items-center gap-4 px-5 py-3.5 border-b border-[#17171B] last:border-b-0 hover:bg-[#111116] transition-colors"
+                >
+                  <a
+                    href={videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="min-w-0 flex items-center gap-3 group no-underline"
+                  >
+                    <div className="relative w-[126px] h-[70px] rounded-lg overflow-hidden bg-[#18181C] border border-[#26262B] shrink-0">
+                      {video.thumbnail ? (
+                        <img
+                          src={video.thumbnail}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Video size={18} className="text-[#52525B]" />
+                        </div>
+                      )}
+
+                      {video.durationSeconds ? (
+                        <span className="absolute bottom-1 right-1 rounded bg-black/85 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                          {formatVideoDuration(video.durationSeconds)}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-bold text-white group-hover:text-[#A78BFA] transition-colors line-clamp-2">
+                          {video.title || "Untitled video"}
+                        </span>
+                        <ExternalLink size={12} className="text-[#52525B] shrink-0" />
+                      </div>
+                    </div>
+                  </a>
+
+                  <div className="text-xs text-[#A1A1AA] whitespace-nowrap">
+                    {formatVideoDate(video.publishedAt)}
+                  </div>
+
+                  <div className="text-xs text-[#A1A1AA] tabular-nums whitespace-nowrap">
+                    {formatVideoDuration(video.durationSeconds)}
+                  </div>
+
+                  <div className="text-xs text-[#A1A1AA] tabular-nums whitespace-nowrap">
+                    {formatVideoViews(video.views)}
+                  </div>
+
+                  <div className="text-xs text-[#A1A1AA] whitespace-nowrap">
+                    {level}
+                  </div>
+
+                  <div className="min-w-0">
+                    <span className="inline-flex max-w-full items-center rounded-full border border-[#2C2C32] bg-[#101014] px-2.5 py-1 text-[10px] font-semibold text-[#D4D4D8] truncate">
+                      {category}
+                    </span>
+                  </div>
+
+                  <a
+                    href={videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="min-w-0 flex items-center gap-2 group/channel no-underline"
+                  >
+                    {video.authorAvatar ? (
+                      <img
+                        src={video.authorAvatar}
+                        alt=""
+                        className="w-7 h-7 rounded-full object-cover border border-[#29292F] shrink-0"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-[#1C1C20] border border-[#29292F] flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                        {(video.authorName || "?").charAt(0)}
+                      </div>
+                    )}
+                    <span className="text-xs font-semibold text-white truncate group-hover/channel:text-[#A78BFA] transition-colors">
+                      {video.authorName || "Unknown channel"}
+                    </span>
+                    <ExternalLink size={11} className="text-[#52525B] shrink-0" />
+                  </a>
+
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (navigator.clipboard) {
+                          navigator.clipboard.writeText(videoUrl);
+                          toast.success("Video link copied to clipboard!");
+                        }
+                      }}
+                      className="h-9 w-9 rounded-xl bg-[#1A1A1E] border border-[#2A2A30] text-[#A1A1AA] hover:text-white hover:bg-[#222228] flex items-center justify-center transition-colors cursor-pointer"
+                      title="Share video"
+                    >
+                      <Share2 size={14} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          toast.error("Sign in required to bookmark videos", {
+                            description: "Please sign in or create an account to save videos.",
+                            action: {
+                              label: "Sign In",
+                              onClick: () => router.push("/auth/signin"),
+                            },
+                            duration: 5000,
+                          });
+                          return;
+                        }
+
+                        toast.success("Video saved to bookmarks");
+                      }}
+                      className="h-9 w-9 rounded-xl bg-[#1A1A1E] border border-[#2A2A30] text-[#A1A1AA] hover:text-white hover:bg-[#222228] flex items-center justify-center transition-colors cursor-pointer"
+                      title="Bookmark video"
+                    >
+                      <Bookmark size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-8 sm:p-12 text-center text-[#71717A] text-xs sm:text-sm">
+        <p className="font-semibold text-white mb-1">No videos listed yet</p>
+        <p className="text-xs text-[#52525B]">
+          There are currently no public videos indexed for {cleanName}.
+        </p>
+      </div>
+    )}
   </div>
 )}
 
