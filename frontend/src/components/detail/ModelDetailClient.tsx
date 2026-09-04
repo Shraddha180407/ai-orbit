@@ -113,21 +113,33 @@ function SectionTitle({ title, count }: { title: string; count?: number }) {
 
 function RelatedCard({ model }: { model: AIModel }) {
   const company = model.provider?.name || model.creator || "Unknown provider";
+  const detail = model.modality || model.type || "AI model";
   return (
     <Link
       href={`/models/${model.id}`}
-      className="group flex items-start gap-3 rounded-xl border border-white/[0.07] bg-[#111114] p-3.5 transition-all hover:-translate-y-0.5 hover:border-[#6E56CF]/50 hover:bg-[#151519]"
+      className="group relative flex min-h-44 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#151519] to-[#0d0d10] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#6E56CF]/55 hover:shadow-[0_18px_45px_-24px_rgba(110,86,207,0.65)]"
     >
-      <ProviderLogo src={model.provider?.logoUrl} name={company} size="small" />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-bold text-white">{model.name}</p>
-          <ArrowRight size={13} className="shrink-0 text-[#52525B] transition-transform group-hover:translate-x-0.5 group-hover:text-[#A78BFA]" />
+      <span className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[#6E56CF]/0 blur-2xl transition-colors duration-300 group-hover:bg-[#6E56CF]/15" />
+      <div className="relative flex min-w-0 items-start gap-3">
+        <ProviderLogo src={model.provider?.logoUrl} name={company} size="small" />
+        <div className="min-w-0 flex-1 pt-0.5">
+          <p className="truncate text-[15px] font-bold text-white">{model.name}</p>
+          <p className="mt-1 truncate text-xs text-[#8B8B94]">{company}</p>
         </div>
-        <p className="mt-0.5 truncate text-xs text-[#A1A1AA]">{company}</p>
-        {model.description && (
-          <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-[#71717A]">{model.description}</p>
-        )}
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035] text-[#71717A] transition-all group-hover:border-[#6E56CF]/35 group-hover:bg-[#6E56CF]/10 group-hover:text-[#C4B8FF]">
+          <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </div>
+      <p className="relative mt-4 line-clamp-2 min-h-10 text-xs leading-5 text-[#85858E]">
+        {model.description || `Explore ${model.name}, an AI model created by ${company}.`}
+      </p>
+      <div className="relative mt-auto flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
+        <span className="max-w-[65%] truncate rounded-md border border-white/[0.07] bg-white/[0.035] px-2 py-1 text-[10px] font-semibold text-[#A1A1AA]">
+          {formatModelType(detail)}
+        </span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#77717F] transition-colors group-hover:text-[#B8A7FF]">
+          View model
+        </span>
       </div>
     </Link>
   );
@@ -432,48 +444,6 @@ export function ModelDetailClient() {
               </section>
             )}
 
-            <section>
-              <SectionTitle title="Model ecosystem" />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Link
-                  href={`/tools?q=${encodeURIComponent(model.name)}`}
-                  className="group flex items-center gap-4 rounded-xl border border-white/[0.08] bg-[#111114] p-4 transition hover:border-[#6E56CF]/45 hover:bg-[#151519]"
-                >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#6E56CF]/25 bg-[#6E56CF]/10 text-[#B8A7FF]">
-                    <Wrench size={18} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-white">Tools using this model</span>
-                    <span className="mt-1 block text-xs leading-relaxed text-[#71717A]">Explore products and workflows connected to {model.name}.</span>
-                  </span>
-                  <ArrowRight size={15} className="shrink-0 text-[#52525B] transition group-hover:translate-x-0.5 group-hover:text-[#B8A7FF]" />
-                </Link>
-                <Link
-                  href={`/videos?q=${encodeURIComponent(model.name)}`}
-                  className="group flex items-center gap-4 rounded-xl border border-white/[0.08] bg-[#111114] p-4 transition hover:border-[#6E56CF]/45 hover:bg-[#151519]"
-                >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#6E56CF]/25 bg-[#6E56CF]/10 text-[#B8A7FF]">
-                    <PlayCircle size={19} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-white">Videos and demos</span>
-                    <span className="mt-1 block text-xs leading-relaxed text-[#71717A]">Watch explainers, releases, and demonstrations of {model.name}.</span>
-                  </span>
-                  <ArrowRight size={15} className="shrink-0 text-[#52525B] transition group-hover:translate-x-0.5 group-hover:text-[#B8A7FF]" />
-                </Link>
-              </div>
-            </section>
-
-            {related.length > 0 && (
-              <section>
-                <SectionTitle title={`More models from ${companyName}`} count={related.length} />
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {related.map((relatedModel) => (
-                    <RelatedCard key={relatedModel.id} model={relatedModel} />
-                  ))}
-                </div>
-              </section>
-            )}
           </div>
 
           <aside className="space-y-4 lg:sticky lg:top-24">
@@ -519,6 +489,65 @@ export function ModelDetailClient() {
               )}
             </section>
           </aside>
+        </div>
+
+        <div className="mt-9 space-y-10 border-t border-white/[0.06] pt-9">
+          <section>
+            <SectionTitle title="Model ecosystem" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Link
+                href={`/tools?q=${encodeURIComponent(model.name)}`}
+                className="group relative flex min-h-40 overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#17171c] via-[#121216] to-[#0d0d10] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#6E56CF]/50 hover:shadow-[0_18px_50px_-30px_rgba(110,86,207,0.75)] sm:p-6"
+              >
+                <span className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-[#6E56CF]/10 blur-3xl transition-colors group-hover:bg-[#6E56CF]/20" />
+                <span className="relative flex min-w-0 flex-1 flex-col">
+                  <span className="flex items-start justify-between gap-4">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#6E56CF]/30 bg-[#6E56CF]/12 text-[#B8A7FF] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                      <Wrench size={20} />
+                    </span>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035] text-[#71717A] transition-all group-hover:border-[#6E56CF]/35 group-hover:bg-[#6E56CF]/10 group-hover:text-[#C4B8FF]">
+                      <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </span>
+                  <span className="mt-5 block text-base font-bold text-white sm:text-lg">Tools using {model.name}</span>
+                  <span className="mt-1.5 block max-w-md text-xs leading-5 text-[#85858E] sm:text-sm">
+                    Discover products, applications and workflows powered by this model.
+                  </span>
+                </span>
+              </Link>
+              <Link
+                href={`/videos?q=${encodeURIComponent(model.name)}`}
+                className="group relative flex min-h-40 overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#17171c] via-[#121216] to-[#0d0d10] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#6E56CF]/50 hover:shadow-[0_18px_50px_-30px_rgba(110,86,207,0.75)] sm:p-6"
+              >
+                <span className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-[#6E56CF]/10 blur-3xl transition-colors group-hover:bg-[#6E56CF]/20" />
+                <span className="relative flex min-w-0 flex-1 flex-col">
+                  <span className="flex items-start justify-between gap-4">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#6E56CF]/30 bg-[#6E56CF]/12 text-[#B8A7FF] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                      <PlayCircle size={21} />
+                    </span>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035] text-[#71717A] transition-all group-hover:border-[#6E56CF]/35 group-hover:bg-[#6E56CF]/10 group-hover:text-[#C4B8FF]">
+                      <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </span>
+                  <span className="mt-5 block text-base font-bold text-white sm:text-lg">Videos and demos</span>
+                  <span className="mt-1.5 block max-w-md text-xs leading-5 text-[#85858E] sm:text-sm">
+                    Watch explainers, launch highlights and real-world demonstrations of {model.name}.
+                  </span>
+                </span>
+              </Link>
+            </div>
+          </section>
+
+          {related.length > 0 && (
+            <section>
+              <SectionTitle title={`More models from ${companyName}`} count={related.length} />
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {related.map((relatedModel) => (
+                  <RelatedCard key={relatedModel.id} model={relatedModel} />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </main>
