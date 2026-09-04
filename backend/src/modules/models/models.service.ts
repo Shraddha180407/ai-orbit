@@ -118,7 +118,7 @@ export class ModelsService {
 
     const itemsWithSubCategories = items.map(item => ({
       ...item,
-      subCategories: item.subCategories?.map(sc => sc.subCategory) ?? [],
+      subCategories: item.subCategories.map(sc => sc.subCategory),
     }));
 
     return {
