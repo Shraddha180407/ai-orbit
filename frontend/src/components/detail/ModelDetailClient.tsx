@@ -391,7 +391,7 @@ export function ModelDetailClient() {
                         title={modelWebsiteUrl}
                         className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#6E56CF]/35 bg-[#6E56CF]/10 px-2.5 py-1 text-[10px] font-semibold text-[#B8A7FF] transition hover:border-[#6E56CF]/60 hover:bg-[#6E56CF]/20 hover:text-white"
                       >
-                        <span>Visit website</span>
+                        <span>Visit model</span>
                         <ExternalLink size={11} className="shrink-0" />
                       </a>
                     )}
