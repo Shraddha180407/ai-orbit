@@ -366,24 +366,6 @@ export function ModelDetailClient() {
         <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
           <div className="min-w-0 space-y-6">
             <section>
-              <SectionTitle title="Overview" />
-              <div className="rounded-xl border border-white/[0.08] bg-[#111114] p-4">
-                <p className="text-sm leading-7 text-[#C4C4CC]">
-                  {model.description || `${model.name} is an AI model developed by ${companyName}.`}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {[typeLabel, cleanValue(model.modality), model.openSource === true ? "Open source" : model.openSource === false ? "Closed source" : "Source status unknown", `Released ${formatDate(model.releaseDate)}`]
-                    .filter((value, index, values) => value !== "Not available" && values.indexOf(value) === index)
-                    .map((value) => (
-                      <span key={value} className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-[#D4D4D8]">
-                        {value}
-                      </span>
-                    ))}
-                </div>
-              </div>
-            </section>
-
-            <section>
               <SectionTitle title="Technical specifications" />
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                 <SpecCard label="Model type" value={typeLabel} />
