@@ -360,36 +360,41 @@ export function ModelDetailClient() {
             <div className="relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 lg:grid-cols-[80px_minmax(0,1fr)_330px] lg:gap-5">
               <ProviderLogo src={model.provider?.logoUrl} name={companyName} />
 
-              <div className="min-w-0 pt-0.5">
-                <h1 className="break-words text-3xl font-black tracking-tight text-white sm:text-4xl">{model.name}</h1>
-                <p className="mt-1.5 text-sm text-[#A1A1AA]">
-                  Built by{" "}
-                  {model.provider?.slug ? (
-                    <Link href={`/companies/${model.provider.slug}`} className="font-bold text-white hover:text-[#B8A7FF] hover:underline">
-                      {companyName}
-                    </Link>
-                  ) : (
-                    <span className="font-bold text-white">{companyName}</span>
-                  )}
-                </p>
-                <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                  <CategoryChip label={typeLabel} href={`/models?modality=${encodeURIComponent(model.modality || "")}`} />
-                  <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold text-[#A1A1AA]">
-                    {model.openSource === true ? "Open source" : model.openSource === false ? "Closed source" : "Source status unknown"}
-                  </span>
-                </div>
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-[#C4C4CC] sm:text-[15px] sm:leading-7">
-                  {detailedDescription}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Model capabilities">
-                  {heroCapabilities.map((capability) => (
-                    <span
-                      key={capability}
-                      className="rounded-md border border-[#6E56CF]/25 bg-[#6E56CF]/[0.08] px-2 py-1 text-[10px] font-semibold text-[#B8A7FF]"
-                    >
-                      {capability}
+              <div className="min-w-0 pt-0.5 lg:grid lg:grid-cols-[170px_minmax(0,1fr)] lg:gap-5">
+                <div className="min-w-0">
+                  <h1 className="break-words text-3xl font-black tracking-tight text-white sm:text-4xl">{model.name}</h1>
+                  <p className="mt-1.5 text-sm text-[#A1A1AA]">
+                    Built by{" "}
+                    {model.provider?.slug ? (
+                      <Link href={`/companies/${model.provider.slug}`} className="font-bold text-white hover:text-[#B8A7FF] hover:underline">
+                        {companyName}
+                      </Link>
+                    ) : (
+                      <span className="font-bold text-white">{companyName}</span>
+                    )}
+                  </p>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    <CategoryChip label={typeLabel} href={`/models?modality=${encodeURIComponent(model.modality || "")}`} />
+                    <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold text-[#A1A1AA]">
+                      {model.openSource === true ? "Open source" : model.openSource === false ? "Closed source" : "Source status unknown"}
                     </span>
-                  ))}
+                  </div>
+                </div>
+
+                <div className="mt-3 min-w-0 lg:mt-0">
+                  <p className="text-sm leading-6 text-[#C4C4CC] sm:text-[15px] sm:leading-7">
+                    {detailedDescription}
+                  </p>
+                  <div className="mt-2.5 flex flex-wrap gap-1.5" aria-label="Model capabilities">
+                    {heroCapabilities.map((capability) => (
+                      <span
+                        key={capability}
+                        className="rounded-md border border-[#6E56CF]/25 bg-[#6E56CF]/[0.08] px-2 py-1 text-[10px] font-semibold text-[#B8A7FF]"
+                      >
+                        {capability}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
 
