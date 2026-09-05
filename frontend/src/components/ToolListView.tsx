@@ -113,8 +113,8 @@ function isTruthy(...vals: Array<unknown>): boolean {
 
 function FilterIcon({ active }: { active?: boolean }) {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-      className={active ? "text-[#6E56CF]" : "text-[#52525B] hover:text-white"}>
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+      className={active ? "text-[#6E56CF]" : "text-[#A1A1AA] hover:text-white"}>
       <line x1="4" y1="6" x2="20" y2="6"/>
       <line x1="8" y1="12" x2="16" y2="12"/>
       <line x1="11" y1="18" x2="13" y2="18"/>
@@ -363,8 +363,8 @@ function ToolRow({
               <span className="text-[#71717A] opacity-30 shrink-0 hidden md:inline-flex"><ExternalLink size={14} /></span>
             )}
           </div>
-          <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis md:text-clip">
-            {trimNoDots(tool.description || "")}
+          <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug whitespace-nowrap overflow-hidden max-w-[420px]">
+            {tool.description || ""}
           </p>
         </div>
       ) : (
@@ -400,14 +400,14 @@ function ToolRow({
                 )}
               </div>
             </div>
-            <p className="hidden md:block mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis md:text-clip">
-              {trimNoDots(tool.description || "")}
+             <p className="hidden md:block mt-0.5 text-[11px] text-[#A1A1AA] leading-snug whitespace-nowrap overflow-hidden max-w-[380px]">
+              {tool.description || ""}
             </p>
           </div>
 
           <div className="md:hidden min-w-0 flex flex-col justify-center pr-2 h-full">
-            <p className="text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis">
-              {trimNoDots(tool.description || "")}
+            <p className="text-[11px] text-[#A1A1AA] leading-snug whitespace-nowrap overflow-hidden max-w-[200px]">
+              {tool.description || ""}
             </p>
           </div>
         </>
@@ -528,13 +528,13 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
   const [nameSearch, setNameSearch] = useState("");
 
   type SortKey = "released" | "name";
-  const [sortKey, setSortKey] = useState<SortKey>("released");
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   function handleSort(key: SortKey) {
-    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortKey(key); setSortDir("desc"); }
-  }
+  if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+  else { setSortKey(key); setSortDir("desc"); }
+}
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -579,7 +579,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
         (t.company?.name || "").toLowerCase().includes(q)
       );
     }
-    if (sortKey === "name") {
+     if (sortKey === "name") {
       list.sort((a, b) => {
         const cmp = (a.name || "").localeCompare(b.name || "");
         return sortDir === "asc" ? cmp : -cmp;
@@ -596,6 +596,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
         return (a.name || "").localeCompare(b.name || "");
       });
     }
+    // sortKey === null: preserve original API order
     return list;
   }, [tools, nameSearch, sortKey, sortDir, isMixedFeed]);
   
@@ -748,9 +749,9 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               )}
 
               {/* RELEASED */}
-              <button
+             <button
                 onClick={() => handleSort("released")}
-                className="text-[9.5px] font-mono font-semibold tracking-wider text-[#6E56CF] hover:text-white transition-colors flex items-center gap-1"
+                className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1"
               >
                 RELEASED <SortIcon active={sortKey === "released"} dir={sortDir} />
               </button>
