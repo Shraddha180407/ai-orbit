@@ -186,40 +186,12 @@ export function ToolsClient({
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    if (!container) return;
-    const target = subCatRefs.current[activeCategory || ""];
-    if (!target) return;
-
-    scrollChipIntoView(container, target);
-  }, [activeCategory]);
-
   // FIXED: If the mode changes (e.g. going from Agents to Tools), force the category and page to reset 
   // so the new page doesn't try to query the old page's categories.
   useEffect(() => {
     setActiveCategory(defaultCategory || searchParams.get("category") || "");
     setCurrentPage(Number(searchParams.get("page")) || 1);
   }, [mode, defaultCategory]);
-
-  // Scroll the active category pill into view on mobile after every category change
-  const categoryRowRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
-    const container = categoryRowRef.current;
-    if (!container) return;
-    const activeBtn = container.querySelector<HTMLElement>('[data-active="true"]');
-    if (!activeBtn) return;
-    const cRect = container.getBoundingClientRect();
-    const bRect = activeBtn.getBoundingClientRect();
-    const bLeft = bRect.left - cRect.left + container.scrollLeft;
-    const bRight = bLeft + bRect.width;
-    if (bLeft < container.scrollLeft) {
-      container.scrollTo({ left: bLeft - 16, behavior: 'smooth' });
-    } else if (bRight > container.scrollLeft + container.clientWidth) {
-      container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: 'smooth' });
-    }
-  }, [activeCategory]);
 
 
 

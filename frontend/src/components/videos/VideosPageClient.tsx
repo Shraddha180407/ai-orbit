@@ -56,14 +56,7 @@ export function VideosPageClient({
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    if (!container) return;
-    const target = subCatRefs.current[activeCategory || ""];
-    if (!target) return;
 
-    scrollChipIntoView(container, target);
-  }, [activeCategory]);
 
   const [sortBy, setSortBy] = useState<VideoSortBy>("posted");
   const [sortDir, setSortDir] = useState<VideoSortDir>("desc");

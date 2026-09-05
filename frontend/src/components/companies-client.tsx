@@ -364,15 +364,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    if (!container) return;
-    const activeKey = activeCategorySlug || "all";
-    const target = subCatRefs.current[activeKey];
-    if (!target) return;
 
-    scrollChipIntoView(container, target);
-  }, [activeCategorySlug]);
 
   const [selectedCountry, setSelectedCountry] = useState<string>("all");
   const [isCountryPopoverOpen, setIsCountryPopoverOpen] = useState<boolean>(false);

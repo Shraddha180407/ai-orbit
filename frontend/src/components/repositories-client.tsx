@@ -69,15 +69,7 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    if (!container) return;
-    const activeKey = selectedSubCategorySlug || "all";
-    const target = subCatRefs.current[activeKey];
-    if (!target) return;
 
-    scrollChipIntoView(container, target);
-  }, [selectedSubCategorySlug]);
 
   // Derive selectedCompany from URL query parameter
   const selectedCompany = React.useMemo(() => {
@@ -308,13 +300,8 @@ export function RepositoriesClient({ defaultCategory }: { defaultCategory?: stri
               {subCategories.map((sub) => (
                 <button
                   key={sub.id}
-                  onClick={(e) => {
+                  onClick={() => {
                     handleSelectSubCategory(sub.slug);
-                    e.currentTarget.scrollIntoView({
-                      behavior: "smooth",
-                      block: "nearest",
-                      inline: "nearest"
-                    });
                   }}
                   className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${selectedSubCategorySlug === sub.slug
                       ? "bg-white text-black border-white shadow-lg shadow-white/5"
