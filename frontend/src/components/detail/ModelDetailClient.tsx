@@ -89,9 +89,9 @@ function ProviderLogo({
 function SpecCard({ label, value }: { label: string; value: string }) {
   const available = value !== "Not available";
   return (
-    <div className="min-w-0 rounded-xl border border-white/[0.07] bg-[#111114] p-4 transition-colors hover:border-white/[0.13]">
+    <div className="min-w-0 rounded-lg border border-white/[0.07] bg-[#111114] p-3 transition-colors hover:border-white/[0.13]">
       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#71717A]">{label}</p>
-      <p className={`mt-2 truncate text-sm font-bold ${available ? "text-white" : "text-[#52525B]"}`} title={value}>
+      <p className={`mt-1.5 truncate text-sm font-bold ${available ? "text-white" : "text-[#52525B]"}`} title={value}>
         {value}
       </p>
     </div>
@@ -100,7 +100,7 @@ function SpecCard({ label, value }: { label: string; value: string }) {
 
 function SectionTitle({ title, count }: { title: string; count?: number }) {
   return (
-    <div className="mb-4 flex items-center gap-2 border-b border-white/[0.07] pb-3">
+    <div className="mb-3 flex items-center gap-2 border-b border-white/[0.07] pb-2.5">
       <h2 className="text-base font-bold text-white sm:text-lg">{title}</h2>
       {typeof count === "number" && (
         <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold text-[#A1A1AA]">
@@ -117,26 +117,19 @@ function RelatedCard({ model }: { model: AIModel }) {
   return (
     <Link
       href={`/models/${model.id}`}
-      className="group relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#111114] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#6E56CF]/50 hover:bg-[#141419]"
+      className="group relative flex items-center gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111114] p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#6E56CF]/50 hover:bg-[#141419]"
     >
       <span className="absolute inset-y-0 left-0 w-0.5 bg-[#6E56CF] opacity-0 transition-opacity group-hover:opacity-100" />
-      <div className="relative flex min-w-0 items-center gap-3">
-        <ProviderLogo src={model.provider?.logoUrl} name={company} size="small" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-bold text-white">{model.name}</p>
-          <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-[#8B8B94]">
-            <span className="truncate">{company}</span>
-            <span className="h-1 w-1 shrink-0 rounded-full bg-[#3F3F46]" />
-            <span className="truncate text-[#A78BFA]">{formatModelType(detail)}</span>
-          </div>
+      <ProviderLogo src={model.provider?.logoUrl} name={company} size="small" />
+      <div className="relative min-w-0 flex-1">
+        <p className="truncate text-sm font-bold text-white">{model.name}</p>
+        <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-[#8B8B94]">
+          <span className="truncate">{company}</span>
+          <span className="h-1 w-1 shrink-0 rounded-full bg-[#3F3F46]" />
+          <span className="truncate text-[#A78BFA]">{formatModelType(detail)}</span>
         </div>
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-[#71717A] transition-all group-hover:border-[#6E56CF]/35 group-hover:bg-[#6E56CF]/10 group-hover:text-[#C4B8FF]">
-          <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-        </span>
       </div>
-      <p className="relative mt-3 line-clamp-2 text-xs leading-5 text-[#7F7F89]">
-        {model.description || `Explore ${model.name}, an AI model created by ${company}.`}
-      </p>
+      <ArrowRight size={14} className="relative shrink-0 text-[#52525B] transition-all group-hover:translate-x-0.5 group-hover:text-[#B8A7FF]" />
     </Link>
   );
 }
@@ -277,8 +270,8 @@ export function ModelDetailClient() {
     <main className="relative flex-1 overflow-hidden bg-black">
       <div className="pointer-events-none absolute left-1/2 top-0 h-[460px] w-[780px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#6E56CF]/10 blur-[120px]" />
 
-      <div className="relative mx-auto w-full max-w-[1180px] px-4 py-5 sm:px-6 sm:py-8 lg:py-10">
-        <nav className="mb-5 flex min-w-0 items-center gap-2 text-xs text-[#71717A] sm:mb-7 sm:text-sm" aria-label="Breadcrumb">
+      <div className="relative mx-auto w-full max-w-[1180px] px-4 py-4 sm:px-6 sm:py-6 lg:py-7">
+        <nav className="mb-4 flex min-w-0 items-center gap-2 text-xs text-[#71717A] sm:mb-5 sm:text-sm" aria-label="Breadcrumb">
           <Link href="/models" className="inline-flex shrink-0 items-center gap-1.5 transition-colors hover:text-white">
             <ArrowLeft size={14} />
             AI Models
@@ -288,9 +281,9 @@ export function ModelDetailClient() {
         </nav>
 
         <header className="overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#151519] via-[#101012] to-[#0d0d10] shadow-2xl shadow-black/25">
-          <div className="relative p-4 sm:p-7 lg:p-8">
+          <div className="relative p-4 sm:p-5 lg:p-6">
             <div className="pointer-events-none absolute right-0 top-0 h-52 w-52 rounded-full bg-[#6E56CF]/10 blur-3xl" />
-            <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
+            <div className="relative flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
               <div className="flex min-w-0 items-start gap-4 sm:gap-5">
                 <ProviderLogo src={model.provider?.logoUrl} name={companyName} />
                 <div className="min-w-0">
@@ -349,7 +342,7 @@ export function ModelDetailClient() {
             </div>
 
             {model.description && (
-              <p className="relative mt-5 max-w-4xl text-sm leading-6 text-[#C4C4CC] sm:mt-6 sm:text-[15px] sm:leading-7">{model.description}</p>
+              <p className="relative mt-4 max-w-4xl text-sm leading-6 text-[#C4C4CC] sm:text-[15px]">{model.description}</p>
             )}
           </div>
 
@@ -360,7 +353,7 @@ export function ModelDetailClient() {
               ["Modality", cleanValue(model.modality)],
               ["Primary task", cleanValue(model.primaryTask)],
             ].map(([label, value], index) => (
-              <div key={label} className={`p-4 sm:p-5 ${index % 2 !== 0 ? "border-l border-white/[0.07]" : ""} ${index > 1 ? "border-t border-white/[0.07] sm:border-t-0" : ""} ${index > 0 ? "sm:border-l sm:border-white/[0.07]" : ""}`}>
+              <div key={label} className={`p-3 sm:px-4 sm:py-3.5 ${index % 2 !== 0 ? "border-l border-white/[0.07]" : ""} ${index > 1 ? "border-t border-white/[0.07] sm:border-t-0" : ""} ${index > 0 ? "sm:border-l sm:border-white/[0.07]" : ""}`}>
                 <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#62626B]">{label}</p>
                 <p className={`mt-1.5 truncate text-sm font-bold ${value === "Not available" ? "text-[#52525B]" : "text-white"}`} title={value}>
                   {value}
@@ -370,11 +363,11 @@ export function ModelDetailClient() {
           </div>
         </header>
 
-        <div className="mt-7 grid gap-7 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
-          <div className="min-w-0 space-y-8">
+        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+          <div className="min-w-0 space-y-6">
             <section>
               <SectionTitle title="Overview" />
-              <div className="rounded-xl border border-white/[0.08] bg-[#111114] p-4 sm:p-5">
+              <div className="rounded-xl border border-white/[0.08] bg-[#111114] p-4">
                 <p className="text-sm leading-7 text-[#C4C4CC]">
                   {model.description || `${model.name} is an AI model developed by ${companyName}.`}
                 </p>
@@ -392,7 +385,7 @@ export function ModelDetailClient() {
 
             <section>
               <SectionTitle title="Technical specifications" />
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                 <SpecCard label="Model type" value={typeLabel} />
                 <SpecCard label="Modality" value={cleanValue(model.modality)} />
                 <SpecCard label="Primary task" value={cleanValue(model.primaryTask)} />
@@ -442,13 +435,13 @@ export function ModelDetailClient() {
 
           </div>
 
-          <aside className="space-y-4 lg:sticky lg:top-24">
-            <section className="rounded-xl border border-white/[0.08] bg-[#111114] p-5">
+          <aside className="space-y-3 lg:sticky lg:top-24">
+            <section className="rounded-xl border border-white/[0.08] bg-[#111114] p-4">
               <div className="flex items-center gap-2">
                 <Cpu size={16} className="text-[#A78BFA]" />
                 <h2 className="text-sm font-bold text-white">Model information</h2>
               </div>
-              <dl className="mt-4 divide-y divide-white/[0.06]">
+              <dl className="mt-3 divide-y divide-white/[0.06]">
                 {[
                   ["Provider", companyName],
                   ["Type", typeLabel],
@@ -456,7 +449,7 @@ export function ModelDetailClient() {
                   ["Open source", model.openSource === true ? "Yes" : model.openSource === false ? "No" : "Not available"],
                   ["Last updated", model.updatedAt ? formatDate(model.updatedAt) : "Not available"],
                 ].map(([label, value]) => (
-                  <div key={label} className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                  <div key={label} className="flex items-start justify-between gap-4 py-2.5 first:pt-0 last:pb-0">
                     <dt className="text-xs text-[#71717A]">{label}</dt>
                     <dd className="max-w-[60%] text-right text-xs font-semibold text-[#D4D4D8]">{value}</dd>
                   </div>
@@ -464,7 +457,7 @@ export function ModelDetailClient() {
               </dl>
             </section>
 
-            <section className="rounded-xl border border-white/[0.08] bg-[#111114] p-5">
+            <section className="rounded-xl border border-white/[0.08] bg-[#111114] p-4">
               <div className="flex items-center gap-3">
                 <ProviderLogo src={model.provider?.logoUrl} name={companyName} size="small" />
                 <div className="min-w-0">
@@ -473,7 +466,7 @@ export function ModelDetailClient() {
                 </div>
               </div>
               {model.provider?.slug ? (
-                <Link href={`/companies/${model.provider.slug}`} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/[0.09] bg-white/[0.035] px-3 py-2 text-xs font-bold text-[#D4D4D8] transition hover:border-[#6E56CF]/40 hover:text-white">
+                <Link href={`/companies/${model.provider.slug}`} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/[0.09] bg-white/[0.035] px-3 py-2 text-xs font-bold text-[#D4D4D8] transition hover:border-[#6E56CF]/40 hover:text-white">
                   View company
                   <ArrowRight size={13} />
                 </Link>
@@ -487,13 +480,13 @@ export function ModelDetailClient() {
           </aside>
         </div>
 
-        <div className="mt-9 space-y-10 border-t border-white/[0.06] pt-9">
+        <div className="mt-6 space-y-6 border-t border-white/[0.06] pt-6">
           <section>
             <SectionTitle title="Model ecosystem" />
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Link
                 href={`/tools?q=${encodeURIComponent(model.name)}`}
-                className="group relative flex items-center gap-4 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111114] p-4 transition-all duration-300 hover:border-[#6E56CF]/50 hover:bg-[#141419] sm:p-5"
+                className="group relative flex items-center gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111114] p-3 transition-all duration-300 hover:border-[#6E56CF]/50 hover:bg-[#141419] sm:p-4"
               >
                 <span className="absolute inset-y-0 left-0 w-0.5 bg-[#6E56CF] opacity-0 transition-opacity group-hover:opacity-100" />
                 <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#6E56CF]/30 bg-[#6E56CF]/10 text-[#B8A7FF]">
@@ -509,7 +502,7 @@ export function ModelDetailClient() {
               </Link>
               <Link
                 href={`/videos?q=${encodeURIComponent(model.name)}`}
-                className="group relative flex items-center gap-4 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111114] p-4 transition-all duration-300 hover:border-[#6E56CF]/50 hover:bg-[#141419] sm:p-5"
+                className="group relative flex items-center gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111114] p-3 transition-all duration-300 hover:border-[#6E56CF]/50 hover:bg-[#141419] sm:p-4"
               >
                 <span className="absolute inset-y-0 left-0 w-0.5 bg-[#6E56CF] opacity-0 transition-opacity group-hover:opacity-100" />
                 <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#6E56CF]/30 bg-[#6E56CF]/10 text-[#B8A7FF]">
@@ -529,7 +522,7 @@ export function ModelDetailClient() {
           {related.length > 0 && (
             <section>
               <SectionTitle title={`More models from ${companyName}`} count={related.length} />
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {related.map((relatedModel) => (
                   <RelatedCard key={relatedModel.id} model={relatedModel} />
                 ))}
