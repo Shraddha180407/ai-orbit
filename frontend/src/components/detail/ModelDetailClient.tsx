@@ -311,6 +311,7 @@ export function ModelDetailClient() {
   const tags = Array.from(new Set((model.tags ?? []).filter(Boolean)));
   const benchmarks = model.benchmarks ?? [];
   const detailedDescription = getDetailedDescription(model, companyName);
+  const heroCapabilities = (tags.length > 0 ? tags : ["Reasoning", "Mathematics", "Coding", "Science"]).slice(0, 4);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -356,7 +357,7 @@ export function ModelDetailClient() {
         <header className="overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#151519] via-[#101012] to-[#0d0d10] shadow-2xl shadow-black/25">
           <div className="relative p-4 sm:p-5">
             <div className="pointer-events-none absolute right-0 top-0 h-52 w-52 rounded-full bg-[#6E56CF]/10 blur-3xl" />
-            <div className="relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 lg:grid-cols-[80px_180px_minmax(0,1fr)_330px]">
+            <div className="relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 lg:grid-cols-[80px_minmax(0,1fr)_330px] lg:gap-5">
               <ProviderLogo src={model.provider?.logoUrl} name={companyName} />
 
               <div className="min-w-0 pt-0.5">
@@ -377,13 +378,22 @@ export function ModelDetailClient() {
                     {model.openSource === true ? "Open source" : model.openSource === false ? "Closed source" : "Source status unknown"}
                   </span>
                 </div>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-[#C4C4CC] sm:text-[15px] sm:leading-7">
+                  {detailedDescription}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Model capabilities">
+                  {heroCapabilities.map((capability) => (
+                    <span
+                      key={capability}
+                      className="rounded-md border border-[#6E56CF]/25 bg-[#6E56CF]/[0.08] px-2 py-1 text-[10px] font-semibold text-[#B8A7FF]"
+                    >
+                      {capability}
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              <p className="col-span-2 text-sm leading-6 text-[#C4C4CC] sm:text-[15px] sm:leading-7 lg:col-span-1 lg:pt-0.5">
-                {detailedDescription}
-              </p>
-
-              <div className="col-span-2 rounded-xl border border-white/[0.07] bg-black/20 p-3.5 lg:col-span-1">
+              <div className="col-span-2 rounded-xl border border-white/[0.07] bg-black/20 p-3 lg:col-span-1">
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -407,7 +417,7 @@ export function ModelDetailClient() {
                     {copied ? "Copied" : "Share"}
                   </button>
                 </div>
-                <dl className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-white/[0.07] bg-white/[0.07]">
+                <dl className="mt-2.5 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-white/[0.07] bg-white/[0.07]">
                   {[
                     ["Released", formatDate(model.releaseDate)],
                     ["Context", cleanValue(model.contextWindow)],
