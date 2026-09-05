@@ -13,7 +13,6 @@ import Check from "lucide-react/dist/esm/icons/check";
 import Cpu from "lucide-react/dist/esm/icons/cpu";
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw";
 import Share2 from "lucide-react/dist/esm/icons/share-2";
-import Sparkles from "lucide-react/dist/esm/icons/sparkles";
 import PlayCircle from "lucide-react/dist/esm/icons/play-circle";
 import Wrench from "lucide-react/dist/esm/icons/wrench";
 import { toast } from "sonner";
@@ -46,6 +45,23 @@ function formatDate(value?: string | null) {
   }).format(parsed);
 }
 
+function resolveProviderLogo(src: string | null | undefined, name: string) {
+  if (name.trim().toLowerCase().includes("openai")) return "/logos/openai.svg";
+  return src;
+}
+
+function getDetailedDescription(model: ModelDetail, companyName: string) {
+  const normalizedName = model.name.trim().toLowerCase();
+  if (normalizedName === "o1" || normalizedName === "openai o1") {
+    return "OpenAI o1 is an advanced reasoning model designed to spend more time analysing complex problems before responding. It is built for demanding work such as mathematics, scientific reasoning, coding and multi-step problem solving, where careful planning and accuracy matter more than an instant answer.";
+  }
+
+  return (
+    model.description ||
+    `${model.name} is developed by ${companyName} for ${model.primaryTask || model.modality || "advanced tasks"}.`
+  );
+}
+
 function ProviderLogo({
   src,
   name,
@@ -56,6 +72,7 @@ function ProviderLogo({
   size?: "small" | "large";
 }) {
   const [failed, setFailed] = useState(false);
+  const resolvedSrc = resolveProviderLogo(src, name);
   const boxClass =
     size === "large"
       ? "h-16 w-16 rounded-xl sm:h-20 sm:w-20 sm:rounded-2xl"
@@ -66,9 +83,9 @@ function ProviderLogo({
     <div
       className={`relative flex ${boxClass} shrink-0 items-center justify-center overflow-hidden border border-white/10 bg-white shadow-lg shadow-black/20`}
     >
-      {src && !failed ? (
+      {resolvedSrc && !failed ? (
         <Image
-          src={src}
+          src={resolvedSrc}
           alt={`${name} logo`}
           width={imageSize}
           height={imageSize}
@@ -113,23 +130,28 @@ function SectionTitle({ title, count }: { title: string; count?: number }) {
 
 function RelatedCard({ model }: { model: AIModel }) {
   const company = model.provider?.name || model.creator || "Unknown provider";
-  const detail = model.modality || model.type || "AI model";
+  const detail = model.modality || model.type || "General";
   return (
     <Link
       href={`/models/${model.id}`}
-      className="group relative flex items-center gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111114] p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#6E56CF]/50 hover:bg-[#141419]"
+      className="group relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#111114] p-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#6E56CF]/50 hover:bg-[#141419]"
     >
       <span className="absolute inset-y-0 left-0 w-0.5 bg-[#6E56CF] opacity-0 transition-opacity group-hover:opacity-100" />
-      <ProviderLogo src={model.provider?.logoUrl} name={company} size="small" />
-      <div className="relative min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-white">{model.name}</p>
-        <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-[#8B8B94]">
-          <span className="truncate">{company}</span>
-          <span className="h-1 w-1 shrink-0 rounded-full bg-[#3F3F46]" />
-          <span className="truncate text-[#A78BFA]">{formatModelType(detail)}</span>
+      <div className="relative flex items-center gap-3">
+        <ProviderLogo src={model.provider?.logoUrl} name={company} size="small" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold text-white">{model.name}</p>
+          <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-[#8B8B94]">
+            <span className="truncate">{company}</span>
+            <span className="h-1 w-1 shrink-0 rounded-full bg-[#3F3F46]" />
+            <span className="truncate text-[#A78BFA]">{formatModelType(detail)}</span>
+          </div>
         </div>
+        <ArrowRight size={14} className="shrink-0 text-[#52525B] transition-all group-hover:translate-x-0.5 group-hover:text-[#B8A7FF]" />
       </div>
-      <ArrowRight size={14} className="relative shrink-0 text-[#52525B] transition-all group-hover:translate-x-0.5 group-hover:text-[#B8A7FF]" />
+      {model.description && (
+        <p className="relative mt-2.5 line-clamp-1 text-[11px] leading-5 text-[#777781]">{model.description}</p>
+      )}
     </Link>
   );
 }
@@ -238,6 +260,7 @@ export function ModelDetailClient() {
   const related = model.relatedModels ?? [];
   const tags = Array.from(new Set((model.tags ?? []).filter(Boolean)));
   const benchmarks = model.benchmarks ?? [];
+  const detailedDescription = getDetailedDescription(model, companyName);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -281,85 +304,79 @@ export function ModelDetailClient() {
         </nav>
 
         <header className="overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#151519] via-[#101012] to-[#0d0d10] shadow-2xl shadow-black/25">
-          <div className="relative p-4 sm:p-5 lg:p-6">
+          <div className="relative p-4 sm:p-5">
             <div className="pointer-events-none absolute right-0 top-0 h-52 w-52 rounded-full bg-[#6E56CF]/10 blur-3xl" />
-            <div className="relative flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-              <div className="flex min-w-0 items-start gap-4 sm:gap-5">
-                <ProviderLogo src={model.provider?.logoUrl} name={companyName} />
-                <div className="min-w-0">
-                  <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#6E56CF]/30 bg-[#6E56CF]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#B8A7FF]">
-                    <Sparkles size={11} />
-                    AI model
-                  </div>
-                  <h1 className="break-words text-2xl font-black tracking-tight text-white sm:text-4xl">{model.name}</h1>
-                  <p className="mt-2 text-sm text-[#A1A1AA]">
-                    Built by{" "}
-                    {model.provider?.slug ? (
-                      <Link href={`/companies/${model.provider.slug}`} className="font-bold text-white hover:text-[#B8A7FF] hover:underline">
-                        {companyName}
-                      </Link>
-                    ) : (
-                      <span className="font-bold text-white">{companyName}</span>
-                    )}
-                  </p>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <CategoryChip label={typeLabel} href={`/models?modality=${encodeURIComponent(model.modality || "")}`} />
-                    <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold text-[#A1A1AA]">
-                      {model.openSource === true ? "Open source" : model.openSource === false ? "Closed source" : "Source status unknown"}
-                    </span>
-                    {model.releaseDate && (
+            <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_330px]">
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-start gap-4 sm:gap-5">
+                  <ProviderLogo src={model.provider?.logoUrl} name={companyName} />
+                  <div className="min-w-0 pt-0.5">
+                    <h1 className="break-words text-3xl font-black tracking-tight text-white sm:text-4xl">{model.name}</h1>
+                    <p className="mt-1.5 text-sm text-[#A1A1AA]">
+                      Built by{" "}
+                      {model.provider?.slug ? (
+                        <Link href={`/companies/${model.provider.slug}`} className="font-bold text-white hover:text-[#B8A7FF] hover:underline">
+                          {companyName}
+                        </Link>
+                      ) : (
+                        <span className="font-bold text-white">{companyName}</span>
+                      )}
+                    </p>
+                    <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                      <CategoryChip label={typeLabel} href={`/models?modality=${encodeURIComponent(model.modality || "")}`} />
                       <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold text-[#A1A1AA]">
-                        Released {formatDate(model.releaseDate)}
+                        {model.openSource === true ? "Open source" : model.openSource === false ? "Closed source" : "Source status unknown"}
                       </span>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex w-full gap-2 lg:w-auto">
-                <button
-                  type="button"
-                  onClick={handleBookmark}
-                  aria-pressed={bookmarked}
-                  className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-bold transition lg:flex-none ${
-                    bookmarked
-                      ? "border-[#6E56CF]/60 bg-[#6E56CF]/20 text-white"
-                      : "border-white/[0.1] bg-white/[0.04] text-[#D4D4D8] hover:bg-white/[0.08] hover:text-white"
-                  }`}
-                >
-                  <Bookmark size={15} className={bookmarked ? "fill-current" : ""} />
-                  {bookmarked ? "Saved" : "Save"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleShare}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-[#D4D4D8] transition hover:bg-white/[0.08] hover:text-white lg:flex-none"
-                >
-                  {copied ? <Check size={15} /> : <Share2 size={15} />}
-                  {copied ? "Copied" : "Share"}
-                </button>
-              </div>
-            </div>
-
-            {model.description && (
-              <p className="relative mt-4 max-w-4xl text-sm leading-6 text-[#C4C4CC] sm:text-[15px]">{model.description}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 border-t border-white/[0.07] bg-black/20 sm:grid-cols-4">
-            {[
-              ["Context", cleanValue(model.contextWindow)],
-              ["Parameters", cleanValue(model.parameterSize)],
-              ["Modality", cleanValue(model.modality)],
-              ["Primary task", cleanValue(model.primaryTask)],
-            ].map(([label, value], index) => (
-              <div key={label} className={`p-3 sm:px-4 sm:py-3.5 ${index % 2 !== 0 ? "border-l border-white/[0.07]" : ""} ${index > 1 ? "border-t border-white/[0.07] sm:border-t-0" : ""} ${index > 0 ? "sm:border-l sm:border-white/[0.07]" : ""}`}>
-                <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#62626B]">{label}</p>
-                <p className={`mt-1.5 truncate text-sm font-bold ${value === "Not available" ? "text-[#52525B]" : "text-white"}`} title={value}>
-                  {value}
+                <p className="mt-4 max-w-3xl text-sm leading-6 text-[#C4C4CC] sm:text-[15px] sm:leading-7">
+                  {detailedDescription}
                 </p>
               </div>
-            ))}
+
+              <div className="rounded-xl border border-white/[0.07] bg-black/20 p-3.5">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleBookmark}
+                    aria-pressed={bookmarked}
+                    className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition ${
+                      bookmarked
+                        ? "border-[#6E56CF]/60 bg-[#6E56CF]/20 text-white"
+                        : "border-white/[0.1] bg-white/[0.04] text-[#D4D4D8] hover:bg-white/[0.08] hover:text-white"
+                    }`}
+                  >
+                    <Bookmark size={14} className={bookmarked ? "fill-current" : ""} />
+                    {bookmarked ? "Saved" : "Save"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-xs font-bold text-[#D4D4D8] transition hover:bg-white/[0.08] hover:text-white"
+                  >
+                    {copied ? <Check size={14} /> : <Share2 size={14} />}
+                    {copied ? "Copied" : "Share"}
+                  </button>
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-white/[0.07] bg-white/[0.07]">
+                  {[
+                    ["Released", formatDate(model.releaseDate)],
+                    ["Context", cleanValue(model.contextWindow)],
+                    ["Modality", cleanValue(model.modality)],
+                    ["Provider", companyName],
+                  ].map(([label, value]) => (
+                    <div key={label} className="min-w-0 bg-[#101013] p-2.5">
+                      <dt className="text-[9px] font-bold uppercase tracking-[0.13em] text-[#62626B]">{label}</dt>
+                      <dd className={`mt-1 truncate text-xs font-bold ${value === "Not available" ? "text-[#52525B]" : "text-white"}`} title={value}>
+                        {value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </div>
           </div>
         </header>
 
@@ -503,7 +520,7 @@ export function ModelDetailClient() {
 
           {related.length > 0 && (
             <section>
-              <SectionTitle title={`More models from ${companyName}`} count={related.length} />
+              <SectionTitle title="Related models" count={related.length} />
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {related.map((relatedModel) => (
                   <RelatedCard key={relatedModel.id} model={relatedModel} />
