@@ -52,11 +52,11 @@ export class AuthController {
     }
 
     const user = await this.getService(c).login(result.data);
-    const jwtSecret = c.env?.JWT_SECRET || process.env.JWT_SECRET;
+    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET || 'aiorbit-jwt-secret-key-2026';
 
     const token = sign(
       { id: user.id, email: user.email, name: user.name, role: user.role }, 
-      jwtSecret!, 
+      jwtSecret, 
       { expiresIn: '7d' }
     );
     
@@ -96,11 +96,11 @@ export class AuthController {
     }
 
     const user = await this.getService(c).verifyEmail(result.data);
-    const jwtSecret = c.env?.JWT_SECRET || process.env.JWT_SECRET;
+    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET || 'aiorbit-jwt-secret-key-2026';
 
     const token = sign(
       { id: user.id, email: user.email, name: user.name, role: user.role }, 
-      jwtSecret!, 
+      jwtSecret, 
       { expiresIn: '7d' }
     );
     
