@@ -62,6 +62,20 @@ function getDetailedDescription(model: ModelDetail, companyName: string) {
   );
 }
 
+function getRelatedDescription(model: AIModel) {
+  const name = model.name.trim().toLowerCase();
+  const descriptions: Record<string, string> = {
+    "gpt-4": "A capable multimodal model for complex reasoning, content creation, document analysis and conversations that combine text with visual understanding.",
+    "gpt-4o": "OpenAI's fast omni model for reasoning across text, audio and vision, designed for natural real-time interactions and multimodal applications.",
+    "whisper v3": "A multilingual speech-recognition model built for accurate transcription, translation and audio understanding across accents and noisy environments.",
+    "text-embedding-3-large": "OpenAI's most capable embedding model for semantic search, retrieval-augmented generation, clustering and high-quality vector representations.",
+    sora: "A text-to-video generation model for producing detailed, coherent scenes with realistic motion, multiple characters and complex visual direction.",
+    "dall-e 3": "An advanced text-to-image model that follows nuanced prompts to create detailed illustrations, artwork and realistic visual concepts.",
+  };
+
+  return descriptions[name] || model.description || `${model.name} is a ${model.modality || "general-purpose"} model from ${model.provider?.name || model.creator || "its provider"}.`;
+}
+
 function ProviderLogo({
   src,
   name,
@@ -149,10 +163,46 @@ function RelatedCard({ model }: { model: AIModel }) {
         </div>
         <ArrowRight size={14} className="shrink-0 text-[#52525B] transition-all group-hover:translate-x-0.5 group-hover:text-[#B8A7FF]" />
       </div>
-      {model.description && (
-        <p className="relative mt-2.5 line-clamp-1 text-[11px] leading-5 text-[#777781]">{model.description}</p>
-      )}
+      <p className="relative mt-2.5 line-clamp-3 text-xs leading-5 text-[#7F7F89]">{getRelatedDescription(model)}</p>
     </Link>
+  );
+}
+
+function ModelEcosystem({ modelName }: { modelName: string }) {
+  return (
+    <section>
+      <SectionTitle title="Model ecosystem" />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link
+          href={`/tools?q=${encodeURIComponent(modelName)}`}
+          className="group relative flex items-center gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111114] p-3 transition-all duration-300 hover:border-[#6E56CF]/50 hover:bg-[#141419]"
+        >
+          <span className="absolute inset-y-0 left-0 w-0.5 bg-[#6E56CF] opacity-0 transition-opacity group-hover:opacity-100" />
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#6E56CF]/30 bg-[#6E56CF]/10 text-[#B8A7FF]">
+            <Wrench size={18} />
+          </span>
+          <span className="relative min-w-0 flex-1">
+            <span className="block text-sm font-bold text-white">Tools using {modelName}</span>
+            <span className="mt-0.5 block truncate text-[11px] text-[#7F7F89]">Products and workflows powered by this model</span>
+          </span>
+          <ArrowRight size={14} className="relative shrink-0 text-[#52525B] transition-all group-hover:translate-x-0.5 group-hover:text-[#B8A7FF]" />
+        </Link>
+        <Link
+          href={`/videos?q=${encodeURIComponent(modelName)}`}
+          className="group relative flex items-center gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111114] p-3 transition-all duration-300 hover:border-[#6E56CF]/50 hover:bg-[#141419]"
+        >
+          <span className="absolute inset-y-0 left-0 w-0.5 bg-[#6E56CF] opacity-0 transition-opacity group-hover:opacity-100" />
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#6E56CF]/30 bg-[#6E56CF]/10 text-[#B8A7FF]">
+            <PlayCircle size={19} />
+          </span>
+          <span className="relative min-w-0 flex-1">
+            <span className="block text-sm font-bold text-white">Videos and demos</span>
+            <span className="mt-0.5 block truncate text-[11px] text-[#7F7F89]">Explainers, launch highlights and demonstrations</span>
+          </span>
+          <ArrowRight size={14} className="relative shrink-0 text-[#52525B] transition-all group-hover:translate-x-0.5 group-hover:text-[#B8A7FF]" />
+        </Link>
+      </div>
+    </section>
   );
 }
 
@@ -328,12 +378,11 @@ export function ModelDetailClient() {
                         {model.openSource === true ? "Open source" : model.openSource === false ? "Closed source" : "Source status unknown"}
                       </span>
                     </div>
+                    <p className="mt-3 max-w-3xl text-sm leading-6 text-[#C4C4CC] sm:text-[15px] sm:leading-7">
+                      {detailedDescription}
+                    </p>
                   </div>
                 </div>
-
-                <p className="mt-4 max-w-3xl text-sm leading-6 text-[#C4C4CC] sm:text-[15px] sm:leading-7">
-                  {detailedDescription}
-                </p>
               </div>
 
               <div className="rounded-xl border border-white/[0.07] bg-black/20 p-3.5">
@@ -432,6 +481,7 @@ export function ModelDetailClient() {
               </section>
             )}
 
+            <ModelEcosystem modelName={model.name} />
           </div>
 
           <aside className="space-y-3 lg:sticky lg:top-24">
@@ -479,45 +529,7 @@ export function ModelDetailClient() {
           </aside>
         </div>
 
-        <div className="mt-6 space-y-6 border-t border-white/[0.06] pt-6">
-          <section>
-            <SectionTitle title="Model ecosystem" />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Link
-                href={`/tools?q=${encodeURIComponent(model.name)}`}
-                className="group relative flex items-center gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111114] p-3 transition-all duration-300 hover:border-[#6E56CF]/50 hover:bg-[#141419] sm:p-4"
-              >
-                <span className="absolute inset-y-0 left-0 w-0.5 bg-[#6E56CF] opacity-0 transition-opacity group-hover:opacity-100" />
-                <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#6E56CF]/30 bg-[#6E56CF]/10 text-[#B8A7FF]">
-                  <Wrench size={19} />
-                </span>
-                <span className="relative min-w-0 flex-1">
-                  <span className="block text-sm font-bold text-white sm:text-[15px]">Tools using {model.name}</span>
-                  <span className="mt-1 block truncate text-xs text-[#7F7F89]">Products and workflows powered by this model</span>
-                </span>
-                <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-[#71717A] transition-all group-hover:border-[#6E56CF]/35 group-hover:bg-[#6E56CF]/10 group-hover:text-[#C4B8FF]">
-                  <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-                </span>
-              </Link>
-              <Link
-                href={`/videos?q=${encodeURIComponent(model.name)}`}
-                className="group relative flex items-center gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111114] p-3 transition-all duration-300 hover:border-[#6E56CF]/50 hover:bg-[#141419] sm:p-4"
-              >
-                <span className="absolute inset-y-0 left-0 w-0.5 bg-[#6E56CF] opacity-0 transition-opacity group-hover:opacity-100" />
-                <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#6E56CF]/30 bg-[#6E56CF]/10 text-[#B8A7FF]">
-                  <PlayCircle size={20} />
-                </span>
-                <span className="relative min-w-0 flex-1">
-                  <span className="block text-sm font-bold text-white sm:text-[15px]">Videos and demos</span>
-                  <span className="mt-1 block truncate text-xs text-[#7F7F89]">Explainers, launch highlights and demonstrations</span>
-                </span>
-                <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-[#71717A] transition-all group-hover:border-[#6E56CF]/35 group-hover:bg-[#6E56CF]/10 group-hover:text-[#C4B8FF]">
-                  <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-                </span>
-              </Link>
-            </div>
-          </section>
-
+        <div className="mt-5 border-t border-white/[0.06] pt-5">
           {related.length > 0 && (
             <section>
               <SectionTitle title="Related models" count={related.length} />
