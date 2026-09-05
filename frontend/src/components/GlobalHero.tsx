@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+let globalHeroScrollPos = 0;
 import Search from 'lucide-react/dist/esm/icons/search';
 import Wrench from 'lucide-react/dist/esm/icons/wrench';
 import ListChecks from 'lucide-react/dist/esm/icons/list-checks';
@@ -242,13 +245,19 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
   };
 
   useEffect(() => {
+    // Immediately prefetch Next.js JS route bundles for all directory cards
+    DIRECTORY_CARDS.forEach((card) => {
+      try { router.prefetch(card.href); } catch { }
+    });
+
+    // Prefetch API data for directory cards in background after short idle delay
     const timer = setTimeout(() => {
-      prefetchCategory("Tools", "/tools");
-      prefetchCategory("Companies", "/companies");
-      prefetchCategory("Models", "/models");
-    }, 600);
+      DIRECTORY_CARDS.forEach((card) => {
+        prefetchCategory(card.name, card.href);
+      });
+    }, 200);
     return () => clearTimeout(timer);
-  }, []);
+  }, [router]);
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState(q);
@@ -335,32 +344,69 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     }
     const entityName = card.href.replace("/", "");
     return pathname.startsWith(card.href) || pathname.startsWith(`/p/${entityName}`);
+  };  const SCROLL_KEY = "global_hero_card_scroll_x";
+
+  const handleContainerScroll = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      globalHeroScrollPos = container.scrollLeft;
+      try {
+        sessionStorage.setItem(SCROLL_KEY, container.scrollLeft.toString());
+      } catch {}
+    }
   };
 
-  const scrollToActiveCard = (smooth: boolean = true) => {
+  const saveScrollPos = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      globalHeroScrollPos = container.scrollLeft;
+      try {
+        sessionStorage.setItem(SCROLL_KEY, container.scrollLeft.toString());
+      } catch {}
+    }
+  };
+
+  const setScrollContainerRef = useCallback((el: HTMLDivElement | null) => {
+    scrollContainerRef.current = el;
+    if (el) {
+      let targetPos = globalHeroScrollPos;
+      if (!targetPos) {
+        try {
+          const savedPos = sessionStorage.getItem(SCROLL_KEY);
+          if (savedPos !== null && !isNaN(Number(savedPos))) {
+            targetPos = Number(savedPos);
+          }
+        } catch {}
+      }
+      if (targetPos) {
+        el.scrollLeft = targetPos;
+      }
+    }
+  }, []);
+
+  useIsomorphicLayoutEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    const activeIndex = DIRECTORY_CARDS.findIndex((c) => isCardActive(c));
-    if (activeIndex === -1) return;
-    const target = cardRefs.current[activeIndex];
-    if (!target) return;
+    let targetPos = globalHeroScrollPos;
+    if (!targetPos) {
+      try {
+        const savedPos = sessionStorage.getItem(SCROLL_KEY);
+        if (savedPos !== null && !isNaN(Number(savedPos))) {
+          targetPos = Number(savedPos);
+        }
+      } catch {}
+    }
 
-    scrollChipIntoView(container, target, smooth);
-  };
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      scrollToActiveCard(false);
-    });
-    const timer = setTimeout(() => {
-      scrollToActiveCard(false);
-    }, 120);
-    return () => {
-      cancelAnimationFrame(frame);
-      clearTimeout(timer);
-    };
-  }, [pathname, searchParams]);
+    if (targetPos) {
+      container.scrollLeft = targetPos;
+    } else {
+      const activeIndex = DIRECTORY_CARDS.findIndex((c) => isCardActive(c));
+      if (activeIndex !== -1 && cardRefs.current[activeIndex]) {
+        scrollChipIntoView(container, cardRefs.current[activeIndex]!, false);
+      }
+    }
+  }, [pathname]);
 
   // Helper to render the actual pill card UI
   const renderCard = (card: typeof DIRECTORY_CARDS[number], index: number) => {
@@ -371,6 +417,26 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     return (
       <Link
         href={card.href}
+        prefetch={true}
+        scroll={false}
+        onPointerDown={() => {
+          saveScrollPos();
+          try { router.prefetch(card.href); } catch { }
+          prefetchCategory(card.name, card.href);
+        }}
+        onTouchStart={() => {
+          saveScrollPos();
+          try { router.prefetch(card.href); } catch { }
+          prefetchCategory(card.name, card.href);
+        }}
+        onClick={(e) => {
+          saveScrollPos();
+          e.currentTarget.blur();
+          const container = scrollContainerRef.current;
+          if (container && globalHeroScrollPos > 0) {
+            container.scrollLeft = globalHeroScrollPos;
+          }
+        }}
         className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
           }`}
         data-active={isSelected ? "true" : undefined}
@@ -632,8 +698,9 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
       <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1 relative z-10 max-w-full overflow-hidden flex justify-center">
         <div className="mx-auto w-full max-w-[1600px] overflow-hidden flex justify-center">
           <div
-            ref={scrollContainerRef}
-            className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 touch-scroll-x scrollbar-none w-max max-w-full overflow-x-auto py-1 scroll-smooth mx-auto"
+            ref={setScrollContainerRef}
+            onScroll={handleContainerScroll}
+            className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 touch-scroll-x scrollbar-none w-full max-w-full overflow-x-auto py-1 scroll-px-0 overscroll-x-contain"
           >
             {DIRECTORY_CARDS.map((card, index) => {
               const cardEl = renderCard(card, index);

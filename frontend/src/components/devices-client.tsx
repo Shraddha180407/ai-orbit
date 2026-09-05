@@ -214,15 +214,7 @@ export function DevicesClient({ defaultCategory }: { defaultCategory?: string })
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    if (!container) return;
-    const activeKey = selectedCategory || ALL_CATEGORIES;
-    const target = subCatRefs.current[activeKey];
-    if (!target) return;
 
-    scrollChipIntoView(container, target);
-  }, [selectedCategory]);
 
   useEffect(() => {
     if (defaultCategory !== undefined) {
