@@ -11,6 +11,7 @@ import Bookmark from "lucide-react/dist/esm/icons/bookmark";
 import Building2 from "lucide-react/dist/esm/icons/building-2";
 import Check from "lucide-react/dist/esm/icons/check";
 import Cpu from "lucide-react/dist/esm/icons/cpu";
+import ExternalLink from "lucide-react/dist/esm/icons/external-link";
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw";
 import Share2 from "lucide-react/dist/esm/icons/share-2";
 import PlayCircle from "lucide-react/dist/esm/icons/play-circle";
@@ -312,6 +313,10 @@ export function ModelDetailClient() {
   const benchmarks = model.benchmarks ?? [];
   const detailedDescription = getDetailedDescription(model, companyName);
   const heroCapabilities = (tags.length > 0 ? tags : ["Reasoning", "Mathematics", "Coding", "Science"]).slice(0, 4);
+  const storedWebsiteUrl = (model as ModelDetail & { websiteUrl?: string | null }).websiteUrl?.trim();
+  const modelWebsiteUrl =
+    storedWebsiteUrl ||
+    (["o1", "openai o1"].includes(model.name.trim().toLowerCase()) ? "https://openai.com/o1/" : null);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -378,6 +383,18 @@ export function ModelDetailClient() {
                     <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold text-[#A1A1AA]">
                       {model.openSource === true ? "Open source" : model.openSource === false ? "Closed source" : "Source status unknown"}
                     </span>
+                    {modelWebsiteUrl && (
+                      <a
+                        href={modelWebsiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        title={modelWebsiteUrl}
+                        className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#6E56CF]/35 bg-[#6E56CF]/10 px-2.5 py-1 text-[10px] font-semibold text-[#B8A7FF] transition hover:border-[#6E56CF]/60 hover:bg-[#6E56CF]/20 hover:text-white"
+                      >
+                        <span>Visit website</span>
+                        <ExternalLink size={11} className="shrink-0" />
+                      </a>
+                    )}
                   </div>
                 </div>
 
