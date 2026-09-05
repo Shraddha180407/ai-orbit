@@ -131,7 +131,7 @@ function SpecCard({ label, value }: { label: string; value: string }) {
 
 function SectionTitle({ title, count }: { title: string; count?: number }) {
   return (
-    <div className="mb-3 flex items-center gap-2 border-b border-white/[0.07] pb-2.5">
+    <div className="mb-2.5 flex items-center gap-2 border-b border-white/[0.07] pb-2">
       <h2 className="text-base font-bold text-white sm:text-lg">{title}</h2>
       {typeof count === "number" && (
         <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold text-[#A1A1AA]">
@@ -356,36 +356,34 @@ export function ModelDetailClient() {
         <header className="overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#151519] via-[#101012] to-[#0d0d10] shadow-2xl shadow-black/25">
           <div className="relative p-4 sm:p-5">
             <div className="pointer-events-none absolute right-0 top-0 h-52 w-52 rounded-full bg-[#6E56CF]/10 blur-3xl" />
-            <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_330px]">
-              <div className="min-w-0">
-                <div className="flex min-w-0 items-start gap-4 sm:gap-5">
-                  <ProviderLogo src={model.provider?.logoUrl} name={companyName} />
-                  <div className="min-w-0 pt-0.5">
-                    <h1 className="break-words text-3xl font-black tracking-tight text-white sm:text-4xl">{model.name}</h1>
-                    <p className="mt-1.5 text-sm text-[#A1A1AA]">
-                      Built by{" "}
-                      {model.provider?.slug ? (
-                        <Link href={`/companies/${model.provider.slug}`} className="font-bold text-white hover:text-[#B8A7FF] hover:underline">
-                          {companyName}
-                        </Link>
-                      ) : (
-                        <span className="font-bold text-white">{companyName}</span>
-                      )}
-                    </p>
-                    <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                      <CategoryChip label={typeLabel} href={`/models?modality=${encodeURIComponent(model.modality || "")}`} />
-                      <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold text-[#A1A1AA]">
-                        {model.openSource === true ? "Open source" : model.openSource === false ? "Closed source" : "Source status unknown"}
-                      </span>
-                    </div>
-                    <p className="mt-3 max-w-3xl text-sm leading-6 text-[#C4C4CC] sm:text-[15px] sm:leading-7">
-                      {detailedDescription}
-                    </p>
-                  </div>
+            <div className="relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 lg:grid-cols-[80px_180px_minmax(0,1fr)_330px]">
+              <ProviderLogo src={model.provider?.logoUrl} name={companyName} />
+
+              <div className="min-w-0 pt-0.5">
+                <h1 className="break-words text-3xl font-black tracking-tight text-white sm:text-4xl">{model.name}</h1>
+                <p className="mt-1.5 text-sm text-[#A1A1AA]">
+                  Built by{" "}
+                  {model.provider?.slug ? (
+                    <Link href={`/companies/${model.provider.slug}`} className="font-bold text-white hover:text-[#B8A7FF] hover:underline">
+                      {companyName}
+                    </Link>
+                  ) : (
+                    <span className="font-bold text-white">{companyName}</span>
+                  )}
+                </p>
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <CategoryChip label={typeLabel} href={`/models?modality=${encodeURIComponent(model.modality || "")}`} />
+                  <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold text-[#A1A1AA]">
+                    {model.openSource === true ? "Open source" : model.openSource === false ? "Closed source" : "Source status unknown"}
+                  </span>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/[0.07] bg-black/20 p-3.5">
+              <p className="col-span-2 text-sm leading-6 text-[#C4C4CC] sm:text-[15px] sm:leading-7 lg:col-span-1 lg:pt-0.5">
+                {detailedDescription}
+              </p>
+
+              <div className="col-span-2 rounded-xl border border-white/[0.07] bg-black/20 p-3.5 lg:col-span-1">
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -429,8 +427,8 @@ export function ModelDetailClient() {
           </div>
         </header>
 
-        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
-          <div className="min-w-0 space-y-6">
+        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+          <div className="min-w-0 space-y-4">
             <section>
               <SectionTitle title="Technical specifications" />
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -482,9 +480,20 @@ export function ModelDetailClient() {
             )}
 
             <ModelEcosystem modelName={model.name} />
+
+            {related.length > 0 && (
+              <section>
+                <SectionTitle title="Related models" count={related.length} />
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  {related.map((relatedModel) => (
+                    <RelatedCard key={relatedModel.id} model={relatedModel} />
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
 
-          <aside className="space-y-3 lg:sticky lg:top-24">
+          <aside className="space-y-2.5 lg:sticky lg:top-24">
             <section className="rounded-xl border border-white/[0.08] bg-[#111114] p-4">
               <div className="flex items-center gap-2">
                 <Cpu size={16} className="text-[#A78BFA]" />
@@ -529,18 +538,6 @@ export function ModelDetailClient() {
           </aside>
         </div>
 
-        <div className="mt-5 border-t border-white/[0.06] pt-5">
-          {related.length > 0 && (
-            <section>
-              <SectionTitle title="Related models" count={related.length} />
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {related.map((relatedModel) => (
-                  <RelatedCard key={relatedModel.id} model={relatedModel} />
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
       </div>
     </main>
   );
