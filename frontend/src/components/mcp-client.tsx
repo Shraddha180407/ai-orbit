@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useQuery, useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 // Lucide icons
 import Globe from 'lucide-react/dist/esm/icons/globe';
@@ -12,10 +12,13 @@ import Github from 'lucide-react/dist/esm/icons/github';
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 
 import { fetchMCPCategories, fetchMCPSubCategories, fetchMCPItems } from "@/lib/api";
+import { FALLBACK_MCP_ITEMS } from "@/data/mcp";
 import { EmptyState } from "@/components/EmptyState";
 import { CategoryChip } from "@/components/CategoryChip";
 import { PricingBadge } from "@/components/PricingBadge";
+import { Pagination } from "@/components/Pagination";
 import type { MCPCategory, MCPSubCategory } from "@/lib/types";
+import { scrollChipIntoView } from "@/lib/utils";
 
 // FIXED: Adjusted desktop Grid 'fr' ratios. Shrank Name/Desc to 2.2fr and expanded Company to 1.2fr to perfectly balance the visual gaps.
 const COL_TEMPLATE = "grid-cols-[48px_70px_190px_minmax(130px,1.4fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)] md:grid-cols-[40px_minmax(220px,2.2fr)_minmax(130px,1.2fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)]";
@@ -56,36 +59,45 @@ export const MCP_SUBCATEGORIES: MCPSubCategory[] = [
 export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { defaultCategory?: string; defaultSubCategory?: string }) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
+
   const q = searchParams.get("q") ?? "";
 
   const initialSub = defaultSubCategory || defaultCategory || searchParams.get("subCategory") || searchParams.get("category") || "";
   const [activeSubCategory, setActiveSubCategory] = useState<string>(initialSub);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(100);
+
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+
 
   useEffect(() => {
     const currentParam = searchParams.get("subCategory") || searchParams.get("category") || "";
     if (currentParam !== activeSubCategory) {
       setActiveSubCategory(currentParam);
+      setCurrentPage(1);
     }
   }, [searchParams]);
 
   const handleSelectSubCategory = (slug: string | null) => {
     const newSlug = slug === activeSubCategory ? "" : (slug || "");
-    
+
     setActiveSubCategory(newSlug);
+    setCurrentPage(1);
 
     const currentSearch = typeof window !== "undefined" ? window.location.search : searchParams.toString();
     const params = new URLSearchParams(currentSearch);
     params.delete("category");
     params.delete("subCategory");
-    
+
     if (newSlug) {
       params.set("subCategory", newSlug);
     }
 
     const queryString = params.toString();
     const newUrl = queryString ? `/mcp?${queryString}` : `/mcp`;
-    
+
     if (typeof window !== "undefined") {
       window.history.constructor.prototype.replaceState.call(window.history, null, "", newUrl);
     }
@@ -93,26 +105,25 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
 
   const {
     data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
     isLoading,
     isPlaceholderData,
     error,
-  } = useInfiniteQuery({
+  } = useQuery({
     queryKey: [
       "mcpItems",
       {
+        page: currentPage,
+        pageSize,
         q,
         subCategory: activeSubCategory,
       },
     ],
-    queryFn: async ({ pageParam }) => {
+    queryFn: async () => {
       const apiParams: any = {
-        page: pageParam as number,
-        limit: 20,
+        page: currentPage,
+        limit: pageSize,
       };
-      
+
       if (q) apiParams.search = q;
       if (activeSubCategory) apiParams.subCategory = activeSubCategory;
 
@@ -120,51 +131,30 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
     },
     retry: false,
     refetchOnWindowFocus: false,
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      return lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined;
-    },
     placeholderData: keepPreviousData,
     staleTime: 10 * 60 * 1000,
   });
 
+  const totalCount = (data as any)?.totalCount || (data as any)?.total || ((data as any)?.items && (data as any).items.length > 0 ? (data as any).items.length : FALLBACK_MCP_ITEMS.length);
+  const totalPages = (data as any)?.totalPages || Math.max(1, Math.ceil(totalCount / pageSize));
+
   const items = React.useMemo(() => {
-    const fetchedItems = data?.pages.flatMap((page) => page.items || []) || [];
-    
-    return fetchedItems.sort((a: any, b: any) => {
+    const fetchedItems = (data as any)?.items || [];
+
+    // Use fallback data when API returns nothing (e.g. local dev with empty DB)
+    const sourceItems = fetchedItems.length > 0
+      ? fetchedItems
+      : FALLBACK_MCP_ITEMS.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+    return sourceItems.sort((a: any, b: any) => {
       const getScore = (item: any) => {
         if (item.logoUrl && item.shortDescription && item.shortDescription.trim() !== "") return 2;
-        return 1;
+        if (item.logoUrl) return 1;
+        return 0;
       };
       return getScore(b) - getScore(a);
     });
   }, [data]);
-
-  const sentinelRef = React.useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (isLoading || isFetchingNextPage || !hasNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          fetchNextPage();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    const currentSentinel = sentinelRef.current;
-    if (currentSentinel) {
-      observer.observe(currentSentinel);
-    }
-
-    return () => {
-      if (currentSentinel) {
-        observer.unobserve(currentSentinel);
-      }
-    };
-  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   return (
     <div id="mcp" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
@@ -195,14 +185,17 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
         }
       `}</style>
       <div className="mx-auto w-full max-w-[1600px] space-y-4 animate-fade-in">
-        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+        <div
+          ref={subCatContainerRef}
+          className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+        >
           <button
+            ref={(el) => { subCatRefs.current["all"] = el; }}
             onClick={() => handleSelectSubCategory(null)}
-            className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
-              !activeSubCategory
+            className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${!activeSubCategory
                 ? "bg-white text-black border-white shadow-lg shadow-white/5"
                 : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-            }`}
+              }`}
           >
             All
           </button>
@@ -211,14 +204,30 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
             return (
               <button
                 key={sub.id}
-                onClick={() => {
+                onClick={(e) => {
                   handleSelectSubCategory(sub.slug);
+
+                  const btn = e.currentTarget;
+                  const container = btn.parentElement;
+                  if (container && window.innerWidth < 768) {
+                    requestAnimationFrame(() => {
+                      const cRect = container.getBoundingClientRect();
+                      const bRect = btn.getBoundingClientRect();
+                      const bLeft = bRect.left - cRect.left + container.scrollLeft;
+                      const bRight = bLeft + bRect.width;
+
+                      if (bLeft < container.scrollLeft) {
+                        container.scrollTo({ left: bLeft - 16, behavior: "smooth" });
+                      } else if (bRight > container.scrollLeft + container.clientWidth) {
+                        container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: "smooth" });
+                      }
+                    });
+                  }
                 }}
-                className={`rounded-full px-3 py-1 text-[10px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
-                  isSelected
+                className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                }`}
+                  }`}
               >
                 {sub.name}
               </button>
@@ -228,12 +237,12 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
 
         <div className="pt-0">
           {isLoading && items.length === 0 ? (
-            <div className="overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10">
+            <div className="overflow-x-auto touch-scroll-x rounded-lg border border-[#232326]/60 bg-[#131316]/10">
               <div className="flex flex-col divide-y divide-[#232326]/60">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-4 py-2.5`}>
                     <div className="pl-4 md:pl-0"><div className="h-8 w-8 md:h-11 md:w-11 animate-pulse rounded-lg bg-[#18181C]" /></div>
-                    
+
                     {/* Skeleton Mobile Name / Desktop Combined */}
                     <div className="space-y-1.5 pr-2 md:pr-0">
                       <div className="h-3 w-16 md:w-32 animate-pulse rounded bg-[#18181C]" />
@@ -243,7 +252,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                     <div className="md:hidden pr-4">
                       <div className="h-2 w-32 animate-pulse rounded bg-[#18181C]" />
                     </div>
-                    
+
                     <div className="h-3 w-20 animate-pulse rounded bg-[#18181C] pl-4 md:pl-0" />
                     <div className="h-4.5 w-16 animate-pulse rounded-full bg-[#18181C]" />
                     <div className="h-4 w-24 animate-pulse rounded bg-[#18181C]" />
@@ -275,13 +284,13 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
           ) : (
             <div className={`overflow-x-auto rounded-lg border border-[#232326]/60 bg-[#131316]/10 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
               <div className={`flex flex-col relative bg-[#000000] ${COL_MIN_WIDTH}`}>
-                
+
                 {/* Column Headers */}
                 <div className="border-b border-[#232326]/60 bg-[#131316] sticky top-0 z-30">
                   <div className={`grid ${COL_TEMPLATE} items-center gap-4 py-2`}>
                     {COLUMN_HEADERS.map((h, i) => {
                       if (i === 0) return <div key={i} className="sticky left-0 md:static z-40 bg-[#131316] md:bg-transparent h-full pl-4 shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none" />;
-                      
+
                       if (i === 1) return (
                         <React.Fragment key={i}>
                           <div className="relative flex items-center gap-2 sticky left-[64px] md:static z-40 bg-[#131316] md:bg-transparent shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none h-full pr-2 md:pr-0 before:content-[''] before:absolute before:inset-y-0 before:-left-[16px] before:w-[16px] before:bg-[#131316] md:before:hidden">
@@ -291,11 +300,11 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                           <span className="md:hidden text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pr-2">DESCRIPTION</span>
                         </React.Fragment>
                       );
-                      
+
                       if (i === 2) return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase pl-4 md:pl-0">{h}</span>;
                       if (i >= 3 && i <= 6) return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase text-center block w-full">{h}</span>;
                       if (i === COLUMN_HEADERS.length - 1) return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase pr-4 md:pr-0 text-center block w-full">{h}</span>;
-                      
+
                       return <span key={i} className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] uppercase">{h}</span>;
                     })}
                   </div>
@@ -309,7 +318,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                     const prefetchRow = () => {
                       try {
                         router.prefetch(targetUrl);
-                      } catch {}
+                      } catch { }
                     };
 
                     return (
@@ -343,7 +352,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                                 unoptimized
                               />
                             ) : (
-                              <span className="text-[10px] md:text-sm font-bold text-neutral-900">
+                              <span className="text-[12px] md:text-base font-bold text-neutral-900">
                                 {item.name.charAt(0)}
                               </span>
                             )}
@@ -376,11 +385,10 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
 
                         {/* Column 4: Type */}
                         <div className="flex items-center justify-center w-full">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold border ${
-                            item.itemType === "SERVER"
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-bold border ${item.itemType === "SERVER"
                               ? "bg-[#6E56CF]/10 text-[#6E56CF] border-[#6E56CF]/30"
                               : "bg-[#FFC53D]/10 text-[#FFC53D] border-[#FFC53D]/30"
-                          }`}>
+                            }`}>
                             {item.itemType}
                           </span>
                         </div>
@@ -455,11 +463,21 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
           )}
         </div>
 
-        {items.length > 0 && hasNextPage && (
-          <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-          </div>
-        )}
+        {/* Unified Floating Pill Pagination */}
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalCount={totalCount}
+          onPageChange={(p) => {
+            setCurrentPage(p);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setCurrentPage(1);
+          }}
+        />
       </div>
     </div>
   );

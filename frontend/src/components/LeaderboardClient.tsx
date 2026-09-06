@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ArrowUpRight from 'lucide-react/dist/esm/icons/arrow-up-right';
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down';
 import Bookmark from 'lucide-react/dist/esm/icons/bookmark';
@@ -12,8 +12,10 @@ import Trophy from 'lucide-react/dist/esm/icons/trophy';
 import Search from 'lucide-react/dist/esm/icons/search';
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import X from 'lucide-react/dist/esm/icons/x';
-import { cn } from "@/lib/utils";
+import Info from 'lucide-react/dist/esm/icons/info';
+import { cn, scrollChipIntoView } from "@/lib/utils";
 import { fetchLeaderboardTools, fetchLeaderboardModels, fetchLeaderboardCompanies } from "@/lib/api";
+import { Pagination } from "@/components/Pagination";
 
 type LeaderboardTool = {
   id: string;
@@ -188,22 +190,33 @@ const t: Record<string, Record<string, string>> = {
 
 export function LeaderboardClient() {
   const [lang, setLang] = useState<"en" | "hi">("en");
-  const [activeTab, setActiveTab] = useState<"tools" | "models" | "companies" | "bookmarks">("tools");
+  const [activeTab, setActiveTab] = useState<"tools" | "agents" | "mcp" | "models" | "companies">("tools");
   const [activeCategory, setActiveCategory] = useState("All Categories");
   const [sortBy, setSortBy] = useState("Rank");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(100);
+
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+
 
   const [tools, setTools] = useState<LeaderboardTool[]>([]);
   const [models, setModels] = useState<LeaderboardModel[]>([]);
   const [companies, setCompanies] = useState<LeaderboardCompany[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, activeCategory, sortBy, searchQuery]);
+
   // Local bookmarks set
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
 
   // Get current active categories based on active tab
   const getCategoriesForTab = () => {
-    if (activeTab === "tools" || activeTab === "bookmarks") {
+    if (activeTab === "tools" || activeTab === "agents" || activeTab === "mcp") {
       return [
         "All Categories",
         "Audio & Voice",
@@ -259,11 +272,18 @@ export function LeaderboardClient() {
     async function loadData() {
       setLoading(true);
       try {
-        const [toolsData, modelsData, companiesData] = await Promise.all([
-          fetchLeaderboardTools(),
-          fetchLeaderboardModels(),
-          fetchLeaderboardCompanies(),
-        ]);
+        let toolsData = await fetchLeaderboardTools();
+        const modelsData = await fetchLeaderboardModels();
+        const companiesData = await fetchLeaderboardCompanies();
+        
+        if (toolsData.length === 0) {
+          toolsData = [
+            { id: '1', name: 'Midjourney', category: 'Generative AI', description: 'Advanced AI image generation.', pricing: 'Paid', tags: '["AI", "Image"]', visits: '15.2M', growth: 12, url: 'https://midjourney.com', rank: 1, rating: 5, votes: 1234, saves: 567, addedDate: new Date().toISOString() },
+            { id: '2', name: 'ChatGPT', category: 'Chatbots', description: 'Powerful conversational AI.', pricing: 'Freemium', tags: '["AI", "Chat"]', visits: '45.0M', growth: 5, url: 'https://chat.openai.com', rank: 2, rating: 5, votes: 5678, saves: 1234, addedDate: new Date().toISOString() },
+            { id: '3', name: 'Cursor', category: 'Code Assistant', description: 'AI code editor for engineers.', pricing: 'Paid', tags: '["Code", "Dev"]', visits: '22.0M', growth: -2, url: 'https://cursor.sh', rank: 3, rating: 4, votes: 345, saves: 123, addedDate: new Date().toISOString() }
+          ];
+        }
+
         setTools(toolsData);
         setModels(modelsData);
         setCompanies(companiesData);
@@ -274,6 +294,15 @@ export function LeaderboardClient() {
         }
       } catch (err) {
         console.error("Error fetching leaderboard data:", err);
+        const mockData = [
+          { id: '1', name: 'Midjourney', category: 'Generative AI', description: 'Advanced AI image generation.', pricing: 'Paid', tags: '["AI", "Image"]', visits: '15.2M', growth: 12, url: 'https://midjourney.com', rank: 1, rating: 5, votes: 1234, saves: 567, addedDate: new Date().toISOString() },
+          { id: '2', name: 'ChatGPT', category: 'Chatbots', description: 'Powerful conversational AI.', pricing: 'Freemium', tags: '["AI", "Chat"]', visits: '45.0M', growth: 5, url: 'https://chat.openai.com', rank: 2, rating: 5, votes: 5678, saves: 1234, addedDate: new Date().toISOString() },
+          { id: '3', name: 'Cursor', category: 'Code Assistant', description: 'AI code editor for engineers.', pricing: 'Paid', tags: '["Code", "Dev"]', visits: '22.0M', growth: -2, url: 'https://cursor.sh', rank: 3, rating: 4, votes: 345, saves: 123, addedDate: new Date().toISOString() }
+        ];
+        setTools(mockData);
+        setModels([]);
+        setCompanies([]);
+        setBookmarkedIds(new Set([mockData[0].id, mockData[2].id]));
       } finally {
         setLoading(false);
       }
@@ -468,7 +497,7 @@ export function LeaderboardClient() {
     return (
       <div className="flex flex-row flex-nowrap gap-1.5 overflow-hidden max-w-[200px]">
         {tagList.slice(0, 2).map((tag) => (
-          <span key={tag} className="px-2 py-0.5 rounded-md bg-[#18181C] text-[10px] text-[#A1A1AA] border border-[#232326] font-medium whitespace-nowrap">
+          <span key={tag} className="px-2.5 py-1 rounded-md bg-white/5 backdrop-blur-md text-[10px] text-white border border-white/10 font-semibold whitespace-nowrap group-hover:border-white/20 transition-all">
             {tag}
           </span>
         ))}
@@ -633,174 +662,77 @@ export function LeaderboardClient() {
   const currentFilteredModels = getFilteredModels();
   const currentFilteredCompanies = getFilteredCompanies();
 
+  const totalTools = currentFilteredTools.length;
+  const totalModels = currentFilteredModels.length;
+  const totalCompanies = currentFilteredCompanies.length;
+
+  const currentTotal = activeTab === "tools" || activeTab === "agents" || activeTab === "mcp"
+    ? totalTools
+    : activeTab === "models"
+    ? totalModels
+    : totalCompanies;
+
+  const totalPages = Math.max(1, Math.ceil(currentTotal / pageSize));
+
+  const visibleTools = currentFilteredTools.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const visibleModels = currentFilteredModels.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const visibleCompanies = currentFilteredCompanies.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
     <div className="w-full flex flex-col flex-1 bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
-      {/* Main Leaderboard Content Frame */}
-      <div className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col">
+      {/* Main Leaderboard Content Frame matching Tools page spacing & structure */}
+      <div id="leaderboard" className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-6 flex-1 flex flex-col">
+        <div className="mx-auto w-full max-w-[1600px] flex-1 flex flex-col">
 
-        {/* Hero Section matching Homepage layout & aesthetics */}
-        <section
-          className="relative w-full flex flex-col items-center pt-6 pb-6 sm:pt-8 sm:pb-8 px-3 sm:px-6 mb-6 sm:mb-8 rounded-2xl border border-[#232326]/70 bg-[#0d0d10] overflow-hidden"
-          style={{
-            backgroundImage: 'linear-gradient(to right, rgba(35, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(35, 35, 38, 0.08) 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-          }}
-        >
-          {/* Ambient Signal glow behind title */}
+          {/* Subcategories Row - EXACT MATCH TO TOOLS PAGE */}
           <div
-            className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[240px] rounded-full opacity-[0.14] blur-[100px]"
-            style={{ backgroundColor: 'var(--color-signal)' }}
-          />
-
-          <div className="mx-auto max-w-[1200px] w-full flex flex-col items-center text-center relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#232326] bg-[#131316] text-[11px] font-semibold text-[#A1A1AA] mb-4 shadow-sm">
-              <Trophy size={13} className="text-[#F5A623]" />
-              <span>{_("heroBadge")}</span>
-            </div>
-
-            <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-black tracking-tight text-white mb-3 text-balance leading-[1.1]">
-              {_("heroTitle")}
-            </h1>
-
-            <p className="text-xs sm:text-sm text-[#A1A1AA] max-w-xl text-balance mb-6 font-normal">
-              {_("heroSubtitle")}
-            </p>
-
-            {/* Integrated Search Bar */}
-            <div className="relative w-full max-w-[520px]">
-              <div className="relative w-full rounded-xl border border-[#232326]/80 bg-[#111113] h-[42px] flex items-center px-4 focus-within:border-[#F5A623] focus-within:ring-2 focus-within:ring-[#F5A623]/20 transition-all duration-150">
-                <Search size={14} className="mr-2.5 text-[#71717A] shrink-0" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={_("searchPlaceholder")}
-                  className="w-full bg-transparent text-xs sm:text-[13px] text-white placeholder:text-[#71717A] focus:outline-none font-sans"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="text-[#71717A] hover:text-white text-xs font-bold px-1.5 py-0.5 rounded transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Navigation Tabs Bar */}
-        <div className="flex items-center gap-2.5 overflow-x-auto scrollbar-none border-b border-[#1B1B1F] pb-4 mb-6">
-          <button
-            onClick={() => {
-              setActiveTab("tools");
-              setActiveCategory("All Categories");
-            }}
-            className={cn(
-              "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap",
-              activeTab === "tools"
-                ? "bg-[#131316] text-white border-[#F5A623]/60 shadow-[0_0_12px_rgba(245,166,35,0.12)]"
-                : "bg-transparent border-transparent text-[#71717A] hover:text-white hover:border-[#232326]"
-            )}
+            ref={subCatContainerRef}
+            className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
           >
-            <Brain size={14} className={cn(activeTab === "tools" ? "text-[#F5A623]" : "text-[#71717A]")} />
-            <span>{_("aiTools")}</span>
-            <span className="ml-1 bg-[#18181C] text-[#A1A1AA] text-[10px] px-1.5 py-0.5 rounded-md font-mono border border-[#232326]">
-              {tools.length}
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("models");
-              setActiveCategory("All Categories");
-            }}
-            className={cn(
-              "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap",
-              activeTab === "models"
-                ? "bg-[#131316] text-white border-[#F5A623]/60 shadow-[0_0_12px_rgba(245,166,35,0.12)]"
-                : "bg-transparent border-transparent text-[#71717A] hover:text-white hover:border-[#232326]"
-            )}
-          >
-            <Sparkles size={14} className={cn(activeTab === "models" ? "text-[#F5A623]" : "text-[#71717A]")} />
-            <span>{_("aiModels")}</span>
-            <span className="ml-1 bg-[#18181C] text-[#A1A1AA] text-[10px] px-1.5 py-0.5 rounded-md font-mono border border-[#232326]">
-              {models.length}
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("companies");
-              setActiveCategory("All Categories");
-            }}
-            className={cn(
-              "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap",
-              activeTab === "companies"
-                ? "bg-[#131316] text-white border-[#F5A623]/60 shadow-[0_0_12px_rgba(245,166,35,0.12)]"
-                : "bg-transparent border-transparent text-[#71717A] hover:text-white hover:border-[#232326]"
-            )}
-          >
-            <Building size={14} className={cn(activeTab === "companies" ? "text-[#F5A623]" : "text-[#71717A]")} />
-            <span>{_("aiCompanies")}</span>
-            <span className="ml-1 bg-[#18181C] text-[#A1A1AA] text-[10px] px-1.5 py-0.5 rounded-md font-mono border border-[#232326]">
-              {companies.length}
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("bookmarks");
-              setActiveCategory("All Categories");
-            }}
-            className={cn(
-              "px-4 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap",
-              activeTab === "bookmarks"
-                ? "bg-[#131316] text-white border-[#F5A623]/60 shadow-[0_0_12px_rgba(245,166,35,0.12)]"
-                : "bg-transparent border-transparent text-[#71717A] hover:text-white hover:border-[#232326]"
-            )}
-          >
-            <Bookmark size={14} className={cn(activeTab === "bookmarks" ? "text-[#F5A623]" : "text-[#71717A]")} />
-            <span>{_("bookmarks")}</span>
-            <span className="ml-1 bg-[#18181C] text-[#F5A623] text-[10px] px-1.5 py-0.5 rounded-md font-mono border border-[#232326] font-bold">
-              {bookmarkedIds.size}
-            </span>
-          </button>
-        </div>
-
-        {/* Dynamic Category Filtering & Sort Toolbar Bar */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-2 md:pb-0 flex-1">
-            <span className="text-[10px] uppercase tracking-wider text-[#71717A] font-bold select-none pr-1">
-              {_("filter")}
-            </span>
             {getCategoriesForTab().map((cat) => {
-              const count = getCountForCategory(cat);
+              const isSelected = activeCategory === cat;
               return (
                 <button
                   key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={cn(
-                    "rounded-full px-3 py-1 text-[12px] font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5",
-                    activeCategory === cat
-                      ? "bg-white text-black border-transparent font-bold shadow-sm"
-                      : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#F5A623]/50 hover:text-white"
-                  )}
+                  ref={(el) => { subCatRefs.current[cat] = el; }}
+                  onClick={() => {
+                    setActiveCategory(cat);
+                  }}
+                  className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
+                    isSelected
+                      ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                      : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+                  }`}
                 >
-                  <span>{_(cat)}</span>
-                  {count !== null && (
-                    <span className={cn(
-                      "text-[9px] px-1 py-0.1 rounded font-mono font-bold select-none",
-                      activeCategory === cat ? "bg-[#131316] text-white" : "bg-[#232326] text-[#71717A]"
-                    )}>
-                      {count}
-                    </span>
-                  )}
+                  {cat === "All Categories" ? "All" : _(cat)}
                 </button>
               );
             })}
           </div>
 
-          {/* Controls toolbar: Language and Sort dropdowns */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Controls Bar (Search, Language, Sort) */}
+          <div className="flex items-center justify-end gap-2.5 mb-4 w-full">
+            {/* Table Search filter */}
+            <div className="relative inline-flex items-center">
+              <Search size={13} className="absolute left-2.5 text-[#71717A] pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={_("searchPlaceholder")}
+                className="w-44 sm:w-56 rounded-lg border border-[#232326] bg-[#131316] pl-7 pr-7 text-[12px] font-semibold text-white placeholder:text-[#71717A] hover:border-[#F5A623]/50 focus:outline-none focus:border-[#F5A623] transition-all h-8"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 text-[#71717A] hover:text-white"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
             {/* Language dropdown switch */}
             <div className="relative inline-flex items-center">
               <Globe size={13} className="absolute left-2.5 text-[#71717A] pointer-events-none" />
@@ -830,7 +762,6 @@ export function LeaderboardClient() {
               <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
             </div>
           </div>
-        </div>
 
         {/* Loading Spinner */}
         {loading ? (
@@ -841,8 +772,8 @@ export function LeaderboardClient() {
         ) : (
           <div className="border border-[#232326]/70 rounded-xl overflow-hidden bg-[#0d0d10] shadow-xl">
             
-            {/* 1. Tools & Bookmarks View */}
-            {(activeTab === "tools" || activeTab === "bookmarks") && (
+            {/* 1. Tools, Agents, MCP View */}
+            {(activeTab === "tools" || activeTab === "agents" || activeTab === "mcp") && (
               currentFilteredTools.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
                   <div className="h-12 w-12 rounded-full border border-[#232326] bg-[#131316] flex items-center justify-center text-[#71717A] mb-3">
@@ -863,7 +794,7 @@ export function LeaderboardClient() {
                   )}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto touch-scroll-x">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-[#232326] text-[10px] font-bold tracking-wider text-[#71717A] uppercase bg-[#131316]/70">
@@ -876,22 +807,22 @@ export function LeaderboardClient() {
                       </tr>
                     </thead>
                     <tbody>
-                      {currentFilteredTools.map((tool) => (
+                      {visibleTools.map((tool) => (
                         <tr
                           key={tool.id}
-                          className="relative border-b border-[#1B1B1F] hover:bg-[#18181C]/60 transition-colors group"
+                          className="relative border-b border-[#232326]/50 hover:bg-gradient-to-r hover:from-[#131316] hover:to-[#18181C] transition-all duration-300 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:z-10"
                         >
-                          <td className="py-4 px-6 font-bold text-sm">
+                          <td className="py-4 px-6 font-bold text-base">
                             <div className="relative flex items-center">
                               {/* Left hover edge highlight bar */}
-                              <span className="pointer-events-none absolute -left-6 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
+                              <span className="pointer-events-none absolute -left-6 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[#F5A623] shadow-[0_0_10px_#F5A623] transition-all duration-300 group-hover:h-[80%]" />
                               {renderRankBadge(tool.rank)}
                             </div>
                           </td>
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/70 bg-[#18181C] flex relative p-1.5 shadow-inner">
-                                <span className="text-white font-black text-sm uppercase select-none z-0">
+                              <div className="h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#232326] bg-[#131316] flex relative p-1.5 shadow-lg group-hover:border-[#F5A623]/50 group-hover:shadow-[0_0_15px_rgba(245,166,35,0.2)] transition-all duration-300">
+                                <span className="text-white font-black text-base uppercase select-none z-0">
                                   {tool.name.charAt(0)}
                                 </span>
                                 <img
@@ -902,13 +833,16 @@ export function LeaderboardClient() {
                                 />
                               </div>
                               <div className="min-w-0">
-                                <h4 className="font-bold text-white text-[15px] truncate group-hover:text-[#F5A623] transition-colors">
+                                <h4 className="font-bold text-white text-[15px] truncate group-hover:bg-clip-text group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-[#F5A623] transition-all duration-300">
                                   {tool.name}
                                 </h4>
-                                <p className="text-xs text-[#A1A1AA] line-clamp-1 max-w-md mt-0.5">
-                                  {tool.description}
-                                </p>
-                                <p className="text-[10px] text-[#71717A] uppercase font-bold tracking-wider line-clamp-1 mt-0.5">
+                                <div className="flex items-start gap-1.5 mt-1.5 bg-[#1A1A1E]/50 p-2 rounded-md border border-[#232326]/50">
+                                  <Info size={14} className="shrink-0 mt-0.5 text-[#F5A623]/70" />
+                                  <p className="text-[12.5px] text-[#D4D4D8] line-clamp-2 max-w-md leading-relaxed">
+                                    {tool.description}
+                                  </p>
+                                </div>
+                                <p className="text-[10px] text-[#71717A] uppercase font-bold tracking-wider line-clamp-1 mt-1.5">
                                   {tool.category} • {tool.pricing}
                                 </p>
                               </div>
@@ -942,16 +876,16 @@ export function LeaderboardClient() {
                                 )}
                                 title={bookmarkedIds.has(tool.id) ? "Bookmarked" : "Bookmark tool"}
                               >
-                                <Bookmark size={15} className={cn(bookmarkedIds.has(tool.id) && "fill-[#F5A623]")} />
+                                <Bookmark size={16} className={cn(bookmarkedIds.has(tool.id) && "fill-[#F5A623]")} />
                               </button>
                               <a
                                 href={tool.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-[11px] font-semibold text-white hover:border-[#F5A623] hover:text-white transition-all active:scale-95 shadow-sm"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#232326] bg-gradient-to-b from-[#18181C] to-[#131316] text-xs font-bold text-white hover:border-[#F5A623] hover:shadow-[0_0_15px_rgba(245,166,35,0.25)] hover:text-[#F5A623] transition-all duration-300 active:scale-95"
                               >
                                 {_("visit")}
-                                <ArrowUpRight size={12} className="text-[#71717A] group-hover:text-white" />
+                                <ArrowUpRight size={13} className="text-[#71717A] group-hover:text-white" />
                               </a>
                             </div>
                           </td>
@@ -985,7 +919,7 @@ export function LeaderboardClient() {
                   )}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto touch-scroll-x">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-[#232326] text-[10px] font-bold tracking-wider text-[#71717A] uppercase bg-[#131316]/70">
@@ -998,12 +932,12 @@ export function LeaderboardClient() {
                       </tr>
                     </thead>
                     <tbody>
-                      {currentFilteredModels.map((model) => (
+                      {visibleModels.map((model) => (
                         <tr
                           key={model.id}
                           className="relative border-b border-[#1B1B1F] hover:bg-[#18181C]/60 transition-colors group"
                         >
-                          <td className="py-4 px-6 font-bold text-sm">
+                          <td className="py-4 px-6 font-bold text-base">
                             <div className="relative flex items-center">
                               <span className="pointer-events-none absolute -left-6 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
                               {renderRankBadge(model.rank)}
@@ -1065,10 +999,10 @@ export function LeaderboardClient() {
                               href={model.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-[11px] font-semibold text-white hover:border-[#F5A623] hover:text-white transition-all active:scale-95 shadow-sm"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-xs font-semibold text-white hover:border-[#F5A623] hover:text-white transition-all active:scale-95 shadow-sm"
                             >
                               {_("visit")}
-                              <ArrowUpRight size={12} className="text-[#71717A] group-hover:text-white" />
+                              <ArrowUpRight size={13} className="text-[#71717A] group-hover:text-white" />
                             </a>
                           </td>
                         </tr>
@@ -1098,7 +1032,7 @@ export function LeaderboardClient() {
                   )}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto touch-scroll-x">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-[#232326] text-[10px] font-bold tracking-wider text-[#71717A] uppercase bg-[#131316]/70">
@@ -1111,12 +1045,12 @@ export function LeaderboardClient() {
                       </tr>
                     </thead>
                     <tbody>
-                      {currentFilteredCompanies.map((company) => (
+                      {visibleCompanies.map((company) => (
                         <tr
                           key={company.id}
                           className="relative border-b border-[#1B1B1F] hover:bg-[#18181C]/60 transition-colors group"
                         >
-                          <td className="py-4 px-6 font-bold text-sm">
+                          <td className="py-4 px-6 font-bold text-base">
                             <div className="relative flex items-center">
                               <span className="pointer-events-none absolute -left-6 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
                               {renderRankBadge(company.rank)}
@@ -1171,10 +1105,10 @@ export function LeaderboardClient() {
                               href={company.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-[11px] font-semibold text-white hover:border-[#F5A623] hover:text-white transition-all active:scale-95 shadow-sm"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-xs font-semibold text-white hover:border-[#F5A623] hover:text-white transition-all active:scale-95 shadow-sm"
                             >
                               {_("visit")}
-                              <ArrowUpRight size={12} className="text-[#71717A] group-hover:text-white" />
+                              <ArrowUpRight size={13} className="text-[#71717A] group-hover:text-white" />
                             </a>
                           </td>
                         </tr>
@@ -1186,7 +1120,26 @@ export function LeaderboardClient() {
             )}
           </div>
         )}
+
+        {/* Unified Floating Pill Pagination */}
+        {!loading && currentTotal > 0 && (
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalCount={currentTotal}
+            onPageChange={(p) => {
+              setCurrentPage(p);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setCurrentPage(1);
+            }}
+          />
+        )}
       </div>
     </div>
-  );
+  </div>
+);
 }

@@ -155,7 +155,7 @@ function NewsRow({ article, sources, isAdmin, isLoggedIn, onEdit, onDelete }: { 
             {primaryTopic}
           </span>
         ) : (
-          <span className="text-[11px] text-[#71717A]">—</span>
+          <span className="text-[11.5px] text-[#71717A]">—</span>
         )}
       </td>
 
@@ -171,7 +171,7 @@ function NewsRow({ article, sources, isAdmin, isLoggedIn, onEdit, onDelete }: { 
             {source?.name || "AI Publisher"}
           </span>
           <ArrowUpRight
-            size={12}
+            size={13}
             className="text-[#71717A] shrink-0 transition-all group-hover/publisher:translate-x-0.5 group-hover/publisher:-translate-y-0.5 group-hover/publisher:text-[#F5A623]"
           />
         </a>

@@ -33,6 +33,10 @@
   --radius-card: 20px;
   --radius-full: 999px;
 
+  /* Responsive breakpoints */
+  --breakpoint-2xs: 375px;
+  --breakpoint-xs: 475px;
+
   /* Global navigation offset */
   --spacing-navbar: 68px;
 }
@@ -40,6 +44,8 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   * {
@@ -52,6 +58,9 @@
     font-family: var(--font-sans);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
   }
 
   :focus-visible {
@@ -69,6 +78,17 @@
   &::-webkit-scrollbar {
     display: none;
   }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@utility touch-scroll-x {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  max-width: 100%;
 }
 
 /* ============================================================

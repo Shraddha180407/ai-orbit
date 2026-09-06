@@ -9,7 +9,7 @@ export const MCPItemQuerySchema = z.object({
   search: z.string().optional(),
   sortBy: z.enum(['trending', 'top-rated', 'most-upvoted', 'recently-updated']).optional(),
   page: z.string().default('1'),
-  limit: z.string().default('20'),
+  limit: z.string().default('100'),
 });
 
 export const MCPItemSlugSchema = z.object({

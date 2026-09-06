@@ -141,7 +141,7 @@ describe('ToolsService', () => {
       await service.listTools({ sort: 'oldest' });
 
       expect(prisma.tool.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ orderBy: { createdAt: 'asc' } }),
+        expect.objectContaining({ orderBy: [{ ttasks: { _count: 'desc' } }, { createdAt: 'asc' }] }),
       );
     });
 
@@ -149,7 +149,7 @@ describe('ToolsService', () => {
       await service.listTools({ sort: 'name-asc' });
 
       expect(prisma.tool.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ orderBy: { name: 'asc' } }),
+        expect.objectContaining({ orderBy: [{ ttasks: { _count: 'desc' } }, { name: 'asc' }] }),
       );
     });
 
@@ -157,7 +157,7 @@ describe('ToolsService', () => {
       await service.listTools({ sort: 'name-desc' });
 
       expect(prisma.tool.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ orderBy: { name: 'desc' } }),
+        expect.objectContaining({ orderBy: [{ ttasks: { _count: 'desc' } }, { name: 'desc' }] }),
       );
     });
 
@@ -165,7 +165,7 @@ describe('ToolsService', () => {
       await service.listTools({ sort: 'rating' });
 
       expect(prisma.tool.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ orderBy: { avgRating: 'desc' } }),
+        expect.objectContaining({ orderBy: [{ ttasks: { _count: 'desc' } }, { avgRating: 'desc' }] }),
       );
     });
 
@@ -173,7 +173,7 @@ describe('ToolsService', () => {
       await service.listTools({ sort: 'unknown' });
 
       expect(prisma.tool.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ orderBy: { createdAt: 'desc' } }),
+        expect.objectContaining({ orderBy: [{ ttasks: { _count: 'desc' } }, { createdAt: 'desc' }] }),
       );
     });
 

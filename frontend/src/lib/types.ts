@@ -30,7 +30,7 @@ export type ToolsSearchParams = {
   page?: string;
 };
 
-export const PAGE_SIZE = 80;
+export const PAGE_SIZE = 100;
 
 // ---------------------------------------------------------------------------
 // Detail page types (Step 3)
@@ -190,6 +190,9 @@ export type Company = {
   views?: number;
   upvotes?: number;
   impressions?: number;
+  devices?: any[];
+repositories?: any[];
+robots?: any[];
   tools?: {
     id: string;
     slug: string;
@@ -224,6 +227,48 @@ export type AIModelProvider = {
   logoUrl: string | null;
 };
 
+export type ModelType =
+  | "TEXT"
+  | "IMAGE"
+  | "VIDEO"
+  | "MULTIMODAL"
+  | "AUDIO"
+  | "CODE"
+  | "THREE_D"
+  | "STRUCTURED_DATA";
+
+export const MODEL_TYPE_OPTIONS: ModelType[] = [
+  "TEXT",
+  "IMAGE",
+  "VIDEO",
+  "MULTIMODAL",
+  "AUDIO",
+  "CODE",
+  "THREE_D",
+  "STRUCTURED_DATA",
+];
+
+const MODEL_TYPE_LABELS: Record<ModelType, string> = {
+  TEXT: "Text",
+  IMAGE: "Image",
+  VIDEO: "Video",
+  MULTIMODAL: "Multimodal",
+  AUDIO: "Audio",
+  CODE: "Code",
+  THREE_D: "3D",
+  STRUCTURED_DATA: "Structured Data",
+};
+
+/**
+ * The backend AIModel schema exposes `modelType` (an enum), not `type`.
+ * Use this everywhere the UI needs a human-readable label instead of
+ * reading a `type` field that doesn't exist on the API response.
+ */
+export function formatModelType(modelType?: string | null): string | null {
+  if (!modelType) return null;
+  return MODEL_TYPE_LABELS[modelType as ModelType] ?? modelType;
+}
+
 export type AIModel = {
   id: string;
   name: string;
@@ -235,9 +280,10 @@ export type AIModel = {
   releaseDate: string;
   slug?: string;
   provider?: AIModelProvider | null;
-  type?: string;
+  modelType?: ModelType;
   primaryTask?: string;
   openSource?: boolean;
+  subCategories?: { id: string; name: string; slug: string }[];
   benchmarks?: { name: string; score: number | string }[];
   tags?: string[];
   similarModels?: AIModel[];
@@ -247,6 +293,12 @@ export type AIModel = {
 };
 
 export type ModelDetail = AIModel;
+
+export type ModelFilterOptions = {
+  providers: { slug: string; name: string }[];
+  primaryTasks: string[];
+  modelTypes: ModelType[];
+};
 
 export type ModelsSortOption =
   | "alphabetical"
@@ -453,8 +505,17 @@ export type Device = {
   aiModel?: string | null;
   processingType?: "On-device" | "Cloud" | "Hybrid" | null;
   bestFor?: string[] | null;
-  score?: number | null;
+  qualityScore?: number | null;
   verdict?: string | null;
+  subcategory?: string | null;
+  platform?: string | null;
+  officialWebsite?: string | null;
+  officialProductUrl?: string | null;
+  regionsSupported?: string[] | null;
+  officialSource?: string | null;
+  secondarySource?: string | null;
+  lastVerifiedDate?: string | null;
+  verificationNotes?: string | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -557,4 +618,3 @@ export type MCPListResponse = {
   page: number;
   totalPages: number;
 };
-

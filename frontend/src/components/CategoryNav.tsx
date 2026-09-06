@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { scrollChipIntoView } from "@/lib/utils";
 
 
 const FILTER_OPTIONS = [
@@ -13,16 +14,58 @@ const FILTER_OPTIONS = [
   { id: 'models', label: 'Models', count: 85, color: 'bg-white' }
 ];
 
+const CATEGORIES = [
+  { name: "AI Tools", href: "#tools" },
+  { name: "Models", href: "/models", isPageLink: true },
+  { name: "Companies", href: "/companies", isPageLink: true },
+  { name: "Repositories", href: "/repositories", isPageLink: true },
+  { name: "News", href: "/news", isPageLink: true },
+  { name: "Collections", href: "/tools", isPageLink: true },
+  { name: "Videos", href: "/videos", isPageLink: true },
+  { name: "Agents", href: "/tools?category=agents", isPageLink: true },
+];
+
 export function CategoryNav() {
-  const [activeCategory, setActiveCategory] = useState("New");
-  // Simple, pure boolean state for the dropdown
+  const [activeCategory, setActiveCategory] = useState("AI Tools");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLElement | null)[]>([]);
 
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
+  let pathname = "";
+  let searchParams: ReturnType<typeof useSearchParams> | null = null;
+  let router: ReturnType<typeof useRouter> | null = null;
 
-  const showParam = searchParams.get('show');
+  try {
+    pathname = usePathname() || "";
+    searchParams = useSearchParams();
+    router = useRouter();
+  } catch {}
+
+  useEffect(() => {
+    if (!pathname) return;
+    if (pathname === "/models") setActiveCategory("Models");
+    else if (pathname === "/companies") setActiveCategory("Companies");
+    else if (pathname === "/repositories") setActiveCategory("Repositories");
+    else if (pathname === "/news") setActiveCategory("News");
+    else if (pathname === "/videos") setActiveCategory("Videos");
+    else if (pathname === "/tools" && searchParams?.get("category") === "agents") setActiveCategory("Agents");
+    else if (pathname === "/" || pathname === "/tools") setActiveCategory("AI Tools");
+  }, [pathname, searchParams]);
+
+  const scrollToActive = (smooth = true) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const activeIdx = CATEGORIES.findIndex((c) => c.name === activeCategory);
+    if (activeIdx === -1) return;
+    const target = itemRefs.current[activeIdx];
+    if (!target) return;
+
+    scrollChipIntoView(container, target, smooth);
+  };
+
+
+
+  const showParam = searchParams ? searchParams.get('show') : null;
   const activeFilters = showParam ? showParam.split(',') : FILTER_OPTIONS.map(f => f.id);
 
   const toggleFilter = (id: string, e: React.MouseEvent) => {
@@ -36,43 +79,34 @@ export function CategoryNav() {
       newFilters = [...activeFilters, id];
     }
 
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
     if (newFilters.length === 0) params.delete('show');
     else params.set('show', newFilters.join(','));
     
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    if (router) {
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    }
   };
 
-  const CATEGORIES = [
-    { name: "AI Tools", href: "#tools" },
-    { name: "Models", href: "/models", isPageLink: true },
-    { name: "Companies", href: "/companies", isPageLink: true },
-    { name: "Repositories", href: "/repositories", isPageLink: true },
-    { name: "News", href: "/news", isPageLink: true },
-    { name: "Videos", href: "/videos", isPageLink: true },
-    { name: "Agents", href: "/tools?category=agents", isPageLink: true },
-  ];
-
   return (
-    // Explicit overflow-visible added to prevent clipping
-    <div className="w-full border-b border-[#232326]/40 bg-[#000000] py-3 sm:py-4 sticky top-navbar z-30 select-none overflow-visible">
-      <div className="mx-auto max-w-[1440px] px-3 sm:px-8 overflow-visible">
+    <div className="w-full border-b border-[#232326]/40 bg-[#000000] py-3 sm:py-4 sticky top-navbar z-30 select-none max-w-full overflow-hidden">
+      <div className="mx-auto max-w-[1440px] px-3 sm:px-8">
         
-        <div className="flex flex-nowrap gap-2 items-center w-full relative overflow-visible">
+        <div className="flex flex-nowrap gap-2 items-center w-full relative">
           
           {/* ✨ NEW BUTTON & CLICK DROPDOWN ✨ */}
-          <div className="shrink-0 relative overflow-visible">
+          <div className="shrink-0 relative">
             <button 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 h-[30px] text-[11px] font-semibold border transition-all duration-200 active:scale-95 whitespace-nowrap bg-[#18181C] border-[#6E56CF] text-white shadow-[0_0_10px_rgba(110,86,207,0.15)]"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 h-[30px] text-[11px] font-semibold border transition-all duration-200 active:scale-95 whitespace-nowrap bg-[#18181C] border-[#6E56CF] text-white shadow-[0_0_10px_rgba(110,86,207,0.15)] cursor-pointer"
             >
               <span className="text-[#6E56CF] text-[12px]">✨</span> New
             </button>
 
-            {/* THE DROPDOWN BOX (Pure CSS positioning, no animations to break) */}
+            {/* THE DROPDOWN BOX */}
             {isDropdownOpen && (
               <div 
-                className="absolute left-0 top-[40px] w-56 bg-[#111113] rounded-xl border border-[#232326] p-4 flex flex-col gap-4 shadow-2xl z-[99999]"
+                className="absolute left-0 top-[40px] w-60 max-w-[calc(100vw-32px)] bg-[#111113] rounded-xl border border-[#232326] p-4 flex flex-col gap-4 shadow-2xl z-[99999]"
               >
                 <h3 className="text-[10px] font-bold tracking-widest text-[#71717A] uppercase">Show</h3>
                 {FILTER_OPTIONS.map((option) => {
@@ -85,7 +119,8 @@ export function CategoryNav() {
                         <button
                           type="button"
                           onClick={(e) => toggleFilter(option.id, e)}
-                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                          aria-label={`Toggle ${option.label}`}
+                          className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none cursor-pointer ${
                             isActive ? option.color : 'bg-[#232326]'
                           }`}
                         >
@@ -102,10 +137,13 @@ export function CategoryNav() {
           </div>
 
           {/* Scrollable Container for the rest of the categories */}
-          <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-none pb-1 w-full items-center">
-            {CATEGORIES.map((cat) => {
+          <div
+            ref={scrollContainerRef}
+            className="flex flex-nowrap gap-1.5 sm:gap-2 touch-scroll-x scrollbar-none pb-1 min-w-0 flex-1 w-full items-center overflow-x-auto scroll-smooth"
+          >
+            {CATEGORIES.map((cat, idx) => {
               const isActive = activeCategory === cat.name;
-              const className = `inline-flex items-center rounded-lg px-3.5 h-[30px] text-[11px] font-semibold border transition-all duration-200 active:scale-95 whitespace-nowrap ${
+              const className = `inline-flex items-center rounded-lg px-3.5 h-[30px] text-[11px] font-semibold border transition-all duration-200 active:scale-95 whitespace-nowrap cursor-pointer shrink-0 ${
                 isActive
                   ? "bg-white text-[#000000] border-transparent shadow-sm"
                   : "bg-transparent border-[#232326] text-[#A1A1AA] hover:border-neutral-500 hover:text-white"
@@ -113,7 +151,16 @@ export function CategoryNav() {
 
               if (cat.isPageLink) {
                 return (
-                  <Link key={cat.name} href={cat.href} className={className}>
+                  <Link
+                    key={cat.name}
+                    ref={(el) => { itemRefs.current[idx] = el; }}
+                    href={cat.href}
+                    className={className}
+                    onClick={() => {
+                      setActiveCategory(cat.name);
+                      setTimeout(() => scrollToActive(true), 50);
+                    }}
+                  >
                     <span>{cat.name}</span>
                   </Link>
                 );
@@ -122,8 +169,12 @@ export function CategoryNav() {
               return (
                 <a
                   key={cat.name}
+                  ref={(el) => { itemRefs.current[idx] = el; }}
                   href={cat.href}
-                  onClick={() => setActiveCategory(cat.name)}
+                  onClick={() => {
+                    setActiveCategory(cat.name);
+                    setTimeout(() => scrollToActive(true), 50);
+                  }}
                   className={className}
                 >
                   <span>{cat.name}</span>

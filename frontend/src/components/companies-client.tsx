@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState, useRef, useCallback, useTransition
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Company } from "@/lib/types";
-import { API_URL, fetchCompanies, fetchAllCompanies, prefetchUrl } from "@/lib/api";
+import { API_URL, fetchCompanies, prefetchUrl } from "@/lib/api";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,8 @@ import {
   Bookmark, Share2, ExternalLink, BadgeCheck, Check
 } from "lucide-react";
 import { Button } from "@/components/ui/shadcn-button";
-import { cn } from "@/lib/utils";
+import { Pagination } from "@/components/Pagination";
+import { cn, scrollChipIntoView } from "@/lib/utils";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 
 const PAGE_SIZE = 100;
@@ -38,40 +39,27 @@ const COMPANY_TYPES: { label: string; value: string; slug: string }[] = [
   { label: "Open Source", value: "OPEN_SOURCE", slug: "open-source" },
   { label: "Finance", value: "FINANCE", slug: "finance" },
   { label: "AI Native", value: "AI_NATIVE", slug: "ai-native" },
-  { label: "Model Companies", value: "MODEL_COMPANIES", slug: "model-companies" },
-  { label: "Unicorns", value: "UNICORNS", slug: "unicorns" }
+  { label: "Profitable", value: "PROFITABLE", slug: "profitable" },
 ];
 
-type SortField = 'name' | 'country' | 'valuation' | 'valEmp' | 'aiNative' | 'profitable' | 'sector' | 'modelsCount' | 'toolsCount';
+type SortField = 'valuation' | 'valEmp' | 'name' | 'country' | 'sector' | 'modelsCount' | 'toolsCount' | 'aiNative' | 'profitable';
 type SortDir = 'asc' | 'desc';
 
-const COL_TEMPLATE =
-  "grid-cols-[44px_minmax(200px,2.2fr)_minmax(110px,1fr)_minmax(100px,1fr)_minmax(90px,0.9fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(120px,1.1fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_44px_44px]";
-const COL_MIN_WIDTH = "min-w-[1150px]";
+const COL_TEMPLATE = "grid-cols-[44px_minmax(180px,2fr)_minmax(90px,1fr)_minmax(90px,1fr)_minmax(90px,1fr)_minmax(75px,0.8fr)_minmax(75px,0.8fr)_minmax(120px,1.2fr)_minmax(65px,0.7fr)_minmax(65px,0.7fr)_44px_44px]";
+const COL_MIN_WIDTH = "min-w-[1050px]";
 
 function formatCompanyName(name: string): string {
   if (!name) return "";
-  const cleaned = name.replace(/^!\[+/, '').replace(/\]\(.*?\)/g, '').replace(/[\!\[\]]/g, '').trim();
-  return cleaned || name;
+  return name.replace(/^!\[+/, '').replace(/\]\(.*?\)/g, '').replace(/[\!\[\]]/g, '').trim();
 }
 
 function cleanCompanySlug(slug: string): string {
   if (!slug) return "";
-  return slug.replace(/^!\[+/, '').replace(/[\]\(\)]/g, '').trim();
+  return slug.replace(/^!\[+/, '').replace(/\]\(.*?\)/g, '').replace(/[\!\[\]]/g, '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 function getCompanyLogo(company: Company): string | null {
-  if (company.logoUrl && company.logoUrl.trim() && !company.logoUrl.startsWith('![')) return company.logoUrl.trim();
-  if (company.tools && company.tools.length > 0) {
-    const firstWithLogo = company.tools.find(t => t.logoUrl && t.logoUrl.trim() && !t.logoUrl.startsWith('!['));
-    if (firstWithLogo?.logoUrl) return firstWithLogo.logoUrl.trim();
-  }
-  if (company.website) {
-    try {
-      const hostname = new URL(company.website.startsWith('http') ? company.website : `https://${company.website}`).hostname;
-      if (hostname) return `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`;
-    } catch {}
-  }
+  if (company.logoUrl && company.logoUrl.trim()) return company.logoUrl;
   return null;
 }
 
@@ -112,7 +100,7 @@ function getValEmpNumeric(valuation: string | number | null | undefined, employe
 function BoolPill({ value, trueLabel = "YES", falseLabel = "NO" }: { value: boolean | null; trueLabel?: string; falseLabel?: string }) {
   if (value === null) return <span className="text-[11px] text-[#71717A] font-mono">—</span>;
   return (
-    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
+    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
       {value ? trueLabel : falseLabel}
     </span>
   );
@@ -121,7 +109,7 @@ function BoolPill({ value, trueLabel = "YES", falseLabel = "NO" }: { value: bool
 function LogoCell({ name, logoUrl }: { name: string; logoUrl: string | null }) {
   const [failed, setFailed] = useState(false);
   if (!logoUrl || failed) {
-    return <span className="text-xs font-bold text-neutral-900">{name.charAt(0)}</span>;
+    return <span className="text-sm font-bold text-neutral-900">{name.charAt(0)}</span>;
   }
   return (
     <img
@@ -178,45 +166,33 @@ function BookmarkBtn({ companyId, companyName }: { companyId: string; companyNam
 function matchesSubcategory(c: Company, slug: string): boolean {
   if (!slug || slug === "all") return true;
   const slugLower = slug.toLowerCase().replace(/[-_]/g, " ");
-  const typeLower = (c.type || []).join(" ").toLowerCase().replace(/[-_]/g, " ");
-  const sectorLower = (c.sector || "").toLowerCase();
-  const nameLower = (c.name || "").toLowerCase();
-  const descLower = (c.description || "").toLowerCase();
-  const modelsLower = (c.aiModels || []).map(m => m.name).join(" ").toLowerCase();
 
-  const fullText = `${typeLower} ${sectorLower} ${nameLower} ${descLower} ${modelsLower}`;
-
-  switch (slug) {
-    case "ai-model-providers":
-    case "model-companies":
-      return fullText.includes("model") || fullText.includes("provider") || (c.aiModels && c.aiModels.length > 0) || typeLower.includes("model");
-    case "infrastructure":
-      return fullText.includes("infra") || fullText.includes("cloud") || fullText.includes("compute") || fullText.includes("chip") || typeLower.includes("infra");
-    case "enterprise":
-      return fullText.includes("enterprise") || fullText.includes("b2b") || fullText.includes("business") || typeLower.includes("enterprise");
-    case "healthcare":
-      return fullText.includes("health") || fullText.includes("med") || fullText.includes("bio") || typeLower.includes("health");
-    case "generative-ai":
-      return fullText.includes("generative") || fullText.includes("genai") || fullText.includes("llm") || fullText.includes("gpt") || typeLower.includes("generative");
-    case "marketing":
-      return fullText.includes("market") || fullText.includes("seo") || fullText.includes("ad") || typeLower.includes("market");
-    case "developer-tools":
-      return fullText.includes("dev") || fullText.includes("code") || fullText.includes("git") || typeLower.includes("developer");
-    case "robotics":
-      return fullText.includes("robot") || fullText.includes("hardware") || typeLower.includes("robot");
-    case "education":
-      return fullText.includes("edu") || fullText.includes("learn") || typeLower.includes("education");
-    case "open-source":
-      return fullText.includes("open") || fullText.includes("source") || typeLower.includes("open");
-    case "finance":
-      return fullText.includes("fin") || fullText.includes("bank") || fullText.includes("trad") || typeLower.includes("finance");
-    case "ai-native":
-      return typeLower.includes("native") || fullText.includes("ai native");
-    case "unicorns":
-      return fullText.includes("unicorn") || Boolean(c.valuation && Number(c.valuation) >= 1_000_000_000);
-    default:
-      return fullText.includes(slugLower);
+  const types = Array.isArray(c.type) ? c.type : [];
+  for (const t of types) {
+    if (t && t.toLowerCase().replace(/[-_]/g, " ").includes(slugLower)) return true;
   }
+
+  if (c.sector && c.sector.toLowerCase().replace(/[-_]/g, " ").includes(slugLower)) return true;
+  if (c.description && c.description.toLowerCase().includes(slugLower)) return true;
+
+  return false;
+}
+
+function ClearFilterChip({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClick();
+      }}
+      className="shrink-0 rounded-full border border-[#6E56CF]/50 bg-[#6E56CF]/10 px-1 py-0.5 text-[7px] leading-none font-medium normal-case tracking-normal text-[#A1A1AA] hover:text-white hover:border-[#6E56CF] transition-colors"
+      title="Clear filter"
+    >
+      Clear filter
+    </button>
+  );
 }
 
 function CompanyRow({
@@ -284,7 +260,7 @@ function CompanyRow({
             {cleanName}
           </h3>
           {company.verified && (
-            <BadgeCheck size={13} className="shrink-0 text-blue-400" aria-label="Verified" />
+            <BadgeCheck size={14} className="shrink-0 text-blue-400" aria-label="Verified" />
           )}
           {company.website && (
             <a
@@ -294,14 +270,14 @@ function CompanyRow({
               onClick={(e) => e.stopPropagation()}
               className="text-[#71717A] hover:text-white transition-colors shrink-0"
             >
-              <ExternalLink size={13} />
+              <ExternalLink size={14} />
             </a>
           )}
         </div>
         {authenticModels.length > 0 ? (
           <div className="flex items-center gap-1 mt-0.5 flex-wrap">
             {authenticModels.slice(0, 2).map((m) => (
-              <span key={m.id} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[9px] font-mono text-[#A1A1AA] truncate max-w-[90px]">
+              <span key={m.id} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[9px] font-mono text-[#A1A1AA] truncate max-w-[100px]">
                 {m.name}
               </span>
             ))}
@@ -382,17 +358,32 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const urlFilterParam = searchParams.get("filter") || searchParams.get("category");
 
   const [activeCategorySlug, setActiveCategorySlug] = useState<string>(() => {
-    return defaultCategory || urlFilterParam || "all";
+    return defaultCategory || urlFilterParam || "";
   });
+
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+
 
   const [selectedCountry, setSelectedCountry] = useState<string>("all");
   const [isCountryPopoverOpen, setIsCountryPopoverOpen] = useState<boolean>(false);
   const [countrySearch, setCountrySearch] = useState<string>("");
+  const [allCompanyCountries, setAllCompanyCountries] = useState<string[]>([]);
   const countryPopoverRef = useRef<HTMLDivElement>(null);
 
-  const [sortField, setSortField] = useState<SortField>('valuation');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  // Company name filter
+  const [isCompanyNamePopoverOpen, setIsCompanyNamePopoverOpen] = useState(false);
+  const [companyNameInput, setCompanyNameInput] = useState("");
+  const [companyNameFilter, setCompanyNameFilter] = useState("");
+  const companyNamePopoverRef = useRef<HTMLDivElement>(null);
+
+  const [aiNativeFilter, setAiNativeFilter] = useState<'all' | 'yes' | 'no'>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(100);
 
   const matchedTypeEnum = useMemo(() => {
     if (!activeCategorySlug || activeCategorySlug === "all") return undefined;
@@ -400,33 +391,155 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     return matched && matched.value !== "ALL" ? matched.value : activeCategorySlug;
   }, [activeCategorySlug]);
 
-  const { data: companiesResponse, isLoading } = useQuery<any>({
-    queryKey: ["companies", currentPage, query, activeCategorySlug, selectedCountry, sortField, sortDir],
-    queryFn: () => fetchCompanies({
-      page: currentPage,
-      pageSize: PAGE_SIZE,
-      q: query || undefined,
-      type: matchedTypeEnum,
-      country: selectedCountry !== "all" ? selectedCountry : undefined,
-      sort: sortField === "valuation" ? (sortDir === "asc" ? "valuation-asc" : "valuation-desc")
-          : sortField === "name" ? (sortDir === "asc" ? "name-asc" : "name-desc")
-          : undefined,
-    }),
+  /*
+   * Load the complete company directory once and filter/sort it locally.
+   *
+   * This is deliberate: the directory has several UI-only filters
+   * (especially AI Native = No and the COMPANY name popup). Applying them
+   * to an already-paginated API response caused filters to appear broken.
+   * We now have one source dataset, then:
+   *   1. category
+   *   2. country
+   *   3. company name
+   *   4. AI Native
+   *   5. general search
+   *   6. sorting
+   *   7. pagination
+   */
+  const { data: companiesResponse, isLoading, isFetching } = useQuery<any>({
+    queryKey: [
+      "companies",
+      currentPage,
+      pageSize,
+      query,
+      companyNameFilter,
+      activeCategorySlug,
+      selectedCountry,
+      sortField,
+      sortDir,
+    ],
+    queryFn: async () => {
+      const sort =
+        sortField === "valuation"
+          ? (sortDir === "asc" ? "valuation-asc" : "valuation-desc")
+          : sortField === "name"
+            ? (sortDir === "asc" ? "name-asc" : "name-desc")
+            : undefined;
+
+      const type = matchedTypeEnum;
+      const country =
+        selectedCountry !== "all" ? selectedCountry : undefined;
+
+      /*
+       * Normal page:
+       * One API request only. This keeps the page fast and prevents the
+       * endless skeleton/loading problem caused by downloading the whole DB.
+       */
+      if (!companyNameFilter.trim()) {
+        return fetchCompanies({
+          page: currentPage,
+          pageSize,
+          q: query.trim() || undefined,
+          type,
+          country,
+          sort,
+        });
+      }
+
+      /*
+       * COMPANY filter:
+       * Use q only to narrow the server-side candidate set, then check
+       * company.name locally so description/sector matches are discarded.
+       *
+       * We fetch the q-result pages, not the entire company database.
+       */
+      const firstResponse = await fetchCompanies({
+        page: 1,
+        pageSize: 200,
+        q: companyNameFilter.trim(),
+        type,
+        country,
+        sort,
+      });
+
+      const firstCompanies: Company[] = Array.isArray(firstResponse)
+        ? (firstResponse as Company[])
+        : ((firstResponse?.companies || []) as Company[]);
+
+      let candidates = firstCompanies;
+
+      const totalPagesFromApi =
+        typeof firstResponse?.totalPages === "number"
+          ? firstResponse.totalPages
+          : 1;
+
+      // Fetch the remaining search-result pages in parallel, with a hard cap
+      // so a malformed API response can never freeze the page.
+      if (totalPagesFromApi > 1) {
+        const remainingPages = Math.min(totalPagesFromApi, 20);
+
+        const responses = await Promise.all(
+          Array.from({ length: remainingPages - 1 }, (_, index) =>
+            fetchCompanies({
+              page: index + 2,
+              pageSize: 200,
+              q: companyNameFilter.trim(),
+              type,
+              country,
+              sort,
+            })
+          )
+        );
+
+        for (const response of responses) {
+          const companies: Company[] = Array.isArray(response)
+            ? (response as Company[])
+            : ((response?.companies || []) as Company[]);
+          candidates = candidates.concat(companies);
+        }
+      }
+
+      const needle = companyNameFilter.trim().toLocaleLowerCase();
+
+      const matchingCompanies = candidates.filter((company) =>
+        formatCompanyName(String(company?.name ?? ""))
+          .trim()
+          .toLocaleLowerCase()
+          .includes(needle)
+      );
+
+      const startIndex = (currentPage - 1) * pageSize;
+
+      return {
+        companies: matchingCompanies.slice(startIndex, startIndex + pageSize),
+        total: matchingCompanies.length,
+        page: currentPage,
+        pageSize,
+        totalPages: Math.max(
+          1,
+          Math.ceil(matchingCompanies.length / pageSize)
+        ),
+      };
+    },
     placeholderData: keepPreviousData,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
   });
 
-  const allCompanies: Company[] = Array.isArray(companiesResponse) 
-    ? companiesResponse 
+  const allCompanies: Company[] = Array.isArray(companiesResponse)
+    ? companiesResponse
     : (companiesResponse?.companies || []);
 
-  const totalCount = typeof companiesResponse?.total === 'number' 
-    ? companiesResponse.total 
-    : allCompanies.length;
+  const totalCount =
+    typeof companiesResponse?.total === "number"
+      ? companiesResponse.total
+      : allCompanies.length;
 
-  const totalPages = typeof companiesResponse?.totalPages === 'number'
-    ? companiesResponse.totalPages
-    : Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const totalPages =
+    typeof companiesResponse?.totalPages === "number"
+      ? companiesResponse.totalPages
+      : Math.max(1, Math.ceil(totalCount / pageSize));
+
+  const paginatedCompanies: Company[] = allCompanies;
 
   useEffect(() => {
     if (urlSortParam) {
@@ -459,18 +572,90 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
       if (countryPopoverRef.current && !countryPopoverRef.current.contains(e.target as Node)) {
         setIsCountryPopoverOpen(false);
       }
+      if (companyNamePopoverRef.current && !companyNamePopoverRef.current.contains(e.target as Node)) {
+        setIsCompanyNamePopoverOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCountries = async () => {
+      try {
+        const firstResponse = await fetchCompanies({
+          page: 1,
+          pageSize: 200,
+        });
+
+        const firstCompanies: Company[] = Array.isArray(firstResponse)
+          ? (firstResponse as Company[])
+          : ((firstResponse?.companies || []) as Company[]);
+
+        const countries = new Set<string>();
+
+        firstCompanies.forEach((company) => {
+          const country = company.country?.trim();
+          if (country) countries.add(country);
+        });
+
+        const totalPagesFromApi =
+          typeof firstResponse?.totalPages === "number"
+            ? firstResponse.totalPages
+            : 1;
+
+        if (totalPagesFromApi > 1) {
+          const pages = Math.min(totalPagesFromApi, 20);
+
+          const responses = await Promise.all(
+            Array.from({ length: pages - 1 }, (_, index) =>
+              fetchCompanies({
+                page: index + 2,
+                pageSize: 200,
+              })
+            )
+          );
+
+          responses.forEach((response) => {
+            const companies: Company[] = Array.isArray(response)
+              ? (response as Company[])
+              : ((response?.companies || []) as Company[]);
+
+            companies.forEach((company) => {
+              const country = company.country?.trim();
+              if (country) countries.add(country);
+            });
+          });
+        }
+
+        if (!cancelled) {
+          setAllCompanyCountries(Array.from(countries).sort());
+        }
+      } catch {
+        // Current-page countries remain as fallback.
+      }
+    };
+
+    loadCountries();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const availableCountries = useMemo(() => {
+    if (allCompanyCountries.length > 0) return allCompanyCountries;
+
     const set = new Set<string>();
-    allCompanies.forEach((c) => {
-      if (c.country && c.country.trim()) set.add(c.country.trim());
+    allCompanies.forEach((company) => {
+      if (company.country && company.country.trim()) {
+        set.add(company.country.trim());
+      }
     });
     return Array.from(set).sort();
-  }, [allCompanies]);
+  }, [allCompanyCountries, allCompanies]);
 
   const filteredCountriesList = useMemo(() => {
     if (!countrySearch.trim()) return availableCountries;
@@ -478,11 +663,10 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     return availableCountries.filter((c) => c.toLowerCase().includes(q));
   }, [availableCountries, countrySearch]);
 
-  const paginatedCompanies = allCompanies;
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [query, activeCategorySlug, selectedCountry]);
+  }, [query, companyNameFilter, activeCategorySlug, selectedCountry, pageSize]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -536,12 +720,12 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
       type="button"
       onClick={() => toggleSort(field)}
       className={`flex items-center gap-1 font-mono hover:text-white transition-colors cursor-pointer select-none ${
-        sortField === field ? 'text-[#6E56CF]' : 'text-[#A1A1AA]'
+        sortField === field ? 'text-white' : 'text-[#A1A1AA]'
       }`}
     >
       <span>{label}</span>
       {sortField === field ? (
-        <span className="text-[10px] text-[#6E56CF]">{sortDir === 'desc' ? '↓' : '↑'}</span>
+        <span className="text-[10px] text-white">{sortDir === 'desc' ? '↓' : '↑'}</span>
       ) : (
         <span className="text-[10px] opacity-40">↕</span>
       )}
@@ -554,23 +738,34 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
         <div className="w-full space-y-4">
           {/* Subcategories Horizontal Scrollbar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1 w-full">
+            <div
+              ref={subCatContainerRef}
+              className="flex items-center gap-1.5 touch-scroll-x scrollbar-none pb-1 md:pb-0 flex-1 w-auto sm:w-full -mx-3 sm:mx-0 px-3 sm:px-0 overflow-x-auto scroll-smooth"
+            >
               {COMPANY_TYPES.map((ct) => {
                 const isSelected = activeCategorySlug === ct.slug;
                 return (
-                  <button
-                    key={ct.slug}
-                    type="button"
-                    onClick={() => handleSubcategoryClick(ct.slug)}
-                    className={cn(
-                      "rounded-full px-3 py-1 text-xs font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer",
-                      isSelected
-                        ? "bg-white text-black border-transparent font-bold shadow-sm"
-                        : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/50 hover:text-white"
+                  <div key={ct.slug} className="flex items-center gap-1 shrink-0">
+                    <button
+                      ref={(el) => { subCatRefs.current[ct.slug] = el; }}
+                      type="button"
+                      onClick={() => handleSubcategoryClick(ct.slug)}
+                      className={cn(
+                        "rounded-full px-3.5 py-1 text-xs font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0",
+                        isSelected
+                          ? "bg-[#6E56CF] text-white border-[#6E56CF] font-bold shadow-sm"
+                          : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/50 hover:text-white"
+                      )}
+                    >
+                      <span>{ct.label}</span>
+                    </button>
+
+                    {isSelected && ct.slug !== "all" && (
+                      <ClearFilterChip
+                        onClick={() => handleSubcategoryClick("all")}
+                      />
                     )}
-                  >
-                    <span>{ct.label}</span>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -584,21 +779,8 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
             )}
           </div>
 
-          {/* Active Filter Pills Bar */}
-          {selectedCountry !== "all" && (
-            <div className="flex items-center gap-2 pb-2">
-              <span className="text-xs text-[#71717A]">Country:</span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#232326] bg-[#131316] px-2.5 py-1 text-xs font-medium text-white">
-                {selectedCountry}
-                <button onClick={() => setSelectedCountry("all")} className="text-[#71717A] hover:text-white">
-                  <X size={12} />
-                </button>
-              </span>
-            </div>
-          )}
-
           {/* Companies List Container */}
-          {isLoading ? (
+          {isLoading || isFetching && allCompanies.length === 0 ? (
             <div className="w-full space-y-2">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="h-16 animate-pulse bg-[#131316]/50 rounded-xl border border-[#232326]/60" />
@@ -607,56 +789,166 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
           ) : allCompanies.length === 0 ? (
             <div className="text-center py-20 bg-[#111113] rounded-xl border border-[#232326]">
               <p className="text-[#71717A] text-sm">
-                {query ? `No companies match "${query}".` : "No companies found."}
+                {companyNameFilter
+                  ? `No companies match "${companyNameFilter}".`
+                  : query
+                    ? `No companies match "${query}".`
+                    : "No companies found."}
               </p>
             </div>
           ) : (
             <div className="w-full rounded-xl border border-[#232326] bg-[#0A0A0C] overflow-hidden shadow-xl">
-              <div className="overflow-x-auto relative">
+              <div className="overflow-x-auto touch-scroll-x relative">
                 {/* Header Row */}
                 <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2.5 bg-[#131316] border-b border-[#232326]/60 text-[10px] font-bold font-mono tracking-wider uppercase text-[#A1A1AA]`}>
                   <div></div>
-                  <div><SortHeader label="COMPANY" field="name" /></div>
+                  <div>
+                    <div className="relative" ref={companyNamePopoverRef}>
+                      <div className="flex items-center gap-1">
+                        {/* Existing company-name sort */}
+                        <SortHeader label="COMPANY" field="name" />
+
+                        {companyNameFilter && (
+                          <ClearFilterChip
+                            onClick={() => {
+                              setCompanyNameFilter("");
+                              setCompanyNameInput("");
+                              setCurrentPage(1);
+                            }}
+                          />
+                        )}
+
+                        {/* Company-name filter */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCompanyNameInput(companyNameFilter);
+                            setIsCompanyNamePopoverOpen((open) => !open);
+                          }}
+                          className={`flex items-center justify-center transition-colors cursor-pointer ${
+                            companyNameFilter
+                              ? "text-[#6E56CF]"
+                              : "text-[#71717A] hover:text-white"
+                          }`}
+                          aria-label="Filter by company name"
+                          title="Filter by name"
+                        >
+                          <Filter size={12} />
+                        </button>
+                      </div>
+
+                      {isCompanyNamePopoverOpen && (
+                        <div
+                          className="absolute left-0 top-full mt-2 w-[190px] rounded-xl border border-[#232326] bg-[#18181C] p-2 shadow-2xl z-[60] text-xs normal-case font-sans flex flex-col gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            autoFocus
+                            type="text"
+                            value={companyNameInput}
+                            onChange={(e) => setCompanyNameInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                setCompanyNameFilter(companyNameInput.trim());
+                                setIsCompanyNamePopoverOpen(false);
+                              }
+                            }}
+                            placeholder="Filter by name..."
+                            className="w-full h-7 shrink-0 rounded-md border border-[#6E56CF] bg-[#131316] px-2 text-xs text-white placeholder:text-[#71717A] focus:outline-none focus:ring-0"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCompanyNameFilter(companyNameInput.trim());
+                              setIsCompanyNamePopoverOpen(false);
+                            }}
+                            className="w-full h-7 shrink-0 rounded-md bg-[#6E56CF] text-white text-xs font-semibold hover:bg-[#7C66DF] transition-colors"
+                          >
+                            Apply
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <div>
                     <div className="relative" ref={countryPopoverRef}>
                       <button
                         type="button"
                         onClick={() => setIsCountryPopoverOpen(!isCountryPopoverOpen)}
                         className={`flex items-center gap-1 font-mono hover:text-white transition-colors cursor-pointer select-none ${
-                          selectedCountry !== 'all' || sortField === 'country' ? 'text-[#6E56CF]' : 'text-[#A1A1AA]'
+                          selectedCountry !== 'all' ? 'text-[#6E56CF]' : 'text-[#A1A1AA]'
                         }`}
                       >
                         <span>COUNTRY</span>
-                        <Filter size={10} className="ml-0.5" />
+                        <Filter size={12} className="ml-0.5" />
+                        {selectedCountry !== "all" && (
+                          <ClearFilterChip
+                            onClick={() => {
+                              setSelectedCountry("all");
+                              setCountrySearch("");
+                              setCurrentPage(1);
+                            }}
+                          />
+                        )}
                       </button>
 
                       {isCountryPopoverOpen && (
-                        <div className="absolute left-0 top-full mt-2 w-60 rounded-xl border border-[#232326] bg-[#131316] p-3 shadow-2xl z-50 text-xs normal-case font-sans">
+                        <div
+                          className="absolute left-0 top-full mt-2 w-[220px] rounded-xl border border-[#232326] bg-[#131316] p-2.5 shadow-2xl z-[70] text-xs normal-case font-sans"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <input
                             type="text"
                             value={countrySearch}
                             onChange={(e) => setCountrySearch(e.target.value)}
                             placeholder="Search countries..."
-                            className="w-full rounded-lg border border-[#232326] bg-[#0A0A0C] px-3 py-1.5 text-xs text-white placeholder-[#71717A] focus:border-[#6E56CF] focus:outline-none mb-2"
+                            className="w-full h-9 rounded-lg border border-[#232326] bg-[#0A0A0C] px-3 text-xs leading-9 text-white placeholder:text-[#71717A] focus:border-[#6E56CF] focus:outline-none mb-2"
                           />
-                          <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-thin">
-                            <button
-                              type="button"
-                              onClick={() => { setSelectedCountry('all'); setIsCountryPopoverOpen(false); }}
-                              className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold ${selectedCountry === 'all' ? 'bg-white text-black font-bold' : 'text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white'}`}
-                            >
-                              All countries
-                            </button>
-                            {filteredCountriesList.map((countryName) => (
-                              <button
-                                key={countryName}
-                                type="button"
-                                onClick={() => { setSelectedCountry(countryName); setIsCountryPopoverOpen(false); }}
-                                className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold truncate ${selectedCountry.toLowerCase() === countryName.toLowerCase() ? 'bg-white text-black font-bold' : 'text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white'}`}
-                              >
-                                {countryName}
-                              </button>
-                            ))}
+
+                          <div className="max-h-[150px] overflow-y-auto overflow-x-hidden pr-1">
+                            <div className="flex flex-col gap-0.5">
+                              {selectedCountry !== "all" && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCountry("all");
+                                    setCountrySearch("");
+                                    setCurrentPage(1);
+                                    setIsCountryPopoverOpen(false);
+                                  }}
+                                  className="w-full h-7 shrink-0 flex items-center rounded-md px-2 text-left text-[11px] leading-none font-semibold text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white"
+                                >
+                                  Clear filter
+                                </button>
+                              )}
+
+                              {filteredCountriesList.map((countryName) => (
+                                <button
+                                  key={countryName}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCountry(countryName);
+                                    setCurrentPage(1);
+                                    setIsCountryPopoverOpen(false);
+                                  }}
+                                  className={`w-full h-7 shrink-0 flex items-center rounded-md px-2 text-left text-[11px] leading-none font-semibold truncate ${
+                                    selectedCountry.toLowerCase() === countryName.toLowerCase()
+                                      ? "bg-white text-black font-bold"
+                                      : "text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white"
+                                  }`}
+                                >
+                                  <span className="truncate">{countryName}</span>
+                                </button>
+                              ))}
+
+                              {filteredCountriesList.length === 0 && (
+                                <div className="px-2 py-3 text-[11px] text-[#71717A]">
+                                  No countries found
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -664,9 +956,9 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                   </div>
                   <div><SortHeader label="VALUATION" field="valuation" /></div>
                   <div><SortHeader label="VAL/EMP" field="valEmp" /></div>
-                  <div><SortHeader label="AI NATIVE" field="aiNative" /></div>
-                  <div><SortHeader label="PROFITABLE" field="profitable" /></div>
-                  <div><SortHeader label="SECTOR" field="sector" /></div>
+                  <div className="font-mono">AI NATIVE</div>
+                  <div className="font-mono">PROFITABLE</div>
+                  <div className="font-mono">SECTOR</div>
                   <div><SortHeader label="MODELS" field="modelsCount" /></div>
                   <div><SortHeader label="TOOLS" field="toolsCount" /></div>
                   <div>SHARE</div>
@@ -686,65 +978,22 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                 </div>
               </div>
 
-              {/* 100 Rows Pagination Bar */}
-              {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-[#131316] border-t border-[#232326]/60 text-xs text-[#A1A1AA]">
-                  <div>
-                    Showing <span className="font-bold text-white">{(currentPage - 1) * PAGE_SIZE + 1}</span>–<span className="font-bold text-white">{Math.min(currentPage * PAGE_SIZE, totalCount)}</span> of <span className="font-bold text-white">{totalCount.toLocaleString()}</span> companies
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="h-8 px-2.5 text-xs font-semibold border-[#232326] bg-[#0A0A0C] hover:bg-[#1A1A1E] text-[#A1A1AA] hover:text-white disabled:opacity-40"
-                    >
-                      <ChevronLeft size={14} className="mr-1" /> Prev
-                    </Button>
-
-                    <div className="flex items-center gap-1 px-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum = currentPage;
-                        if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
-                        if (pageNum < 1 || pageNum > totalPages) return null;
-
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() => handlePageChange(pageNum)}
-                            className={cn(
-                              "h-8 w-8 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center cursor-pointer",
-                              currentPage === pageNum
-                                ? "bg-white text-black font-bold shadow-sm"
-                                : "bg-[#0A0A0C] text-[#A1A1AA] hover:text-white hover:bg-[#1A1A1E] border border-[#232326]"
-                            )}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="h-8 px-2.5 text-xs font-semibold border-[#232326] bg-[#0A0A0C] hover:bg-[#1A1A1E] text-[#A1A1AA] hover:text-[#A1A1AA] disabled:opacity-40"
-                    >
-                      Next <ChevronRight size={14} className="ml-1" />
-                    </Button>
-                  </div>
-                </div>
-              )}
+              {/* Unified Floating Pill Pagination */}
+              <Pagination
+                page={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                totalCount={totalCount}
+                onPageChange={(p) => {
+                  handlePageChange(p);
+                  const target = document.getElementById("companies-container");
+                  if (target) target.scrollIntoView({ behavior: "smooth" });
+                }}
+                onPageSizeChange={(s) => {
+                  setPageSize(s);
+                  setCurrentPage(1);
+                }}
+              />
             </div>
           )}
         </div>

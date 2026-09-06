@@ -129,20 +129,24 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     return (
       <div className="flex flex-col flex-1">
 
-        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-        <Suspense fallback={
-          <main className="mx-auto max-w-container px-6 py-10 flex-1">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
-              ))}
+        <div className="relative z-[60]">
+          <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        </div>
+        <div className="relative z-10 flex-1 flex flex-col">
+          <Suspense fallback={
+            <main className="mx-auto max-w-container px-6 py-10 flex-1">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
+                ))}
+              </div>
+            </main>
+          }>
+            <div className="flex-1">
+              <ToolsClient defaultMode={type as any} defaultCategory={slug} />
             </div>
-          </main>
-        }>
-          <div className="flex-1">
-            <ToolsClient defaultMode={type as any} defaultCategory={slug} />
-          </div>
-        </Suspense>
+          </Suspense>
+        </div>
 
       </div>
     );
@@ -151,20 +155,24 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     return (
       <div className="flex flex-col flex-1">
 
-        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-        <Suspense fallback={
-          <main className="mx-auto max-w-container px-6 py-10 flex-1">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
-              ))}
+        <div className="relative z-[60]">
+          <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        </div>
+        <div className="relative z-10 flex-1 flex flex-col">
+          <Suspense fallback={
+            <main className="mx-auto max-w-container px-6 py-10 flex-1">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <div key={i} className="h-48 animate-pulse rounded-xl border border-[#232326] bg-[#131316]" />
+                ))}
+              </div>
+            </main>
+          }>
+            <div className="flex-1">
+              <MCPClient defaultSubCategory={slug} />
             </div>
-          </main>
-        }>
-          <div className="flex-1">
-            <MCPClient defaultSubCategory={slug} />
-          </div>
-        </Suspense>
+          </Suspense>
+        </div>
 
       </div>
     );
@@ -173,8 +181,10 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     return (
       <div className="flex flex-col flex-1">
 
-        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-        <div className="flex-1">
+        <div className="relative z-[60]">
+          <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        </div>
+        <div className="relative z-10 flex-1 flex flex-col">
           <TasksClient defaultCategory={slug} />
         </div>
 
@@ -185,8 +195,10 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     return (
       <div className="flex flex-col flex-1">
 
-        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-        <div className="flex-1">
+        <div className="relative z-[60]">
+          <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        </div>
+        <div className="relative z-10 flex-1 flex flex-col">
           <CompaniesClient defaultCategory={slug} />
         </div>
 
@@ -197,8 +209,10 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     return (
       <div className="flex flex-col flex-1">
 
-        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-        <div className="flex-1">
+        <div className="relative z-[60]">
+          <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        </div>
+        <div className="relative z-10 flex-1 flex flex-col">
           <NewsListingClient category={slug} />
         </div>
 
@@ -209,8 +223,10 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     return (
       <div className="flex flex-col flex-1">
 
-        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-        <div className="flex-1">
+        <div className="relative z-[60]">
+          <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        </div>
+        <div className="relative z-10 flex-1 flex flex-col">
           <VideosPageClient initialVideos={[]} initialTotal={0} pageSize={24} defaultCategory={slug} />
         </div>
 
@@ -221,8 +237,10 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     return (
       <div className="flex flex-col flex-1">
 
-        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-        <div className="flex-1">
+        <div className="relative z-[60]">
+          <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        </div>
+        <div className="relative z-10 flex-1 flex flex-col">
           <RobotsClient defaultCategory={slug} />
         </div>
 
@@ -233,8 +251,10 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     return (
       <div className="flex flex-col flex-1">
 
-        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-        <div className="flex-1">
+        <div className="relative z-[60]">
+          <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        </div>
+        <div className="relative z-10 flex-1 flex flex-col">
           <DevicesClient defaultCategory={slug} />
         </div>
 
@@ -245,8 +265,10 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     return (
       <div className="flex flex-col flex-1">
 
-        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-        <div className="flex-1">
+        <div className="relative z-[60]">
+          <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        </div>
+        <div className="relative z-10 flex-1 flex flex-col">
           <ModelsClient defaultSubCategory={slug} />
         </div>
 
@@ -257,8 +279,10 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     return (
       <div className="flex flex-col flex-1">
 
-        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-        <div className="flex-1">
+        <div className="relative z-[60]">
+          <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+        </div>
+        <div className="relative z-10 flex-1 flex flex-col">
           <RepositoriesClient defaultCategory={slug} />
         </div>
 
@@ -276,17 +300,11 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     </div>
   );
   if (type === "mcp") {
-    // ONLY fetch the main item on the server. Do not wait for alternatives!
     const item = await fetchMCPItemBySlug(slug);
     if (!item) return notFound();
 
     return (
-      <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-        <Header />
-        {/* Pass undefined for alternatives, letting the client fetch them in the background */}
-        <MCPDetailClient item={item} initialAlternatives={undefined} />
-        <Footer />
-      </div>
+      <MCPDetailClient item={item} initialAlternatives={undefined} />
     );
   }
   if (type === "videos") return <VideoDetailsClient />;

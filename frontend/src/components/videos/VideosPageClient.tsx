@@ -11,6 +11,7 @@ import {
 } from "@/lib/videos-data";
 import { VideoTable } from "./VideoTable";
 import { Pagination } from "./Pagination";
+import { scrollChipIntoView } from "@/lib/utils";
 
 const VIDEO_CATEGORIES = [
   { name: "All", slug: "" },
@@ -34,7 +35,7 @@ const VIDEO_CATEGORIES = [
 export function VideosPageClient({
   initialVideos,
   initialTotal,
-  pageSize,
+  pageSize: initialPageSize = 100,
   defaultCategory,
 }: {
   initialVideos: Video[];
@@ -46,10 +47,16 @@ export function VideosPageClient({
   const searchParams = useSearchParams();
 
   const [videos, setVideos] = useState<Video[]>(initialVideos);
+  const [currentPageSize, setCurrentPageSize] = useState<number>(initialPageSize || 100);
 
   const [activeCategory, setActiveCategory] = useState<string>(
     defaultCategory || searchParams?.get("category") || ""
   );
+
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+
 
   const [sortBy, setSortBy] = useState<VideoSortBy>("posted");
   const [sortDir, setSortDir] = useState<VideoSortDir>("desc");
@@ -70,7 +77,7 @@ export function VideosPageClient({
 
   const didMountRef = useRef(false);
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = Math.max(1, Math.ceil(total / currentPageSize));
 
   // Whenever category or sort changes, jump back to page 1 — a filter/sort
   // change on page 5 of the old result set doesn't make sense on the new one.
@@ -94,9 +101,9 @@ export function VideosPageClient({
       setLoading(true);
 
       try {
-        const offset = (page - 1) * pageSize;
+        const offset = (page - 1) * currentPageSize;
         const [pageVideos, count] = await Promise.all([
-          getVideosPage(pageSize, offset, activeCategory || undefined, sortBy, sortDir),
+          getVideosPage(currentPageSize, offset, activeCategory || undefined, sortBy, sortDir),
           getVideosCount(activeCategory || undefined),
         ]);
 
@@ -112,7 +119,7 @@ export function VideosPageClient({
     return () => {
       cancelled = true;
     };
-  }, [activeCategory, sortBy, sortDir, page, pageSize]);
+  }, [activeCategory, sortBy, sortDir, page, currentPageSize]);
 
   function handleSortChange(key: VideoSortBy) {
     if (key === sortBy) {
@@ -144,23 +151,21 @@ export function VideosPageClient({
   return (
     <div className="w-full">
       <div className="w-full flex flex-col gap-0.5">
-        <div id="videos-list-top" className="mb-2 flex flex-nowrap items-center justify-start gap-2 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+        <div
+          id="videos-list-top"
+          ref={subCatContainerRef}
+          className="mb-2 flex flex-nowrap items-center justify-start gap-2 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0 scroll-smooth touch-scroll-x"
+        >
           {VIDEO_CATEGORIES.map((topic) => {
             const isSelected = activeCategory === topic.slug;
 
             return (
               <button
                 key={topic.name}
-                onClick={(e) => {
+                ref={(el) => { subCatRefs.current[topic.slug] = el; }}
+                onClick={() => {
                   setActiveCategory(topic.slug);
 
-                  // Query-param navigation on the SAME /videos route — not
-                  // a path segment (/videos/<slug>), since there is no
-                  // app/videos/[category]/page.tsx route to match that. A
-                  // path-based push forced a full remount of this page,
-                  // which wiped the activeCategory state set just above,
-                  // right before it could take effect — that was the
-                  // sub-category filter bug (URL changed, list didn't).
                   const params = new URLSearchParams(searchParams?.toString());
                   if (topic.slug) {
                     params.set("category", topic.slug);
@@ -171,17 +176,27 @@ export function VideosPageClient({
                   const qs = params.toString();
                   router.push(`/videos${qs ? `?${qs}` : ""}`, { scroll: false });
 
-                  e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center",
-                  });
+                  const btn = e.currentTarget;
+                  const container = btn.parentElement;
+                  if (container && window.innerWidth < 768) {
+                    requestAnimationFrame(() => {
+                      const cRect = container.getBoundingClientRect();
+                      const bRect = btn.getBoundingClientRect();
+                      const bLeft = bRect.left - cRect.left + container.scrollLeft;
+                      const bRight = bLeft + bRect.width;
+
+                      if (bLeft < container.scrollLeft) {
+                        container.scrollTo({ left: bLeft - 16, behavior: "smooth" });
+                      } else if (bRight > container.scrollLeft + container.clientWidth) {
+                        container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: "smooth" });
+                      }
+                    });
+                  }
                 }}
-                className={`rounded-full px-4 py-2 text-[11.5px] font-medium whitespace-nowrap transition-all duration-200 border ${
-                  isSelected
+                className={`rounded-full px-4 py-2 text-[11.5px] font-medium whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                }`}
+                  }`}
               >
                 {topic.name}
               </button>
@@ -211,7 +226,17 @@ export function VideosPageClient({
         )}
 
         {!loading && videos.length > 0 && (
-          <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            pageSize={currentPageSize}
+            totalCount={total}
+            onPageChange={goToPage}
+            onPageSizeChange={(s) => {
+              setCurrentPageSize(s);
+              setPage(1);
+            }}
+          />
         )}
       </div>
     </div>

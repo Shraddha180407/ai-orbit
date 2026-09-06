@@ -1,74 +1,66 @@
 'use client';
 
-import React, { useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { API_URL } from "@/lib/api";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { GlobalHero } from "@/components/GlobalHero";
 import { ToolListView } from "@/components/ToolListView";
-
-const INITIAL_PAGE_SIZE = 50;
-const DEFAULT_PAGE_SIZE = 12;
+import { Pagination } from "@/components/Pagination";
 
 export function HomeClient() {
   const searchParams = useSearchParams();
-  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const [currentPage, setCurrentPage] = useState<number>(() => {
+    const pageFromUrl = searchParams.get("page");
+    return pageFromUrl ? parseInt(pageFromUrl, 10) : 1;
+  });
+
+  const [pageSize, setPageSize] = useState<number>(() => {
+    const sizeFromUrl = searchParams.get("pageSize");
+    return sizeFromUrl ? parseInt(sizeFromUrl, 10) : 24;
+  });
 
   const showParam = searchParams.get("show");
   const show = showParam !== null ? showParam : "tools,devices,robots,news,models";
-  const queryKey = ["unified-feed", { show }];
+
+  // Reset to page 1 whenever show filter changes
+  const prevShowRef = React.useRef(show);
+  React.useEffect(() => {
+    if (prevShowRef.current !== show) {
+      prevShowRef.current = show;
+      setCurrentPage(1);
+    }
+  }, [show]);
+  const queryKey = ["unified-feed", { show, page: currentPage, pageSize }];
 
   const {
     data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
     isLoading,
     isPlaceholderData,
-  } = useInfiniteQuery({
+  } = useQuery({
     queryKey,
-    queryFn: async ({ pageParam = 1 }) => {
+    queryFn: async () => {
       const query = new URLSearchParams();
       query.set("show", show);
-      query.set("page", String(pageParam));
-      query.set("pageSize", String(pageParam === 1 ? INITIAL_PAGE_SIZE : DEFAULT_PAGE_SIZE));
+      query.set("page", String(currentPage));
+      query.set("pageSize", String(pageSize));
 
-      // Hitting the new UNION ALL feed endpoint
+      // Hitting the unified feed endpoint
       const res = await fetch(`${API_URL}/api/v1/feed?${query.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch feed");
       return res.json();
     },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage: any) => {
-      if (lastPage?.hasNextPage) return lastPage.page + 1;
-      return undefined;
-    },
     placeholderData: keepPreviousData,
-    staleTime: 10 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const tools = data?.pages.flatMap((p: any) => p?.items || p?.tools || []) || [];
-
-  useEffect(() => {
-    if (isLoading || isFetchingNextPage || !hasNextPage) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) fetchNextPage();
-    }, { threshold: 0.1 });
-
-    const currentSentinel = sentinelRef.current;
-    if (currentSentinel) observer.observe(currentSentinel);
-
-    return () => {
-      if (currentSentinel) observer.unobserve(currentSentinel);
-    };
-  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
+  const tools = data?.items || data?.tools || [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="flex flex-col flex-1">
-
       
       {/* FIXED: Wrapped GlobalHero in a very high z-index so any dropdowns inside it will float above the table below */}
       <div className="relative z-[60]">
@@ -76,8 +68,8 @@ export function HomeClient() {
       </div>
 
       {/* FIXED: Confined the table wrapper to a lower z-index (z-10) so its sticky columns can never overlap the Hero */}
-      <div id="tools" className="relative z-10 scroll-mt-28 w-full px-3 sm:px-6 lg:px-8 pt-2 pb-2">
-        <div className={`mx-auto w-full max-w-[1600px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
+      <div id="tools" className="relative z-10 scroll-mt-28 w-full px-3 sm:px-6 lg:px-8 pt-2 pb-8">
+        <div className={`mx-auto w-full max-w-[1600px] space-y-4 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
           
           {/* Feed the unified items directly into your full-width table */}
           <ToolListView
@@ -85,14 +77,27 @@ export function HomeClient() {
             loading={isLoading && tools.length === 0}
           />
 
-          {hasNextPage && (
-            <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-            </div>
-          )}
+          {/* Unified Floating Pill Pagination */}
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalCount={total}
+            pageSizeOptions={[12, 24, 50, 100]}
+            onPageChange={(p) => {
+              setCurrentPage(p);
+              const target = document.getElementById("tools");
+              if (target) {
+                target.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       </div>
-
 
     </div>
   );

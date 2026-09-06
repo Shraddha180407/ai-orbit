@@ -70,10 +70,12 @@ const LINK_GROUPS = [
     ]
   },
   {
-    heading: "AI ORBIT",
+    heading: "COMPANY",
     links: [
       { label: "About", href: "/about" },
       { label: "Contact", href: "/contact" },
+      { label: "Write", href: "/write-for-us" },
+      { label: "Press", href: "/press" },
       { label: "Privacy", href: "/privacy" },
       { label: "Terms", href: "/terms" },
     ]
@@ -88,12 +90,12 @@ export function Footer() {
   return (
     <footer className="w-full bg-black text-white pt-2 sm:pt-4 lg:pt-6 pb-4 sm:pb-6 font-sans selection:bg-white/30 border-t border-[#1C1C1F]">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="flex flex-col lg:flex-row justify-between gap-10 sm:gap-16 lg:gap-32">
+        <div className="flex flex-col lg:flex-row justify-between gap-6 sm:gap-16 lg:gap-32">
 
           {/* Left Column */}
           <div className="w-full lg:w-[380px] shrink-0">
-            <Link href="/" className="flex items-center mb-4 sm:mb-6 -ml-5 sm:-ml-6 relative z-30">
-              <AiOrbitLogo size={160} className="text-white" />
+            <Link href="/" className="flex items-center mb-0 sm:mb-2 -ml-4 sm:-ml-6 relative z-30">
+              <AiOrbitLogo size="auto" className="h-[50px] sm:h-[70px] text-white" />
             </Link>
 
             <p className="text-[13px] sm:text-[14px] text-[#e4e4e7] mb-2 sm:mb-3">
@@ -104,32 +106,31 @@ export function Footer() {
               Discover the tools, companies, and technologies shaping the global AI ecosystem.
             </p>
 
-            <div className="flex items-center gap-5 sm:gap-6">
-              <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="X (Twitter)"><XIcon /></a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="LinkedIn"><LinkedInIcon /></a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="Instagram"><InstagramIcon /></a>
-              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="YouTube"><YouTubeIcon /></a>
-              <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="Discord"><DiscordIcon /></a>
+            <div className="flex items-center gap-4 sm:gap-6">
+              <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 active:scale-95 transition-all p-1" aria-label="X (Twitter)"><XIcon /></a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 active:scale-95 transition-all p-1" aria-label="LinkedIn"><LinkedInIcon /></a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 active:scale-95 transition-all p-1" aria-label="Instagram"><InstagramIcon /></a>
+              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 active:scale-95 transition-all p-1" aria-label="YouTube"><YouTubeIcon /></a>
+              <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 active:scale-95 transition-all p-1" aria-label="Discord"><DiscordIcon /></a>
             </div>
 
           </div>
 
-          {/* Links Grid */}
-          <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-x-4 sm:gap-x-8 gap-y-8 sm:gap-y-14 pt-2">
+          <div className="flex-1 grid grid-cols-4 gap-x-3 sm:gap-x-8 gap-y-6 sm:gap-y-14 pt-0">
             {LINK_GROUPS.map((group) => (
               <div key={group.heading} className="flex flex-col">
-                <div className="mb-3 sm:mb-4">
-                  <h4 className="text-[11px] sm:text-[12px] font-bold text-white tracking-[0.1em] uppercase mb-2 sm:mb-4 inline-block w-fit">
+                <div className="mb-2 sm:mb-4">
+                  <h4 className="text-[9px] sm:text-[12px] font-bold text-white tracking-[0.05em] sm:tracking-[0.1em] uppercase mb-1.5 sm:mb-4 inline-block w-fit">
                     {group.heading}
                   </h4>
                   <div className="h-px w-full max-w-[80px] sm:max-w-[100px] bg-[#3f3f46]"></div>
                 </div>
-                <ul className="space-y-2 sm:space-y-3">
+                <ul className="space-y-1 sm:space-y-3">
                   {group.links.map((link) => (
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="text-[12px] sm:text-[14px] text-[#e4e4e7] hover:text-white transition-colors font-medium"
+                        className="text-[10px] sm:text-[14px] leading-tight sm:leading-normal text-[#e4e4e7] hover:text-white transition-colors font-medium block"
                       >
                         {link.label}
                       </Link>
@@ -143,14 +144,14 @@ export function Footer() {
         </div>
 
         {/* Bottom Row */}
-        <div className="mt-4 sm:mt-5 pt-4 sm:pt-5 border-t border-[#27272a] flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-2 sm:mt-5 pt-3 sm:pt-5 border-t border-[#27272a] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
           <p className="text-[12px] sm:text-[13px] text-[#a1a1aa] text-center sm:text-left">
             &copy; 2026 AI Orbit. All rights reserved.
           </p>
 
           <button
             onClick={scrollToTop}
-            className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-[#3f3f46] hover:bg-white/5 transition-colors text-white cursor-pointer"
+            className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-[#3f3f46] hover:bg-white/5 active:scale-95 transition-all text-white cursor-pointer"
             aria-label="Scroll to top"
           >
             <ArrowUp size={18} strokeWidth={1.5} />

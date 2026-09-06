@@ -10,6 +10,8 @@ import { RobotListItem } from "@/lib/types";
 import { fetchAllRobots } from "@/lib/api";
 import { FALLBACK_ROBOTS } from "@/data/robots";
 import { CategoryChip } from "@/components/CategoryChip";
+import { Pagination } from "@/components/Pagination";
+import { scrollChipIntoView } from "@/lib/utils";
 
 // Fixed-width template to preserve all 8 columns across mobile and desktop
 const COL_TEMPLATE = "grid-cols-[44px_minmax(200px,2fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(90px,0.8fr)_minmax(140px,1fr)_minmax(80px,0.6fr)_minmax(80px,0.6fr)]";
@@ -17,7 +19,7 @@ const TABLE_MIN_WIDTH = "min-w-[880px]";
 
 const COLUMN_HEADERS = ["", "NAME", "CATEGORY", "COMPANY", "COUNTRY", "AVAILABILITY", "PRICE", "RELEASE DATE"];
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 100;
 
 function AvailabilityBadge({ status }: { status: string }) {
   const s = status.toLowerCase();
@@ -32,7 +34,7 @@ function AvailabilityBadge({ status }: { status: string }) {
     colorClass = "border-blue-500/40 bg-blue-500/10 text-blue-400";
   }
   return (
-    <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-semibold tracking-wide ${colorClass}`}>
+    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[9.5px] font-semibold tracking-wide ${colorClass}`}>
       {status}
     </span>
   );
@@ -49,7 +51,7 @@ function RobotRow({ robot }: { robot: RobotListItem }) {
         {robot.logoUrl ? (
           <Image src={robot.logoUrl} alt={robot.name} width={44} height={44} className="object-cover" unoptimized />
         ) : (
-          <span className="text-sm font-bold text-white uppercase">{robot.name.charAt(0)}</span>
+          <span className="text-base font-bold text-white uppercase">{robot.name.charAt(0)}</span>
         )}
       </div>
 
@@ -179,14 +181,19 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
 
   const robots = (fetchedRobots && fetchedRobots.length > 0) ? fetchedRobots : FALLBACK_ROBOTS;
 
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+
+
   useEffect(() => {
     if (defaultCategory !== undefined) {
       setActiveCategory(defaultCategory && ROBOT_SLUGS[defaultCategory] ? ROBOT_SLUGS[defaultCategory] : "All");
     }
   }, [defaultCategory]);
 
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(100);
 
   const ROBOT_CATEGORIES = [
     "All",
@@ -230,68 +237,65 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
       );
     }
     return list.slice().sort((a, b) => {
-      if (rawSort === "name-asc")  return a.name.localeCompare(b.name);
+      if (rawSort === "name-asc") return a.name.localeCompare(b.name);
       if (rawSort === "name-desc") return b.name.localeCompare(a.name);
-      if (rawSort === "oldest")    return (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "");
+      if (rawSort === "oldest") return (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "");
       return (b.releaseDate ?? "").localeCompare(a.releaseDate ?? "");
     });
   }, [robots, query, activeCategory, rawSort]);
 
-  const visibleRobots = filtered.slice(0, visibleCount);
-
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
+    setCurrentPage(1);
   }, [query, activeCategory]);
 
+  // Scroll active category pill into view on mobile
+  const categoryRowRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (isLoading || visibleCount >= filtered.length) return;
+    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
+    const container = categoryRowRef.current;
+    if (!container) return;
+    const activeBtn = container.querySelector<HTMLElement>('[data-active="true"]');
+    if (!activeBtn) return;
+    const cRect = container.getBoundingClientRect();
+    const bRect = activeBtn.getBoundingClientRect();
+    const bLeft = bRect.left - cRect.left + container.scrollLeft;
+    const bRight = bLeft + bRect.width;
+    if (bLeft < container.scrollLeft) {
+      container.scrollTo({ left: bLeft - 16, behavior: 'smooth' });
+    } else if (bRight > container.scrollLeft + container.clientWidth) {
+      container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: 'smooth' });
+    }
+  }, [activeCategory]);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleCount((prev) => prev + PAGE_SIZE);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    const currentSentinel = sentinelRef.current;
-    if (currentSentinel) observer.observe(currentSentinel);
-    return () => {
-      if (currentSentinel) observer.unobserve(currentSentinel);
-    };
-  }, [isLoading, visibleCount, filtered.length]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const visibleRobots = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <main className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-6 flex-1">
       <div className="mx-auto w-full max-w-[1440px] space-y-3">
         {/* Category Row */}
-        <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2 scrollbar-none w-full">
+        <div ref={categoryRowRef} className="mb-2 -mx-3 sm:mx-0 px-3 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2 scrollbar-none w-auto sm:w-full">
           {ROBOT_CATEGORIES.map((cat) => {
             const isSelected = activeCategory === cat;
             const slug = ROBOT_TO_SLUG[cat];
             return (
               <button
                 key={cat}
+                ref={(el) => { subCatRefs.current[cat] = el; }}
                 type="button"
-                onClick={(e) => {
+                data-active={isSelected ? "true" : undefined}
+                onClick={() => {
                   setActiveCategory(cat);
                   if (cat === "All") {
                     router.push(`/robots`);
                   } else {
                     router.push(`/robots/${slug}`);
                   }
-                  e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center"
-                  });
                 }}
-                className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
-                  isSelected
+                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                }`}
+                  }`}
               >
                 {cat}
               </button>
@@ -315,7 +319,7 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
         ) : (
           <div className={`flex flex-col rounded-lg border border-[#232326]/50 bg-[#0F0F12]/30 overflow-hidden transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
             {/* Scroll Container */}
-            <div className="w-full overflow-x-auto scrollbar-none">
+            <div className="w-full overflow-x-auto touch-scroll-x scrollbar-none">
               {/* Table Headers */}
               <div className="border-b border-[#232326]/60 bg-[#131316]/40">
                 <div className={`grid ${COL_TEMPLATE} ${TABLE_MIN_WIDTH} items-center gap-4 px-4 py-2`}>
@@ -337,12 +341,20 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
               </div>
             </div>
 
-            {/* Infinite Scroll Sentinel */}
-            {visibleCount < filtered.length && (
-              <div ref={sentinelRef} className="flex items-center justify-center py-6">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-              </div>
-            )}
+            {/* Unified Floating Pill Pagination */}
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              totalCount={filtered.length}
+              onPageChange={(p) => {
+                setCurrentPage(p);
+              }}
+              onPageSizeChange={(s) => {
+                setPageSize(s);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         )}
       </div>

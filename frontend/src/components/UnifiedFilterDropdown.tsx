@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 const FILTER_OPTIONS = [
@@ -16,14 +17,32 @@ const FILTER_OPTIONS = [
 
 export function UnifiedFilterDropdown({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [coords, setCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const showParam = searchParams.get('show');
   const activeFilters = showParam ? showParam.split(',') : FILTER_OPTIONS.map(f => f.id);
+
+  const updatePosition = () => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const left = Math.max(16, Math.min(rect.left, window.innerWidth - 256));
+      setCoords({
+        top: rect.bottom + 8,
+        left,
+      });
+    }
+  };
 
   const toggleFilter = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -53,35 +72,65 @@ export function UnifiedFilterDropdown({ children }: { children: React.ReactNode 
 
   const handleMouseEnter = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    updatePosition();
     setIsOpen(true);
   };
 
   const handleMouseLeave = () => {
-    // 200ms delay prevents the menu from snapping shut instantly
     timeoutRef.current = setTimeout(() => {
       setIsOpen(false);
     }, 200); 
   };
 
+  const toggleDropdown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    updatePosition();
+    setIsOpen((prev) => !prev);
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScrollOrResize = () => updatePosition();
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node) &&
+        !(e.target as HTMLElement)?.closest(".unified-dropdown-popover")
+      ) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("scroll", handleScrollOrResize, { passive: true });
+    window.addEventListener("resize", handleScrollOrResize);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize);
+      window.removeEventListener("resize", handleScrollOrResize);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
   return (
     <div 
-      // FIXED: Added z-[100] to the parent wrapper so it creates a stacking context higher than the table
-      className="relative inline-block overflow-visible z-[100]"
+      ref={containerRef}
+      className="relative shrink-0 flex items-stretch"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Trigger Button (Still clickable for mobile users) */}
-      <div onClick={(e) => { e.preventDefault(); setIsOpen(!isOpen); }} className="cursor-pointer">
+      {/* Trigger Button (Clickable on desktop/mobile) */}
+      <div onClick={toggleDropdown} className="cursor-pointer flex items-stretch">
         {children}
       </div>
 
-      {/* The Dropdown Box */}
-      {isOpen && (
-        // The "pt-2" (padding-top) creates an invisible bridge so your mouse 
-        // never leaves the component while moving downward!
-        // FIXED: Bumped absolute z-index to an extremely high value (z-[9999])
-        <div className="absolute left-0 top-full pt-2 w-56 z-[9999]">
-          <div className="w-full bg-[#111113] rounded-xl border border-[#232326] p-4 flex flex-col gap-4 shadow-2xl">
+      {/* The Dropdown Box via Portal */}
+      {mounted && isOpen && createPortal(
+        <div 
+          className="unified-dropdown-popover fixed z-[99999] w-60 max-w-[calc(100vw-32px)] animate-fadeIn"
+          style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          <div className="w-full bg-[#111113] rounded-xl border border-[#232326] p-4 flex flex-col gap-4 shadow-2xl backdrop-blur-md">
             <h3 className="text-[10px] font-bold tracking-widest text-[#71717A] uppercase">Show</h3>
             {FILTER_OPTIONS.map((option) => {
               const isActive = activeFilters.includes(option.id);
@@ -93,7 +142,8 @@ export function UnifiedFilterDropdown({ children }: { children: React.ReactNode 
                     <button
                       type="button"
                       onClick={(e) => toggleFilter(option.id, e)}
-                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                      aria-label={`Toggle ${option.label}`}
+                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none cursor-pointer ${
                         isActive ? option.color : 'bg-[#232326]'
                       }`}
                     >
@@ -106,7 +156,8 @@ export function UnifiedFilterDropdown({ children }: { children: React.ReactNode 
               );
             })}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

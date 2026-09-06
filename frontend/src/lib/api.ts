@@ -89,7 +89,7 @@ export async function fetchCompanies(options: FetchCompaniesOptions = {}): Promi
   if (options.country && options.country !== "all") url.searchParams.set("country", options.country);
   if (options.sort) url.searchParams.set("sort", options.sort);
 
-  const fallback: CompaniesListResponse = { companies: [], total: 0, page: 1, pageSize: 50, totalPages: 1 };
+  const fallback: CompaniesListResponse = { companies: [], total: 0, page: 1, pageSize: 100, totalPages: 1 };
   const raw = await cachedFetchJson<any>(url.toString(), fallback, { ttlMs: 60 * 1000 });
 
   if (Array.isArray(raw)) {
@@ -144,7 +144,7 @@ export async function fetchCompanyDetails(slug: string): Promise<any> {
   return (res && !res.error) ? res : null;
 }
 
-import type { AIModel, ModelsListResponse, ModelsSortOption } from "./types";
+import type { AIModel, ModelsListResponse, ModelsSortOption, ModelFilterOptions, ModelType } from "./types";
 
 export interface ModelsQuery {
   search?: string;
@@ -152,6 +152,9 @@ export interface ModelsQuery {
   modality?: string;
   creator?: string;
   subCategory?: string;
+  modelType?: ModelType;
+  openSource?: boolean;
+  primaryTask?: string;
   sort?: ModelsSortOption;
   page?: number;
   limit?: number;
@@ -164,6 +167,9 @@ export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListR
   if (params.modality) url.searchParams.set("modality", params.modality);
   if (params.creator) url.searchParams.set("creator", params.creator);
   if (params.subCategory) url.searchParams.set("subCategory", params.subCategory);
+  if (params.modelType) url.searchParams.set("modelType", params.modelType);
+  if (params.openSource !== undefined) url.searchParams.set("openSource", String(params.openSource));
+  if (params.primaryTask) url.searchParams.set("primaryTask", params.primaryTask);
   if (params.sort) url.searchParams.set("sort", params.sort);
   if (params.page) url.searchParams.set("page", String(params.page));
   if (params.limit) url.searchParams.set("limit", String(params.limit));
@@ -172,7 +178,7 @@ export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListR
     items: [],
     pagination: {
       page: params.page ?? 1,
-      limit: params.limit ?? 20,
+      limit: params.limit ?? 100,
       total: 0,
       totalPages: 1,
       hasMore: false,
@@ -209,6 +215,25 @@ export async function fetchModelById(id: string): Promise<import("./types").Mode
   return cachedFetchJson(url, null, { ttlMs: 15 * 60 * 1000 });
 }
 
+/** Provider / primary-task / model-type options for the models filter UI. */
+export async function fetchModelFilters(): Promise<ModelFilterOptions> {
+  const url = `${API_URL}/api/v1/models/filters`;
+  const empty: ModelFilterOptions = { providers: [], primaryTasks: [], modelTypes: [] };
+  return cachedFetchJson<ModelFilterOptions>(url, empty, { ttlMs: 30 * 60 * 1000 });
+}
+
+export interface ModelsCompareResponse {
+  items: import("./types").ModelDetail[];
+}
+
+/** Uses the backend's dedicated compare endpoint (validates count, 404s on missing ids, preserves order). */
+export async function fetchModelsCompare(ids: string[]): Promise<import("./types").ModelDetail[]> {
+  if (ids.length === 0) return [];
+  const url = `${API_URL}/api/v1/models/compare?ids=${encodeURIComponent(ids.join(","))}`;
+  const data = await cachedFetchJson<ModelsCompareResponse | null>(url, null, { ttlMs: 5 * 60 * 1000 });
+  return data?.items ?? [];
+}
+
 export async function fetchAllNews(): Promise<any[]> {
   return cachedFetchJson(`${API_URL}/api/v1/news`, [], { ttlMs: 10 * 60 * 1000 });
 }
@@ -217,7 +242,9 @@ import { Repository, RepositoryListResponse, RepositoryDetailResponse, Repositor
 import type { ModelSubCategory } from "./types";
 
 export interface FetchRepositoriesOptions {
+  page?: number;
   limit?: number;
+  pageSize?: number;
   cursor?: string | null;
   sort?: string;
   language?: string;
@@ -228,10 +255,11 @@ export interface FetchRepositoriesOptions {
 }
 
 export async function fetchRepositories(options: FetchRepositoriesOptions = {}): Promise<RepositoryListResponse> {
-  const { limit, cursor, sort, language, topic, q, owner, subCategory } = options;
+  const { page, limit, pageSize, cursor, sort, language, topic, q, owner, subCategory } = options;
 
   const url = new URL(`${API_URL}/api/v1/repositories`);
-  if (limit) url.searchParams.set("limit", limit.toString());
+  if (page) url.searchParams.set("page", page.toString());
+  if (limit || pageSize) url.searchParams.set("limit", (limit || pageSize)!.toString());
   if (cursor) url.searchParams.set("cursor", cursor);
   if (sort) url.searchParams.set("sort", sort);
   if (language) url.searchParams.set("language", language);
@@ -346,11 +374,36 @@ function resolveServerApiUrl(): string {
 
 export const SERVER_API_URL = resolveServerApiUrl();
 
+export interface FetchTasksOptions {
+  category?: string;
+  q?: string;
+  sort?: string;
+  filter?: string;
+  difficulty?: string;
+  pricing?: string;
+  page?: number;
+  pageSize?: number;
+  limit?: number;
+}
+
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-export async function fetchTasks(category?: string): Promise<any> {
+export async function fetchTasks(optionsOrCategory?: string | FetchTasksOptions): Promise<any> {
   const url = new URL(`${API_URL}/api/v1/tasks`);
-  if (category) url.searchParams.set("category", category);
-  return cachedFetchJson(url.toString(), { tasks: [], total: 0 }, { ttlMs: 15 * 60 * 1000 });
+  if (typeof optionsOrCategory === "string") {
+    if (optionsOrCategory) url.searchParams.set("category", optionsOrCategory);
+  } else if (optionsOrCategory && typeof optionsOrCategory === "object") {
+    if (optionsOrCategory.category) url.searchParams.set("category", optionsOrCategory.category);
+    if (optionsOrCategory.q) url.searchParams.set("q", optionsOrCategory.q);
+    if (optionsOrCategory.sort) url.searchParams.set("sort", optionsOrCategory.sort);
+    if (optionsOrCategory.filter) url.searchParams.set("filter", optionsOrCategory.filter);
+    if (optionsOrCategory.difficulty) url.searchParams.set("difficulty", optionsOrCategory.difficulty);
+    if (optionsOrCategory.pricing) url.searchParams.set("pricing", optionsOrCategory.pricing);
+    if (optionsOrCategory.page) url.searchParams.set("page", String(optionsOrCategory.page));
+    if (optionsOrCategory.pageSize || optionsOrCategory.limit) {
+      url.searchParams.set("pageSize", String(optionsOrCategory.pageSize || optionsOrCategory.limit));
+    }
+  }
+  return cachedFetchJson(url.toString(), { tasks: [], total: 0, totalPages: 1 }, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function toggleTaskSubscription(slug: string): Promise<boolean> {
@@ -415,7 +468,9 @@ export async function fetchMCPItemBySlug(slug: string): Promise<MCPItem | null> 
   if (responseJson && responseJson.success && responseJson.data) {
     return responseJson.data;
   }
-  return null;
+  // Fall back to hardcoded data when API returns nothing (e.g. local dev with empty DB)
+  const { FALLBACK_MCP_ITEMS } = await import("@/data/mcp");
+  return FALLBACK_MCP_ITEMS.find((item) => item.slug === slug) ?? null;
 }
 
 export async function fetchMCPItemAlternatives(slug: string): Promise<MCPItem[]> {

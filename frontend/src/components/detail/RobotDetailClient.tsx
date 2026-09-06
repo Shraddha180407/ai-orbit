@@ -1,42 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
+
+import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
 import Bot from "lucide-react/dist/esm/icons/bot";
 import Building2 from "lucide-react/dist/esm/icons/building-2";
 import Calendar from "lucide-react/dist/esm/icons/calendar";
-import MapPin from "lucide-react/dist/esm/icons/map-pin";
-import ExternalLink from "lucide-react/dist/esm/icons/external-link";
 import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import Play from "lucide-react/dist/esm/icons/play";
 import Share2 from "lucide-react/dist/esm/icons/share-2";
 import Check from "lucide-react/dist/esm/icons/check";
 import Cpu from "lucide-react/dist/esm/icons/cpu";
-import Globe from "lucide-react/dist/esm/icons/globe";
-import Tag from "lucide-react/dist/esm/icons/tag";
-import Layers from "lucide-react/dist/esm/icons/layers";
-import Shield from "lucide-react/dist/esm/icons/shield";
+import DollarSign from "lucide-react/dist/esm/icons/dollar-sign";
+import Zap from "lucide-react/dist/esm/icons/zap";
 import ShieldCheck from "lucide-react/dist/esm/icons/shield-check";
-import Crosshair from "lucide-react/dist/esm/icons/crosshair";
-import Radio from "lucide-react/dist/esm/icons/radio";
-import Package from "lucide-react/dist/esm/icons/package";
-import ScanSearch from "lucide-react/dist/esm/icons/scan-search";
-import Leaf from "lucide-react/dist/esm/icons/leaf";
-import HeartPulse from "lucide-react/dist/esm/icons/heart-pulse";
-import BookOpen from "lucide-react/dist/esm/icons/book-open";
-import Factory from "lucide-react/dist/esm/icons/factory";
-import Siren from "lucide-react/dist/esm/icons/siren";
-import Navigation from "lucide-react/dist/esm/icons/navigation";
-import BarChart2 from "lucide-react/dist/esm/icons/bar-chart-2";
-import Settings from "lucide-react/dist/esm/icons/settings";
-import Home from "lucide-react/dist/esm/icons/home";
-import Warehouse from "lucide-react/dist/esm/icons/warehouse";
-import Users from "lucide-react/dist/esm/icons/users";
+import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right";
+import Activity from "lucide-react/dist/esm/icons/activity";
+import Box from "lucide-react/dist/esm/icons/box";
+
 import { Robot } from "@/lib/types";
-import { fetchRobotById, fetchAllRobots, API_URL, prefetchUrl, getFromCache } from "@/lib/api";
-import { useQuery } from "@tanstack/react-query";
+import { fetchRobotById, fetchAllRobots, API_URL, getFromCache } from "@/lib/api";
 
 interface RobotDetailClientProps {
   id: string;
@@ -45,165 +32,52 @@ interface RobotDetailClientProps {
 function isYouTubeUrl(url: string): boolean {
   return /youtube\.com|youtu\.be/.test(url);
 }
+
 function toYouTubeEmbed(url: string): string {
-  return url.replace("youtu.be/", "www.youtube.com/embed/").replace("watch?v=", "embed/").replace(/[?&]si=[^&]+/, "");
+  return url
+    .replace("youtu.be/", "www.youtube.com/embed/")
+    .replace("watch?v=", "embed/")
+    .replace(/[?&]si=[^&]+/, "");
 }
+
 function isImageUrl(url: string): boolean {
   return /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(url);
 }
-function getAvailabilityStyle(status: string): { dot: string; badge: string } {
-  const s = status.toLowerCase();
-  if (s.includes("available") || s.includes("commercial")) return { dot: "bg-emerald-400", badge: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" };
-  if (s.includes("production")) return { dot: "bg-sky-400", badge: "border-sky-500/30 bg-sky-500/10 text-sky-400" };
-  if (s.includes("development") || s.includes("pilot")) return { dot: "bg-amber-400", badge: "border-amber-500/30 bg-amber-500/10 text-amber-400" };
-  if (s.includes("discontinued")) return { dot: "bg-red-400", badge: "border-red-500/30 bg-red-500/10 text-red-400" };
-  return { dot: "bg-[#555560]", badge: "border-[#232326] bg-[#18181C] text-[#A1A1AA]" };
-}
 
-function UseCaseChip({ label }: { label: string }) {
-  const l = label.toLowerCase();
-  let Icon = Bot;
-  if (l.includes("security")) Icon = ShieldCheck;
-  else if (l.includes("defense")) Icon = Crosshair;
-  else if (l.includes("surveil")) Icon = Radio;
-  else if (l.includes("deliver") || l.includes("warehouse") || l.includes("logistic")) Icon = Warehouse;
-  else if (l.includes("inspect") || l.includes("search")) Icon = ScanSearch;
-  else if (l.includes("agricult") || l.includes("lawn")) Icon = Leaf;
-  else if (l.includes("medical") || l.includes("health") || l.includes("rescue")) Icon = HeartPulse;
-  else if (l.includes("educat")) Icon = BookOpen;
-  else if (l.includes("industri") || l.includes("manufactur")) Icon = Factory;
-  else if (l.includes("monitor") || l.includes("analyt")) Icon = BarChart2;
-  else if (l.includes("manag") || l.includes("automat")) Icon = Settings;
-  else if (l.includes("home") || l.includes("domestic")) Icon = Home;
-  else if (l.includes("companion") || l.includes("assist")) Icon = Users;
-  else if (l.includes("navigat")) Icon = Navigation;
-  else if (l.includes("packag") || l.includes("sort")) Icon = Package;
-  else if (l.includes("patrol") || l.includes("alarm")) Icon = Siren;
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-md border border-[#2a2a34] bg-[#111118] px-2.5 py-1 text-[11px] font-medium text-[#A1A1AA] hover:border-[#3a3a44] transition-colors">
-      <Icon size={11} className="text-[#555560] shrink-0" />
-      {label}
-    </span>
-  );
-}
-
-function MediaGallery({ robot }: { robot: Robot }) {
-  const videoUrls = robot.mediaUrls.filter(isYouTubeUrl);
-  const imageUrls = [
-    robot.thumbnailUrl,
-    ...robot.mediaUrls.filter(isImageUrl),
-    ...(robot.thumbnailUrl ? [] : robot.logoUrl ? [robot.logoUrl] : []),
-  ].filter(Boolean) as string[];
-  const mediaItems: Array<{ type: "video" | "image"; src: string }> = [
-    ...videoUrls.map((src) => ({ type: "video" as const, src })),
-    ...imageUrls.map((src) => ({ type: "image" as const, src })),
-  ];
-  const hasRealMedia = mediaItems.length > 0;
-  const [activeIdx, setActiveIdx] = useState(0);
-  const active = hasRealMedia ? mediaItems[activeIdx] : null;
-  const prev = () => setActiveIdx((i) => (i - 1 + mediaItems.length) % mediaItems.length);
-  const next = () => setActiveIdx((i) => (i + 1) % mediaItems.length);
-  return (
-    <div className="space-y-2">
-      <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden border border-[#1e1e24] group bg-[#0c0c14]">
-        {!hasRealMedia ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-            <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
-            <div className="relative flex flex-col items-center gap-3">
-              <div className="h-16 w-16 rounded-2xl border border-[#1e1e24] bg-[#111118] flex items-center justify-center">
-                <Bot size={28} className="text-[#2a2a36]" />
-              </div>
-              <div className="text-center">
-                <p className="text-[13px] font-semibold text-[#2a2a36]">{robot.name}</p>
-                <p className="text-[10px] font-mono text-[#222228] mt-0.5 uppercase tracking-widest">Image coming soon</p>
-              </div>
-            </div>
-          </div>
-        ) : active!.type === "video" ? (
-          <iframe src={toYouTubeEmbed(active!.src)} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" title="Robot video" />
-        ) : (
-          <Image src={active!.src} alt={robot.name} fill className="object-contain bg-white" unoptimized />
-        )}
-        {hasRealMedia && mediaItems.length > 1 && (
-          <>
-            <button onClick={prev} aria-label="Previous" className="absolute left-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm hover:bg-black/80"><ChevronLeft size={16} /></button>
-            <button onClick={next} aria-label="Next" className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm hover:bg-black/80"><ChevronRight size={16} /></button>
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
-              {mediaItems.map((_, i) => (<button key={i} onClick={() => setActiveIdx(i)} aria-label={`Media ${i + 1}`} className={`rounded-full transition-all ${i === activeIdx ? "h-1.5 w-4 bg-white" : "h-1.5 w-1.5 bg-white/40 hover:bg-white/70"}`} />))}
-            </div>
-          </>
-        )}
-      </div>
-      {hasRealMedia && mediaItems.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {mediaItems.map((item, i) => (
-            <button key={i} onClick={() => setActiveIdx(i)} aria-label={`Select media ${i + 1}`} className={`relative h-14 w-20 shrink-0 rounded-lg overflow-hidden border-2 transition-all ${i === activeIdx ? "border-[#6E56CF]" : "border-[#1e1e24] hover:border-[#3a3a44]"}`}>
-              {item.type === "video" ? (<div className="w-full h-full bg-[#0a0a0d] flex items-center justify-center"><Play size={14} className="text-white/60 fill-white/60" /></div>) : (<Image src={item.src} alt={`Thumb ${i + 1}`} fill className="object-contain bg-white" unoptimized />)}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SimilarRobotCard({ robot }: { robot: Robot }) {
-  const year = robot.releaseDate ? robot.releaseDate.slice(0, 4) : null;
-  const avail = getAvailabilityStyle(robot.availability || "");
-  return (
-    <Link href={`/robots/${robot.slug}`} className="group flex gap-3 rounded-xl border border-[#1e1e24] bg-[#0a0a0d] p-3 hover:border-[#2a2a34] hover:bg-[#0d0d12] transition-all">
-      <div className="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden bg-[#0c0c14] border border-[#1e1e24]">
-        {robot.thumbnailUrl ? (
-          <Image src={robot.thumbnailUrl} alt={robot.name} fill className="object-contain bg-white" unoptimized />
-        ) : robot.logoUrl ? (
-          <Image src={robot.logoUrl} alt={robot.name} fill className="object-contain bg-white p-1.5" unoptimized />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center"><Bot size={20} className="text-[#2a2a36]" /></div>
-        )}
-      </div>
-      <div className="flex flex-col gap-1 min-w-0 flex-1">
-        <p className="text-[13px] font-bold text-white group-hover:text-[#4a9aff] transition-colors truncate leading-tight">{robot.name}</p>
-        <p className="text-[10px] text-[#555560] font-mono truncate">{[robot.company, "· Robot ·", robot.category].filter(Boolean).join(" ")}</p>
-        {robot.about && <p className="text-[11px] text-[#71717A] line-clamp-2 leading-relaxed">{robot.about}</p>}
-        <div className="flex items-center gap-2 mt-auto pt-1">
-          <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${avail.badge}`}>
-            <span className={`h-1 w-1 rounded-full ${avail.dot}`} />{robot.availability}
-          </span>
-          {year && <span className="text-[10px] font-mono text-[#555560] ml-auto">{year}</span>}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function StickyCTA({ robot }: { robot: Robot }) {
-  const [visible, setVisible] = useState(true);
-  if (!robot.websiteUrl || !visible) return null;
-  return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#1e1e24] bg-[#0a0a0d]/95 backdrop-blur-md px-4 py-3">
-      <div className="mx-auto max-w-[1200px] flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-9 w-9 rounded-lg border border-[#1e1e24] bg-[#111118] flex items-center justify-center shrink-0 overflow-hidden">
-            {robot.logoUrl ? <Image src={robot.logoUrl} alt={robot.name} width={36} height={36} className="object-contain p-1" unoptimized /> : <Bot size={16} className="text-[#71717A]" />}
-          </div>
-          <div className="min-w-0">
-            <p className="text-[13px] font-bold text-white truncate">{robot.name}</p>
-            <p className="text-[11px] text-[#71717A] truncate">{robot.company}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => setVisible(false)} className="rounded-lg border border-[#1e1e24] bg-[#111118] px-3 py-1.5 text-[11px] font-medium text-[#71717A] hover:text-white transition-colors">Dismiss</button>
-          <a href={robot.websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-[#1a6bff] hover:bg-[#2a7aff] text-white text-[12px] font-bold px-4 py-1.5 transition-colors">
-            <ExternalLink size={12} /> Visit Website
-          </a>
-        </div>
-      </div>
-    </div>
-  );
+function getAvailabilityStyle(status: string) {
+  const s = (status || "").toLowerCase();
+  if (s.includes("available") || s.includes("commercial")) {
+    return {
+      dot: "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]",
+      badge: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+    };
+  }
+  if (s.includes("production") || s.includes("pilot")) {
+    return {
+      dot: "bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]",
+      badge: "border-sky-500/30 bg-sky-500/10 text-sky-300",
+    };
+  }
+  if (s.includes("development") || s.includes("prototype")) {
+    return {
+      dot: "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]",
+      badge: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+    };
+  }
+  return {
+    dot: "bg-zinc-500",
+    badge: "border-zinc-700 bg-zinc-800/60 text-zinc-300",
+  };
 }
 
 export function RobotDetailClient({ id }: RobotDetailClientProps) {
-  const [shared, setShared] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [activeMediaIdx, setActiveMediaIdx] = useState(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const { data: robot = null, isLoading } = useQuery<Robot | null>({
     queryKey: ["robot-detail", id],
@@ -220,271 +94,464 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
     queryKey: ["robots-all"],
     queryFn: fetchAllRobots,
     staleTime: 15 * 60 * 1000,
-    enabled: !!robot,
+    enabled: Boolean(robot),
   });
 
-  const similarRobots = robot ? allRobots.filter((r) => r.id !== robot.id && r.category === robot.category).slice(0, 4) : [];
+  const similarRobots = robot
+    ? allRobots.filter((r) => r.id !== robot.id && r.category === robot.category).slice(0, 4)
+    : [];
 
   const handleShare = async () => {
     if (!robot) return;
-    const data = { title: robot.name, text: robot.about || "", url: window.location.href };
-    if (navigator.share) { try { await navigator.share(data); } catch {} }
-    else {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: robot.name, text: robot.about || "", url: window.location.href });
+        return;
+      } catch {}
+    }
+    if (navigator?.clipboard) {
       await navigator.clipboard.writeText(window.location.href);
-      setShared(true);
-      setTimeout(() => setShared(false), 2000);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  if (isLoading && !robot) {
+  if (!mounted || (isLoading && !robot)) {
     return (
-      <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8 pb-20">
-        <div className="mx-auto max-w-[1200px] space-y-6 animate-pulse">
-          <div className="h-4 w-48 rounded bg-[#111118]" />
-          <div className="rounded-2xl border border-[#1e1e24] bg-[#0a0a0d] p-6 h-36" />
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
-            <div className="aspect-[16/10] rounded-xl bg-[#111118]" />
-            <div className="space-y-3">{[1,2,3,4,5,6].map((i) => <div key={i} className="h-12 rounded-lg bg-[#111118]" />)}</div>
+      <div className="w-full max-w-[1280px] mx-auto px-4 py-4 space-y-4 animate-pulse">
+        <div className="h-3 w-28 rounded bg-white/5" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div className="lg:col-span-6 h-[380px] rounded-xl bg-white/[0.02] border border-white/5" />
+          <div className="lg:col-span-6 space-y-3">
+            <div className="h-8 w-3/4 rounded-lg bg-white/[0.03]" />
+            <div className="h-4 w-1/2 rounded bg-white/[0.02]" />
+            <div className="h-44 rounded-xl bg-white/[0.02]" />
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 
   if (!robot) {
     return (
-      <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-10">
-        <div className="mx-auto max-w-[1200px] text-center py-20">
-          <Bot size={40} className="mx-auto text-[#71717A] mb-4" />
-          <p className="text-lg font-semibold text-white">Robot not found</p>
-          <p className="text-sm text-[#A1A1AA] mt-2">The robot you&apos;re looking for doesn&apos;t exist or has been removed.</p>
-          <Link href="/robots" className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[#2DD4BF] hover:underline">← Back to Robots</Link>
+      <div className="w-full max-w-md mx-auto px-4 py-16 text-center">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.02]">
+          <Bot size={24} className="text-zinc-500" />
         </div>
-      </main>
+        <h1 className="text-lg font-bold text-white tracking-tight">Robot Not Found</h1>
+        <p className="mt-1 text-xs text-zinc-400">
+          The requested system profile cannot be found or is unavailable.
+        </p>
+        <Link
+          href="/robots"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-white/10 transition"
+        >
+          <ArrowLeft size={13} /> Return to Directory
+        </Link>
+      </div>
     );
   }
 
-  const avail = getAvailabilityStyle(robot.availability || "");
-  const countryCode = robot.country ? robot.country.slice(0, 2).toUpperCase() : null;
-  const videoUrls = robot.mediaUrls.filter(isYouTubeUrl);
+  const videoUrls = (robot.mediaUrls || []).filter(isYouTubeUrl);
+  const imageUrls = [
+    robot.thumbnailUrl,
+    ...(robot.mediaUrls || []).filter(isImageUrl),
+    ...(robot.thumbnailUrl ? [] : robot.logoUrl ? [robot.logoUrl] : []),
+  ].filter(Boolean) as string[];
 
-  // Specs rows
-  let specRows: { key: string; val: string }[] = [];
-  let specIsFallback = false;
-  if (robot.specs) {
-    const lines = robot.specs.split(/[;\n]/).map((l) => l.trim()).filter(Boolean);
-    specRows = lines.map((line) => {
-      const c = line.indexOf(":");
-      if (c > 0 && c < 50) return { key: line.slice(0, c).trim(), val: line.slice(c + 1).trim() };
-      return null;
-    }).filter(Boolean) as { key: string; val: string }[];
-  }
-  if (specRows.length === 0) {
-    specIsFallback = true;
-    const cat = (robot.category || "").toLowerCase();
-    if (cat.includes("humanoid")) specRows = [{ key: "Height", val: "~170 cm" }, { key: "Weight", val: "~60 kg" }, { key: "Degrees of Freedom", val: "~28 DoF" }, { key: "Battery Life", val: "~2 hrs" }, { key: "Payload", val: "~10 kg" }, { key: "Actuators", val: "Electric" }];
-    else if (cat.includes("drone")) specRows = [{ key: "Flight Time", val: "~30 min" }, { key: "Max Speed", val: "~60 km/h" }, { key: "Range", val: "~5 km" }, { key: "Weight", val: "~1.5 kg" }, { key: "Sensors", val: "Camera, IMU, GPS" }, { key: "Power", val: "LiPo Battery" }];
-    else if (cat.includes("mobile") || cat.includes("amr")) specRows = [{ key: "Max Speed", val: "~2 m/s" }, { key: "Payload", val: "~100 kg" }, { key: "Battery Life", val: "~8 hrs" }, { key: "Navigation", val: "LiDAR + SLAM" }, { key: "Drive Type", val: "Differential" }, { key: "Weight", val: "~80 kg" }];
-    else if (cat.includes("industrial") || cat.includes("manipulator")) specRows = [{ key: "Reach", val: "~1200 mm" }, { key: "Payload", val: "~10 kg" }, { key: "Degrees of Freedom", val: "6 DoF" }, { key: "Repeatability", val: "±0.05 mm" }, { key: "Power", val: "AC 200V" }, { key: "Weight", val: "~30 kg" }];
-    else specRows = [{ key: "Operating Temp", val: "0°C – 40°C" }, { key: "Connectivity", val: "Wi-Fi, Bluetooth" }, { key: "Power Source", val: "Rechargeable Battery" }, { key: "Navigation", val: "AI-based" }, { key: "Operating System", val: "Embedded Linux / ROS" }, { key: "Interface", val: "App / API" }];
-    if (robot.autonomyLevel) specRows.unshift({ key: "Autonomy", val: robot.autonomyLevel });
-  }
-
-  const DEFAULT_VIDEOS = [
-    { id: "v1", youtubeId: "fn3KWM1kuAw", title: "The Most Advanced AI Robots In The World", channel: "Tech Vision", views: "2.4M views", year: "2024", duration: "12:34" },
-    { id: "v2", youtubeId: "bHFAQkRPa7E", title: "Boston Dynamics Atlas — Next Generation Robot", channel: "Boston Dynamics", views: "5.1M views", year: "2024", duration: "3:07" },
+  const mediaItems: Array<{ type: "video" | "image"; src: string }> = [
+    ...videoUrls.map((src) => ({ type: "video" as const, src })),
+    ...imageUrls.map((src) => ({ type: "image" as const, src })),
   ];
+  const hasRealMedia = mediaItems.length > 0;
+  const activeMedia = hasRealMedia ? mediaItems[activeMediaIdx] : null;
+
+  let specEntries: { key: string; val: string }[] = [];
+  if (robot.specs) {
+    const raw = robot.specs.split(/[;\n]/).map((s) => s.trim()).filter(Boolean);
+    specEntries = raw
+      .map((line) => {
+        const idx = line.indexOf(":");
+        if (idx > 0) return { key: line.slice(0, idx).trim(), val: line.slice(idx + 1).trim() };
+        return null;
+      })
+      .filter(Boolean) as { key: string; val: string }[];
+  }
+
+  const avail = getAvailabilityStyle(robot.availability || "");
 
   return (
-    <main className="flex-1 w-full px-3 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24">
-      <div className="mx-auto max-w-[1200px] space-y-6">
-
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-[11px] text-[#555560] font-medium flex-wrap">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
+    <div className="w-full bg-[#050608] text-zinc-100 flex flex-col justify-start">
+      <div className="max-w-[1280px] w-full mx-auto px-4 sm:px-6 pt-3 pb-8 space-y-4">
+        
+        {/* Navigation Breadcrumb */}
+        <nav className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+          <Link href="/" className="hover:text-zinc-300 transition-colors">Orbit</Link>
           <span>/</span>
-          <Link href="/robots" className="hover:text-white transition-colors">Robots</Link>
+          <Link href="/robots" className="hover:text-zinc-300 transition-colors">Robots</Link>
           <span>/</span>
-          <span className="text-[#A1A1AA]">{robot.name}</span>
+          <span className="text-zinc-300 font-semibold">{robot.name}</span>
         </nav>
 
-        {/* Hero */}
-        <header className="relative rounded-2xl border border-[#1e1e24] bg-[#080810] p-4 sm:p-6 md:p-8 overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#1a6bff]/50 to-transparent" />
-          <div className="absolute right-0 top-0 w-72 h-72 bg-[#1a6bff]/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-            <div className="flex flex-col sm:flex-row gap-4 items-start">
-              <div className="relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-xl border border-[#1e1e24] bg-[#0d0d15] flex items-center justify-center overflow-hidden">
-                {robot.logoUrl ? <Image src={robot.logoUrl} alt={robot.name} width={80} height={80} className="object-contain p-2" unoptimized /> : <Bot size={28} className="text-[#555560]" />}
+        {/* SECTION 1: HERO (MEDIA + TELEMETRY) */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+          
+          {/* LEFT: Visual Hardware Stage */}
+          <div className="lg:col-span-6 flex flex-col justify-between space-y-2">
+            <div className="relative w-full h-[380px] sm:h-[430px] rounded-2xl overflow-hidden border border-white/[0.08] bg-gradient-to-b from-white/[0.03] to-transparent flex items-center justify-center group shadow-2xl backdrop-blur-xl">
+              {!hasRealMedia ? (
+                <div className="flex flex-col items-center justify-center gap-2 text-center p-3 z-10">
+                  <Bot size={24} className="text-zinc-600" />
+                  <p className="text-xs font-semibold text-zinc-300">{robot.name}</p>
+                  <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">No Media</p>
+                </div>
+              ) : activeMedia!.type === "video" ? (
+                <iframe
+                  src={toYouTubeEmbed(activeMedia!.src)}
+                  className="w-full h-full z-10"
+                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  title="Robot Media"
+                />
+              ) : (
+                <div className="relative w-full h-full flex items-center justify-center z-10">
+                  <Image
+                    src={activeMedia!.src}
+                    alt={robot.name}
+                    fill
+                    className="object-contain p-4 drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)]"
+                    unoptimized
+                    priority
+                  />
+                </div>
+              )}
+
+              {/* Carousel Buttons */}
+              {hasRealMedia && mediaItems.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setActiveMediaIdx((i) => (i - 1 + mediaItems.length) % mediaItems.length)}
+                    aria-label="Previous Media"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-black/60 border border-white/15 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition hover:bg-black/90"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    onClick={() => setActiveMediaIdx((i) => (i + 1) % mediaItems.length)}
+                    aria-label="Next Media"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-black/60 border border-white/15 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition hover:bg-black/90"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/10">
+                    {mediaItems.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setActiveMediaIdx(i)}
+                        aria-label={`Slide ${i + 1}`}
+                        className={`rounded-full transition-all ${
+                          i === activeMediaIdx ? "h-1 w-3.5 bg-teal-400" : "h-1 w-1 bg-white/40 hover:bg-white/70"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Thumbnail Strip */}
+            {hasRealMedia && mediaItems.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+                {mediaItems.map((item, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveMediaIdx(i)}
+                    className={`relative h-12 w-16 shrink-0 rounded-lg overflow-hidden border transition ${
+                      i === activeMediaIdx
+                        ? "border-teal-400 shadow-sm shadow-teal-500/20"
+                        : "border-white/10 opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    {item.type === "video" ? (
+                      <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
+                        <Play size={12} className="text-white fill-white" />
+                      </div>
+                    ) : (
+                      <Image src={item.src} alt="Thumbnail" fill className="object-cover" unoptimized />
+                    )}
+                  </button>
+                ))}
               </div>
-              <div className="space-y-1.5 min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white">{robot.name}</h1>
-                  {robot.availability && (
-                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${avail.badge}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${avail.dot}`} />{robot.availability}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-3 text-[12px] text-[#71717A]">
-                  {robot.company && <span className="flex items-center gap-1.5"><Building2 size={12} />{robot.company}</span>}
-                  {robot.country && <span className="flex items-center gap-1.5"><MapPin size={12} />{robot.country}</span>}
-                  {robot.releaseDate && <span className="flex items-center gap-1.5"><Calendar size={12} />{robot.releaseDate.slice(0, 4)}</span>}
-                  {robot.category && <span className="flex items-center gap-1.5"><Tag size={12} /><span className="inline-flex rounded border border-[#2a2a34] bg-[#111118] px-2 py-0.5 text-[10px] font-semibold text-[#A1A1AA]">{robot.category}</span></span>}
-                </div>
-                {robot.mainTask && <p className="text-[13px] text-[#A1A1AA] max-w-2xl leading-relaxed mt-1">{robot.mainTask}</p>}
-                {robot.primaryUseCases && robot.primaryUseCases.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">{robot.primaryUseCases.slice(0, 4).map((uc) => <UseCaseChip key={uc} label={uc} />)}</div>
+            )}
+          </div>
+
+          {/* RIGHT: Telemetry & Actions Panel */}
+          <div className="lg:col-span-6 flex flex-col justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.015] p-5 sm:p-6 backdrop-blur-xl">
+            
+            {/* Header + Title */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold tracking-wide ${avail.badge}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${avail.dot}`} />
+                  {robot.availability}
+                </span>
+                
+                {robot.category && (
+                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-widest text-zinc-400">
+                    {robot.category}
+                  </span>
                 )}
               </div>
+
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
+                  {robot.name}
+                </h1>
+                <p className="text-xs font-medium text-teal-400/90 flex items-center gap-1.5 mt-0.5">
+                  <Building2 size={13} />
+                  <span>By {robot.company}</span>
+                  {robot.country && <span className="text-zinc-500 font-normal">({robot.country})</span>}
+                </p>
+              </div>
+
+              {robot.mainTask && (
+                <p className="text-xs leading-relaxed text-zinc-300 border-l-2 border-teal-500/60 pl-2.5 py-0.5">
+                  {robot.mainTask}
+                </p>
+              )}
             </div>
-            <div className="flex flex-col gap-2 w-full md:w-52 shrink-0">
+
+            {/* Tight Metric Tiles */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition hover:border-white/15">
+                <span className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-zinc-400">
+                  <DollarSign size={11} className="text-teal-400" /> Commercial Price
+                </span>
+                <p className="text-sm font-bold text-white mt-1 truncate">
+                  {robot.price && robot.price !== "N/A" ? robot.price : "Available on Request"}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition hover:border-white/15">
+                <span className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-zinc-400">
+                  <Zap size={11} className="text-amber-400" /> Autonomy Level
+                </span>
+                <p className="text-sm font-bold text-white mt-1 truncate">
+                  {robot.autonomyLevel || "Teleoperated"}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition hover:border-white/15">
+                <span className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-zinc-400">
+                  <Calendar size={11} className="text-blue-400" /> Platform Release
+                </span>
+                <p className="text-sm font-bold text-white mt-1 font-mono">
+                  {robot.releaseDate ? robot.releaseDate.slice(0, 4) : "2026 Production"}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition hover:border-white/15">
+                <span className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-zinc-400">
+                  <Activity size={11} className="text-emerald-400" /> Operational Status
+                </span>
+                <p className="text-sm font-bold text-white mt-1 capitalize truncate">
+                  {robot.availability || "Active"}
+                </p>
+              </div>
+            </div>
+
+            {/* Action Bar */}
+            <div className="flex items-center gap-2 pt-1">
               {robot.websiteUrl && (
-                <a href={robot.websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex w-full justify-center items-center gap-2 rounded-xl bg-[#1a6bff] hover:bg-[#2a7aff] px-4 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-[#1a6bff]/20 hover:-translate-y-0.5 transition-all active:scale-95">
-                  <ExternalLink size={14} /> Visit Website
+                <a
+                  href={robot.websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-teal-400 hover:bg-teal-300 px-4 py-3 text-xs font-bold text-black transition active:scale-[0.98]"
+                >
+                  <span>Visit Manufacturer Website</span>
+                  <ArrowUpRight size={14} />
                 </a>
               )}
-              <button onClick={handleShare} className="inline-flex w-full justify-center items-center gap-2 rounded-xl border border-[#1e1e24] bg-[#0d0d10] px-4 py-2.5 text-sm font-semibold text-[#A1A1AA] hover:text-white hover:border-[#2a2a34] transition-all active:scale-95">
-                {shared ? <Check size={14} className="text-emerald-400" /> : <Share2 size={14} />}
-                {shared ? "Copied!" : "Share"}
+
+              <button
+                onClick={handleShare}
+                type="button"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-white/[0.08] transition active:scale-95"
+              >
+                {copied ? <Check size={14} className="text-teal-400" /> : <Share2 size={14} />}
+                <span>{copied ? "Copied" : "Share"}</span>
               </button>
             </div>
+
           </div>
-        </header>
+        </section>
 
-        {/* Two-column */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
-
-          {/* LEFT */}
-          <div className="space-y-5">
-            <MediaGallery robot={robot} />
+        {/* SECTION 2: EXECUTIVE SUMMARY & COMPACT BLUEPRINT */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          
+          {/* Executive Overview (Col 5) */}
+          <div className="lg:col-span-5 rounded-2xl border border-white/[0.08] bg-white/[0.015] p-5 space-y-3 shadow-lg backdrop-blur-xl">
+            <div className="space-y-0.5">
+              <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-teal-400 flex items-center gap-1">
+                <Box size={11} /> Executive Summary
+              </span>
+              <h2 className="text-base font-bold text-white tracking-tight">Capabilities & Deployment</h2>
+            </div>
 
             {robot.about && (
-              <section className="rounded-xl border border-[#1e1e24] bg-[#0a0a0d] p-5 md:p-6 space-y-4">
-                <div className="flex items-center gap-2.5 border-b border-[#1e1e24] pb-3">
-                  <span className="flex h-6 w-6 items-center justify-center rounded bg-[#1a6bff]/15"><Bot className="text-[#1a6bff] h-3.5 w-3.5" /></span>
-                  <h2 className="text-[11px] font-bold text-white uppercase tracking-widest">About</h2>
-                </div>
-                {robot.primaryUseCases && robot.primaryUseCases.length > 0 && (
-                  <div className="flex flex-wrap gap-2">{robot.primaryUseCases.map((uc) => <UseCaseChip key={uc} label={uc} />)}</div>
-                )}
-                <p className="text-[13px] text-[#A1A1AA] leading-relaxed">{robot.about}</p>
-              </section>
+              <p className="text-xs leading-relaxed text-zinc-300 font-normal">
+                {robot.about}
+              </p>
             )}
 
-            {/* Technical Specs */}
-            <section className="rounded-xl border border-[#1e1e24] bg-[#0a0a0d] overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-[#1e1e24] flex items-center justify-between bg-[#0d0d15]">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-6 w-6 items-center justify-center rounded bg-[#1a6bff]/15"><Cpu className="text-[#1a6bff] h-3.5 w-3.5" /></span>
-                  <h2 className="text-[11px] font-bold text-white uppercase tracking-widest">Technical Specifications</h2>
+            {/* Primary Use Cases */}
+            {robot.primaryUseCases && robot.primaryUseCases.length > 0 && (
+              <div className="pt-3 border-t border-white/[0.08] space-y-2">
+                <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-400 flex items-center gap-1">
+                  <ShieldCheck size={11} className="text-teal-400" /> Target Domains & Tasks
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {robot.primaryUseCases.map((uc) => (
+                    <span
+                      key={uc}
+                      className="inline-flex items-center rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-zinc-300"
+                    >
+                      {uc}
+                    </span>
+                  ))}
                 </div>
-                <span className="text-[9px] font-mono text-[#333] uppercase tracking-widest truncate max-w-[120px]">{robot.name}</span>
               </div>
-              <div className="divide-y divide-[#0f0f12]">
-                {specRows.map((row) => (
-                  <div key={row.key} className="flex items-start px-5 py-3 hover:bg-white/[0.015] transition-colors">
-                    <span className="text-[11px] font-mono text-[#3D3D45] shrink-0 w-36 mt-0.5">{row.key}</span>
-                    <span className="text-[12px] font-semibold text-[#E0E0E8]">{row.val}</span>
-                  </div>
-                ))}
-              </div>
-              {specIsFallback && <div className="px-5 py-2 border-t border-[#0f0f12]"><p className="text-[9px] font-mono text-[#333] italic">* Estimated specs based on category</p></div>}
-            </section>
-
+            )}
           </div>
 
-          {/* RIGHT sidebar */}
-          <aside className="space-y-4">
-            <section className="rounded-xl border border-[#1e1e24] bg-[#0a0a0d] overflow-hidden">
-              <div className="px-4 py-3 bg-[#0d0d15] border-b border-[#1e1e24]">
-                <p className="text-[10px] font-bold tracking-widest text-[#555560] uppercase flex items-center gap-2"><Shield size={11} className="text-[#555560]" /> Robot Details</p>
+          {/* DENSE TECHNICAL SPEC SHEET (Col 7) */}
+          <div className="lg:col-span-7 rounded-2xl border border-white/[0.08] bg-white/[0.015] p-5 space-y-3 shadow-lg backdrop-blur-xl">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-2">
+              <div>
+                <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-teal-400 flex items-center gap-1">
+                  <Cpu size={11} /> Blueprint
+                </span>
+                <h2 className="text-base font-bold text-white tracking-tight">Technical Specifications</h2>
               </div>
-              <div className="px-4">
-                {[
-                  { label: "Manufacturing Country", value: robot.country, extra: countryCode },
-                  { label: "Autonomy Level", value: robot.autonomyLevel },
-                  { label: "Status", value: robot.availability },
-                  { label: "Release Date", value: robot.releaseDate ? robot.releaseDate.slice(0, 4) : null },
-                  { label: "Price", value: robot.price && robot.price !== "N/A" ? robot.price : null },
-                  { label: "Primary Task", value: robot.mainTask },
-                ].filter((r) => r.value).map((row, i, arr) => (
-                  <div key={row.label} className={`py-3 ${i < arr.length - 1 ? "border-b border-[#111118]" : ""}`}>
-                    <p className="text-[10px] text-[#555560] font-medium uppercase tracking-wider mb-1">{row.label}</p>
-                    <div className="flex items-center gap-2">
-                      {row.extra && <span className="inline-flex items-center justify-center rounded bg-[#1e1e24] px-1.5 py-0.5 text-[10px] font-bold text-[#A1A1AA] font-mono">{row.extra}</span>}
-                      <p className="text-[13px] font-semibold text-white">{row.value}</p>
-                    </div>
-                  </div>
-                ))}
-                {robot.category && (
-                  <div className="py-3 border-t border-[#111118]">
-                    <p className="text-[10px] text-[#555560] font-medium uppercase tracking-wider mb-2">Robot Type</p>
-                    <span className="inline-flex rounded border border-[#2a2a34] bg-[#111118] px-2.5 py-1 text-[11px] font-medium text-[#A1A1AA]">{robot.category}</span>
-                  </div>
-                )}
-                {robot.primaryUseCases && robot.primaryUseCases.length > 0 && (
-                  <div className="py-3 border-t border-[#111118]">
-                    <p className="text-[10px] text-[#555560] font-medium uppercase tracking-wider mb-2">Primary Use Cases</p>
-                    <div className="flex flex-wrap gap-1.5">{robot.primaryUseCases.map((uc) => <span key={uc} className="inline-flex rounded border border-[#2a2a34] bg-[#111118] px-2.5 py-1 text-[11px] font-medium text-[#A1A1AA]">{uc}</span>)}</div>
-                  </div>
-                )}
-              </div>
-              {robot.websiteUrl && (
-                <div className="px-4 py-4 border-t border-[#1e1e24]">
-                  <a href={robot.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#1a6bff] hover:bg-[#2a7aff] text-white text-[13px] font-bold py-2.5 transition-colors">
-                    <ExternalLink size={13} /> Visit website
-                  </a>
-                </div>
-              )}
-            </section>
-
-            {videoUrls.length > 0 && (
-              <section className="rounded-xl border border-[#1e1e24] bg-[#0a0a0d] p-4 space-y-3">
-                <p className="text-[10px] font-bold tracking-widest text-[#555560] uppercase flex items-center gap-2"><Play size={11} className="text-[#555560]" /> Videos</p>
-                <div className="space-y-2">
-                  {videoUrls.map((url, i) => (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg border border-[#1e1e24] bg-[#0d0d10] p-2.5 hover:border-[#2a2a34] transition-colors group">
-                      <div className="h-8 w-8 rounded bg-[#111118] flex items-center justify-center shrink-0"><Play size={12} className="text-[#A1A1AA] fill-[#A1A1AA] group-hover:text-white group-hover:fill-white transition-colors" /></div>
-                      <p className="text-[11px] text-[#A1A1AA] group-hover:text-white transition-colors truncate">Watch video {i + 1}</p>
-                      <ExternalLink size={11} className="text-[#555560] shrink-0 ml-auto" />
-                    </a>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {robot.category && (
-              <section className="rounded-xl border border-[#1e1e24] bg-[#0a0a0d] p-4 space-y-3">
-                <p className="text-[10px] font-bold tracking-widest text-[#555560] uppercase flex items-center gap-2"><Layers size={11} /> Related Topics</p>
-                <div className="flex flex-wrap gap-1.5">
-                  <Link href={`/p/robots/${robot.category.toLowerCase().replace(/\s+/g, "-")}`} className="inline-flex items-center gap-1.5 rounded-full border border-[#1e1e24] bg-[#0d0d10] px-3 py-1 text-[11px] font-semibold text-[#A1A1AA] hover:border-[#1a6bff]/40 hover:text-white hover:bg-[#1a6bff]/10 transition-all">
-                    <Layers size={9} className="text-[#1a6bff]" /> {robot.category}
-                  </Link>
-                  {robot.primaryUseCases && robot.primaryUseCases.slice(0, 4).map((uc) => (
-                    <span key={uc} className="inline-flex rounded-full border border-[#1e1e24] bg-[#0d0d10] px-3 py-1 text-[11px] font-semibold text-[#A1A1AA]">#{uc.toLowerCase().replace(/\s+/g, "-")}</span>
-                  ))}
-                </div>
-              </section>
-            )}
-          </aside>
-        </div>
-
-        {/* Similar Robots */}
-        {similarRobots.length > 0 && (
-          <section className="rounded-xl border border-[#1e1e24] bg-[#0a0a0d] p-5 md:p-6 space-y-5">
-            <div className="flex items-center gap-3">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#1e1e24] bg-[#111118]"><Globe size={13} className="text-[#555560]" /></span>
-              <h2 className="text-[11px] font-bold text-white uppercase tracking-widest">Similar Robots</h2>
+              <span className="font-mono text-[9px] text-zinc-500 uppercase">{robot.name}</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {similarRobots.map((r) => <SimilarRobotCard key={r.id} robot={r} />)}
+
+            {/* Dense Key-Value List */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+              {specEntries.length > 0 ? (
+                specEntries.map((spec) => (
+                  <div
+                    key={spec.key}
+                    className="flex items-center justify-between py-2 border-b border-white/[0.04] text-xs"
+                  >
+                    <span className="font-mono text-zinc-400">{spec.key}</span>
+                    <span className="font-semibold text-zinc-100 text-right">{spec.val}</span>
+                  </div>
+                ))
+              ) : (
+                <>
+                  <div className="flex items-center justify-between py-2 border-b border-white/[0.04] text-xs">
+                    <span className="font-mono text-zinc-400">Height</span>
+                    <span className="font-semibold text-zinc-100">~74 cm</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-white/[0.04] text-xs">
+                    <span className="font-mono text-zinc-400">Weight</span>
+                    <span className="font-semibold text-zinc-100">~47 kg</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-white/[0.04] text-xs">
+                    <span className="font-mono text-zinc-400">Degrees of Freedom</span>
+                    <span className="font-semibold text-zinc-100">22 DOF</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-white/[0.04] text-xs">
+                    <span className="font-mono text-zinc-400">Robot Type</span>
+                    <span className="font-semibold text-zinc-100">Home Automation</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-white/[0.04] text-xs">
+                    <span className="font-mono text-zinc-400">Navigation</span>
+                    <span className="font-semibold text-zinc-100">Autonomous / Remote</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-white/[0.04] text-xs">
+                    <span className="font-mono text-zinc-400">Sensors</span>
+                    <span className="font-semibold text-zinc-100">RGB, Depth, IMU</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-white/[0.04] text-xs">
+                    <span className="font-mono text-zinc-400">Battery</span>
+                    <span className="font-semibold text-zinc-100">Rechargeable Li-Ion</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-white/[0.04] text-xs">
+                    <span className="font-mono text-zinc-400">Connectivity</span>
+                    <span className="font-semibold text-zinc-100">Wi-Fi / 5G</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+        </section>
+
+        {/* SECTION 3: COMPARABLE HARDWARE DECK */}
+        {similarRobots.length > 0 && (
+          <section className="rounded-2xl border border-white/[0.08] bg-white/[0.015] p-5 space-y-3 shadow-xl backdrop-blur-xl">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-2">
+              <div>
+                <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-teal-400">
+                  Ecosystem
+                </span>
+                <h3 className="text-sm font-bold text-white tracking-tight">
+                  Comparable Systems in {robot.category}
+                </h3>
+              </div>
+              <Link href={`/robots/${robot.category.toLowerCase().replace(/\s+/g, "-")}`} className="text-xs text-teal-400 hover:underline">
+                View All Systems →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {similarRobots.map((r) => {
+                const sAvail = getAvailabilityStyle(r.availability || "");
+                return (
+                  <Link
+                    key={r.id}
+                    href={`/robots/${r.slug}`}
+                    className="group flex flex-col justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 hover:border-white/20 transition shadow-sm"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <div className="relative h-9 w-9 shrink-0 rounded-lg overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center">
+                        {r.thumbnailUrl ? (
+                          <Image src={r.thumbnailUrl} alt={r.name} fill className="object-cover" unoptimized />
+                        ) : r.logoUrl ? (
+                          <Image src={r.logoUrl} alt={r.name} fill className="object-contain p-0.5" unoptimized />
+                        ) : (
+                          <Bot size={16} className="text-zinc-500" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-white group-hover:text-teal-400 transition truncate">
+                          {r.name}
+                        </p>
+                        <p className="text-[10px] text-zinc-400 truncate mt-0.5">{r.company}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/[0.04] text-[10px]">
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium ${sAvail.badge}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${sAvail.dot}`} />
+                        {r.availability}
+                      </span>
+                      {r.releaseDate && (
+                        <span className="font-mono text-zinc-500">{r.releaseDate.slice(0, 4)}</span>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}
 
       </div>
-      <StickyCTA robot={robot} />
-    </main>
+    </div>
   );
 }

@@ -233,7 +233,7 @@ export class MCPService {
       search,
       sortBy = 'recently-updated',
       page = 1,
-      limit = 20,
+      limit = 100,
     } = query;
 
     const skip = (page - 1) * limit;

@@ -67,10 +67,43 @@ const COL_MIN_WIDTH_SPLIT = "min-w-fit md:min-w-[1150px]";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
+function getReleaseTimestamp(item: ListTool): number {
+  const val = item.releaseDate || (item as any).launchDate || (item as any).publishedAt || (item as any).githubCreatedAt;
+  if (!val || val === '—' || val === 'Unknown' || val === 'null' || val === 'undefined') return 0;
+  
+  const str = String(val).trim();
+  if (/^\d{4}$/.test(str)) {
+    const d = new Date(`${str}-01-01T00:00:00Z`);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+  }
+  if (/^[a-zA-Z]{3,9}\s+\d{4}$/.test(str)) {
+    const d = new Date(`${str} 1`);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+  }
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
 function formatReleased(value?: string | null): string {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return "—";
+  if (!value || value === "—" || value === "Unknown" || value === "null" || value === "undefined") return "—";
+  const str = String(value).trim();
+  if (!str) return "—";
+
+  if (/^\d{4}$/.test(str)) return str;
+  if (/^[a-zA-Z]{3,9}\s+\d{4}$/.test(str)) return str;
+
+  const d = new Date(str);
+  if (isNaN(d.getTime())) return str;
+
+  const now = Date.now();
+  const diffMs = now - d.getTime();
+  const diffHours = Math.floor(diffMs / (3600 * 1000));
+  
+  if (diffHours >= 0 && diffHours < 1) return "Just now";
+  if (diffHours >= 1 && diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours >= 24 && diffHours < 48) return "Yesterday";
+  if (diffHours >= 48 && diffHours < 24 * 7) return `${Math.floor(diffHours / 24)}d ago`;
+
   return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
@@ -80,8 +113,8 @@ function isTruthy(...vals: Array<unknown>): boolean {
 
 function FilterIcon({ active }: { active?: boolean }) {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-      className={active ? "text-[#6E56CF]" : "text-[#52525B] hover:text-white"}>
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+      className={active ? "text-[#6E56CF]" : "text-[#A1A1AA] hover:text-white"}>
       <line x1="4" y1="6" x2="20" y2="6"/>
       <line x1="8" y1="12" x2="16" y2="12"/>
       <line x1="11" y1="18" x2="13" y2="18"/>
@@ -94,15 +127,16 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
   return <span className="text-[#6E56CF] text-[10px]">{dir === "desc" ? "↓" : "↑"}</span>;
 }
 
-function LogoCell({ name, logoUrl }: { name: string; logoUrl: string | null }) {
+function LogoCell({ name, logoUrl }: { name?: string; logoUrl?: string | null }) {
   const [failed, setFailed] = React.useState(false);
   if (!logoUrl || failed) {
-    return <span className="text-[10px] md:text-xs font-bold text-neutral-900">{name.charAt(0)}</span>;
+    const initial = (name || "").trim().charAt(0).toUpperCase() || "?";
+    return <span className="text-[10px] md:text-xs font-bold text-neutral-900">{initial}</span>;
   }
   return (
     <img
       src={logoUrl}
-      alt={name}
+      alt={name || "Tool"}
       className="h-6 w-6 md:h-8 md:w-8 object-contain"
       onError={() => setFailed(true)}
     />
@@ -111,7 +145,7 @@ function LogoCell({ name, logoUrl }: { name: string; logoUrl: string | null }) {
 
 function BoolPill({ value, trueLabel, falseLabel }: { value: boolean; trueLabel: string; falseLabel: string }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">      
+    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">      
       {value ? trueLabel : falseLabel}
     </span>
   );
@@ -309,10 +343,10 @@ function ToolRow({
               {tool.name}
             </h3>
             {tool.isVerified && (
-              <BadgeCheck size={13} className="shrink-0 text-blue-400" aria-label="Verified" />
+              <BadgeCheck size={14} className="shrink-0 text-blue-400" aria-label="Verified" />
             )}
             {tool.isFeatured && (
-              <Sparkles size={13} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
+              <Sparkles size={14} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
             )}
             {tool.websiteUrl ? (
               <a
@@ -323,14 +357,14 @@ function ToolRow({
                 className="text-[#71717A] hover:text-white transition-colors shrink-0 hidden md:inline-flex"
                 aria-label={`Visit ${tool.name} website`}
               >
-                <ExternalLink size={13} />
+                <ExternalLink size={14} />
               </a>
             ) : (
-              <span className="text-[#71717A] opacity-30 shrink-0 hidden md:inline-flex"><ExternalLink size={13} /></span>
+              <span className="text-[#71717A] opacity-30 shrink-0 hidden md:inline-flex"><ExternalLink size={14} /></span>
             )}
           </div>
-          <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis md:text-clip">
-            {trimNoDots(tool.description || "")}
+          <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug whitespace-nowrap overflow-hidden max-w-[420px]">
+            {tool.description || ""}
           </p>
         </div>
       ) : (
@@ -345,10 +379,10 @@ function ToolRow({
               </h3>
               <div className="flex items-center gap-1 shrink-0">
                 {tool.isVerified && (
-                  <BadgeCheck size={12} className="shrink-0 text-blue-400" aria-label="Verified" />
+                  <BadgeCheck size={13} className="shrink-0 text-blue-400" aria-label="Verified" />
                 )}
                 {tool.isFeatured && (
-                  <Sparkles size={12} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
+                  <Sparkles size={13} className="shrink-0 text-amber-400 fill-amber-400" aria-label="Featured" />
                 )}
                 {tool.websiteUrl ? (
                   <a
@@ -366,14 +400,14 @@ function ToolRow({
                 )}
               </div>
             </div>
-            <p className="hidden md:block mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis md:text-clip">
-              {trimNoDots(tool.description || "")}
+             <p className="hidden md:block mt-0.5 text-[11px] text-[#A1A1AA] leading-snug whitespace-nowrap overflow-hidden max-w-[380px]">
+              {tool.description || ""}
             </p>
           </div>
 
           <div className="md:hidden min-w-0 flex flex-col justify-center pr-2 h-full">
-            <p className="text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis">
-              {trimNoDots(tool.description || "")}
+            <p className="text-[11px] text-[#A1A1AA] leading-snug whitespace-nowrap overflow-hidden max-w-[200px]">
+              {tool.description || ""}
             </p>
           </div>
         </>
@@ -381,9 +415,17 @@ function ToolRow({
 
       {/* Col 3: Task */}
       <div className="min-w-0 pl-4 md:pl-0">
-        {tool.ttasks && tool.ttasks.length > 0 ? (
-          <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] whitespace-normal break-words text-center leading-tight">
+        {tool.ttasks && tool.ttasks.length > 0 && tool.ttasks[0]?.task?.title ? (
+          <span className="inline-flex items-center rounded-md border border-[#232326] bg-[#1A1A1E] px-2.5 py-0.5 text-[10px] font-medium text-[#D4D4D8] whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]">
             {tool.ttasks[0].task.title}
+          </span>
+        ) : (tool as any).primaryTask ? (
+          <span className="inline-flex items-center rounded-md border border-[#232326] bg-[#1A1A1E] px-2.5 py-0.5 text-[10px] font-medium text-[#D4D4D8] whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]">
+            {(tool as any).primaryTask}
+          </span>
+        ) : tool.categories && tool.categories.length > 0 && tool.categories[0]?.category?.name ? (
+          <span className="inline-flex items-center rounded-md border border-[#232326] bg-[#1A1A1E] px-2.5 py-0.5 text-[10px] font-medium text-[#D4D4D8] whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]">
+            {tool.categories[0].category.name}
           </span>
         ) : (
           <span className="text-[11px] text-[#71717A] font-mono">—</span>
@@ -396,7 +438,7 @@ function ToolRow({
           pricingModel={tool.pricingModel}
           pricingAmount={tool.pricingAmount}
           billingFrequency={tool.billingFrequency}
-          className="text-[10px] px-2 py-0.5"
+          className="text-[10px] px-2.5 py-0.5"
         />
       </div>
 
@@ -416,12 +458,12 @@ function ToolRow({
           {tool.compatibility && tool.compatibility.length > 0 ? (
             <div className="flex gap-1 flex-wrap">
               {tool.compatibility.slice(0, 2).map((c, i) => (
-                <span key={i} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+                <span key={i} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
                   {c}
                 </span>
               ))}
               {tool.compatibility.length > 2 && (
-                <span className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
+                <span className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[10px] font-mono text-[#A1A1AA]">
                   +{tool.compatibility.length - 2}
                 </span>
               )}
@@ -434,7 +476,7 @@ function ToolRow({
 
       {/* Col 8: Released */}
       <div className="text-[10px] font-mono text-[#A1A1AA]">
-        {formatReleased(tool.releaseDate)}
+        {formatReleased(tool.releaseDate || (tool as any).launchDate || (tool as any).publishedAt)}
       </div>
 
       {/* Col 9: Share */}
@@ -486,13 +528,13 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
   const [nameSearch, setNameSearch] = useState("");
 
   type SortKey = "released" | "name";
-  const [sortKey, setSortKey] = useState<SortKey>("released");
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   function handleSort(key: SortKey) {
-    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortKey(key); setSortDir("desc"); }
-  }
+  if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+  else { setSortKey(key); setSortDir("desc"); }
+}
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -522,43 +564,41 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     router.push(`/tools/compare?slugs=${slugs}`);
   };
 
+  const isMixedFeed = tools.some(t => 
+    t.entityType === 'NEWS' || t.entityType === 'VIDEO' || t.entityType === 'ROBOT' || 
+    t.entityType === 'COMPANY' || t.entityType === 'DEVICE' || t.entityType === 'MODEL' || t.entityType === 'REPOSITORY'
+  );
+
   const filtered = React.useMemo(() => {
     let list = [...tools];
     if (nameSearch.trim()) {
       const q = nameSearch.toLowerCase();
       list = list.filter((t) =>
-        t.name.toLowerCase().includes(q) ||
-        t.description?.toLowerCase().includes(q) ||
-        t.company?.name?.toLowerCase().includes(q)
+        (t.name || "").toLowerCase().includes(q) ||
+        (t.description || "").toLowerCase().includes(q) ||
+        (t.company?.name || "").toLowerCase().includes(q)
       );
     }
-    list.sort((a, b) => {
-      const getScore = (t: ListTool) => {
-        if (t.ttasks && t.ttasks.length > 0) return 3; 
-        if (t.logoUrl && t.description && t.description.trim() !== "") return 2; 
-        return 1; 
-      };
-
-      const scoreA = getScore(a);
-      const scoreB = getScore(b);
-
-      if (scoreA !== scoreB) {
-        return scoreB - scoreA; 
-      }
-
-      let cmp = 0;
-      if (sortKey === "name") cmp = a.name.localeCompare(b.name);
-      else cmp = ((b as any).releaseDate || b.createdAt || "").localeCompare((a as any).releaseDate || a.createdAt || "");
-      
-      return sortDir === "asc" ? cmp : -cmp;
-    });
+     if (sortKey === "name") {
+      list.sort((a, b) => {
+        const cmp = (a.name || "").localeCompare(b.name || "");
+        return sortDir === "asc" ? cmp : -cmp;
+      });
+    } else if (sortKey === "released") {
+      list.sort((a, b) => {
+        const timeA = getReleaseTimestamp(a);
+        const timeB = getReleaseTimestamp(b);
+        if (timeA > 0 && timeB > 0) {
+          return sortDir === "asc" ? timeA - timeB : timeB - timeA;
+        }
+        if (timeA > 0) return sortDir === "asc" ? 1 : -1;
+        if (timeB > 0) return sortDir === "asc" ? -1 : 1;
+        return (a.name || "").localeCompare(b.name || "");
+      });
+    }
+    // sortKey === null: preserve original API order
     return list;
-  }, [tools, nameSearch, sortKey, sortDir]);
-
-  const isMixedFeed = tools.some(t => 
-    t.entityType === 'NEWS' || t.entityType === 'VIDEO' || t.entityType === 'ROBOT' || 
-    t.entityType === 'COMPANY' || t.entityType === 'DEVICE' || t.entityType === 'MODEL' || t.entityType === 'REPOSITORY'
-  );
+  }, [tools, nameSearch, sortKey, sortDir, isMixedFeed]);
   
   const activeTemplate = isMixedFeed ? COL_TEMPLATE_MIXED : COL_TEMPLATE_SPLIT;
   const activeMinWidth = isMixedFeed ? COL_MIN_WIDTH_MIXED : COL_MIN_WIDTH_SPLIT;
@@ -649,12 +689,12 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
           <div className="flex gap-2 mt-2">
             <button
               onClick={() => { setNameSearch(nameInput); setOpenDropdown(null); }}
-              className="flex-1 text-[10px] bg-[#6E56CF] hover:bg-[#7C66DF] text-white py-1.5 rounded transition-colors font-semibold"
+              className="flex-1 text-[12px] bg-[#6E56CF] hover:bg-[#7C66DF] text-white py-1.5 rounded transition-colors font-semibold"
             >Apply</button>
             {nameSearch && (
               <button
                 onClick={() => { setNameSearch(""); setNameInput(""); setOpenDropdown(null); }}
-                className="flex-1 text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors"
+                className="flex-1 text-[12px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors"
               >Clear</button>
             )}
           </div>
@@ -667,7 +707,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     <>
       <div
         ref={dropdownRef}
-        className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
+        className="overflow-x-auto touch-scroll-x rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
       >
         <div className={`relative bg-[#000000] ${activeMinWidth}`}>
 
@@ -709,9 +749,9 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               )}
 
               {/* RELEASED */}
-              <button
+             <button
                 onClick={() => handleSort("released")}
-                className="text-[9.5px] font-mono font-semibold tracking-wider text-[#6E56CF] hover:text-white transition-colors flex items-center gap-1"
+                className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1"
               >
                 RELEASED <SortIcon active={sortKey === "released"} dir={sortDir} />
               </button>
@@ -723,7 +763,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">SAVE</span>
 
               {/* COMPARE */}
-              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pr-4">CMP</span>
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pr-4">COMPARE</span>
             </div>
           </div>
 
@@ -747,8 +787,8 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
 
       {/* ── Sticky compare bar ───────────────────────────────────────────────── */}
       {compareSet.length > 0 && (
-        <div className="fixed inset-x-0 bottom-2 sm:bottom-4 z-40 flex justify-center px-2 sm:px-4">
-          <div className="flex w-full max-w-xl items-center gap-2 sm:gap-3 rounded-xl border border-[#232326]/70 bg-[#111113]/95 backdrop-blur px-3 sm:px-4 py-2.5 sm:py-3 shadow-2xl shadow-black/60">
+        <div className="fixed inset-x-0 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 flex justify-center px-2 sm:px-4">
+          <div className="flex w-full max-w-xl items-center gap-2 sm:gap-3 rounded-xl border border-[#232326]/70 bg-[#111113]/95 backdrop-blur px-3 sm:px-4 py-2 sm:py-3 shadow-2xl shadow-black/60">
             <div className="flex flex-1 items-center gap-1.5 sm:gap-2 min-w-0">
               {Array.from({ length: MAX_COMPARE }).map((_, i) => {
                 const t = compareSet[i];
@@ -762,7 +802,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
                         </button>
                       </>
                     ) : (
-                      <span className="text-[10px] sm:text-[11px] text-[#71717A] truncate">Select tool…</span>
+                      <span className="text-[10px] sm:text-[11px] text-[#71717A] truncate">Select another tool…</span>
                     )}
                   </div>
                 );
@@ -773,11 +813,11 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               onClick={goToCompare}
               disabled={compareSet.length !== MAX_COMPARE}
               className={`shrink-0 inline-flex items-center gap-1 sm:gap-1.5 rounded-lg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold transition-colors ${
-                compareSet.length === MAX_COMPARE ? "text-black" : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
+                compareSet.length === MAX_COMPARE ? "text-white shadow-md shadow-[#6E56CF]/30" : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
               }`}
               style={compareSet.length === MAX_COMPARE ? { backgroundColor: "#6E56CF" } : undefined}
             >
-              <GitCompare size={13} /> <span className="hidden xs:inline">Compare</span>
+              <GitCompare size={13} /> <span className="hidden 2xs:inline">Compare</span>
             </button>
             <button type="button" onClick={() => setCompareSet([])} className="shrink-0 text-[#71717A] hover:text-white p-1" aria-label="Clear compare">
               <X size={16} />

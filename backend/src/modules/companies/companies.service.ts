@@ -7,16 +7,18 @@ export class CompaniesService {
     this.prisma = prisma;
   }
 
-  async listCompanies(filters: {
-    page?: number;
-    pageSize?: number;
-    q?: string;
-    type?: CompanyType;
-    country?: string;
-    sort?: string;
-  } = {}) {
+  async listCompanies(
+    filters: {
+      page?: number;
+      pageSize?: number;
+      q?: string;
+      type?: CompanyType;
+      country?: string;
+      sort?: string;
+    } = {},
+  ) {
     const page = Math.max(1, filters.page || 1);
-    const limit = Math.min(200, Math.max(1, filters.pageSize || 50));
+    const limit = Math.min(200, Math.max(1, filters.pageSize || 100));
     const skip = (page - 1) * limit;
 
     const where: Prisma.CompanyWhereInput = {};
@@ -27,49 +29,79 @@ export class CompaniesService {
 
     if (filters.q && filters.q.trim().length > 0) {
       const query = filters.q.trim();
+
       where.OR = [
-        { name: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-        { sector: { contains: query, mode: 'insensitive' } },
+        {
+          name: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
+        {
+          description: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
+        {
+          sector: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
       ];
     }
 
     if (filters.country && filters.country !== 'all') {
-      where.country = { equals: filters.country, mode: 'insensitive' };
+      where.country = {
+        equals: filters.country,
+        mode: 'insensitive',
+      };
     }
 
-    let orderBy: Prisma.CompanyOrderByWithRelationInput = { name: 'asc' };
+    let orderBy: Prisma.CompanyOrderByWithRelationInput = {
+      name: 'asc',
+    };
 
     switch (filters.sort) {
       case 'valuation':
       case 'valuation-desc':
         orderBy = { valuation: 'desc' };
         break;
+
       case 'valuation-asc':
         orderBy = { valuation: 'asc' };
         break;
+
       case 'funding':
       case 'funding-desc':
         orderBy = { fundingRaised: 'desc' };
         break;
+
       case 'name-asc':
         orderBy = { name: 'asc' };
         break;
+
       case 'name-desc':
         orderBy = { name: 'desc' };
         break;
+
       case 'newest':
         orderBy = { createdAt: 'desc' };
         break;
+
       case 'oldest':
         orderBy = { createdAt: 'asc' };
         break;
+
       case 'views':
         orderBy = { views: 'desc' };
         break;
+
       case 'upvotes':
         orderBy = { upvotes: 'desc' };
         break;
+
       default:
         orderBy = { name: 'asc' };
         break;
@@ -81,6 +113,7 @@ export class CompaniesService {
         orderBy,
         skip,
         take: limit,
+
         select: {
           id: true,
           slug: true,
@@ -106,6 +139,7 @@ export class CompaniesService {
           impressions: true,
           createdAt: true,
           updatedAt: true,
+
           tools: {
             take: 3,
             select: {
@@ -113,32 +147,37 @@ export class CompaniesService {
               slug: true,
               name: true,
               logoUrl: true,
-            }
+            },
           },
+
           aiModels: {
             take: 3,
             select: {
               id: true,
               slug: true,
               name: true,
-            }
+            },
           },
+
           _count: {
             select: {
               tools: true,
               aiModels: true,
-            }
-          }
-        }
+            },
+          },
+        },
       }),
-      this.prisma.company.count({ where }),
+
+      this.prisma.company.count({
+        where,
+      }),
     ]);
 
-    // Convert BigInt to string for JSON serialization
     const formattedCompanies = companies.map((c) => ({
       ...c,
       valuation: c.valuation !== null ? c.valuation.toString() : null,
-      fundingRaised: c.fundingRaised !== null ? c.fundingRaised.toString() : null,
+      fundingRaised:
+        c.fundingRaised !== null ? c.fundingRaised.toString() : null,
     }));
 
     return {
@@ -152,7 +191,10 @@ export class CompaniesService {
 
   async getCompanyDetails(slug: string) {
     const company = await this.prisma.company.findUnique({
-      where: { slug },
+      where: {
+        slug,
+      },
+
       include: {
         tools: {
           select: {
@@ -162,11 +204,58 @@ export class CompaniesService {
             logoUrl: true,
             description: true,
             pricingModel: true,
-            avgRating: true,
             websiteUrl: true,
-            _count: { select: { reviews: true } }
-          }
+            releaseDate: true,
+            launchDate: true,
+            country: true,
+            isOpenSource: true,
+            isTrending: true,
+            verified: true,
+            targetUsers: true,
+            hasApi: true,
+            useCases: true,
+            avgRating: true,
+            views: true,
+
+            // Tool.tags is ToolTag[], so Tag fields must be selected
+            // through the nested `tag` relation.
+            tags: {
+              take: 5,
+              select: {
+                tag: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                  },
+                },
+              },
+            },
+
+            // Tool.ttasks is a TaskTool[] relation.
+            // Return the linked task identity/title so the company
+            // tools grid can show real task tags without hardcoding.
+            ttasks: {
+              take: 5,
+              select: {
+                task: {
+                  select: {
+                    id: true,
+                    slug: true,
+                    title: true,
+                  },
+                },
+              },
+            },
+
+            _count: {
+              select: {
+                reviews: true,
+              },
+            },
+          },
         },
+
         aiModels: {
           select: {
             id: true,
@@ -179,20 +268,76 @@ export class CompaniesService {
             releaseDate: true,
             websiteUrl: true,
             capabilities: true,
-          }
+            primaryTask: true,
+            modelType: true,
+            apiAvailable: true,
+            openSource: true,
+          },
         },
+
+        news: true,
+        videos: true,
+
         _count: {
-          select: { tools: true, aiModels: true, collectionCompanies: true }
-        }
-      }
+          select: {
+            tools: true,
+            aiModels: true,
+            collectionCompanies: true,
+            news: true,
+            videos: true,
+          },
+        },
+      },
     });
 
-    if (!company) return null;
+    if (!company) {
+      return null;
+    }
+
+    /*
+     * Robots, devices, and repositories don't have direct Prisma relations
+     * with Company, so we match them using existing string fields.
+     */
+    const [robots, devices, repositories] = await Promise.all([
+      this.prisma.robot.findMany({
+        where: {
+          company: {
+            equals: company.name,
+            mode: 'insensitive',
+          },
+        },
+      }),
+
+      this.prisma.device.findMany({
+        where: {
+          manufacturer: {
+            equals: company.name,
+            mode: 'insensitive',
+          },
+        },
+      }),
+
+      this.prisma.repository.findMany({
+        where: {
+          owner: {
+            equals: company.slug,
+            mode: 'insensitive',
+          },
+        },
+      }),
+    ]);
 
     return {
       ...company,
-      valuation: company.valuation !== null ? company.valuation.toString() : null,
-      fundingRaised: company.fundingRaised !== null ? company.fundingRaised.toString() : null,
+      robots,
+      devices,
+      repositories,
+      valuation:
+        company.valuation !== null ? company.valuation.toString() : null,
+      fundingRaised:
+        company.fundingRaised !== null
+          ? company.fundingRaised.toString()
+          : null,
     };
   }
 }

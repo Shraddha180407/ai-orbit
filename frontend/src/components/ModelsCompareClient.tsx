@@ -7,8 +7,9 @@ import { useSearchParams } from "next/navigation";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { fetchModelById } from "@/lib/api";
+import { fetchModelsCompare } from "@/lib/api";
 import type { ModelDetail } from "@/lib/types";
+import { formatModelType } from "@/lib/types";
 
 const ROWS: { key: string; label: string; get: (m: ModelDetail) => string }[] = [
   {
@@ -19,7 +20,7 @@ const ROWS: { key: string; label: string; get: (m: ModelDetail) => string }[] = 
   {
     key: "type",
     label: "Type",
-    get: (m) => m.type || m.modality || "—",
+    get: (m) => formatModelType(m.modelType) || m.modality || "—",
   },
   {
     key: "primaryTask",
@@ -54,7 +55,7 @@ export function ModelsCompareClient() {
     .filter(Boolean)
     .slice(0, 2);
 
-  const [models, setModels] = useState<(ModelDetail | null)[]>([]);
+  const [models, setModels] = useState<ModelDetail[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,7 +65,7 @@ export function ModelsCompareClient() {
       return;
     }
     setLoading(true);
-    Promise.all(ids.map((id) => fetchModelById(id))).then((results) => {
+    fetchModelsCompare(ids).then((results) => {
       setModels(results);
       setLoading(false);
     });

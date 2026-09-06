@@ -100,7 +100,9 @@ model Company {
 
   collectionCompanies CollectionCompany[]
   tools              Tool[]
-  aiModels           AIModel[]
+  aiModels            AIModel[]
+  news               News[]
+  videos             Video[]
 }
 
 model User {
@@ -467,6 +469,9 @@ model News {
   aiSummary  String
   articleUrl String @unique
 
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
   publisherId String
   publisher   Publisher @relation(fields: [publisherId], references: [id])
 
@@ -489,7 +494,9 @@ model News {
   @@index([publishedAt])
   @@index([publisherId])
   @@index([category])
+  @@index([companyId])
 }
+
 
 model NewsBookmark {
   id        String   @id @default(cuid())
@@ -606,13 +613,18 @@ model Video {
   // true so existing rows aren't affected until the backfill script runs.
   available       Boolean  @default(true)
 
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  @@index([toolCategory])
+   @@index([toolCategory])
   @@index([publishedAt])
   @@index([views])
   @@index([available])
+  @@index([companyId])
+
 }
 
 enum RobotCategory {
@@ -1177,6 +1189,28 @@ model Report {
   reportedNews   News?   @relation(fields: [reportedNewsId], references: [id], onDelete: Cascade)
 }
 
+model WriterSubmission {
+  id                    String   @id @default(cuid())
+  firstName             String
+  lastName              String
+  email                 String
+  country               String
+  websiteUrl            String?
+  portfolioUrl          String?
+  authorBio             String
+  articleTitle          String
+  topic                 String
+  googleDocsUrl         String
+  contributionFrequency String
+  status                String   @default("PENDING")
+  reviewNotes           String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
 model MCPDirectoryReport {
   id        String   @id @default(cuid())
   status    String   @default("OPEN")
@@ -1671,3 +1705,13 @@ model AgentReview {
   @@index([userId])
 }
 
+model PressRelease {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  tag         String
+  date        String
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
