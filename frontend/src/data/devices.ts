@@ -69,16 +69,16 @@ export const DEVICES_DATA: DeviceData[] = [
     country: "US",
     ram: "4 GB",
     aiFeatures: [
-  "Large Action Model (LAM)",
-  "Voice Input & Push-to-Talk",
-  "App Control without APIs",
-  "360° Rotating AI Camera",
-  "Natural Language Commands",
-  "Cloud AI Processing",
-  "Music & Spotify Playback",
-  "Real-time Web Search",
-  "Task Execution Agent",
-],
+      "Large Action Model (LAM)",
+      "Voice Input & Push-to-Talk",
+      "App Control without APIs",
+      "360° Rotating AI Camera",
+      "Natural Language Commands",
+      "Cloud AI Processing",
+      "Music & Spotify Playback",
+      "Real-time Web Search",
+      "Task Execution Agent",
+    ],
     primaryUseCases: [
       "Hands-free task automation",
       "Voice-first productivity",
@@ -106,8 +106,7 @@ export const DEVICES_DATA: DeviceData[] = [
     aiModel: "Large Action Model (LAM) — proprietary by Rabbit Inc.",
     processingType: "Cloud",
     bestFor: ["Early Adopters", "Tech Enthusiasts", "Minimalists"],
-        qualityScore: 72,
-    subcategory: "Pocket AI Companion",
+    qualityScore: 72,
     platform: "RabbitOS (Custom Linux)",
     verdict: "The Rabbit r1 is a genuinely interesting experiment in rethinking how we interact with AI. The LAM concept is novel and the hardware is charming, but real-world performance still lags behind the promise. Worth watching as the platform matures, but not yet a daily driver replacement.",
   },
@@ -160,7 +159,6 @@ export const DEVICES_DATA: DeviceData[] = [
     month: "Sep, 2024",
     description: "AI-powered smart glasses with built-in camera, open-ear speakers, and Meta AI assistant for hands-free interaction.",
     imageUrl: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&q=80",
-
     manufacturerLogoUrl: "https://www.google.com/s2/favicons?sz=64&domain=meta.com",
     mainTask: "Wearable",
     mainTaskColor: "#0082FB",
@@ -183,7 +181,7 @@ export const DEVICES_DATA: DeviceData[] = [
     qualityScore: 81,
     verdict: "The best mainstream AI glasses available today. They look normal, sound great, and Meta AI is genuinely useful for on-the-go queries. The camera quality and live AI view are impressive. Battery life is the main limitation.",
   },
-    {
+  {
     id: "mock-agribot-ai-sprayer",
     slug: "agribot-ai-sprayer",
     name: "AgriBot AI Crop Sprayer",
@@ -245,7 +243,6 @@ export const DEVICES_DATA: DeviceData[] = [
     month: "Feb, 2024",
     description: "Spatial computing device that blends digital content with the physical world using eye, hand, and voice inputs.",
     imageUrl: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh0M-xMVNKOim3tbWKFD18A7LnR-TakTjNAMuZUea7aHi59t-n2Dl8SJ61C8h6zRc8H00_GUybGptIJaojH21cwmYOsvgOaEzi5fAlprcAWNqsSgM5vkWMzAIlMPkU33rd6mbF3sC_dDKZOgTNoGk029rLE9row-adJmAVVKaxNWI9QdzLbvWSSTcUsSPd5/s1629/appple%202.PNG",
-
     manufacturerLogoUrl: "https://www.google.com/s2/favicons?sz=64&domain=apple.com",
     mainTask: "Computing",
     mainTaskColor: "#555555",
@@ -271,7 +268,6 @@ export const DEVICES_DATA: DeviceData[] = [
     month: "Jun, 2024",
     description: "Smart home speaker powered by Google Assistant with multi-room audio and smart home control capabilities.",
     imageUrl: "https://images.unsplash.com/photo-1543512214-318c7553f230?w=400&q=80",
-
     manufacturerLogoUrl: "https://www.google.com/s2/favicons?sz=64&domain=google.com",
     mainTask: "Smart Home",
     mainTaskColor: "#34A853",
@@ -297,7 +293,6 @@ export const DEVICES_DATA: DeviceData[] = [
     month: "Oct, 2024",
     description: "AI-powered smart ring that continuously monitors health biomarkers, estimates biological age, tracks recovery and longevity metrics.",
     imageUrl: "https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=400&q=80",
-
     manufacturerLogoUrl: "https://www.google.com/s2/favicons?sz=64&domain=ouraring.com",
     mainTask: "Health",
     mainTaskColor: "#E85D4A",
@@ -323,7 +318,6 @@ export const DEVICES_DATA: DeviceData[] = [
     month: "Nov, 2023",
     description: "Smart display with a motorized base that automatically moves to keep you in frame during video calls.",
     imageUrl: "https://images.unsplash.com/photo-1518444065439-e933c06ce9cd?w=400&q=80",
-
     manufacturerLogoUrl: "https://www.google.com/s2/favicons?sz=64&domain=amazon.com",
     mainTask: "Smart Home",
     mainTaskColor: "#FF9900",
@@ -349,7 +343,6 @@ export const DEVICES_DATA: DeviceData[] = [
     month: "Jul, 2024",
     description: "Lightweight titanium smart ring with AI-powered health tracking, sleep analysis, and Samsung Health integration.",
     imageUrl: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80",
-
     manufacturerLogoUrl: "https://www.google.com/s2/favicons?sz=64&domain=samsung.com",
     mainTask: "Health",
     mainTaskColor: "#1428A0",
@@ -367,7 +360,7 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "MSI EdgeXpert",
     manufacturer: "MSI",
     manufacturerSlug: "msi",
-        category: "Edge AI Hardware",
+    category: "Edge AI Hardware",
     subcategory: "AI Dev Kit",
     availability: "Available",
     price: "$311.00",
@@ -375,7 +368,6 @@ export const DEVICES_DATA: DeviceData[] = [
     month: "2026",
     description: "A compact AI supercomputer based on the NVIDIA DGX Spark GB10 platform, designed for local AI development, inference, and enterprise AI workloads.",
     imageUrl: "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=400&q=80",
-
     manufacturerLogoUrl: "https://www.google.com/s2/favicons?sz=64&domain=msi.com",
     mainTask: "AI Edge",
     mainTaskColor: "#E85D4A",
@@ -401,7 +393,6 @@ export const DEVICES_DATA: DeviceData[] = [
     month: "Jun, 2024",
     description: "AI-powered smart glasses with always-on display, camera, and personalized AI assistant for hands-free productivity.",
     imageUrl: "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=400&q=80",
-
     manufacturerLogoUrl: "https://www.google.com/s2/favicons?sz=64&domain=mentra.glass",
     mainTask: "Wearable",
     mainTaskColor: "#6E56CF",
