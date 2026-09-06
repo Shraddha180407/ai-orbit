@@ -331,7 +331,7 @@ export function DeviceDetailClient() {
                 slug: dSlug,
                 name: d.name,
                 manufacturer,
-                manufacturerSlug: d.manufacturerSlug || "",
+                manufacturerSlug: (d as any).manufacturerSlug || "",
                 category: d.category || "Other",
                 availability: (d.availability as DeviceData["availability"]) || "Available",
                 price: d.price || null,
