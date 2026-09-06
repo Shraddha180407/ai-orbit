@@ -7,14 +7,16 @@ export class CompaniesService {
     this.prisma = prisma;
   }
 
-  async listCompanies(filters: {
-    page?: number;
-    pageSize?: number;
-    q?: string;
-    type?: CompanyType;
-    country?: string;
-    sort?: string;
-  } = {}) {
+  async listCompanies(
+    filters: {
+      page?: number;
+      pageSize?: number;
+      q?: string;
+      type?: CompanyType;
+      country?: string;
+      sort?: string;
+    } = {},
+  ) {
     const page = Math.max(1, filters.page || 1);
     const limit = Math.min(200, Math.max(1, filters.pageSize || 100));
     const skip = (page - 1) * limit;
@@ -171,18 +173,11 @@ export class CompaniesService {
       }),
     ]);
 
-    // Convert BigInt to string for JSON serialization
     const formattedCompanies = companies.map((c) => ({
       ...c,
-      valuation:
-        c.valuation !== null
-          ? c.valuation.toString()
-          : null,
-
+      valuation: c.valuation !== null ? c.valuation.toString() : null,
       fundingRaised:
-        c.fundingRaised !== null
-          ? c.fundingRaised.toString()
-          : null,
+        c.fundingRaised !== null ? c.fundingRaised.toString() : null,
     }));
 
     return {
@@ -190,10 +185,7 @@ export class CompaniesService {
       total,
       page,
       pageSize: limit,
-      totalPages: Math.max(
-        1,
-        Math.ceil(total / limit)
-      ),
+      totalPages: Math.max(1, Math.ceil(total / limit)),
     };
   }
 
@@ -212,8 +204,49 @@ export class CompaniesService {
             logoUrl: true,
             description: true,
             pricingModel: true,
-            avgRating: true,
             websiteUrl: true,
+            releaseDate: true,
+            launchDate: true,
+            country: true,
+            isOpenSource: true,
+            isTrending: true,
+            verified: true,
+            targetUsers: true,
+            hasApi: true,
+            useCases: true,
+            avgRating: true,
+            views: true,
+
+            // Tool.tags is ToolTag[], so Tag fields must be selected
+            // through the nested `tag` relation.
+            tags: {
+              take: 5,
+              select: {
+                tag: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                  },
+                },
+              },
+            },
+
+            // Tool.ttasks is a TaskTool[] relation.
+            // Return the linked task identity/title so the company
+            // tools grid can show real task tags without hardcoding.
+            ttasks: {
+              take: 5,
+              select: {
+                task: {
+                  select: {
+                    id: true,
+                    slug: true,
+                    title: true,
+                  },
+                },
+              },
+            },
 
             _count: {
               select: {
@@ -235,14 +268,23 @@ export class CompaniesService {
             releaseDate: true,
             websiteUrl: true,
             capabilities: true,
+            primaryTask: true,
+            modelType: true,
+            apiAvailable: true,
+            openSource: true,
           },
         },
+
+        news: true,
+        videos: true,
 
         _count: {
           select: {
             tools: true,
             aiModels: true,
             collectionCompanies: true,
+            news: true,
+            videos: true,
           },
         },
       },
@@ -253,13 +295,10 @@ export class CompaniesService {
     }
 
     /*
-     * These entities don't have direct Prisma relations
-     * with Company, so we match them using the existing
-     * string fields in the database.
+     * Robots, devices, and repositories don't have direct Prisma relations
+     * with Company, so we match them using existing string fields.
      */
-
     const [robots, devices, repositories] = await Promise.all([
-      // Robots → Robot.company matches Company.name
       this.prisma.robot.findMany({
         where: {
           company: {
@@ -269,18 +308,15 @@ export class CompaniesService {
         },
       }),
 
-      // Devices → Device.manufacturer matches Company.name
       this.prisma.device.findMany({
         where: {
           manufacturer: {
             equals: company.name,
-          mode: 'insensitive',
+            mode: 'insensitive',
           },
         },
       }),
 
-      // Repositories → Repository.owner matches Company.slug
-      // GitHub owners are generally stored as slugs/usernames.
       this.prisma.repository.findMany({
         where: {
           owner: {
@@ -293,16 +329,11 @@ export class CompaniesService {
 
     return {
       ...company,
-
       robots,
       devices,
       repositories,
-
       valuation:
-        company.valuation !== null
-          ? company.valuation.toString()
-          : null,
-
+        company.valuation !== null ? company.valuation.toString() : null,
       fundingRaised:
         company.fundingRaised !== null
           ? company.fundingRaised.toString()

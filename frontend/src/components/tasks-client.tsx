@@ -94,15 +94,7 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    if (!container) return;
-    const activeKey = activeCategory || "all";
-    const target = subCatRefs.current[activeKey];
-    if (!target) return;
 
-    scrollChipIntoView(container, target);
-  }, [activeCategory]);
 
   const currentPage = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
   const [pageSize, setPageSize] = useState<number>(100);

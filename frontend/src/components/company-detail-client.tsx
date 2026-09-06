@@ -56,6 +56,65 @@ function formatJoinedDate(value: string | Date | null | undefined): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function formatVideoDuration(seconds: number | null | undefined): string {
+  if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds < 0) return "—";
+  const total = Math.floor(seconds);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  }
+
+  return `${minutes}:${secs.toString().padStart(2, "0")}`;
+}
+
+function formatVideoViews(views: number | null | undefined): string {
+  if (typeof views !== "number" || !Number.isFinite(views)) return "—";
+  if (views >= 1_000_000_000) return `${(views / 1_000_000_000).toFixed(1)}B`;
+  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
+  if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`;
+  return views.toLocaleString();
+}
+
+function formatVideoDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatToolViews(views: number | null | undefined): string {
+  if (typeof views !== "number" || !Number.isFinite(views)) return "—";
+  if (views >= 1_000_000_000) return `${(views / 1_000_000_000).toFixed(1)}B`;
+  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
+  if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`;
+  return views.toLocaleString();
+}
+
+function formatToolTargetUser(value: string): string {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function formatToolDate(value: string | Date | null | undefined): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric",
+  });
+}
+
 const formatRobotTag = (value: string) =>
   value
     .toLowerCase()
@@ -63,6 +122,23 @@ const formatRobotTag = (value: string) =>
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
 type TabType = 'tools' | 'models' | 'devices' | 'repositories' | 'robots' | 'news' | 'videos' | 'fundraises' | 'investments';
+
+function formatModelDate(value: string | null | undefined): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
+function formatModelValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "";
+  if (Array.isArray(value)) return value.filter(Boolean).map(String).join(", ");
+  return String(value);
+}
+
+function formatModelLabel(value: unknown): string {
+  return formatModelValue(value).replace(/_/g, " ").replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
 export function CompanyDetailClient() {
   const params = useParams();
@@ -169,6 +245,8 @@ export function CompanyDetailClient() {
 
   const toolsCount = company.tools?.length || company._count?.tools || 0;
   const modelsCount = company.aiModels?.length || company._count?.aiModels || 0;
+  const companyVideos = ((company as any).videos || []) as any[];
+  const videosCount = companyVideos.length || (company as any)._count?.videos || 0;
   const firstTool = company.tools && company.tools.length > 0 ? company.tools[0] : null;
   const sectorName = company.sector || (firstTool as any)?.category || (firstTool as any)?.tags?.[0] || "Artificial Intelligence";
   const companyDesc = company.description || (firstTool as any)?.description || `${cleanName} is an artificial intelligence entity building software solutions.`;
@@ -186,7 +264,7 @@ export function CompanyDetailClient() {
   { id: 'repositories', label: 'Repositories', count: company.repositories?.length || 0, icon: <Code size={13} /> },
   { id: 'robots', label: 'Robots', count: company.robots?.length || 0, icon: <Briefcase size={13} /> },
     { id: 'news', label: 'News', count: 0, icon: <Newspaper size={13} /> },
-    { id: 'videos', label: 'Videos', count: 0, icon: <Video size={13} /> },
+    { id: 'videos', label: 'Videos', count: videosCount, icon: <Video size={13} /> },
     { id: 'fundraises', label: 'Fundraises', count: 0, icon: <DollarSign size={13} /> },
     { id: 'investments', label: 'Investments', count: 0, icon: <Award size={13} /> },
   ];
@@ -457,49 +535,217 @@ className="text-white text-xs font-bold bg-[#1C1C20] border border-[#2B2B30] px-
               {activeTab === 'tools' && (
                 <div>
                   <div className="flex items-center justify-between gap-4 mb-3 sm:mb-4">
-                    <h2 className="text-xl sm:text-2xl font-extrabold text-white">Tools ({toolsCount})</h2>
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+                      Tools ({toolsCount})
+                    </h2>
                   </div>
+
                   {company.tools && company.tools.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                      {company.tools.map((tool) => (
-                        <Link key={tool.id} href={`/p/tools/${tool.slug}`} className="block group no-underline">
-                          <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-4 hover:border-[#6E56CF]/50 hover:bg-[#111116] transition-all h-full">
-                            <div className="flex items-start gap-3">
-                              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-[#18181C] border border-[#26262B] flex items-center justify-center overflow-hidden shrink-0 p-1.5">
-                                {tool.logoUrl ? (
-                                  <img src={tool.logoUrl} alt={tool.name} className="object-cover w-full h-full rounded-lg" />
-                                ) : (
-                                  <span className="text-white font-black text-lg">{tool.name.charAt(0)}</span>
-                                )}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between gap-2 mb-1.5">
-  <div className="flex items-center gap-2 min-w-0">
-    <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#A78BFA] transition-colors truncate">
-      {tool.name}
-    </h3>
-    <ExternalLink size={13} className="text-[#52525B] shrink-0" />
-  </div>
+                      {company.tools.map((tool) => {
+                        const toolData = tool as any;
 
-  <span
-    className={`inline-flex shrink-0 text-[10px] font-bold px-2 py-1 rounded border ${
-      (tool.pricingModel || "").toLowerCase().includes("paid")
-        ? "text-[#F5C84C] bg-[#F5C84C]/10 border-[#F5C84C]/30"
-        : "text-emerald-400 bg-emerald-400/10 border-emerald-400/30"
-    }`}
-  >
-    {tool.pricingModel || "Freemium"}
-  </span>
-</div>
-                                
-                                <p className="text-xs text-[#8A8F98] leading-relaxed mt-2 line-clamp-3">
-                                  {tool.description || "AI solution listed on AIOrbit."}
+                        const dbTags = Array.isArray(toolData.tags)
+                          ? toolData.tags
+                              .map((item: any) =>
+                                item?.tag?.name ||
+                                item?.tag?.slug ||
+                                item?.name ||
+                                item?.slug
+                              )
+                              .filter(Boolean)
+                          : [];
+
+                        const useCaseTags = Array.isArray(toolData.useCases)
+                          ? toolData.useCases
+                              .map((useCase: any) =>
+                                typeof useCase === "string"
+                                  ? useCase
+                                  : useCase?.name ||
+                                    useCase?.label ||
+                                    useCase?.title
+                              )
+                              .filter(Boolean)
+                          : [];
+
+                        const taskTags = Array.isArray(toolData.ttasks)
+                          ? toolData.ttasks
+                              .map((taskItem: any) => {
+                                const task = taskItem?.task || taskItem;
+                                return task?.title || task?.name || task?.slug || null;
+                              })
+                              .filter(Boolean)
+                          : [];
+
+                        const toolTags = Array.from(
+                          new Set([...dbTags, ...useCaseTags, ...taskTags])
+                        ).slice(0, 6);
+
+                        const targetUsers = Array.isArray(toolData.targetUsers)
+                          ? toolData.targetUsers.filter(Boolean).slice(0, 3)
+                          : [];
+
+                        const reviewCount = toolData._count?.reviews || 0;
+
+                        const pricingLabel = toolData.pricingModel || "Freemium";
+                        const pricingLower = pricingLabel.toLowerCase();
+                        const pricingIsPaid =
+                          pricingLower.includes("paid") ||
+                          pricingLower.includes("subscription");
+
+                        const toolDate =
+                          toolData.releaseDate || toolData.launchDate;
+
+                        return (
+                          <Link
+                            key={tool.id}
+                            href={`/p/tools/${tool.slug}`}
+                            className="block group no-underline"
+                          >
+                            <div className="relative overflow-hidden bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-4 sm:p-5 hover:border-[#6E56CF]/50 hover:bg-[#111116] transition-all h-full">
+                              <div className="absolute -top-20 -right-20 w-36 h-36 rounded-full bg-[#6E56CF]/5 blur-3xl pointer-events-none" />
+
+                              <div className="relative">
+                                {/* Header */}
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-12 h-12 rounded-xl bg-[#18181C] border border-[#26262B] flex items-center justify-center overflow-hidden shrink-0 p-1.5">
+                                      {tool.logoUrl ? (
+                                        <img
+                                          src={tool.logoUrl}
+                                          alt={tool.name}
+                                          className="object-cover w-full h-full rounded-lg"
+                                        />
+                                      ) : (
+                                        <span className="text-white font-black text-lg">
+                                          {tool.name.charAt(0)}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-1.5 min-w-0">
+                                        <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#A78BFA] transition-colors truncate">
+                                          {tool.name}
+                                        </h3>
+                                        <ExternalLink
+                                          size={12}
+                                          className="text-[#52525B] shrink-0"
+                                        />
+                                      </div>
+
+                                      <div className="flex items-center gap-2 mt-1">
+                                        {toolData.verified && (
+                                          <span className="text-[9px] font-semibold text-[#A78BFA]">
+                                            Verified
+                                          </span>
+                                        )}
+                                        {toolData.isTrending && (
+                                          <span className="text-[9px] font-semibold text-[#F5C84C]">
+                                            Trending
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <span
+                                    className={`inline-flex shrink-0 text-[10px] font-bold px-2 py-1 rounded-md border ${
+                                      pricingIsPaid
+                                        ? "text-[#F5C84C] bg-[#F5C84C]/10 border-[#F5C84C]/30"
+                                        : "text-emerald-400 bg-emerald-400/10 border-emerald-400/30"
+                                    }`}
+                                  >
+                                    {pricingLabel}
+                                  </span>
+                                </div>
+
+                                {/* Short description */}
+                                <p className="text-xs text-[#8A8F98] leading-5 line-clamp-2 min-h-[40px] mt-4">
+                                  {toolData.description || "AI solution listed on AIOrbit."}
                                 </p>
+
+                                {/* Tags / use cases / tasks */}
+                                {toolTags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 mt-3">
+                                    {toolTags.map((tag: string) => (
+                                      <span
+                                        key={tag}
+                                        className="inline-flex items-center rounded-full border border-[#29292F] bg-[#15151A] px-2 py-1 text-[9px] font-semibold text-[#A1A1AA]"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Target users */}
+                                {targetUsers.length > 0 && (
+                                  <div className="flex flex-wrap items-center gap-1.5 mt-3">
+                                    <span className="text-[9px] uppercase tracking-[0.08em] text-[#52525B]">
+                                      For
+                                    </span>
+                                    {targetUsers.map((userType: string) => (
+                                      <span
+                                        key={userType}
+                                        className="inline-flex items-center rounded-full bg-[#18181C] border border-[#29292F] px-2 py-1 text-[9px] font-medium text-[#A1A1AA]"
+                                      >
+                                        {formatToolTargetUser(userType)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Bottom metadata */}
+                                <div className="mt-4 pt-3 border-t border-[#1F1F24] flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-3 min-w-0 flex-wrap">
+                                    {toolDate && (
+                                      <span className="text-[10px] text-[#71717A] whitespace-nowrap">
+                                        Released {formatToolDate(toolDate)}
+                                      </span>
+                                    )}
+
+                                    {typeof toolData.avgRating === "number" &&
+                                      Number.isFinite(toolData.avgRating) &&
+                                      toolData.avgRating > 0 && (
+                                        <span className="inline-flex items-center gap-1 text-[10px] text-[#A1A1AA] whitespace-nowrap">
+                                          <span className="text-[#F5C84C]">★</span>
+                                          {toolData.avgRating.toFixed(1)}
+                                          {reviewCount > 0
+                                            ? ` · ${reviewCount} reviews`
+                                            : ""}
+                                        </span>
+                                      )}
+
+                                    {typeof toolData.views === "number" &&
+                                      Number.isFinite(toolData.views) &&
+                                      toolData.views > 0 && (
+                                        <span className="text-[10px] text-[#71717A] whitespace-nowrap">
+                                          {formatToolViews(toolData.views)} views
+                                        </span>
+                                      )}
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    {toolData.hasApi && (
+                                      <span className="text-[9px] font-bold text-[#A78BFA] bg-[#6E56CF]/10 border border-[#6E56CF]/25 px-1.5 py-0.5 rounded">
+                                        API
+                                      </span>
+                                    )}
+
+                                    {toolData.isOpenSource && (
+                                      <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/25 px-1.5 py-0.5 rounded">
+                                        Open Source
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </Link>
-                      ))}
+                          </Link>
+                        );
+                      })}
+
                     </div>
                   ) : (
                     <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-8 sm:p-12 text-center text-[#71717A] text-xs sm:text-sm">
@@ -512,35 +758,68 @@ className="text-white text-xs font-bold bg-[#1C1C20] border border-[#2B2B30] px-
               {activeTab === 'models' && (
                 <div>
                   <h2 className="text-xl sm:text-2xl font-extrabold text-white mb-4 sm:mb-5">Models ({modelsCount})</h2>
-                  {company.aiModels && company.aiModels.length > 0 ? (
+                  {Array.isArray(company.aiModels) && company.aiModels.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                      {company.aiModels.map((model) => (
-                        <Link key={model.id} href={`/models/${model.slug}`} className="block group no-underline">
-                          <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-4 sm:p-5 hover:border-[#6E56CF]/50 hover:bg-[#111116] transition-all h-full">
-                            <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#A78BFA] transition-colors mb-2">{model.name}</h3>
-                            <p className="text-xs text-[#8A8F98] leading-relaxed mb-3 line-clamp-2">
-                              {model.description || "AI model listed on AIOrbit."}
-                            </p>
-                            <div className="flex items-center gap-2">
-                              {model.modality && (
-                                <span className="text-[10px] font-semibold text-[#A1A1AA] bg-[#1A1A1E] px-2 py-0.5 rounded border border-[#28282E]">
-                                  {model.modality}
-                                </span>
+                      {company.aiModels.map((model: any) => {
+                        const m = model as any;
+                        const capabilities = Array.isArray(m.capabilities) ? m.capabilities.filter(Boolean).map(String).slice(0, 4) : [];
+                        const releaseDate = formatModelDate(m.releaseDate);
+                        const modelType = formatModelLabel(m.modelType);
+                        const primaryTask = formatModelLabel(m.primaryTask);
+                        const modality = formatModelLabel(m.modality);
+                        const parameterSize = formatModelValue(m.parameterSize);
+                        const contextWindow = formatModelValue(m.contextWindow);
+                        const hasApi = m.apiAvailable === true || m.hasApi === true;
+                        const isOpenSource = m.openSource === true;
+
+                        return (
+                          <Link key={m.id} href={m.slug ? `/models/${m.slug}` : "#"} className={`block group no-underline${m.slug ? "" : " pointer-events-none"}`}>
+                            <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-4 sm:p-5 hover:border-[#6E56CF]/50 hover:bg-[#111116] transition-all h-full flex flex-col">
+                              <div className="flex items-start justify-between gap-3 mb-2">
+                                <div className="min-w-0">
+                                  <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#A78BFA] transition-colors truncate">{m.name}</h3>
+                                  <p className="text-[10px] text-[#71717A] mt-1">{cleanName}</p>
+                                </div>
+                                <ExternalLink className="w-3.5 h-3.5 text-[#52525B] group-hover:text-[#A78BFA] shrink-0 mt-0.5" />
+                              </div>
+
+                              <p className="text-xs text-[#8A8F98] leading-relaxed mb-3 line-clamp-2 min-h-[34px]">{m.description || "AI model listed on AIOrbit."}</p>
+
+                              {(modelType || primaryTask || modality) && (
+                                <div className="flex flex-wrap gap-1.5 mb-3">
+                                  {modelType && <span className="text-[9px] font-semibold text-[#C4B5FD] bg-[#6E56CF]/10 border border-[#6E56CF]/20 px-2 py-1 rounded-md">{modelType}</span>}
+                                  {primaryTask && <span className="text-[9px] font-semibold text-[#A1A1AA] bg-[#1A1A1E] border border-[#28282E] px-2 py-1 rounded-md">{primaryTask}</span>}
+                                  {modality && <span className="text-[9px] font-semibold text-[#A1A1AA] bg-[#1A1A1E] border border-[#28282E] px-2 py-1 rounded-md">{modality}</span>}
+                                </div>
                               )}
-                              {model.parameterSize && (
-                                <span className="text-[10px] font-semibold text-[#A1A1AA] bg-[#1A1A1E] px-2 py-0.5 rounded border border-[#28282E]">
-                                  {model.parameterSize}
-                                </span>
+
+                              {(parameterSize || contextWindow) && (
+                                <div className="grid grid-cols-2 gap-2 mb-3">
+                                  {parameterSize && <div className="rounded-lg bg-[#111116] border border-[#202026] px-2.5 py-2"><p className="text-[8px] uppercase tracking-wider text-[#52525B]">Parameters</p><p className="text-[10px] font-semibold text-[#D4D4D8] mt-0.5 truncate">{parameterSize}</p></div>}
+                                  {contextWindow && <div className="rounded-lg bg-[#111116] border border-[#202026] px-2.5 py-2"><p className="text-[8px] uppercase tracking-wider text-[#52525B]">Context</p><p className="text-[10px] font-semibold text-[#D4D4D8] mt-0.5 truncate">{contextWindow}</p></div>}
+                                </div>
                               )}
+
+                              {capabilities.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 mb-3">
+                                  {capabilities.map((capability: string) => <span key={capability} className="text-[9px] text-[#A1A1AA] bg-[#17171C] border border-[#26262C] px-1.5 py-0.5 rounded">{formatModelLabel(capability)}</span>)}
+                                </div>
+                              )}
+
+                              <div className="mt-auto pt-3 border-t border-[#1B1B20] flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">{releaseDate && <span className="text-[9px] text-[#71717A]">Released {releaseDate}</span>}</div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  {hasApi && <span className="text-[9px] font-semibold text-[#A1A1AA] bg-[#1A1A1E] border border-[#28282E] px-1.5 py-0.5 rounded">API</span>}
+                                  {isOpenSource && <span className="text-[9px] font-semibold text-[#A1A1AA] bg-[#1A1A1E] border border-[#28282E] px-1.5 py-0.5 rounded">Open Source</span>}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </Link>
-                      ))}
+                          </Link>
+                        );
+                      })}
                     </div>
                   ) : (
-                    <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-8 sm:p-12 text-center text-[#71717A] text-xs sm:text-sm">
-                      No foundation models listed yet for {cleanName}.
-                    </div>
+                    <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-8 sm:p-12 text-center text-[#71717A] text-xs sm:text-sm">No foundation models listed yet for {cleanName}.</div>
                   )}
                 </div>
               )}
@@ -614,48 +893,113 @@ className="text-white text-xs font-bold bg-[#1C1C20] border border-[#2B2B30] px-
 
     {company.repositories && company.repositories.length > 0 ? (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {company.repositories.map((repo: any) => (
-          <a
-            key={repo.id}
-            href={repo.url || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block group no-underline"
-          >
-            <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-4 hover:border-[#6E56CF]/50 hover:bg-[#111116] transition-all h-full">
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#A78BFA] transition-colors truncate">
-                  {repo.name}
-                </h3>
+        {company.repositories.map((repo: any) => {
+          const repoTopics = Array.isArray(repo.topics)
+            ? repo.topics
+                .map((topic: any) =>
+                  typeof topic === "string"
+                    ? topic
+                    : topic?.name || topic?.label || topic?.slug
+                )
+                .filter(Boolean)
+                .slice(0, 6)
+            : [];
 
-                <ExternalLink
-                  size={13}
-                  className="text-[#52525B] shrink-0"
-                />
-              </div>
+          const stars =
+            typeof repo.stars === "number" && Number.isFinite(repo.stars)
+              ? repo.stars
+              : null;
 
-              {repo.description && (
-                <p className="text-xs text-[#8A8F98] leading-relaxed mb-3 line-clamp-3">
-                  {repo.description}
-                </p>
-              )}
+          const forks =
+            typeof repo.forks === "number" && Number.isFinite(repo.forks)
+              ? repo.forks
+              : null;
 
-              <div className="flex flex-wrap items-center gap-2">
-                {repo.language && (
-                  <span className="text-[10px] font-semibold text-[#A1A1AA] bg-[#1A1A1E] px-2 py-1 rounded border border-[#28282E]">
-                    {repo.language}
-                  </span>
+          const language = repo.language || null;
+          const license = repo.license || repo.licenseName || null;
+
+          const formatCount = (value: number) => {
+            if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+            if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+            return value.toLocaleString();
+          };
+
+          return (
+            <Link
+              key={repo.id}
+              href={
+                repo.slug
+                  ? `/repositories/${repo.slug}`
+                  : `/repositories/${repo.id}`
+              }
+              className="block group no-underline"
+            >
+              <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-4 sm:p-5 hover:border-[#6E56CF]/50 hover:bg-[#111116] transition-all h-full flex flex-col">
+                {/* Name */}
+                <div className="mb-2">
+                  <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#A78BFA] transition-colors truncate">
+                    {repo.name}
+                  </h3>
+                </div>
+
+                {/* Description */}
+                {repo.description && (
+                  <p className="text-xs text-[#8A8F98] leading-relaxed mb-4 line-clamp-2">
+                    {repo.description}
+                  </p>
                 )}
 
-                {typeof repo.stars === 'number' && (
-                  <span className="text-[10px] font-semibold text-[#A1A1AA] bg-[#1A1A1E] px-2 py-1 rounded border border-[#28282E]">
-                    ★ {repo.stars.toLocaleString()}
-                  </span>
+                {/* Language / stars / forks */}
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  {language && (
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#A78BFA] bg-[#6E56CF]/10 border border-[#6E56CF]/25 px-2 py-1 rounded-md">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#A78BFA]" />
+                      {language}
+                    </span>
+                  )}
+
+                  {stars !== null && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#F5C84C] bg-[#F5C84C]/10 border border-[#F5C84C]/25 px-2 py-1 rounded-md">
+                      <span>★</span>
+                      {formatCount(stars)}
+                    </span>
+                  )}
+
+                  {forks !== null && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/25 px-2 py-1 rounded-md">
+                      <span>⑂</span>
+                      {formatCount(forks)}
+                    </span>
+                  )}
+                </div>
+
+                {/* Topics */}
+                {repoTopics.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {repoTopics.map((topic: string) => (
+                      <span
+                        key={topic}
+                        className="inline-flex items-center rounded-full border border-[#29292F] bg-[#15151A] px-2 py-1 text-[9px] font-semibold text-[#A1A1AA]"
+                      >
+                        {topic}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* License */}
+                {license && (
+                  <div className="mt-auto pt-3 border-t border-[#1F1F24]">
+                    <span className="text-[10px] font-semibold text-[#71717A]">
+                      License:{" "}
+                      <span className="text-[#D4D4D8]">{license}</span>
+                    </span>
+                  </div>
                 )}
               </div>
-            </div>
-          </a>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     ) : (
       <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-8 sm:p-12 text-center text-[#71717A] text-xs sm:text-sm">
@@ -751,11 +1095,205 @@ className="text-white text-xs font-bold bg-[#1C1C20] border border-[#2B2B30] px-
 )}
 
 {activeTab === 'videos' && (
-  <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-8 sm:p-12 text-center text-[#71717A] text-xs sm:text-sm">
-    <p className="font-semibold text-white mb-1">No videos listed yet</p>
-    <p className="text-xs text-[#52525B]">
-      There are currently no public videos indexed for {cleanName}.
-    </p>
+  <div>
+    <div className="flex items-center justify-between gap-4 mb-3 sm:mb-4">
+      <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+        Videos ({videosCount})
+      </h2>
+    </div>
+
+    {companyVideos.length > 0 ? (
+      <div className="w-full overflow-x-auto rounded-2xl border border-[#1F1F24] bg-[#0D0D10]">
+        <div className="min-w-[1080px]">
+          <div className="grid grid-cols-[minmax(390px,2.4fr)_125px_95px_75px_105px_135px_minmax(180px,1fr)_76px] items-center gap-4 px-5 py-3 border-b border-[#1F1F24] text-[10px] sm:text-[11px] font-bold uppercase tracking-wide text-white">
+            <div>Name</div>
+            <div>Posted <span className="text-[#52525B]">⌄</span></div>
+            <div>Duration</div>
+            <div>Views</div>
+            <div>Level</div>
+            <div>CATEGORY</div>
+            <div>CHANNEL</div>
+            <div className="text-right">Actions</div>
+          </div>
+
+          <div>
+            {companyVideos.map((video: any) => {
+              const videoUrl = video.youtubeId
+                ? `https://www.youtube.com/watch?v=${video.youtubeId}`
+                : video.url || "#";
+
+              const categoryStyles: Record<string, { color: string; backgroundColor: string; borderColor: string }> = {
+                "generative ai": { color: "#D8CCFF", backgroundColor: "rgba(110, 86, 207, 0.28)", borderColor: "rgba(139, 117, 232, 0.55)" },
+                "developer tools": { color: "#C4E2FF", backgroundColor: "rgba(72, 126, 176, 0.28)", borderColor: "rgba(111, 166, 208, 0.55)" },
+                "productivity": { color: "#FFE3A3", backgroundColor: "rgba(181, 138, 58, 0.28)", borderColor: "rgba(196, 154, 74, 0.55)" },
+                "marketing": { color: "#F0C7F4", backgroundColor: "rgba(154, 94, 172, 0.28)", borderColor: "rgba(184, 120, 196, 0.55)" },
+                "design": { color: "#D2DDF2", backgroundColor: "rgba(113, 134, 170, 0.28)", borderColor: "rgba(143, 164, 201, 0.55)" },
+                "education": { color: "#D0E9C8", backgroundColor: "rgba(95, 138, 88, 0.28)", borderColor: "rgba(121, 169, 111, 0.55)" },
+                "business": { color: "#E7D0C1", backgroundColor: "rgba(145, 107, 88, 0.30)", borderColor: "rgba(177, 136, 112, 0.55)" },
+                "research": { color: "#D2DCEB", backgroundColor: "rgba(101, 116, 138, 0.28)", borderColor: "rgba(132, 149, 178, 0.55)" },
+              };
+
+              const category = video.toolCategory
+                ? String(video.toolCategory)
+                    .replace(/[-_]/g, " ")
+                    .replace(/\b\w/g, (char: string) => char.toUpperCase())
+                    .trim()
+                : "—";
+
+              const categoryStyle =
+                categoryStyles[category.toLowerCase()] || {
+                  color: "#D4D4D8",
+                  backgroundColor: "rgba(82, 82, 91, 0.22)",
+                  borderColor: "rgba(113, 113, 122, 0.45)",
+                };
+
+              const level = video.level || video.difficulty || "—";
+
+              return (
+                <div
+                  key={video.id}
+                  className="grid grid-cols-[minmax(390px,2.4fr)_125px_95px_75px_105px_135px_minmax(180px,1fr)_76px] items-center gap-4 px-5 py-3.5 border-b border-[#17171B] last:border-b-0 hover:bg-[#111116] transition-colors"
+                >
+                  <a
+                    href={videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="min-w-0 flex items-center gap-3 group no-underline"
+                  >
+                    <div className="relative w-[126px] h-[70px] rounded-lg overflow-hidden bg-[#18181C] border border-[#26262B] shrink-0">
+                      {video.thumbnail ? (
+                        <img
+                          src={video.thumbnail}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Video size={18} className="text-[#52525B]" />
+                        </div>
+                      )}
+
+                      {video.durationSeconds ? (
+                        <span className="absolute bottom-1 right-1 rounded bg-black/85 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                          {formatVideoDuration(video.durationSeconds)}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-bold text-white group-hover:text-[#A78BFA] transition-colors line-clamp-2">
+                          {video.title || "Untitled video"}
+                        </span>
+                        <ExternalLink size={12} className="text-[#52525B] shrink-0" />
+                      </div>
+                    </div>
+                  </a>
+
+                  <div className="text-xs text-[#A1A1AA] whitespace-nowrap">
+                    {formatVideoDate(video.publishedAt)}
+                  </div>
+
+                  <div className="text-xs text-[#A1A1AA] tabular-nums whitespace-nowrap">
+                    {formatVideoDuration(video.durationSeconds)}
+                  </div>
+
+                  <div className="text-xs text-[#A1A1AA] tabular-nums whitespace-nowrap">
+                    {formatVideoViews(video.views)}
+                  </div>
+
+                  <div className="text-xs text-[#A1A1AA] whitespace-nowrap">
+                    {level}
+                  </div>
+
+                  <div className="min-w-0">
+                    <span
+                      className="inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold truncate"
+                      style={{
+                        color: categoryStyle.color,
+                        backgroundColor: categoryStyle.backgroundColor,
+                        borderColor: categoryStyle.borderColor,
+                      }}
+                    >
+                      {category}
+                    </span>
+                  </div>
+
+                  <a
+                    href={videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="min-w-0 flex items-center gap-2 group/channel no-underline"
+                  >
+                    {video.authorAvatar ? (
+                      <img
+                        src={video.authorAvatar}
+                        alt=""
+                        className="w-7 h-7 rounded-full object-cover border border-[#29292F] shrink-0"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-[#1C1C20] border border-[#29292F] flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                        {(video.authorName || "?").charAt(0)}
+                      </div>
+                    )}
+                    <span className="text-xs font-semibold text-white truncate group-hover/channel:text-[#A78BFA] transition-colors">
+                      {video.authorName || "Unknown channel"}
+                    </span>
+                    <ExternalLink size={11} className="text-[#52525B] shrink-0" />
+                  </a>
+
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (navigator.clipboard) {
+                          navigator.clipboard.writeText(videoUrl);
+                          toast.success("Video link copied to clipboard!");
+                        }
+                      }}
+                      className="h-9 w-9 rounded-xl bg-[#1A1A1E] border border-[#2A2A30] text-[#A1A1AA] hover:text-white hover:bg-[#222228] flex items-center justify-center transition-colors cursor-pointer"
+                      title="Share video"
+                    >
+                      <Share2 size={14} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          toast.error("Sign in required to bookmark videos", {
+                            description: "Please sign in or create an account to save videos.",
+                            action: {
+                              label: "Sign In",
+                              onClick: () => router.push("/auth/signin"),
+                            },
+                            duration: 5000,
+                          });
+                          return;
+                        }
+
+                        toast.success("Video saved to bookmarks");
+                      }}
+                      className="h-9 w-9 rounded-xl bg-[#1A1A1E] border border-[#2A2A30] text-[#A1A1AA] hover:text-white hover:bg-[#222228] flex items-center justify-center transition-colors cursor-pointer"
+                      title="Bookmark video"
+                    >
+                      <Bookmark size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div className="bg-[#0D0D10] border border-[#1F1F24] rounded-2xl p-8 sm:p-12 text-center text-[#71717A] text-xs sm:text-sm">
+        <p className="font-semibold text-white mb-1">No videos listed yet</p>
+        <p className="text-xs text-[#52525B]">
+          There are currently no public videos indexed for {cleanName}.
+        </p>
+      </div>
+    )}
   </div>
 )}
 

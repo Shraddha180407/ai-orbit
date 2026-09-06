@@ -1,7 +1,8 @@
 import type { Video } from "./video-types";
-import { cachedFetchJson } from "./api-cache";
+import { cachedFetchJson, getFromCache, prefetchUrl, setInCache } from "./api-cache";
 
 export type { Video };
+export { getFromCache, setInCache, prefetchUrl };
 export { BLUR_DATA_URL, formatDuration, formatViews, formatRelativeDate } from "./video-types";
 
 function resolveApiUrl(): string {
@@ -19,7 +20,7 @@ function resolveApiUrl(): string {
   return "https://ai-orbit.palamrendra-pm.workers.dev";
 }
 
-const API_URL = resolveApiUrl();
+export const API_URL = resolveApiUrl();
 
 async function fetchJson<T>(path: string): Promise<T | null> {
   return cachedFetchJson<T | null>(`${API_URL}${path}`, null, { ttlMs: 15 * 60 * 1000 });
@@ -27,6 +28,57 @@ async function fetchJson<T>(path: string): Promise<T | null> {
 
 export type VideoSortBy = "name" | "duration" | "posted" | "views";
 export type VideoSortDir = "asc" | "desc";
+
+export function buildVideosPageUrl(
+  limit: number,
+  offset: number,
+  category?: string,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): string {
+  const params = new URLSearchParams({ sort: "latest", limit: String(limit), offset: String(offset) });
+  if (category) params.set("category", category);
+  if (sortBy) params.set("sortBy", sortBy);
+  if (sortDir) params.set("sortDir", sortDir);
+  return `${API_URL}/api/videos?${params.toString()}`;
+}
+
+export function buildVideosCountUrl(category?: string): string {
+  const params = new URLSearchParams();
+  if (category) params.set("category", category);
+  const qs = params.toString();
+  return `${API_URL}/api/videos/count${qs ? `?${qs}` : ""}`;
+}
+
+export function getCachedVideosPage(
+  limit: number,
+  offset: number,
+  category?: string,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): Video[] | null {
+  const url = buildVideosPageUrl(limit, offset, category, sortBy, sortDir);
+  return getFromCache<Video[]>(url);
+}
+
+export function getCachedVideosCount(category?: string): number | null {
+  const url = buildVideosCountUrl(category);
+  const cached = getFromCache<{ total: number }>(url);
+  return cached?.total ?? null;
+}
+
+export function prefetchVideosCategory(
+  category?: string,
+  limit = 100,
+  offset = 0,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): void {
+  const pageUrl = buildVideosPageUrl(limit, offset, category, sortBy, sortDir);
+  const countUrl = buildVideosCountUrl(category);
+  prefetchUrl(pageUrl, 15 * 60 * 1000);
+  prefetchUrl(countUrl, 15 * 60 * 1000);
+}
 
 export async function getTrendingVideos(limit = 4): Promise<Video[]> {
   return (await fetchJson<Video[]>(`/api/videos?sort=trending&limit=${limit}`)) ?? [];

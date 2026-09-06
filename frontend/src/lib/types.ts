@@ -237,6 +237,17 @@ export type ModelType =
   | "THREE_D"
   | "STRUCTURED_DATA";
 
+export const MODEL_TYPE_OPTIONS: ModelType[] = [
+  "TEXT",
+  "IMAGE",
+  "VIDEO",
+  "MULTIMODAL",
+  "AUDIO",
+  "CODE",
+  "THREE_D",
+  "STRUCTURED_DATA",
+];
+
 const MODEL_TYPE_LABELS: Record<ModelType, string> = {
   TEXT: "Text",
   IMAGE: "Image",

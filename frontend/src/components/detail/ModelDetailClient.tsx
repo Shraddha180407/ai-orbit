@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
 import ArrowRight from "lucide-react/dist/esm/icons/arrow-right";
@@ -17,18 +17,12 @@ import Share2 from "lucide-react/dist/esm/icons/share-2";
 import PlayCircle from "lucide-react/dist/esm/icons/play-circle";
 import Wrench from "lucide-react/dist/esm/icons/wrench";
 import { toast } from "sonner";
-import { fetchModelById, API_URL, getFromCache } from "@/lib/api";
+import { fetchModelById } from "@/lib/api";
 import { isModelBookmarked, toggleModelBookmark } from "@/lib/model-bookmarks";
 import { CategoryChip } from "@/components/CategoryChip";
+import { MOCK_MODELS_BY_ID } from "@/lib/mock/models";
+import { formatModelType } from "@/lib/types";
 import type { ModelDetail, AIModel } from "@/lib/types";
-
-function formatModelType(value?: string | null) {
-  if (!value) return "";
-  return value
-    .replace(/[_-]+/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
 
 function cleanValue(value?: string | null) {
   const normalized = value?.trim();
@@ -145,7 +139,7 @@ function SectionTitle({ title, count }: { title: string; count?: number }) {
 
 function RelatedCard({ model }: { model: AIModel }) {
   const company = model.provider?.name || model.creator || "Unknown provider";
-  const detail = model.modality || model.type || "General";
+  const detail = formatModelType(model.modelType) || model.modality || "General";
   return (
     <Link
       href={`/models/${model.id}`}
@@ -269,23 +263,25 @@ function MissingState({ retry, retrying }: { retry: () => void; retrying: boolea
 export function ModelDetailClient() {
   const params = useParams();
   const id = (params?.id || params?.slug) as string;
+  const mockModel = id ? MOCK_MODELS_BY_ID[id] : undefined;
 
   const {
-    data: model = null,
-    isLoading,
+    data: apiModel = null,
+    isLoading: apiLoading,
     isError,
     isFetching,
     refetch,
   } = useQuery<ModelDetail | null>({
     queryKey: ["model-detail", id],
     queryFn: () => fetchModelById(id),
-    initialData: () => {
-      if (!id) return undefined;
-      return getFromCache<ModelDetail>(`${API_URL}/api/v1/models/${encodeURIComponent(id)}`) || undefined;
-    },
     staleTime: 15 * 60 * 1000,
-    enabled: Boolean(id),
+    enabled: Boolean(id) && !mockModel,
   });
+
+  // Keep the first server and browser renders identical. Browser cache data
+  // must not be supplied as initialData here because it causes hydration drift.
+  const model = mockModel ?? apiModel;
+  const isLoading = Boolean(id) && !mockModel && apiLoading;
 
   const [bookmarked, setBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -298,22 +294,38 @@ export function ModelDetailClient() {
 
   if (isLoading && !model) return <LoadingState />;
 
-  if ((isError || !model) && !isLoading) {
+  if (isError && !model && !isLoading) {
     return <MissingState retry={() => void refetch()} retrying={isFetching} />;
   }
 
-  if (!model) return null;
+  if (!model) {
+    notFound();
+    return null;
+  }
 
   const companyName = model.provider?.name || model.creator || "Unknown provider";
-  const modelType = (model as ModelDetail & { modelType?: string | null }).modelType;
-  const typeLabel = formatModelType(modelType) || model.type || model.modality || "Not available";
-  const tasks = (model.tasks ?? []).map((item) => item.task).filter(Boolean);
+  const typeLabel = formatModelType(model.modelType) || model.modality || "Not available";
+  const tasks = (model.tasks ?? [])
+    .map((entry) => entry?.task)
+    .filter(
+      (task): task is { id: string; title: string; slug: string } =>
+        Boolean(task?.id && task?.title && task?.slug)
+    );
   const related = model.relatedModels ?? [];
-  const tags = Array.from(new Set((model.tags ?? []).filter(Boolean)));
+  const subCategories = model.subCategories ?? [];
+  const tags = Array.from(
+    new Set(
+      [
+        ...(model.tags ?? []),
+        ...(model.capabilities ?? []),
+        ...subCategories.map((category) => category.name),
+      ].filter(Boolean)
+    )
+  );
   const benchmarks = model.benchmarks ?? [];
   const detailedDescription = getDetailedDescription(model, companyName);
   const heroCapabilities = (tags.length > 0 ? tags : ["Reasoning", "Mathematics", "Coding", "Science"]).slice(0, 4);
-  const storedWebsiteUrl = (model as ModelDetail & { websiteUrl?: string | null }).websiteUrl?.trim();
+  const storedWebsiteUrl = model.websiteUrl?.trim();
   const modelWebsiteUrl =
     storedWebsiteUrl ||
     (["o1", "openai o1"].includes(model.name.trim().toLowerCase()) ? "https://openai.com/o1/" : null);
