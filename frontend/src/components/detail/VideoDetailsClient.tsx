@@ -9,19 +9,20 @@ import { getVideoBySlug, Video } from "@/lib/videos-data";
 import { API_URL, getFromCache } from "@/lib/api";
 import { getChannelUrl } from "@/lib/video-types";
 
-export function VideoDetailsClient() {
+export function VideoDetailsClient({ initialVideo }: { initialVideo?: Video } = {}) {
   const params = useParams();
-  const slug = params.slug as string;
+  const slug = (params?.slug as string) || initialVideo?.slug;
 
-  const { data: video = null, isLoading: loading, isError } = useQuery<Video | null>({
+  const { data: video = initialVideo || null, isLoading: loading, isError } = useQuery<Video | null>({
     queryKey: ["video-detail", slug],
     queryFn: () => getVideoBySlug(slug),
     initialData: () => {
+      if (initialVideo) return initialVideo;
       if (!slug) return undefined;
       return getFromCache<Video>(`${API_URL}/api/videos/${encodeURIComponent(slug)}`) || undefined;
     },
     staleTime: 15 * 60 * 1000,
-    enabled: Boolean(slug),
+    enabled: Boolean(slug && !initialVideo),
   });
 
   if (isError && !video) {
@@ -30,7 +31,7 @@ export function VideoDetailsClient() {
 
   if (loading && !video) {
     return (
-      <main className="flex h-[100dvh] items-center justify-center overflow-hidden bg-[#050506]">
+      <main className="fixed inset-0 z-[99999] flex items-center justify-center overflow-hidden bg-[#050506] p-3 sm:p-6">
         <div
           className="flex w-[94vw] flex-col rounded-[14px] border border-white/[0.07] bg-[#0d0d10] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.7)] sm:w-[81vw] sm:rounded-[22px]"
           style={{ aspectRatio: "16 / 9" }}
@@ -44,7 +45,7 @@ export function VideoDetailsClient() {
   if (!video) return null;
 
 return (
-<main className="flex h-[100dvh] items-center justify-center overflow-hidden bg-[#050506]">
+<main className="fixed inset-0 z-[99999] flex items-center justify-center overflow-hidden bg-[#050506] p-3 sm:p-6">
 {/*
 Width-first layout: the card's width is a fixed share of the viewport
 (94vw on mobile, 81vw from sm and up) and is never derived from
@@ -82,7 +83,7 @@ className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-whi
 {/* Player — width-bound (94vw mobile / 81vw sm+, from the card), height derives from 16:9 */}
 <div className="px-2 sm:px-4">
 <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
-<VideoPlayer youtubeId={video.youtubeId} title={video.title} />
+<VideoPlayer youtubeId={video.youtubeId} title={video.title} thumbnail={video.thumbnail} />
 </div>
 </div>
 

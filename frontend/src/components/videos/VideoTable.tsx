@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Video, formatDuration, getChannelUrl } from "@/lib/video-types";
-import type { VideoSortBy, VideoSortDir } from "@/lib/videos-data";
+import { API_URL, type VideoSortBy, type VideoSortDir } from "@/lib/videos-data";
+import { setInCache } from "@/lib/api-cache";
 import { ThumbImage } from "./ThumbImage";
 import { VideoSaveButton } from "./VideoSaveButton";
 import { VideoShareButton } from "./VideoShareButton";
@@ -35,9 +36,6 @@ function formatViewsCompact(n: number) {
 return n.toLocaleString("en-US");
 }
 
-// Neutral state: small double-chevron (unsorted). Active state: a single
-// arrow that actually points up (ascending) or down (descending), so the
-// icon reflects real direction instead of always showing both.
 function SortDirectionIcon({ active, dir }: { active: boolean; dir: SortDir }) {
 if (!active) {
 return (
@@ -68,8 +66,6 @@ return (
 );
 }
 
-// Table headers double as sort controls (desktop) — on mobile the table is
-// hidden entirely, so this small pill row is the only way to change sort.
 function MobileSortBar({
 sortBy,
 sortDir,
@@ -119,7 +115,15 @@ className={`shrink-0 transition-transform ${sortDir === "asc" ? "rotate-180" : "
 );
 }
 
-function MobileTable({ videos, onThumbFailed }: { videos: Video[]; onThumbFailed: (id: string) => void }) {
+function MobileTable({
+  videos,
+  onThumbFailed,
+  onVideoSelect,
+}: {
+  videos: Video[];
+  onThumbFailed: (id: string) => void;
+  onVideoSelect?: (video: Video) => void;
+}) {
 return (
 <table className="w-full table-fixed border-collapse sm:hidden">
 <colgroup>
@@ -138,9 +142,23 @@ Posted
 </thead>
 <tbody>
 {videos.map((v) => (
-<tr key={v.id} className="border-b border-white/[0.05] active:bg-bg-hover" style={{ ["--row-accent" as string]: v.accent }}>
+<tr
+  key={v.id}
+  className="border-b border-white/[0.05] active:bg-bg-hover cursor-pointer"
+  style={{ ["--row-accent" as string]: v.accent }}
+  onClick={() => onVideoSelect?.(v)}
+>
 <td className="py-2.5 pr-2">
-<Link href={`/videos/${v.slug}`} className="flex min-w-0 items-center gap-2.5">
+<Link
+  href={`/videos/${v.slug}`}
+  onClick={(e) => {
+    if (!e.ctrlKey && !e.metaKey && !e.shiftKey && onVideoSelect) {
+      e.preventDefault();
+      onVideoSelect(v);
+    }
+  }}
+  className="flex min-w-0 items-center gap-2.5"
+>
 <span className="relative block h-[46px] w-[80px] shrink-0 overflow-hidden rounded-md bg-bg-elevated">
 <ThumbImage
 src={v.thumbnail}
@@ -174,12 +192,24 @@ videos,
 sortBy,
 sortDir,
 onSortChange,
+onVideoSelect,
 }: {
 videos: Video[];
 sortBy: VideoSortBy;
 sortDir: SortDir;
 onSortChange: (key: VideoSortBy) => void;
+onVideoSelect?: (video: Video) => void;
 }) {
+// Seed all visible videos into client cache immediately for 0ms instant playback
+useEffect(() => {
+  if (videos && videos.length > 0) {
+    videos.forEach((v) => {
+      if (v.slug) {
+        setInCache(`${API_URL}/api/videos/${encodeURIComponent(v.slug)}`, v, 30 * 60 * 1000);
+      }
+    });
+  }
+}, [videos]);
 // Every row in this list must show a real thumbnail — if one fails to
 // load, the video is dropped from the list entirely rather than shown
 // with a placeholder (see ThumbImage's onError prop).
@@ -243,7 +273,7 @@ return (
 <MobileSortBar sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
 
 <div className="sm:hidden">
-<MobileTable videos={sorted} onThumbFailed={markThumbFailed} />
+<MobileTable videos={sorted} onThumbFailed={markThumbFailed} onVideoSelect={onVideoSelect} />
 </div>
 
 <div className="hidden overflow-x-auto sm:block">
@@ -303,12 +333,31 @@ Channel
 {sorted.map((v) => (
 <tr
 key={v.id}
-className="group relative border-b border-white/[0.03] transition-all duration-200 ease-out hover:-translate-y-[1px] hover:bg-bg-hover hover:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_8px_24px_rgba(0,0,0,0.18)]"
+onClick={(e) => {
+  const target = e.target as HTMLElement | null;
+  if (target?.closest("a[target='_blank'], button, [role='button']")) {
+    return;
+  }
+  if (!e.ctrlKey && !e.metaKey && !e.shiftKey && onVideoSelect) {
+    e.preventDefault();
+    onVideoSelect(v);
+  }
+}}
+className="group relative border-b border-white/[0.03] transition-all duration-200 ease-out hover:-translate-y-[1px] hover:bg-bg-hover hover:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_8px_24px_rgba(0,0,0,0.18)] cursor-pointer"
 style={{ ["--row-accent" as string]: v.accent }}
 >
 <td className="relative py-[9.6px] pl-4 pr-4">
 <span className="absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--row-accent)] transition-all duration-200 group-hover:h-[70%]" />
-<Link href={`/videos/${v.slug}`} className="flex items-center gap-3.5">
+<Link
+  href={`/videos/${v.slug}`}
+  onClick={(e) => {
+    if (!e.ctrlKey && !e.metaKey && !e.shiftKey && onVideoSelect) {
+      e.preventDefault();
+      onVideoSelect(v);
+    }
+  }}
+  className="flex items-center gap-3.5"
+>
 <span className="relative block h-[48px] w-[85px] shrink-0 overflow-hidden rounded-none bg-bg-elevated transition-transform duration-300 ease-out group-hover:scale-[1.04] group-hover:shadow-[0_0_0_1.5px_var(--row-accent)]">
 <ThumbImage
 src={v.thumbnail}
@@ -400,4 +449,137 @@ strokeLinejoin="round"
 </div>
 </div>
 );
+}
+
+export function VideoTableSkeleton({ rowCount = 8 }: { rowCount?: number }) {
+  const rows = Array.from({ length: rowCount }, (_, i) => i);
+
+  return (
+    <div className="w-full">
+      {/* Mobile Skeleton */}
+      <div className="sm:hidden">
+        <table className="w-full table-fixed border-collapse">
+          <colgroup>
+            <col />
+            <col className="w-[92px]" />
+          </colgroup>
+          <thead>
+            <tr className="border-b border-white/[0.05]">
+              <th className="py-2 pl-0 pr-2 text-left font-mono text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+                Name
+              </th>
+              <th className="py-2 pl-2 pr-0 text-right font-mono text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+                Posted
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((i) => (
+              <tr key={i} className="border-b border-white/[0.04]">
+                <td className="py-2.5 pr-2">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <div className="h-[46px] w-[80px] shrink-0 rounded-md bg-[#18181c] animate-pulse" />
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                      <div
+                        className="h-3.5 rounded bg-[#1e1e24] animate-pulse"
+                        style={{ width: `${65 + ((i * 17) % 30)}%` }}
+                      />
+                      <div className="h-2.5 w-16 rounded bg-[#151518] animate-pulse" />
+                    </div>
+                  </div>
+                </td>
+                <td className="py-2.5 pl-2 text-right">
+                  <div className="ml-auto h-3 w-16 rounded bg-[#18181c] animate-pulse" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Desktop Skeleton */}
+      <div className="hidden overflow-x-auto sm:block">
+        <table className="w-full min-w-[760px] table-fixed border-collapse">
+          <colgroup>
+            <col className="w-[34%]" />
+            <col className="w-[100px]" />
+            <col className="w-[90px]" />
+            <col className="w-[90px]" />
+            <col className="w-[110px]" />
+            <col className="w-[120px]" />
+            <col className="w-[140px]" />
+            <col className="w-20" />
+          </colgroup>
+          <thead>
+            <tr className="border-b border-white/[0.05]">
+              <th className="px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted pl-4">
+                Name
+              </th>
+              <th className="px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+                Posted
+              </th>
+              <th className="px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+                Duration
+              </th>
+              <th className="px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+                Views
+              </th>
+              <th className="px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+                Level
+              </th>
+              <th className="px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+                Category
+              </th>
+              <th className="px-4 py-[9.6px] text-left font-mono text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+                Channel
+              </th>
+              <th className="px-4 py-[9.6px]" aria-hidden="true" />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((i) => (
+              <tr key={i} className="border-b border-white/[0.03]">
+                <td className="py-[9.6px] pl-4 pr-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="h-[48px] w-[85px] shrink-0 rounded bg-[#18181c] animate-pulse" />
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                      <div
+                        className="h-3.5 rounded bg-[#1e1e24] animate-pulse"
+                        style={{ width: `${55 + ((i * 19) % 40)}%` }}
+                      />
+                      <div className="h-2.5 w-20 rounded bg-[#141417] animate-pulse" />
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 py-[9.6px]">
+                  <div className="h-3.5 w-16 rounded bg-[#18181c] animate-pulse" />
+                </td>
+                <td className="px-4 py-[9.6px]">
+                  <div className="h-3.5 w-11 rounded bg-[#18181c] animate-pulse" />
+                </td>
+                <td className="px-4 py-[9.6px]">
+                  <div className="h-3.5 w-14 rounded bg-[#18181c] animate-pulse" />
+                </td>
+                <td className="px-4 py-[9.6px]">
+                  <div className="h-5 w-20 rounded-full bg-[#1c1c22] animate-pulse" />
+                </td>
+                <td className="px-4 py-[9.6px]">
+                  <div className="h-5 w-24 rounded-full border border-white/[0.06] bg-[#161619] animate-pulse" />
+                </td>
+                <td className="px-4 py-[9.6px]">
+                  <div className="h-3.5 w-24 rounded bg-[#18181c] animate-pulse" />
+                </td>
+                <td className="px-4 py-[9.6px] text-right">
+                  <div className="flex items-center justify-end gap-1.5">
+                    <div className="h-6 w-6 rounded-full bg-[#18181c] animate-pulse" />
+                    <div className="h-6 w-6 rounded-full bg-[#18181c] animate-pulse" />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }

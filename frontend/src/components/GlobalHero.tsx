@@ -33,6 +33,7 @@ import type { RealSearchSuggestion } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { API_URL, fetchAllCompanies, fetchAllRobots, fetchAllDevices, fetchModels, fetchRepositories, fetchMCPItems, prefetchUrl } from "@/lib/api";
 import { fetchTasks as fetchTasksApi } from "@/lib/tasks-api";
+import { prefetchVideosCategory } from "@/lib/videos-data";
 
 // NEW: Import the unified filter dropdown
 import { UnifiedFilterDropdown } from "@/components/UnifiedFilterDropdown";
@@ -193,10 +194,14 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
         }).catch(() => { });
         break;
       case "Videos":
+        prefetchVideosCategory(undefined, 100, 0);
+        prefetchVideosCategory("general-ai", 100, 0);
+        prefetchVideosCategory("llm", 100, 0);
+        prefetchVideosCategory("agents", 100, 0);
         queryClient.prefetchQuery({
           queryKey: ["videos", { sort: "latest", page: 1 }],
           queryFn: async () => {
-            const res = await fetch(`${API_URL}/api/videos?sort=latest&limit=24&offset=0`);
+            const res = await fetch(`${API_URL}/api/videos?sort=latest&limit=100&offset=0`);
             return res.ok ? res.json() : [];
           },
           staleTime: 10 * 60 * 1000,
