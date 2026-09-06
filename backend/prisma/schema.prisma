@@ -100,7 +100,9 @@ model Company {
 
   collectionCompanies CollectionCompany[]
   tools              Tool[]
-  aiModels           AIModel[]
+  aiModels            AIModel[]
+  news               News[]
+  videos             Video[]
 }
 
 model User {
@@ -467,6 +469,9 @@ model News {
   aiSummary  String
   articleUrl String @unique
 
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
   publisherId String
   publisher   Publisher @relation(fields: [publisherId], references: [id])
 
@@ -489,7 +494,9 @@ model News {
   @@index([publishedAt])
   @@index([publisherId])
   @@index([category])
+  @@index([companyId])
 }
+
 
 model NewsBookmark {
   id        String   @id @default(cuid())
@@ -606,13 +613,18 @@ model Video {
   // true so existing rows aren't affected until the backfill script runs.
   available       Boolean  @default(true)
 
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  @@index([toolCategory])
+   @@index([toolCategory])
   @@index([publishedAt])
   @@index([views])
   @@index([available])
+  @@index([companyId])
+
 }
 
 enum RobotCategory {

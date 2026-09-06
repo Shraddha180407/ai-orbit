@@ -200,14 +200,7 @@ export function LeaderboardClient() {
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    if (!container) return;
-    const target = subCatRefs.current[activeCategory];
-    if (!target) return;
 
-    scrollChipIntoView(container, target);
-  }, [activeCategory, activeTab]);
 
   const [tools, setTools] = useState<LeaderboardTool[]>([]);
   const [models, setModels] = useState<LeaderboardModel[]>([]);

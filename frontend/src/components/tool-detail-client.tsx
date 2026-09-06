@@ -345,8 +345,10 @@ export function ToolDetailClient() {
     alternativeIds: raw.alternativeIds ?? [],
   } : null;
 
-  const similarTools: ToolCardData[] = detailData?.similarTools || [];
-  const reviews: ReviewData[] = detailData?.reviews || [];
+  const similarTools: ToolCardData[] = 
+  (detailData?.similarTools?.length > 0 
+    ? detailData.similarTools 
+    : getSampleSimilarTools(slug)) || [];  const reviews: ReviewData[] = detailData?.reviews || [];
   const ttasks: any[] = (raw?.ttasks) || [];
   const visibleTasks = ttasks.slice(0, visibleCount);
 
@@ -446,14 +448,13 @@ export function ToolDetailClient() {
 
             {/* ── HERO ── */}
       <header className="relative rounded-2xl border border-[#1e1e22] bg-[#09090c] overflow-hidden mb-5">
-        {/* Layered background effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#6E56CF]/8 via-transparent to-transparent pointer-events-none" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/70 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/10 to-transparent" />
-        <div className="absolute right-0 top-0 w-96 h-96 bg-[#6E56CF]/6 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute left-0 bottom-0 w-64 h-64 bg-[#6E56CF]/3 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative p-4 md:p-8">
+  {/* subtle bg tint only — no border lines, no orbs */}
+  <div className="absolute inset-0 bg-gradient-to-br from-[#6E56CF]/6 via-[#6E56CF]/2 to-transparent pointer-events-none" />
+  <div className="absolute right-0 top-0 w-80 h-80 bg-[#6E56CF]/5 rounded-full blur-3xl pointer-events-none" />
+
+  <div className="relative p-4 md:p-8">
+    {/* rest unchanged */}
 
                     {/* Mobile layout */}
           <div className="sm:hidden space-y-3">
@@ -705,7 +706,7 @@ export function ToolDetailClient() {
 
                         {/* Overview — always show with description + use cases */}
             <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-5 space-y-3 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+              
               <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-600/6 rounded-full blur-2xl pointer-events-none" />
               <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-indigo-600/5 rounded-full blur-2xl pointer-events-none" />
               <SectionHeader icon={FileText} title="Overview" />
@@ -745,7 +746,7 @@ export function ToolDetailClient() {
             </section>
                       {/* Specs — mobile only, shows between Overview and rest of content */}
             <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 relative overflow-hidden lg:hidden">
-              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+              
               <div className="absolute -top-10 -right-10 w-36 h-36 bg-blue-600/6 rounded-full blur-2xl pointer-events-none" />
               <h3 className="text-sm font-bold text-foreground uppercase tracking-wide border-b border-[#232326]/50 pb-3 mb-1 flex items-center gap-2.5">
                 <FileText size={13} className="text-[#6E56CF]" /> Specifications
@@ -756,7 +757,7 @@ export function ToolDetailClient() {
             {/* Key Features */}
             {tool.features?.length > 0 && (
               <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-5 space-y-3 relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/30 to-transparent" />
+                
                 <div className="absolute -top-10 -right-10 w-36 h-36 bg-[#6E56CF]/4 rounded-full blur-2xl pointer-events-none" />
                 <SectionHeader icon={Sparkles} title="Key Features" />
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10">
@@ -779,7 +780,7 @@ export function ToolDetailClient() {
             {/* ── WHAT YOU CAN DO — below Key Features, distinct style: left-border accent rows ── */}
             {ttasks.length > 0 && (
                                 <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-5 space-y-3 relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
+               
                 <div className="absolute -top-12 -right-12 w-40 h-40 bg-[#6E56CF]/4 rounded-full blur-3xl pointer-events-none" />
                 <SectionHeader icon={ListChecks} title="Use Cases" badge={`${ttasks.length} tasks`} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10">
@@ -832,7 +833,7 @@ export function ToolDetailClient() {
 
             {/* Specs */}
             <section className="hidden lg:block rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+              
               <div className="absolute -top-10 -right-10 w-36 h-36 bg-blue-600/6 rounded-full blur-2xl pointer-events-none" />
                             <h3 className="text-sm font-bold text-foreground uppercase tracking-wide border-b border-[#232326]/50 pb-3 mb-1 flex items-center gap-2.5">
                 <FileText size={13} className="text-[#6E56CF]" /> Specifications
@@ -844,7 +845,7 @@ export function ToolDetailClient() {
             {/* Company */}
             {tool.company && (
               <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 space-y-3 relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
+                
                 <div className="absolute -top-12 -left-12 w-40 h-40 bg-[#6E56CF]/4 rounded-full blur-3xl pointer-events-none" />
                 <h3 className="text-sm font-bold text-foreground uppercase tracking-wide border-b border-[#232326]/50 pb-3 flex items-center gap-2.5">
                   <Building size={13} className="text-[#6E56CF]" /> Company
@@ -866,7 +867,7 @@ export function ToolDetailClient() {
                         {/* Integrations — sidebar stacked */}
             {tool.integrations?.length > 0 && (
               <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 space-y-3 relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
+                
                 <div className="absolute -top-12 -right-12 w-40 h-40 bg-[#6E56CF]/4 rounded-full blur-3xl pointer-events-none" />
                 <h3 className="text-sm font-bold text-foreground uppercase tracking-wide border-b border-[#232326]/50 pb-3 flex items-center gap-2.5">
                   <Layers size={13} className="text-[#6E56CF]" /> Integrations
@@ -882,7 +883,6 @@ export function ToolDetailClient() {
             {/* ROI Calculator — only show when there are enough tasks to justify it */}
             {ttasks.length >= 4 && (
               <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#6E56CF]/20 to-transparent" />
                 <div className="absolute -top-12 -right-12 w-40 h-40 bg-[#6E56CF]/4 rounded-full blur-3xl pointer-events-none" />
                 <ROICalculator pricingModel={tool.pricingModel} pricingAmount={tool.pricingAmount} name={tool.name} />
               </section>

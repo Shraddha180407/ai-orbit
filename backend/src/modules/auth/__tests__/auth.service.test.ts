@@ -135,10 +135,13 @@ describe('AuthService', () => {
         expires: new Date(Date.now() + 3600000),
       });
       prisma.user.findUnique.mockResolvedValue({ id: 'u1', email: 'a@b.com' });
-      prisma.$transaction.mockResolvedValue([{}, {}]);
+      prisma.user.update.mockResolvedValue({ id: 'u1', email: 'a@b.com' });
+      prisma.verificationToken.deleteMany.mockResolvedValue({});
 
       const result = await service.verifyEmail({ email: 'a@b.com', token: 'raw-tok' });
       expect(result!.id).toBe('u1');
+      expect(prisma.user.update).toHaveBeenCalled();
+      expect(prisma.verificationToken.deleteMany).toHaveBeenCalled();
     });
 
     it('throws BadRequest when token not found', async () => {
@@ -155,11 +158,11 @@ describe('AuthService', () => {
         token: 'hashed',
         expires: new Date(Date.now() - 1000),
       });
-      prisma.verificationToken.delete.mockResolvedValue({});
+      prisma.verificationToken.deleteMany.mockResolvedValue({});
 
       await expect(service.verifyEmail({ email: 'a@b.com', token: 'raw' }))
         .rejects.toThrow('expired');
-      expect(prisma.verificationToken.delete).toHaveBeenCalled();
+      expect(prisma.verificationToken.deleteMany).toHaveBeenCalled();
     });
 
     it('throws NotFound when user not found', async () => {
@@ -228,11 +231,12 @@ describe('AuthService', () => {
         expires: new Date(Date.now() + 3600000),
       });
       vi.mocked(bcrypt.hash).mockResolvedValue('new-hashed' as never);
-      prisma.$transaction.mockResolvedValue([{}, {}]);
+      prisma.user.update.mockResolvedValue({});
+      prisma.verificationToken.deleteMany.mockResolvedValue({});
 
       await service.resetPassword({ email: 'a@b.com', token: 'raw', newPassword: 'newpass' });
       expect(bcrypt.hash).toHaveBeenCalledWith('newpass', 12);
-      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(prisma.user.update).toHaveBeenCalled();
     });
 
     it('throws BadRequest when token invalid', async () => {
@@ -249,10 +253,11 @@ describe('AuthService', () => {
         token: 'hashed',
         expires: new Date(Date.now() - 1000),
       });
-      prisma.verificationToken.delete.mockResolvedValue({});
+      prisma.verificationToken.deleteMany.mockResolvedValue({});
 
       await expect(service.resetPassword({ email: 'a@b.com', token: 'raw', newPassword: 'new' }))
         .rejects.toThrow('expired');
+      expect(prisma.verificationToken.deleteMany).toHaveBeenCalled();
     });
   });
 

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Plus from 'lucide-react/dist/esm/icons/plus';
 import Pencil from 'lucide-react/dist/esm/icons/pencil';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
-import { AIModel, ModelSubCategory, ModelType, formatModelType } from "@/lib/types";
+import { AIModel, ModelSubCategory } from "@/lib/types";
 import { API_URL, fetchModels, fetchModelSubCategories, fetchModelFilters } from "@/lib/api";
 import { ModelListView } from "@/components/ModelListView";
 import { useUser } from "@/hooks/use-user";
@@ -18,41 +18,30 @@ import { Pagination } from "@/components/Pagination";
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { scrollChipIntoView } from "@/lib/utils";
 
-const MODEL_TYPE_OPTIONS: ModelType[] = [
-  "TEXT",
-  "IMAGE",
-  "VIDEO",
-  "MULTIMODAL",
-  "AUDIO",
-  "CODE",
-  "THREE_D",
-  "STRUCTURED_DATA",
+/**
+ * Static fallback used only when GET /api/v1/models/subcategories comes
+ * back empty (no rows seeded yet, or the endpoint is temporarily down).
+ * This guarantees the chip row is never fully missing from the page.
+ * Clicking a fallback chip still filters through the real backend
+ * `subCategory` query param — nothing here is faked client-side.
+ */
+const FALLBACK_MODEL_SUBCATEGORIES: ModelSubCategory[] = [
+  { id: "fallback-1", name: "LLM", slug: "llm" },
+  { id: "fallback-2", name: "Image Generation", slug: "image-generation" },
+  { id: "fallback-3", name: "Video Generation", slug: "video-generation" },
+  { id: "fallback-4", name: "Speech", slug: "speech" },
+  { id: "fallback-5", name: "Multimodal", slug: "multimodal" },
+  { id: "fallback-6", name: "Code Generation", slug: "code-generation" },
+  { id: "fallback-7", name: "Embedding", slug: "embedding" },
+  { id: "fallback-8", name: "Reasoning", slug: "reasoning" },
+  { id: "fallback-9", name: "Vision Models", slug: "vision-models" },
+  { id: "fallback-10", name: "Open Source Models", slug: "open-source-models" },
+  { id: "fallback-11", name: "Testing", slug: "testing" },
+  { id: "fallback-12", name: "E-Commerce", slug: "ecommerce" },
+  { id: "fallback-13", name: "Recruitment", slug: "recruitment" },
+  { id: "fallback-14", name: "Translation", slug: "translation" },
+  { id: "fallback-15", name: "Project Management", slug: "project-management" },
 ];
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  children,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="flex items-center gap-1.5 text-[12px]">
-      <span className="text-[#71717A] whitespace-nowrap">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-[#232326]/60 bg-[#131316]/50 px-2.5 py-1.5 text-[12px] text-white outline-none transition-colors focus:border-white/[0.15] cursor-pointer"
-      >
-        {children}
-      </select>
-    </label>
-  );
-}
 
 export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: string }) {
   const { user } = useUser();
@@ -68,15 +57,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    if (!container) return;
-    const activeKey = selectedSubCategorySlug || "all";
-    const target = subCatRefs.current[activeKey];
-    if (!target) return;
 
-    scrollChipIntoView(container, target);
-  }, [selectedSubCategorySlug]);
 
   const rawSort = searchParams.get("sort") || "newest";
   const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
@@ -93,7 +74,9 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   const q = searchParams.get("q") || undefined;
 
   const selectedProvider = searchParams.get("provider") || "";
-  const selectedModelType = (searchParams.get("modelType") || "") as ModelType | "";
+  const selectedModelType = searchParams.get("modelType") || "";
+  const selectedOpenSource = searchParams.get("openSource") || "";
+  const selectedReleaseSort = searchParams.get("releaseSort") === "asc" ? "asc" : "desc";
 
   const [currentPage, setCurrentPage] = useState<number>(() => {
     const pageFromUrl = searchParams.get("page");
@@ -104,7 +87,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   // Reset to page 1 whenever search or filters change.
   useEffect(() => {
     setCurrentPage(1);
-  }, [q, selectedProvider, selectedModelType, selectedSubCategorySlug]);
+  }, [q, selectedProvider, selectedModelType, selectedOpenSource, selectedReleaseSort, selectedSubCategorySlug]);
 
   // Admin modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -148,11 +131,17 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
     router.push(query ? `/models?${query}` : "/models");
   };
 
-  const { data: subCategories = [] } = useQuery<ModelSubCategory[]>({
+  const { data: apiSubCategories = [] } = useQuery<ModelSubCategory[]>({
     queryKey: ["model-subcategories"],
     queryFn: fetchModelSubCategories,
     staleTime: 30 * 60 * 1000,
   });
+
+  // Never let the chip row disappear entirely: fall back to a static
+  // frontend list if the backend hasn't got any subcategories seeded (or
+  // the endpoint fails). Selecting a fallback chip still filters through
+  // the real /api/v1/models?subCategory= backend query.
+  const subCategories = apiSubCategories.length > 0 ? apiSubCategories : FALLBACK_MODEL_SUBCATEGORIES;
 
   const { data: filterOptions } = useQuery({
     queryKey: ["model-filters"],
@@ -175,17 +164,20 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
         search: q,
         provider: selectedProvider,
         modelType: selectedModelType,
+        openSource: selectedOpenSource,
+        releaseSort: selectedReleaseSort,
       },
     ],
     queryFn: async () => {
-      return fetchModels({
+      return (fetchModels as any)({
         page: currentPage,
         limit: pageSize,
         subCategory: selectedSubCategorySlug || undefined,
-        sort: selectedSort as any,
         search: q,
         provider: selectedProvider || undefined,
-        modelType: (selectedModelType || undefined) as ModelType | undefined,
+        modelType: (selectedModelType || undefined) as any,
+        openSource: selectedOpenSource || undefined,
+        sort: selectedReleaseSort === "asc" ? "oldest" : "newest",
       });
     },
     placeholderData: keepPreviousData,
@@ -194,7 +186,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
 
   const models = data?.items || [];
   const totalPages = data?.pagination?.totalPages || 1;
-  const hasActiveFilters = Boolean(q || selectedProvider || selectedModelType);
+  const hasActiveFilters = Boolean(q || selectedProvider || selectedModelType || selectedOpenSource);
 
   const reloadFirstPage = async () => {
     queryClient.invalidateQueries({ queryKey: ["models"] });
@@ -299,13 +291,8 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
               {subCategories.map((sub) => (
                 <button
                   key={sub.id}
-                  onClick={(e) => {
+                  onClick={() => {
                     handleSelectSubCategory(sub.slug);
-                    e.currentTarget.scrollIntoView({
-                      behavior: "smooth",
-                      block: "nearest",
-                      inline: "nearest"
-                    });
                   }}
                   className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${selectedSubCategorySlug === sub.slug
                       ? "bg-white text-black border-white shadow-lg shadow-white/5"
@@ -318,55 +305,21 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
             </div>
           )}
 
-          {/* Provider / Type filters — backed by /api/v1/models/filters */}
-          {filterOptions && (filterOptions.providers.length > 0 || filterOptions.modelTypes.length > 0) && (
-            <div className="flex flex-wrap items-center gap-2.5">
-              {filterOptions.providers.length > 0 && (
-                <FilterSelect
-                  label="Provider"
-                  value={selectedProvider}
-                  onChange={(v) => updateParams({ provider: v || null })}
-                >
-                  <option value="">All providers</option>
-                  {filterOptions.providers.map((p) => (
-                    <option key={p.slug} value={p.slug}>
-                      {p.name}
-                    </option>
-                  ))}
-                </FilterSelect>
-              )}
 
-              {filterOptions.modelTypes.length > 0 && (
-                <FilterSelect
-                  label="Type"
-                  value={selectedModelType}
-                  onChange={(v) => updateParams({ modelType: v || null })}
-                >
-                  <option value="">All types</option>
-                  {MODEL_TYPE_OPTIONS.map((t) => (
-                    <option key={t} value={t}>
-                      {formatModelType(t)}
-                    </option>
-                  ))}
-                </FilterSelect>
-              )}
 
-              {(selectedProvider || selectedModelType) && (
-                <button
-                  type="button"
-                  onClick={() => updateParams({
-                    provider: null,
-                    modelType: null,
-                  })}
-                  className="text-[11px] font-semibold text-[#71717A] hover:text-white transition-colors"
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
-          )}
-
-          <ModelListView models={models} loading={isLoading && models.length === 0} />
+          <ModelListView
+            models={models}
+            loading={isLoading && models.length === 0}
+            selectedModelType={selectedModelType}
+            onModelTypeChange={(v) => updateParams({ modelType: v || null })}
+            selectedProvider={selectedProvider}
+            providerOptions={filterOptions?.providers || []}
+            onProviderChange={(v) => updateParams({ provider: v || null })}
+            selectedReleaseSort={selectedReleaseSort}
+            onReleaseSortChange={(v) => updateParams({ releaseSort: v })}
+            selectedOpenSource={selectedOpenSource as "" | "true" | "false"}
+            onOpenSourceChange={(v) => updateParams({ openSource: v || null })}
+          />
 
           {!isLoading && models.length === 0 && hasActiveFilters && (
             <p className="text-center text-[12px] text-[#71717A]">
@@ -381,7 +334,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
                 Admin — edit / delete
               </p>
               <div className="flex flex-wrap gap-2">
-                {models.slice(0, 12).map((m) => (
+                {models.slice(0, 12).map((m: AIModel) => (
                   <div
                     key={m.id}
                     className="inline-flex items-center gap-1 rounded-md border border-[#232326]/60 bg-[#18181C] px-2 py-1"

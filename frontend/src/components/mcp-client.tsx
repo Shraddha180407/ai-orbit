@@ -70,15 +70,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    if (!container) return;
-    const activeKey = activeSubCategory || "all";
-    const target = subCatRefs.current[activeKey];
-    if (!target) return;
 
-    scrollChipIntoView(container, target);
-  }, [activeSubCategory]);
 
   useEffect(() => {
     const currentParam = searchParams.get("subCategory") || searchParams.get("category") || "";

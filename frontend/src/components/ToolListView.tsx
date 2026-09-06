@@ -65,12 +65,12 @@ const COL_MIN_WIDTH_MIXED = "min-w-fit md:min-w-[1070px]";
 const COL_TEMPLATE_SPLIT = "grid-cols-[48px_85px_175px_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_minmax(80px,0.7fr)_44px_44px_60px] md:grid-cols-[60px_minmax(280px,3.5fr)_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_minmax(80px,0.7fr)_44px_44px_60px]";
 const COL_MIN_WIDTH_SPLIT = "min-w-fit md:min-w-[1150px]";
 
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function getReleaseTimestamp(item: ListTool): number {
   const val = item.releaseDate || (item as any).launchDate || (item as any).publishedAt || (item as any).githubCreatedAt;
   if (!val || val === '—' || val === 'Unknown' || val === 'null' || val === 'undefined') return 0;
-  
+
   const str = String(val).trim();
   if (/^\d{4}$/.test(str)) {
     const d = new Date(`${str}-01-01T00:00:00Z`);
@@ -98,7 +98,7 @@ function formatReleased(value?: string | null): string {
   const now = Date.now();
   const diffMs = now - d.getTime();
   const diffHours = Math.floor(diffMs / (3600 * 1000));
-  
+
   if (diffHours >= 0 && diffHours < 1) return "Just now";
   if (diffHours >= 1 && diffHours < 24) return `${diffHours}h ago`;
   if (diffHours >= 24 && diffHours < 48) return "Yesterday";
@@ -113,11 +113,11 @@ function isTruthy(...vals: Array<unknown>): boolean {
 
 function FilterIcon({ active }: { active?: boolean }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-      className={active ? "text-[#6E56CF]" : "text-[#A1A1AA] hover:text-white transition-colors"}>
-      <line x1="4" y1="6" x2="20" y2="6" strokeLinecap="round"/>
-      <line x1="8" y1="12" x2="16" y2="12" strokeLinecap="round"/>
-      <line x1="11" y1="18" x2="13" y2="18" strokeLinecap="round"/>
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+      className={active ? "text-[#6E56CF]" : "text-[#A1A1AA] hover:text-white"}>
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="8" y1="12" x2="16" y2="12" />
+      <line x1="11" y1="18" x2="13" y2="18" />
     </svg>
   );
 }
@@ -145,7 +145,7 @@ function LogoCell({ name, logoUrl }: { name?: string; logoUrl?: string | null })
 
 function BoolPill({ value, trueLabel, falseLabel }: { value: boolean; trueLabel: string; falseLabel: string }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">      
+    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
       {value ? trueLabel : falseLabel}
     </span>
   );
@@ -164,7 +164,7 @@ function ShareButton({ tool }: { tool: ListTool }) {
     if (tool.entityType === 'ROBOT') targetPath = '/robots';
     if (tool.entityType === 'DEVICE') targetPath = '/devices';
     if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
-    
+
     if (tool.entityType === 'MODEL') {
       targetPath = '/models';
       identifier = tool.id;
@@ -176,7 +176,7 @@ function ShareButton({ tool }: { tool: ListTool }) {
       url,
     };
     if (navigator.share) {
-      try { await navigator.share(shareData); } catch {}
+      try { await navigator.share(shareData); } catch { }
     } else {
       try {
         await navigator.clipboard.writeText(url);
@@ -196,11 +196,10 @@ function ShareButton({ tool }: { tool: ListTool }) {
     <button
       type="button"
       onClick={handleShare}
-      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors ${
-        copied
+      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors ${copied
           ? "border-[#6E56CF] text-[#6E56CF]"
           : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
-      }`}
+        }`}
       aria-label={`Share ${tool.name}`}
     >
       {copied ? <Check size={14} /> : <Share2 size={14} />}
@@ -235,11 +234,10 @@ function BookmarkBtn({ tool }: { tool: ListTool }) {
       type="button"
       disabled={isPending}
       onClick={handleBookmark}
-      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors disabled:opacity-60 ${
-        bookmarked
+      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors disabled:opacity-60 ${bookmarked
           ? "border-[#6E56CF] text-[#6E56CF]"
           : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
-      }`}
+        }`}
       aria-label={bookmarked ? `Remove bookmark for ${tool.name}` : `Bookmark ${tool.name}`}
       aria-pressed={bookmarked}
     >
@@ -290,7 +288,7 @@ function ToolRow({
   const targetUrl = `${targetPath}/${identifier}`;
 
   const prefetchRow = () => {
-    try { router.prefetch(targetUrl); } catch {}
+    try { router.prefetch(targetUrl); } catch { }
   };
 
   return (
@@ -303,7 +301,7 @@ function ToolRow({
         const el = e.currentTarget;
         const firstCell = el.querySelector<HTMLElement>('[data-sticky-first="true"]');
         if (firstCell) firstCell.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
-        
+
         const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
         if (logoEl) { logoEl.style.borderColor = accentColor; logoEl.style.boxShadow = `0 0 8px ${accentColor}55`; }
         const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
@@ -363,8 +361,8 @@ function ToolRow({
               <span className="text-[#71717A] opacity-30 shrink-0 hidden md:inline-flex"><ExternalLink size={14} /></span>
             )}
           </div>
-          <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis md:text-clip">
-            {trimNoDots(tool.description || "")}
+          <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug whitespace-nowrap overflow-hidden max-w-[420px]">
+            {tool.description || ""}
           </p>
         </div>
       ) : (
@@ -400,14 +398,14 @@ function ToolRow({
                 )}
               </div>
             </div>
-            <p className="hidden md:block mt-0.5 text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis md:text-clip">
-              {trimNoDots(tool.description || "")}
+            <p className="hidden md:block mt-0.5 text-[11px] text-[#A1A1AA] leading-snug whitespace-nowrap overflow-hidden max-w-[380px]">
+              {tool.description || ""}
             </p>
           </div>
 
           <div className="md:hidden min-w-0 flex flex-col justify-center pr-2 h-full">
-            <p className="text-[11px] text-[#A1A1AA] leading-snug pr-2 whitespace-nowrap overflow-hidden text-ellipsis">
-              {trimNoDots(tool.description || "")}
+            <p className="text-[11px] text-[#A1A1AA] leading-snug whitespace-nowrap overflow-hidden max-w-[200px]">
+              {tool.description || ""}
             </p>
           </div>
         </>
@@ -499,11 +497,10 @@ function ToolRow({
             onToggleCompare(tool);
           }}
           disabled={!isSelected && isCompareFull}
-          className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
-            isSelected
+          className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${isSelected
               ? "border-[#6E56CF] text-[#6E56CF]"
               : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
-          }`}
+            }`}
           aria-label={isSelected ? `Remove ${tool.name} from compare` : `Add ${tool.name} to compare`}
         >
           <GitCompare size={14} />
@@ -528,7 +525,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
   const [nameSearch, setNameSearch] = useState("");
 
   type SortKey = "released" | "name";
-  const [sortKey, setSortKey] = useState<SortKey>("released");
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   function handleSort(key: SortKey) {
@@ -564,8 +561,8 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     router.push(`/tools/compare?slugs=${slugs}`);
   };
 
-  const isMixedFeed = tools.some(t => 
-    t.entityType === 'NEWS' || t.entityType === 'VIDEO' || t.entityType === 'ROBOT' || 
+  const isMixedFeed = tools.some(t =>
+    t.entityType === 'NEWS' || t.entityType === 'VIDEO' || t.entityType === 'ROBOT' ||
     t.entityType === 'COMPANY' || t.entityType === 'DEVICE' || t.entityType === 'MODEL' || t.entityType === 'REPOSITORY'
   );
 
@@ -596,9 +593,10 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
         return (a.name || "").localeCompare(b.name || "");
       });
     }
+    // sortKey === null: preserve original API order
     return list;
   }, [tools, nameSearch, sortKey, sortDir, isMixedFeed]);
-  
+
   const activeTemplate = isMixedFeed ? COL_TEMPLATE_MIXED : COL_TEMPLATE_SPLIT;
   const activeMinWidth = isMixedFeed ? COL_MIN_WIDTH_MIXED : COL_MIN_WIDTH_SPLIT;
 
@@ -610,7 +608,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
             {Array.from({ length: skeletonRows }).map((_, i) => (
               <div key={i} className={`grid ${activeTemplate} items-center gap-3 py-3`}>
                 <div className="pl-4"><div className="h-8 w-8 md:h-11 md:w-11 animate-pulse rounded-lg bg-[#18181C]" /></div>
-                
+
                 {isMixedFeed ? (
                   <div className="space-y-1.5 pr-4 md:pr-0">
                     <div className="h-3 w-32 animate-pulse rounded bg-[#18181C]" />
@@ -634,7 +632,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
                 <div className="h-4 w-16 animate-pulse rounded-full bg-[#18181C]" />
                 <div className="h-4 w-8 animate-pulse rounded-full bg-[#18181C]" />
                 <div className="h-4 w-8 animate-pulse rounded-full bg-[#18181C]" />
-                
+
                 {!isMixedFeed && (
                   <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
                 )}
@@ -750,7 +748,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               {/* RELEASED */}
               <button
                 onClick={() => handleSort("released")}
-                className="text-[9.5px] font-mono font-semibold tracking-wider text-[#6E56CF] hover:text-white transition-colors flex items-center gap-1"
+                className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1"
               >
                 RELEASED <SortIcon active={sortKey === "released"} dir={sortDir} />
               </button>
@@ -811,9 +809,8 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               type="button"
               onClick={goToCompare}
               disabled={compareSet.length !== MAX_COMPARE}
-              className={`shrink-0 inline-flex items-center gap-1 sm:gap-1.5 rounded-lg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold transition-colors ${
-                compareSet.length === MAX_COMPARE ? "text-white shadow-md shadow-[#6E56CF]/30" : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
-              }`}
+              className={`shrink-0 inline-flex items-center gap-1 sm:gap-1.5 rounded-lg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold transition-colors ${compareSet.length === MAX_COMPARE ? "text-white shadow-md shadow-[#6E56CF]/30" : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
+                }`}
               style={compareSet.length === MAX_COMPARE ? { backgroundColor: "#6E56CF" } : undefined}
             >
               <GitCompare size={13} /> <span className="hidden 2xs:inline">Compare</span>

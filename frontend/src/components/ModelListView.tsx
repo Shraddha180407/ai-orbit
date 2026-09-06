@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useState } from "react";
-import Image from "next/image";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import GitCompare from 'lucide-react/dist/esm/icons/git-compare';
 import Check from 'lucide-react/dist/esm/icons/check';
 import X from 'lucide-react/dist/esm/icons/x';
-import { CategoryChip } from "@/components/CategoryChip";
+import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down';
+import ChevronUp from 'lucide-react/dist/esm/icons/chevron-up';
 import type { AIModel } from "@/lib/types";
-import { formatModelType } from "@/lib/types";
+import { formatModelType, MODEL_TYPE_OPTIONS } from "@/lib/types";
 import { API_URL, prefetchUrl } from "@/lib/api";
 
 const MAX_COMPARE = 2;
@@ -19,6 +19,24 @@ type ModelListViewProps = {
   models: AIModel[];
   loading?: boolean;
   skeletonRows?: number;
+  /** Currently active modelType filter (empty string = all types). */
+  selectedModelType?: string;
+  /** Called with the new modelType value ("" clears the filter). */
+  onModelTypeChange?: (value: string) => void;
+  /** Currently active provider filter (empty string = all providers). */
+  selectedProvider?: string;
+  /** Provider filter options displayed in the COMPANY column header. */
+  providerOptions?: Array<{ slug: string; name: string }>;
+  /** Called with the new provider value ("" clears the filter). */
+  onProviderChange?: (value: string) => void;
+  /** Current release-date sort direction. */
+  selectedReleaseSort?: "asc" | "desc";
+  /** Called when the release-date sort direction changes. */
+  onReleaseSortChange?: (value: "asc" | "desc") => void;
+  /** Current open-source filter: empty = all, true = yes, false = no. */
+  selectedOpenSource?: "" | "true" | "false";
+  /** Called when the open-source filter changes. */
+  onOpenSourceChange?: (value: "" | "true" | "false") => void;
 };
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -36,6 +54,11 @@ function isTruthy(...vals: Array<unknown>): boolean {
   return vals.some((v) => v === true || v === "true" || v === 1 || v === "1");
 }
 
+function resolveProviderLogo(src: string | null | undefined, name: string) {
+  if (name.trim().toLowerCase().includes("openai")) return "/logos/openai.svg";
+  return src ?? null;
+}
+
 function BoolPill({
   value,
   trueLabel,
@@ -48,30 +71,308 @@ function BoolPill({
   if (value === undefined) {
     return <span className="text-[11px] text-[#71717A] font-mono">—</span>;
   }
+
+  const accent = value
+    ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-400"
+    : "border-red-500/35 bg-red-500/10 text-red-400";
+
   return (
-    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-mono font-semibold transition-colors ${accent}`}
+    >
       {value ? trueLabel : falseLabel}
     </span>
   );
 }
 
-// Logo | Name | Company | Type | Primary Task | Released | Open Source | Compare
-// Logo track matches h-10/w-10 (40px). Horizontal scroll below ~960px.
+function TypeAccentChip({ label }: { label: string }) {
+  const normalized = label.toLowerCase();
+
+  const accent =
+    normalized.includes("text")
+      ? "border-sky-500/35 bg-sky-500/10 text-sky-400"
+      : normalized.includes("vision") || normalized.includes("image")
+        ? "border-violet-500/35 bg-violet-500/10 text-violet-400"
+        : normalized.includes("audio") || normalized.includes("speech") || normalized.includes("voice")
+          ? "border-amber-500/35 bg-amber-500/10 text-amber-400"
+          : normalized.includes("video")
+            ? "border-pink-500/35 bg-pink-500/10 text-pink-400"
+            : normalized.includes("embedding")
+              ? "border-cyan-500/35 bg-cyan-500/10 text-cyan-400"
+              : normalized.includes("code") || normalized.includes("program")
+                ? "border-green-500/35 bg-green-500/10 text-green-400"
+                : normalized.includes("multimodal")
+                  ? "border-indigo-500/35 bg-indigo-500/10 text-indigo-400"
+                  : "border-[#52525B]/60 bg-[#18181C] text-[#A1A1AA]";
+
+  return (
+    <span
+      className={`inline-flex max-w-full items-center truncate rounded-full border px-2.5 py-0.5 text-[10px] font-mono font-semibold transition-colors ${accent}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+/**
+ * Click-to-open filter dropdown embedded in the TYPE column header, anchored
+ * by a small inverted-triangle (chevron) icon. Replaces the standalone
+ * "Type" filter row that used to sit above the table.
+ */
+function TypeHeaderFilter({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [open]);
+
+  const activeLabel = value ? formatModelType(value) : null;
+
+  return (
+    <div ref={containerRef} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold tracking-wider transition-colors ${
+          value ? "text-white" : "text-[#71717A] hover:text-white"
+        }`}
+      >
+        TYPE
+        <ChevronDown
+          size={10}
+          className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full z-30 mt-1.5 w-40 max-h-60 overflow-y-auto scrollbar-none rounded-lg border border-[#232326]/80 bg-[#131316] py-1 shadow-xl shadow-black/50">
+          <button
+            type="button"
+            role="option"
+            aria-selected={!value}
+            onClick={() => {
+              onChange("");
+              setOpen(false);
+            }}
+            className={`block w-full px-3 py-1.5 text-left text-[12px] font-medium normal-case tracking-normal transition-colors ${
+              !value ? "bg-[#18181C] text-white" : "text-[#A1A1AA] hover:bg-[#18181C] hover:text-white"
+            }`}
+          >
+            All types
+          </button>
+          {MODEL_TYPE_OPTIONS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="option"
+              aria-selected={value === t}
+              onClick={() => {
+                onChange(t);
+                setOpen(false);
+              }}
+              className={`block w-full px-3 py-1.5 text-left text-[12px] font-medium normal-case tracking-normal transition-colors ${
+                value === t ? "bg-[#18181C] text-white" : "text-[#A1A1AA] hover:bg-[#18181C] hover:text-white"
+              }`}
+            >
+              {formatModelType(t)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {activeLabel && (
+        <span className="ml-1 hidden text-[9px] font-mono font-semibold text-[#6E56CF] sm:inline">
+          · {activeLabel}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function ProviderHeaderFilter({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: Array<{ slug: string; name: string }>;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [open]);
+
+  const activeLabel = value ? options.find((p) => p.slug === value)?.name : null;
+
+  return (
+    <div ref={containerRef} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold tracking-wider transition-colors ${
+          value ? "text-white" : "text-[#71717A] hover:text-white"
+        }`}
+      >
+        COMPANY
+        <ChevronDown
+          size={10}
+          className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          className="absolute left-0 top-full z-30 mt-1.5 w-44 max-h-60 overflow-y-auto scrollbar-none rounded-lg border border-[#232326]/80 bg-[#131316] py-1 shadow-xl shadow-black/50"
+        >
+          <button
+            type="button"
+            role="option"
+            aria-selected={!value}
+            onClick={() => {
+              onChange("");
+              setOpen(false);
+            }}
+            className={`block w-full px-3 py-1.5 text-left text-[12px] font-medium normal-case tracking-normal transition-colors ${
+              !value ? "bg-[#18181C] text-white" : "text-[#A1A1AA] hover:bg-[#18181C] hover:text-white"
+            }`}
+          >
+            All companies
+          </button>
+          {options.map((p) => (
+            <button
+              key={p.slug}
+              type="button"
+              role="option"
+              aria-selected={value === p.slug}
+              onClick={() => {
+                onChange(p.slug);
+                setOpen(false);
+              }}
+              className={`block w-full px-3 py-1.5 text-left text-[12px] font-medium normal-case tracking-normal transition-colors ${
+                value === p.slug ? "bg-[#18181C] text-white" : "text-[#A1A1AA] hover:bg-[#18181C] hover:text-white"
+              }`}
+            >
+              {p.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {activeLabel && (
+        <span className="ml-1 hidden max-w-28 truncate align-middle text-[9px] font-mono font-semibold text-[#6E56CF] sm:inline">
+          · {activeLabel}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function HeaderToggleButton({
+  label,
+  active,
+  onClick,
+  icon,
+  ariaLabel,
+}: {
+  label: string;
+  active?: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  ariaLabel: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className={`inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold tracking-wider transition-colors ${
+        active ? "text-white" : "text-[#71717A] hover:text-white"
+      }`}
+    >
+      {label}
+      {icon}
+    </button>
+  );
+}
+
+function OpenSourceHeaderFilter({
+  value,
+  onChange,
+}: {
+  value: "" | "true" | "false";
+  onChange: (value: "" | "true" | "false") => void;
+}) {
+  // Cycle through all three states: ALL -> YES -> NO -> ALL.
+  const nextValue: "" | "true" | "false" =
+    value === "" ? "true" : value === "true" ? "false" : "";
+  const label = value === "true" ? "YES" : value === "false" ? "NO" : "ALL";
+
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(nextValue)}
+      aria-label={`Open source filter is ${label}. Click to switch to ${nextValue === "" ? "all" : nextValue === "true" ? "yes" : "no"}.`}
+      className={`inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold tracking-wider transition-colors ${
+        value ? "text-white" : "text-[#71717A] hover:text-white"
+      }`}
+    >
+      <span>OPEN SOURCE</span>
+      <span className="inline-flex items-center gap-0.5 text-[8px] font-bold">
+        {label}
+      </span>
+    </button>
+  );
+}
+
+// Name | Company | Type | Primary Task | Released | Open Source | Compare
+// The company logo is intentionally rendered inside the NAME cell.
 const COL_TEMPLATE =
-  "grid-cols-[40px_minmax(180px,2.2fr)_minmax(110px,1fr)_minmax(90px,0.85fr)_minmax(110px,1fr)_minmax(100px,0.9fr)_minmax(90px,0.8fr)_minmax(100px,0.85fr)]";
+  "grid-cols-[minmax(220px,2.2fr)_minmax(110px,1fr)_minmax(90px,0.85fr)_minmax(110px,1fr)_minmax(100px,0.9fr)_minmax(90px,0.8fr)_minmax(100px,0.85fr)]";
 
 const COL_MIN_WIDTH = "min-w-[960px]";
-
-const COLUMN_HEADERS = [
-  { label: "MODEL", align: "" },
-  { label: "NAME", align: "" },
-  { label: "COMPANY", align: "" },
-  { label: "TYPE", align: "" },
-  { label: "PRIMARY TASK", align: "" },
-  { label: "RELEASED", align: "" },
-  { label: "OPEN SOURCE", align: "" },
-  { label: "COMPARE", align: "text-right" },
-] as const;
 
 function ModelRow({
   model,
@@ -85,8 +386,13 @@ function ModelRow({
   onToggleCompare: (model: AIModel) => void;
 }) {
   const companyName = model.provider?.name || model.creator || "—";
-  const companyLogo = model.provider?.logoUrl ?? null;
+  const companyLogo = resolveProviderLogo(model.provider?.logoUrl, companyName);
+  const [logoFailed, setLogoFailed] = useState(false);
   const typeLabel = formatModelType(model.modelType) || model.modality || null;
+
+  useEffect(() => {
+    setLogoFailed(false);
+  }, [companyLogo]);
   const primaryTask = model.primaryTask ?? null;
   const openSource =
     model.openSource === undefined ? undefined : isTruthy(model.openSource);
@@ -107,32 +413,42 @@ function ModelRow({
     >
       <span className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal,#6E56CF)] transition-all duration-200 group-hover:h-[70%]" />
 
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
-        {companyLogo ? (
-          <Image
-            src={companyLogo}
-            alt={`${companyName} logo`}
-            width={36}
-            height={36}
-            className="h-8 w-8 object-contain"
-          />
-        ) : (
-          <span className="text-base font-bold text-neutral-900">{model.name.charAt(0)}</span>
-        )}
-      </div>
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
+          {companyLogo && !logoFailed ? (
+            <img
+              src={companyLogo}
+              alt={`${companyName} logo`}
+              width={36}
+              height={36}
+              loading="lazy"
+              decoding="async"
+              className="h-8 w-8 object-contain"
+              onError={() => setLogoFailed(true)}
+            />
+          ) : (
+            <span
+              aria-label={`${companyName} logo`}
+              className="flex h-8 w-8 items-center justify-center rounded-md bg-neutral-100 text-base font-bold text-neutral-900"
+            >
+              {companyName.charAt(0).toUpperCase()}
+            </span>
+          )}
+        </div>
 
-      <div className="min-w-0">
-        <h3 className="truncate text-[13px] font-semibold text-white">{model.name}</h3>
-        <p className="mt-0.5 line-clamp-1 text-[11px] text-[#A1A1AA] leading-snug">
-          {model.description}
-        </p>
+        <div className="min-w-0">
+          <h3 className="truncate text-[13px] font-semibold text-white">{model.name}</h3>
+          <p className="mt-0.5 line-clamp-1 text-[11px] text-[#A1A1AA] leading-snug">
+            {model.description}
+          </p>
+        </div>
       </div>
 
       <div className="min-w-0 truncate text-[12px] text-white">{companyName}</div>
 
       <div className="min-w-0 overflow-hidden">
         {typeLabel ? (
-          <CategoryChip label={typeLabel} className="max-w-full truncate" />
+          <TypeAccentChip label={typeLabel} />
         ) : (
           <span className="text-[11px] text-[#71717A]">—</span>
         )}
@@ -150,7 +466,7 @@ function ModelRow({
         <BoolPill value={openSource} trueLabel="YES" falseLabel="NO" />
       </div>
 
-      <div className="text-right">
+      <div className="text-center">
         <button
           type="button"
           disabled={!isSelected && isCompareFull}
@@ -182,6 +498,15 @@ export function ModelListView({
   models,
   loading = false,
   skeletonRows = 4,
+  selectedModelType = "",
+  onModelTypeChange,
+  selectedProvider = "",
+  providerOptions = [],
+  onProviderChange,
+  selectedReleaseSort = "desc",
+  onReleaseSortChange,
+  selectedOpenSource = "",
+  onOpenSourceChange,
 }: ModelListViewProps) {
   const router = useRouter();
   const [compareSet, setCompareSet] = useState<AIModel[]>([]);
@@ -212,10 +537,12 @@ export function ModelListView({
               key={i}
               className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2.5`}
             >
-              <div className="h-10 w-10 animate-pulse rounded-lg bg-[#18181C]" />
-              <div className="space-y-1.5">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="h-10 w-10 shrink-0 animate-pulse rounded-lg bg-[#18181C]" />
+                <div className="space-y-1.5">
                 <div className="h-3 w-40 animate-pulse rounded bg-[#18181C]" />
-                <div className="h-2 w-64 animate-pulse rounded bg-[#18181C]" />
+                  <div className="h-2 w-64 animate-pulse rounded bg-[#18181C]" />
+                </div>
               </div>
               <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
               <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
@@ -254,14 +581,41 @@ export function ModelListView({
         <div className="overflow-x-auto touch-scroll-x">
           <div className="border-b border-[#232326]/60 bg-[#131316]/40">
             <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2`}>
-              {COLUMN_HEADERS.map((h) => (
-                <span
-                  key={h.label}
-                  className={`text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] ${h.align}`}
-                >
-                  {h.label}
-                </span>
-              ))}
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">NAME</span>
+              {onProviderChange ? (
+                <ProviderHeaderFilter
+                  value={selectedProvider}
+                  options={providerOptions}
+                  onChange={onProviderChange}
+                />
+              ) : (
+                <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">COMPANY</span>
+              )}
+
+              {onModelTypeChange ? (
+                <TypeHeaderFilter value={selectedModelType} onChange={onModelTypeChange} />
+              ) : (
+                <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">TYPE</span>
+              )}
+
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">PRIMARY TASK</span>
+              {onReleaseSortChange ? (
+                <HeaderToggleButton
+                  label="RELEASED"
+                  active
+                  onClick={() => onReleaseSortChange(selectedReleaseSort === "asc" ? "desc" : "asc")}
+                  ariaLabel={`Sort released ${selectedReleaseSort === "asc" ? "descending" : "ascending"}`}
+                  icon={selectedReleaseSort === "asc" ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                />
+              ) : (
+                <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">RELEASED</span>
+              )}
+              {onOpenSourceChange ? (
+                <OpenSourceHeaderFilter value={selectedOpenSource} onChange={onOpenSourceChange} />
+              ) : (
+                <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">OPEN SOURCE</span>
+              )}
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] text-center">COMPARE</span>
             </div>
           </div>
 

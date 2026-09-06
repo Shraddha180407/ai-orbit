@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState, useRef, useCallback, useTransition
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Company } from "@/lib/types";
-import { API_URL, fetchCompanies, fetchAllCompanies, prefetchUrl } from "@/lib/api";
+import { API_URL, fetchCompanies, prefetchUrl } from "@/lib/api";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
@@ -173,10 +173,26 @@ function matchesSubcategory(c: Company, slug: string): boolean {
   }
 
   if (c.sector && c.sector.toLowerCase().replace(/[-_]/g, " ").includes(slugLower)) return true;
-  if (c.industry && c.industry.toLowerCase().replace(/[-_]/g, " ").includes(slugLower)) return true;
   if (c.description && c.description.toLowerCase().includes(slugLower)) return true;
 
   return false;
+}
+
+function ClearFilterChip({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClick();
+      }}
+      className="shrink-0 rounded-full border border-[#6E56CF]/50 bg-[#6E56CF]/10 px-1 py-0.5 text-[7px] leading-none font-medium normal-case tracking-normal text-[#A1A1AA] hover:text-white hover:border-[#6E56CF] transition-colors"
+      title="Clear filter"
+    >
+      Clear filter
+    </button>
+  );
 }
 
 function CompanyRow({
@@ -342,29 +358,30 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const urlFilterParam = searchParams.get("filter") || searchParams.get("category");
 
   const [activeCategorySlug, setActiveCategorySlug] = useState<string>(() => {
-    return defaultCategory || urlFilterParam || "all";
+    return defaultCategory || urlFilterParam || "";
   });
 
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    if (!container) return;
-    const activeKey = activeCategorySlug || "all";
-    const target = subCatRefs.current[activeKey];
-    if (!target) return;
 
-    scrollChipIntoView(container, target);
-  }, [activeCategorySlug]);
 
   const [selectedCountry, setSelectedCountry] = useState<string>("all");
   const [isCountryPopoverOpen, setIsCountryPopoverOpen] = useState<boolean>(false);
   const [countrySearch, setCountrySearch] = useState<string>("");
+  const [allCompanyCountries, setAllCompanyCountries] = useState<string[]>([]);
   const countryPopoverRef = useRef<HTMLDivElement>(null);
 
-  const [sortField, setSortField] = useState<SortField>('valuation');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  // Company name filter
+  const [isCompanyNamePopoverOpen, setIsCompanyNamePopoverOpen] = useState(false);
+  const [companyNameInput, setCompanyNameInput] = useState("");
+  const [companyNameFilter, setCompanyNameFilter] = useState("");
+  const companyNamePopoverRef = useRef<HTMLDivElement>(null);
+
+  const [aiNativeFilter, setAiNativeFilter] = useState<'all' | 'yes' | 'no'>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(100);
 
@@ -374,33 +391,155 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     return matched && matched.value !== "ALL" ? matched.value : activeCategorySlug;
   }, [activeCategorySlug]);
 
-  const { data: companiesResponse, isLoading } = useQuery<any>({
-    queryKey: ["companies", currentPage, pageSize, query, activeCategorySlug, selectedCountry, sortField, sortDir],
-    queryFn: () => fetchCompanies({
-      page: currentPage,
+  /*
+   * Load the complete company directory once and filter/sort it locally.
+   *
+   * This is deliberate: the directory has several UI-only filters
+   * (especially AI Native = No and the COMPANY name popup). Applying them
+   * to an already-paginated API response caused filters to appear broken.
+   * We now have one source dataset, then:
+   *   1. category
+   *   2. country
+   *   3. company name
+   *   4. AI Native
+   *   5. general search
+   *   6. sorting
+   *   7. pagination
+   */
+  const { data: companiesResponse, isLoading, isFetching } = useQuery<any>({
+    queryKey: [
+      "companies",
+      currentPage,
       pageSize,
-      q: query || undefined,
-      type: matchedTypeEnum,
-      country: selectedCountry !== "all" ? selectedCountry : undefined,
-      sort: sortField === "valuation" ? (sortDir === "asc" ? "valuation-asc" : "valuation-desc")
-          : sortField === "name" ? (sortDir === "asc" ? "name-asc" : "name-desc")
-          : undefined,
-    }),
+      query,
+      companyNameFilter,
+      activeCategorySlug,
+      selectedCountry,
+      sortField,
+      sortDir,
+    ],
+    queryFn: async () => {
+      const sort =
+        sortField === "valuation"
+          ? (sortDir === "asc" ? "valuation-asc" : "valuation-desc")
+          : sortField === "name"
+            ? (sortDir === "asc" ? "name-asc" : "name-desc")
+            : undefined;
+
+      const type = matchedTypeEnum;
+      const country =
+        selectedCountry !== "all" ? selectedCountry : undefined;
+
+      /*
+       * Normal page:
+       * One API request only. This keeps the page fast and prevents the
+       * endless skeleton/loading problem caused by downloading the whole DB.
+       */
+      if (!companyNameFilter.trim()) {
+        return fetchCompanies({
+          page: currentPage,
+          pageSize,
+          q: query.trim() || undefined,
+          type,
+          country,
+          sort,
+        });
+      }
+
+      /*
+       * COMPANY filter:
+       * Use q only to narrow the server-side candidate set, then check
+       * company.name locally so description/sector matches are discarded.
+       *
+       * We fetch the q-result pages, not the entire company database.
+       */
+      const firstResponse = await fetchCompanies({
+        page: 1,
+        pageSize: 200,
+        q: companyNameFilter.trim(),
+        type,
+        country,
+        sort,
+      });
+
+      const firstCompanies: Company[] = Array.isArray(firstResponse)
+        ? (firstResponse as Company[])
+        : ((firstResponse?.companies || []) as Company[]);
+
+      let candidates = firstCompanies;
+
+      const totalPagesFromApi =
+        typeof firstResponse?.totalPages === "number"
+          ? firstResponse.totalPages
+          : 1;
+
+      // Fetch the remaining search-result pages in parallel, with a hard cap
+      // so a malformed API response can never freeze the page.
+      if (totalPagesFromApi > 1) {
+        const remainingPages = Math.min(totalPagesFromApi, 20);
+
+        const responses = await Promise.all(
+          Array.from({ length: remainingPages - 1 }, (_, index) =>
+            fetchCompanies({
+              page: index + 2,
+              pageSize: 200,
+              q: companyNameFilter.trim(),
+              type,
+              country,
+              sort,
+            })
+          )
+        );
+
+        for (const response of responses) {
+          const companies: Company[] = Array.isArray(response)
+            ? (response as Company[])
+            : ((response?.companies || []) as Company[]);
+          candidates = candidates.concat(companies);
+        }
+      }
+
+      const needle = companyNameFilter.trim().toLocaleLowerCase();
+
+      const matchingCompanies = candidates.filter((company) =>
+        formatCompanyName(String(company?.name ?? ""))
+          .trim()
+          .toLocaleLowerCase()
+          .includes(needle)
+      );
+
+      const startIndex = (currentPage - 1) * pageSize;
+
+      return {
+        companies: matchingCompanies.slice(startIndex, startIndex + pageSize),
+        total: matchingCompanies.length,
+        page: currentPage,
+        pageSize,
+        totalPages: Math.max(
+          1,
+          Math.ceil(matchingCompanies.length / pageSize)
+        ),
+      };
+    },
     placeholderData: keepPreviousData,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
   });
 
-  const allCompanies: Company[] = Array.isArray(companiesResponse) 
-    ? companiesResponse 
+  const allCompanies: Company[] = Array.isArray(companiesResponse)
+    ? companiesResponse
     : (companiesResponse?.companies || []);
 
-  const totalCount = typeof companiesResponse?.total === 'number' 
-    ? companiesResponse.total 
-    : allCompanies.length;
+  const totalCount =
+    typeof companiesResponse?.total === "number"
+      ? companiesResponse.total
+      : allCompanies.length;
 
-  const totalPages = typeof companiesResponse?.totalPages === 'number'
-    ? companiesResponse.totalPages
-    : Math.max(1, Math.ceil(totalCount / pageSize));
+  const totalPages =
+    typeof companiesResponse?.totalPages === "number"
+      ? companiesResponse.totalPages
+      : Math.max(1, Math.ceil(totalCount / pageSize));
+
+  const paginatedCompanies: Company[] = allCompanies;
 
   useEffect(() => {
     if (urlSortParam) {
@@ -433,18 +572,90 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
       if (countryPopoverRef.current && !countryPopoverRef.current.contains(e.target as Node)) {
         setIsCountryPopoverOpen(false);
       }
+      if (companyNamePopoverRef.current && !companyNamePopoverRef.current.contains(e.target as Node)) {
+        setIsCompanyNamePopoverOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCountries = async () => {
+      try {
+        const firstResponse = await fetchCompanies({
+          page: 1,
+          pageSize: 200,
+        });
+
+        const firstCompanies: Company[] = Array.isArray(firstResponse)
+          ? (firstResponse as Company[])
+          : ((firstResponse?.companies || []) as Company[]);
+
+        const countries = new Set<string>();
+
+        firstCompanies.forEach((company) => {
+          const country = company.country?.trim();
+          if (country) countries.add(country);
+        });
+
+        const totalPagesFromApi =
+          typeof firstResponse?.totalPages === "number"
+            ? firstResponse.totalPages
+            : 1;
+
+        if (totalPagesFromApi > 1) {
+          const pages = Math.min(totalPagesFromApi, 20);
+
+          const responses = await Promise.all(
+            Array.from({ length: pages - 1 }, (_, index) =>
+              fetchCompanies({
+                page: index + 2,
+                pageSize: 200,
+              })
+            )
+          );
+
+          responses.forEach((response) => {
+            const companies: Company[] = Array.isArray(response)
+              ? (response as Company[])
+              : ((response?.companies || []) as Company[]);
+
+            companies.forEach((company) => {
+              const country = company.country?.trim();
+              if (country) countries.add(country);
+            });
+          });
+        }
+
+        if (!cancelled) {
+          setAllCompanyCountries(Array.from(countries).sort());
+        }
+      } catch {
+        // Current-page countries remain as fallback.
+      }
+    };
+
+    loadCountries();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const availableCountries = useMemo(() => {
+    if (allCompanyCountries.length > 0) return allCompanyCountries;
+
     const set = new Set<string>();
-    allCompanies.forEach((c) => {
-      if (c.country && c.country.trim()) set.add(c.country.trim());
+    allCompanies.forEach((company) => {
+      if (company.country && company.country.trim()) {
+        set.add(company.country.trim());
+      }
     });
     return Array.from(set).sort();
-  }, [allCompanies]);
+  }, [allCompanyCountries, allCompanies]);
 
   const filteredCountriesList = useMemo(() => {
     if (!countrySearch.trim()) return availableCountries;
@@ -452,11 +663,10 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     return availableCountries.filter((c) => c.toLowerCase().includes(q));
   }, [availableCountries, countrySearch]);
 
-  const paginatedCompanies = allCompanies;
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [query, activeCategorySlug, selectedCountry]);
+  }, [query, companyNameFilter, activeCategorySlug, selectedCountry, pageSize]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -510,12 +720,12 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
       type="button"
       onClick={() => toggleSort(field)}
       className={`flex items-center gap-1 font-mono hover:text-white transition-colors cursor-pointer select-none ${
-        sortField === field ? 'text-[#6E56CF]' : 'text-[#A1A1AA]'
+        sortField === field ? 'text-white' : 'text-[#A1A1AA]'
       }`}
     >
       <span>{label}</span>
       {sortField === field ? (
-        <span className="text-[10px] text-[#6E56CF]">{sortDir === 'desc' ? '↓' : '↑'}</span>
+        <span className="text-[10px] text-white">{sortDir === 'desc' ? '↓' : '↑'}</span>
       ) : (
         <span className="text-[10px] opacity-40">↕</span>
       )}
@@ -535,20 +745,27 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
               {COMPANY_TYPES.map((ct) => {
                 const isSelected = activeCategorySlug === ct.slug;
                 return (
-                  <button
-                    key={ct.slug}
-                    ref={(el) => { subCatRefs.current[ct.slug] = el; }}
-                    type="button"
-                    onClick={() => handleSubcategoryClick(ct.slug)}
-                    className={cn(
-                      "rounded-full px-3.5 py-1 text-xs font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0",
-                      isSelected
-                        ? "bg-white text-black border-transparent font-bold shadow-sm"
-                        : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/50 hover:text-white"
+                  <div key={ct.slug} className="flex items-center gap-1 shrink-0">
+                    <button
+                      ref={(el) => { subCatRefs.current[ct.slug] = el; }}
+                      type="button"
+                      onClick={() => handleSubcategoryClick(ct.slug)}
+                      className={cn(
+                        "rounded-full px-3.5 py-1 text-xs font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0",
+                        isSelected
+                          ? "bg-[#6E56CF] text-white border-[#6E56CF] font-bold shadow-sm"
+                          : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/50 hover:text-white"
+                      )}
+                    >
+                      <span>{ct.label}</span>
+                    </button>
+
+                    {isSelected && ct.slug !== "all" && (
+                      <ClearFilterChip
+                        onClick={() => handleSubcategoryClick("all")}
+                      />
                     )}
-                  >
-                    <span>{ct.label}</span>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -562,21 +779,8 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
             )}
           </div>
 
-          {/* Active Filter Pills Bar */}
-          {selectedCountry !== "all" && (
-            <div className="flex items-center gap-2 pb-2">
-              <span className="text-xs text-[#71717A]">Country:</span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#232326] bg-[#131316] px-2.5 py-1 text-xs font-medium text-white">
-                {selectedCountry}
-                <button onClick={() => setSelectedCountry("all")} className="text-[#71717A] hover:text-white">
-                  <X size={12} />
-                </button>
-              </span>
-            </div>
-          )}
-
           {/* Companies List Container */}
-          {isLoading ? (
+          {isLoading || isFetching && allCompanies.length === 0 ? (
             <div className="w-full space-y-2">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="h-16 animate-pulse bg-[#131316]/50 rounded-xl border border-[#232326]/60" />
@@ -585,7 +789,11 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
           ) : allCompanies.length === 0 ? (
             <div className="text-center py-20 bg-[#111113] rounded-xl border border-[#232326]">
               <p className="text-[#71717A] text-sm">
-                {query ? `No companies match "${query}".` : "No companies found."}
+                {companyNameFilter
+                  ? `No companies match "${companyNameFilter}".`
+                  : query
+                    ? `No companies match "${query}".`
+                    : "No companies found."}
               </p>
             </div>
           ) : (
@@ -594,47 +802,153 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                 {/* Header Row */}
                 <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2.5 bg-[#131316] border-b border-[#232326]/60 text-[10px] font-bold font-mono tracking-wider uppercase text-[#A1A1AA]`}>
                   <div></div>
-                  <div><SortHeader label="COMPANY" field="name" /></div>
+                  <div>
+                    <div className="relative" ref={companyNamePopoverRef}>
+                      <div className="flex items-center gap-1">
+                        {/* Existing company-name sort */}
+                        <SortHeader label="COMPANY" field="name" />
+
+                        {companyNameFilter && (
+                          <ClearFilterChip
+                            onClick={() => {
+                              setCompanyNameFilter("");
+                              setCompanyNameInput("");
+                              setCurrentPage(1);
+                            }}
+                          />
+                        )}
+
+                        {/* Company-name filter */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCompanyNameInput(companyNameFilter);
+                            setIsCompanyNamePopoverOpen((open) => !open);
+                          }}
+                          className={`flex items-center justify-center transition-colors cursor-pointer ${
+                            companyNameFilter
+                              ? "text-[#6E56CF]"
+                              : "text-[#71717A] hover:text-white"
+                          }`}
+                          aria-label="Filter by company name"
+                          title="Filter by name"
+                        >
+                          <Filter size={12} />
+                        </button>
+                      </div>
+
+                      {isCompanyNamePopoverOpen && (
+                        <div
+                          className="absolute left-0 top-full mt-2 w-[190px] rounded-xl border border-[#232326] bg-[#18181C] p-2 shadow-2xl z-[60] text-xs normal-case font-sans flex flex-col gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            autoFocus
+                            type="text"
+                            value={companyNameInput}
+                            onChange={(e) => setCompanyNameInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                setCompanyNameFilter(companyNameInput.trim());
+                                setIsCompanyNamePopoverOpen(false);
+                              }
+                            }}
+                            placeholder="Filter by name..."
+                            className="w-full h-7 shrink-0 rounded-md border border-[#6E56CF] bg-[#131316] px-2 text-xs text-white placeholder:text-[#71717A] focus:outline-none focus:ring-0"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCompanyNameFilter(companyNameInput.trim());
+                              setIsCompanyNamePopoverOpen(false);
+                            }}
+                            className="w-full h-7 shrink-0 rounded-md bg-[#6E56CF] text-white text-xs font-semibold hover:bg-[#7C66DF] transition-colors"
+                          >
+                            Apply
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <div>
                     <div className="relative" ref={countryPopoverRef}>
                       <button
                         type="button"
                         onClick={() => setIsCountryPopoverOpen(!isCountryPopoverOpen)}
                         className={`flex items-center gap-1 font-mono hover:text-white transition-colors cursor-pointer select-none ${
-                          selectedCountry !== 'all' || sortField === 'country' ? 'text-[#6E56CF]' : 'text-[#A1A1AA]'
+                          selectedCountry !== 'all' ? 'text-[#6E56CF]' : 'text-[#A1A1AA]'
                         }`}
                       >
                         <span>COUNTRY</span>
                         <Filter size={12} className="ml-0.5" />
+                        {selectedCountry !== "all" && (
+                          <ClearFilterChip
+                            onClick={() => {
+                              setSelectedCountry("all");
+                              setCountrySearch("");
+                              setCurrentPage(1);
+                            }}
+                          />
+                        )}
                       </button>
 
                       {isCountryPopoverOpen && (
-                        <div className="absolute left-0 top-full mt-2 w-60 rounded-xl border border-[#232326] bg-[#131316] p-3 shadow-2xl z-50 text-xs normal-case font-sans">
+                        <div
+                          className="absolute left-0 top-full mt-2 w-[220px] rounded-xl border border-[#232326] bg-[#131316] p-2.5 shadow-2xl z-[70] text-xs normal-case font-sans"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <input
                             type="text"
                             value={countrySearch}
                             onChange={(e) => setCountrySearch(e.target.value)}
                             placeholder="Search countries..."
-                            className="w-full rounded-lg border border-[#232326] bg-[#0A0A0C] px-3 py-1.5 text-xs text-white placeholder-[#71717A] focus:border-[#6E56CF] focus:outline-none mb-2"
+                            className="w-full h-9 rounded-lg border border-[#232326] bg-[#0A0A0C] px-3 text-xs leading-9 text-white placeholder:text-[#71717A] focus:border-[#6E56CF] focus:outline-none mb-2"
                           />
-                          <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-thin">
-                            <button
-                              type="button"
-                              onClick={() => { setSelectedCountry('all'); setIsCountryPopoverOpen(false); }}
-                              className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold ${selectedCountry === 'all' ? 'bg-white text-black font-bold' : 'text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white'}`}
-                            >
-                              All countries
-                            </button>
-                            {filteredCountriesList.map((countryName) => (
-                              <button
-                                key={countryName}
-                                type="button"
-                                onClick={() => { setSelectedCountry(countryName); setIsCountryPopoverOpen(false); }}
-                                className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold truncate ${selectedCountry.toLowerCase() === countryName.toLowerCase() ? 'bg-white text-black font-bold' : 'text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white'}`}
-                              >
-                                {countryName}
-                              </button>
-                            ))}
+
+                          <div className="max-h-[150px] overflow-y-auto overflow-x-hidden pr-1">
+                            <div className="flex flex-col gap-0.5">
+                              {selectedCountry !== "all" && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCountry("all");
+                                    setCountrySearch("");
+                                    setCurrentPage(1);
+                                    setIsCountryPopoverOpen(false);
+                                  }}
+                                  className="w-full h-7 shrink-0 flex items-center rounded-md px-2 text-left text-[11px] leading-none font-semibold text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white"
+                                >
+                                  Clear filter
+                                </button>
+                              )}
+
+                              {filteredCountriesList.map((countryName) => (
+                                <button
+                                  key={countryName}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCountry(countryName);
+                                    setCurrentPage(1);
+                                    setIsCountryPopoverOpen(false);
+                                  }}
+                                  className={`w-full h-7 shrink-0 flex items-center rounded-md px-2 text-left text-[11px] leading-none font-semibold truncate ${
+                                    selectedCountry.toLowerCase() === countryName.toLowerCase()
+                                      ? "bg-white text-black font-bold"
+                                      : "text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white"
+                                  }`}
+                                >
+                                  <span className="truncate">{countryName}</span>
+                                </button>
+                              ))}
+
+                              {filteredCountriesList.length === 0 && (
+                                <div className="px-2 py-3 text-[11px] text-[#71717A]">
+                                  No countries found
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -642,9 +956,9 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                   </div>
                   <div><SortHeader label="VALUATION" field="valuation" /></div>
                   <div><SortHeader label="VAL/EMP" field="valEmp" /></div>
-                  <div><SortHeader label="AI NATIVE" field="aiNative" /></div>
-                  <div><SortHeader label="PROFITABLE" field="profitable" /></div>
-                  <div><SortHeader label="SECTOR" field="sector" /></div>
+                  <div className="font-mono">AI NATIVE</div>
+                  <div className="font-mono">PROFITABLE</div>
+                  <div className="font-mono">SECTOR</div>
                   <div><SortHeader label="MODELS" field="modelsCount" /></div>
                   <div><SortHeader label="TOOLS" field="toolsCount" /></div>
                   <div>SHARE</div>

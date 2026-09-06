@@ -63,12 +63,7 @@ export function CategoryNav() {
     scrollChipIntoView(container, target, smooth);
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      scrollToActive(false);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [activeCategory]);
+
 
   const showParam = searchParams ? searchParams.get('show') : null;
   const activeFilters = showParam ? showParam.split(',') : FILTER_OPTIONS.map(f => f.id);

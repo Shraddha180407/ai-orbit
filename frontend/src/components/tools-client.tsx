@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from "react";
-import { useSearchParams, usePathname } from "next/navigation";
+import {useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { ToolListView } from "@/components/ToolListView";
@@ -10,6 +10,57 @@ import type { SortOption } from "@/lib/types";
 import { scrollChipIntoView } from "@/lib/utils";
 
 type DirectoryMode = "tools" | "personal" | "creativity" | "agents";
+
+// Maps UI category slugs → task slugs and tag slugs present in API data
+const CATEGORY_FILTER_MAP: Record<string, { taskSlugs?: string[]; tagSlugs?: string[]; nameParts?: string[]; descriptionParts?: string[] }> = {
+  // ── Tools ──────────────────────────────────────────────────────────────────
+  "writing":             { taskSlugs: ["write-blog-posts"], nameParts: ["write", "copy", "katteb", "grammarly", "jasper", "copyai", "wordtune"], descriptionParts: ["writing", "copywriting", "blog", "essay", "content creation", "marketing copy"] },
+  "image-generation":    { taskSlugs: ["create-empty-states"], nameParts: ["kittl", "midjourney", "dall", "stable", "ilus", "ai-illustration", "ai-hairstyle", "pickey"], descriptionParts: ["image gen", "text-to-image", "image generator", "ai image", "generate image", "ai art", "illustration generator", "visual", "convert text to image"] },
+  "video":               { taskSlugs: ["generate-video-scripts"], nameParts: ["filmflow", "boords", "descript"], descriptionParts: ["video", "storyboard", "film production", "screenwriting", "youtube"] },
+  "audio":               { taskSlugs: ["transcribe-audio"], nameParts: ["otter", "fliflik"], descriptionParts: ["transcri", "voice", "audio", "speech", "meeting", "sound", "voice changer", "voice filter"] },
+  "chatbots":            { taskSlugs: ["build-chatbots"], nameParts: ["chatbase", "poe", "character", "bot"], descriptionParts: ["chatbot", "conversational", "knowledge base", "chat with", "ai chat", "virtual assistant"] },
+  "coding":              { taskSlugs: ["generate-code"], nameParts: ["cursor", "copilot", "codeium", "width"], descriptionParts: ["code", "coding", "developer", "programming", "software development", "engineer"] },
+  "marketing":           { nameParts: ["bestcontent", "copyai", "impel"], descriptionParts: ["marketing", "seo", "advertising", "campaign", "lead", "automotive", "customer lifecycle"] },
+  "productivity":        { tagSlugs: ["productivity"], taskSlugs: ["automate-workflows", "summarize-documents"], nameParts: ["notion", "otter"], descriptionParts: ["productivity", "workflow", "automat", "scheduling", "appointment", "task management", "summarize"] },
+  "business":            { nameParts: ["mava", "truelark", "impel", "chatbase"], descriptionParts: ["business", "enterprise", "customer support", "crm", "b2b", "revenue", "sales", "corporate training"] },
+  "education":           { nameParts: ["twixie", "yourteacher", "umu", "katteb"], descriptionParts: ["educat", "learn", "teach", "tutor", "language", "training", "course", "study", "child", "student", "foreign language"] },
+  "agents":              { taskSlugs: ["automate-workflows"], descriptionParts: ["agent", "autonomous", "automat", "agentic"] },
+  "presentations":       { descriptionParts: ["presentation", "slide", "pitch deck", "slideshow", "powerpoint"] },
+  "3d-generation":       { descriptionParts: ["3d", "three-dimensional", "3d model", "3d generat"] },
+  "no-code":             { nameParts: ["chatme"], descriptionParts: ["no-code", "nocode", "visual editor", "drag and drop", "without code", "web application"] },
+  "workflow-automation": { taskSlugs: ["automate-workflows"], descriptionParts: ["workflow automat", "automation platform", "automate", "zapier", "integrate"] },
+
+  // ── Personal ───────────────────────────────────────────────────────────────
+  "relationships":       { nameParts: ["loverr", "flave", "wowow", "wifeapp", "lovecore", "outpeach", "virtugf", "fallfor", "honeychat", "mygirl", "xmate", "aipornchat", "nsfw", "naughty", "tickles", "texthub", "bloomstories", "dreamrp", "ehentai", "realmplay", "janitor", "polybuzz", "ai-girlfriend", "alphazria", "nsfwchat", "soulfun", "joiai", "couple"], descriptionParts: ["girlfriend", "companion", "romantic", "relationship", "partner", "dating", "virtual partner", "ai girlfriend", "nsfw", "sexting", "roleplay", "intimate"] },
+  "learning":            { nameParts: ["yourteacher", "umu"], descriptionParts: ["language practice", "foreign language", "learning platform", "corporate training", "course", "study", "lesson"] },
+  "health-wellness":     { descriptionParts: ["health", "wellness", "fitness", "mental health", "nutrition", "wellbeing", "medical"] },
+  "personal-development":{ nameParts: ["secretenergy", "ask-marcus"], descriptionParts: ["personal growth", "stoic", "self-improvement", "life coach", "motivat", "mindset", "marcus aurelius", "metaphysical", "conscious"] },
+  "travel":              { descriptionParts: ["travel", "trip", "destination", "hotel", "flight", "itinerary"] },
+  "finance-wealth":      { descriptionParts: ["financ", "wealth", "invest", "money", "budget", "tax", "trading"] },
+  "entertainment":       { nameParts: ["roastedby", "memedeck", "digital-pets", "ai-realm", "dreampal", "lore-sage", "tell-me", "storychat", "dreamrp", "roleplay-gpt", "realmplay", "bot3", "spicy-chat", "carter-chat", "figgs", "nurmonic", "robotalk", "ai-characters"], descriptionParts: ["game", "roleplay", "story", "adventure", "meme", "tamagotchi", "entertain", "rpg", "dnd", "dungeons", "fiction", "narrative", "pet simulation"] },
+  "food-nutrition":      { descriptionParts: ["food", "nutrition", "recipe", "meal", "diet", "cooking", "ingredient"] },
+  "shopping":            { descriptionParts: ["shop", "ecommerce", "product recommendation", "purchase", "buy"] },
+  "fashion-style":       { nameParts: ["ai-hairstyle"], descriptionParts: ["fashion", "style", "hair", "outfit", "clothing", "wardrobe", "makeover"] },
+  "mindfulness":         { descriptionParts: ["mindful", "meditat", "calm", "zen", "stress", "anxiety", "breathe", "relax"] },
+  "life-coaching":       { nameParts: ["huma", "halogram"], descriptionParts: ["life coach", "mentor", "emotional support", "companionship", "mood", "personal assistant", "empathetic"] },
+  "home-decor":          { descriptionParts: ["home decor", "interior design", "furniture", "room design"] },
+  "insurance-advisor":   { descriptionParts: ["insur", "coverage", "policy", "premium"] },
+
+  // ── Creativity ─────────────────────────────────────────────────────────────
+  "software-development":{ taskSlugs: ["generate-code"], descriptionParts: ["software development", "coding", "developer", "programming", "engineer", "web application", "no-code platform"] },
+  "video-creation":      { nameParts: ["filmflow", "boords", "descript"], descriptionParts: ["video", "film", "storyboard", "screenwriting", "youtube", "tutorial"] },
+  "music":               { descriptionParts: ["music", "audio", "sound", "song", "beat", "melody", "compose"] },
+  "graphic-design":      { nameParts: ["kittl"], descriptionParts: ["graphic design", "design creation", "poster", "banner", "logo", "visual design"] },
+  "digital-art":         { nameParts: ["ilus", "ai-illustration"], descriptionParts: ["digital art", "illustration", "ai art", "artwork", "artistic"] },
+  "brainstorming":       { descriptionParts: ["brainstorm", "idea generat", "creative", "ideation", "concept"] },
+  "3d-creation":         { descriptionParts: ["3d", "three-dimensional"] },
+  "presentation-design": { descriptionParts: ["presentation", "slide", "pitch", "deck"] },
+  "storytelling":        { taskSlugs: ["write-blog-posts"], nameParts: ["tell-me", "lore-sage", "storychat", "dreampal"], descriptionParts: ["story", "narrative", "tale", "fiction", "children's story", "world building", "ttrpg", "fantasy world"] },
+  "content-creation":    { taskSlugs: ["write-blog-posts", "generate-video-scripts"], nameParts: ["bestcontent", "copyai", "filmflow"], descriptionParts: ["content creation", "content marketing", "creator", "social media content", "blog"] },
+  "branding":            { nameParts: ["makeinfluencer"], descriptionParts: ["brand", "logo", "identity", "influencer", "monetize"] },
+  "motion-graphics":     { descriptionParts: ["motion", "animation", "animated", "motion graphic"] },
+  "game-creation":       { nameParts: ["ai-realm", "digital-pets", "lore-sage"], descriptionParts: ["game", "rpg", "dnd", "dungeons and dragons", "game master", "ttrpg", "pet simulation"] },
+};
 
 const CATEGORY_MAP = {
   tools: [
@@ -82,6 +133,28 @@ const CATEGORY_MAP = {
   ]
 } as const;
 
+function matchesCategory(tool: any, categorySlug: string): boolean {
+  const filter = CATEGORY_FILTER_MAP[categorySlug];
+  if (!filter) return true;
+
+  // ttasks slugs — most reliable signal
+  const taskSlugs = tool.ttasks?.map((t: any) => t.task?.slug) ?? [];
+  if (filter.taskSlugs?.some((s: string) => taskSlugs.includes(s))) return true;
+
+  // tag slugs
+  const tagSlugs = tool.tags?.map((t: any) => t.tag?.slug) ?? [];
+  if (filter.tagSlugs?.some((s: string) => tagSlugs.includes(s))) return true;
+
+  // name + slug match (exact tool identifiers)
+  const nameAndSlug = (tool.name + " " + tool.slug).toLowerCase();
+  if (filter.nameParts?.some((p: string) => nameAndSlug.includes(p.toLowerCase()))) return true;
+
+  const firstSentence = (tool.description ?? "").split(/\.\s+/)[0].toLowerCase();
+  if (filter.descriptionParts?.some((p: string) => firstSentence.includes(p.toLowerCase()))) return true;
+
+  return false;
+}
+
 export function ToolsClient({
   defaultMode,
   defaultCategory
@@ -91,7 +164,7 @@ export function ToolsClient({
 }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-
+  const router = useRouter();
   // FIXED: Mode is now dynamically derived every render. It will instantly swap back to "tools" 
   // when navigating away from the "agents" page, completely bypassing the Next.js cache trap.
   const mode: DirectoryMode = defaultMode || (
@@ -113,40 +186,12 @@ export function ToolsClient({
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    if (!container) return;
-    const target = subCatRefs.current[activeCategory || ""];
-    if (!target) return;
-
-    scrollChipIntoView(container, target);
-  }, [activeCategory]);
-
   // FIXED: If the mode changes (e.g. going from Agents to Tools), force the category and page to reset 
   // so the new page doesn't try to query the old page's categories.
   useEffect(() => {
     setActiveCategory(defaultCategory || searchParams.get("category") || "");
     setCurrentPage(Number(searchParams.get("page")) || 1);
-  }, [mode, defaultCategory, searchParams]);
-
-  // Scroll the active category pill into view on mobile after every category change
-  const categoryRowRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
-    const container = categoryRowRef.current;
-    if (!container) return;
-    const activeBtn = container.querySelector<HTMLElement>('[data-active="true"]');
-    if (!activeBtn) return;
-    const cRect = container.getBoundingClientRect();
-    const bRect = activeBtn.getBoundingClientRect();
-    const bLeft = bRect.left - cRect.left + container.scrollLeft;
-    const bRight = bLeft + bRect.width;
-    if (bLeft < container.scrollLeft) {
-      container.scrollTo({ left: bLeft - 16, behavior: 'smooth' });
-    } else if (bRight > container.scrollLeft + container.clientWidth) {
-      container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: 'smooth' });
-    }
-  }, [activeCategory]);
+  }, [mode, defaultCategory]);
 
 
 
@@ -177,13 +222,14 @@ export function ToolsClient({
 
   // Single page Query
   const { data, isLoading, isPlaceholderData } = useQuery({
-    queryKey: ["tools", mode, activeCategory, q, pricing, sort, currentPage],
+    queryKey: ["tools", mode, mode === "agents" ? activeCategory : "", q, pricing, sort, currentPage],
     queryFn: async () => {
       const query = new URLSearchParams();
       if (q) query.set("q", q);
       if (pricing) query.set("pricing", pricing);
       if (sort) query.set("sort", sort);
       query.set("page", String(currentPage));
+      query.set("limit", "200");
 
       if (mode === "agents") {
         if (activeCategory) query.set("category", activeCategory);
@@ -192,12 +238,13 @@ export function ToolsClient({
         return res.json();
       }
 
-      const endpoint = activeCategory
-        ? `${API_URL}/api/v1/tools/category/${activeCategory}`
-        : mode === "personal" || mode === "creativity"
-          ? `${API_URL}/api/v1/tools/category/${mode}`
+      const endpoint = mode === "personal"
+        ? `${API_URL}/api/v1/tools/category/personal`
+        : mode === "creativity"
+          ? `${API_URL}/api/v1/tools/category/creativity`
           : `${API_URL}/api/v1/tools`;
 
+    
       const res = await fetch(`${endpoint}?${query.toString()}`);
       if (!res.ok) return { tools: [], totalPages: 1 };
       return res.json();
@@ -206,7 +253,10 @@ export function ToolsClient({
     staleTime: 30 * 1000,
   });
 
-  const tools = data?.tools || [];
+  const rawTools = data?.tools || [];
+  const tools = (activeCategory && mode !== "agents")
+    ? rawTools.filter((t: any) => matchesCategory(t, activeCategory))
+    : rawTools;
   const totalPages = data?.totalPages || 1;
 
   const categories = React.useMemo(() => {
@@ -235,7 +285,8 @@ export function ToolsClient({
 
   return (
     <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-6">
-      <div className={`mx-auto w-full max-w-[1600px] space-y-4 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
+      
+        <div className="mx-auto w-full max-w-[1600px] space-y-4">
 
         {/* Category Row */}
         <div
@@ -264,7 +315,7 @@ export function ToolsClient({
         </div>
 
     {/* List Grid */}
-    <ToolListView tools={tools} loading={isLoading} />
+    <ToolListView tools={tools} loading={isLoading || isPlaceholderData} />
 
     {/* Pagination Bar */}
     {totalPages > 1 && (
