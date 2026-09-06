@@ -442,7 +442,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
             method="GET"
             onSubmit={handleSubmit}
             ref={searchContainerRef}
-            className="relative z-40 w-full max-w-[520px] mx-auto mb-4 sm:mb-5 group"
+            className="relative z-40 w-[92%] sm:w-full max-w-[520px] mx-auto mb-4 sm:mb-5 group"
           >
             <div
               className="relative w-full rounded-xl border border-[#232326]/70 bg-[#111113] h-[38px] sm:h-[42px] flex items-center px-3.5 sm:px-4 pr-[4.5rem] transition-colors duration-150"
@@ -467,9 +467,9 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
               </div>
             </div>
             <style jsx>{`
-              form:focus-within > div {
-                border-color: var(--color-signal) !important;
-                box-shadow: 0 0 0 3px var(--color-signal-dim);
+              form:focus-within > div:first-of-type {
+                border-color: rgba(255, 255, 255, 0.15) !important;
+                box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
               }
             `}</style>
 
