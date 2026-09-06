@@ -86,8 +86,12 @@ function mergeWithDummy(apiDevices: Device[]): DeviceData[] {
       year: api.year || dummy?.year || "—",
       month: dummy?.month || api.month || api.year || "—",
       description: api.description || dummy?.description || "",
-      imageUrl: api.imageUrl || dummy?.imageUrl || "",
-      manufacturerLogoUrl: dummy?.manufacturerLogoUrl || getFaviconUrl(manufacturer, slug),
+      imageUrl: (api.imageUrl && api.imageUrl !== "Unknown") ? api.imageUrl : (dummy?.imageUrl || ""),
+      manufacturerLogoUrl: (dummy?.manufacturerLogoUrl && dummy.manufacturerLogoUrl !== "Unknown") 
+  ? dummy.manufacturerLogoUrl 
+  : ((api.manufacturerLogoUrl && api.manufacturerLogoUrl !== "Unknown") 
+    ? api.manufacturerLogoUrl 
+    : getFaviconUrl(manufacturer, slug)),
       mainTask,
       mainTaskColor: getMainTaskColor(mainTask),
       formFactor: api.formFactor || dummy?.formFactor || null,
@@ -107,8 +111,8 @@ function GridImageCell({ name, imageUrl, color }: { name: string; imageUrl: stri
   const [failed, setFailed] = React.useState(false);
   if (!imageUrl || failed) {
     return (
-      <div className="w-full h-full flex items-center justify-center" style={{ background: `${color}22` }}>
-        <span className="text-5xl font-black uppercase" style={{ color }}>{name.charAt(0)}</span>
+      <div className="w-full h-full flex items-center justify-center bg-white">
+        <span className="text-[13px] font-semibold uppercase text-[#52525B]">{name.charAt(0)}</span>
       </div>
     );
   }
@@ -118,7 +122,7 @@ function GridImageCell({ name, imageUrl, color }: { name: string; imageUrl: stri
 function LogoCell({ name, logoUrl, color }: { name: string; logoUrl: string; color: string }) {
   const [failed, setFailed] = React.useState(false);
   if (!logoUrl || failed) {
-    return <span className="text-sm font-bold" style={{ color }}>{name.charAt(0)}</span>;
+    return <span className="text-[11px] font-semibold uppercase text-[#52525B]">{name.charAt(0)}</span>;
   }
   return <img src={logoUrl} alt={name} className="h-9 w-9 object-contain" onError={() => setFailed(true)} />;
 }
