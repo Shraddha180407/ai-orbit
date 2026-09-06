@@ -410,13 +410,13 @@ LEVEL_STYLES[levelFor(v.id)]
 </td>
 <td className="px-4 py-[9.6px]">
 <a
-href={getChannelUrl(v.channelId, v.author.name)}
+href={getChannelUrl(v.channelId, v.author?.name || v.authorName || v.channel)}
 target="_blank"
 rel="noopener noreferrer"
 className="group/channel inline-flex items-start gap-1.5"
 >
 <span className="line-clamp-2 whitespace-normal break-words text-[13.5px] font-medium leading-snug text-secondary transition-colors group-hover/channel:text-primary">
-{v.author.name}
+{v.author?.name || v.authorName || v.channel || "Channel"}
 </span>
 <svg
 width="12"

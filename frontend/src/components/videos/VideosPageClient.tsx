@@ -52,7 +52,6 @@ export function VideosPageClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
 
   const [currentPageSize, setCurrentPageSize] = useState<number>(initialPageSize || 100);
 
@@ -83,21 +82,11 @@ export function VideosPageClient({
   const [isFetching, setIsFetching] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
 
-  function handleVideoSelect(video: Video) {
-    setSelectedVideo(video);
-    if (typeof window !== "undefined") {
-      window.history.pushState({ videoSlug: video.slug }, "", `/videos/${video.slug}`);
-    }
-  }
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const isInitialMount = useRef(true);
 
-  function handleCloseModal() {
-    setSelectedVideo(null);
-    if (typeof window !== "undefined") {
-      const currentQuery = searchParams?.toString();
-      const returnUrl = `/videos${currentQuery ? `?${currentQuery}` : ""}`;
-      window.history.pushState(null, "", returnUrl);
-    }
-  }
+  const totalPages = Math.max(1, Math.ceil(total / currentPageSize));
 
   // Seed initial SSR data into cache immediately
   useEffect(() => {
@@ -111,50 +100,31 @@ export function VideosPageClient({
     }
   }, []);
 
-  // Handle browser back/forward navigation for video modal and categories
+  // Synchronize state when server props update
   useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
-      if (e.state?.videoSlug) {
-        const found = videos.find((v) => v.slug === e.state.videoSlug);
-        if (found) {
-          setSelectedVideo(found);
-          return;
-        }
-      }
-      setSelectedVideo(null);
+    if (initialVideos && initialVideos.length > 0) {
+      setVideos(initialVideos);
+    }
+  }, [initialVideos]);
 
-      // Handle category popstate
-      const urlParams = new URLSearchParams(window.location.search);
-      const catInUrl = urlParams.get("category") || "";
-      if (catInUrl !== activeCategory) {
-        setActiveCategory(catInUrl);
-        setPage(1);
-        const cached = getCachedVideosPage(currentPageSize, 0, catInUrl || undefined, sortBy, sortDir);
-        if (cached && cached.length > 0) {
-          setVideos(cached);
-          const cachedCount = getCachedVideosCount(catInUrl || undefined);
-          if (cachedCount !== null) setTotal(cachedCount);
-        }
-      }
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [videos, activeCategory, currentPageSize, sortBy, sortDir]);
-
-  const subCatContainerRef = useRef<HTMLDivElement>(null);
-  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const initialFetchDoneRef = useRef(Boolean(initialVideos && initialVideos.length > 0));
-
-  const totalPages = Math.max(1, Math.ceil(total / currentPageSize));
-
-  // Sync with defaultCategory prop changes (e.g. dynamic route change)
   useEffect(() => {
-    if (defaultCategory !== undefined && defaultCategory !== activeCategory) {
-      setActiveCategory(defaultCategory);
+    if (typeof initialTotal === "number" && initialTotal > 0) {
+      setTotal(initialTotal);
+    }
+  }, [initialTotal]);
+
+  // Synchronize state when URL searchParams change (back/forward navigation, direct URL updates)
+  useEffect(() => {
+    const catInUrl = searchParams?.get("category") ?? defaultCategory ?? "";
+    if (catInUrl !== activeCategory) {
+      setActiveCategory(catInUrl);
       setPage(1);
     }
-  }, [defaultCategory]);
+    const pageInUrl = Math.max(1, Number(searchParams?.get("page")) || 1);
+    if (pageInUrl !== page) {
+      setPage(pageInUrl);
+    }
+  }, [searchParams, defaultCategory]);
 
   // Scroll active chip into view on mount or category change
   useEffect(() => {
@@ -165,27 +135,37 @@ export function VideosPageClient({
     }
   }, [activeCategory]);
 
-  // Pre-cache all categories immediately on mount so clicking any tab is 0ms
+  // Handle browser back/forward navigation for video modal
   useEffect(() => {
-    VIDEO_CATEGORIES.forEach((cat) => {
-      if (cat.slug !== activeCategory) {
-        prefetchVideosCategory(cat.slug || undefined, currentPageSize, 0, sortBy, sortDir);
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state?.videoSlug) {
+        const found = videos.find((v) => v.slug === e.state.videoSlug);
+        if (found) {
+          setSelectedVideo(found);
+          return;
+        }
       }
-    });
-  }, [currentPageSize, sortBy, sortDir]);
+      setSelectedVideo(null);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [videos]);
 
   // Fetch or revalidate videos whenever category, page, sort, or size changes
   useEffect(() => {
-    // If we already have SSR data for the initial render, skip redundant duplicate fetch
-    if (initialFetchDoneRef.current) {
-      initialFetchDoneRef.current = false;
-      return;
+    // If we have initial SSR data on first mount for this category/page, skip duplicate fetch
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      if (initialVideos && initialVideos.length > 0) {
+        return;
+      }
     }
 
     let cancelled = false;
+    const offset = (page - 1) * currentPageSize;
 
     // Check synchronous cache first for 0ms instant display
-    const offset = (page - 1) * currentPageSize;
     const cached = getCachedVideosPage(currentPageSize, offset, activeCategory || undefined, sortBy, sortDir);
     const cachedCount = getCachedVideosCount(activeCategory || undefined);
 
@@ -208,6 +188,8 @@ export function VideosPageClient({
 
         setVideos(pageVideos);
         setTotal(count);
+      } catch (err) {
+        console.error("Failed to fetch videos:", err);
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -220,6 +202,35 @@ export function VideosPageClient({
       cancelled = true;
     };
   }, [activeCategory, sortBy, sortDir, page, currentPageSize]);
+
+  // Pre-cache other categories quietly after mount so clicking any tab is 0ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      VIDEO_CATEGORIES.forEach((cat) => {
+        if (cat.slug !== activeCategory) {
+          prefetchVideosCategory(cat.slug || undefined, currentPageSize, 0, sortBy, sortDir);
+        }
+      });
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [currentPageSize, sortBy, sortDir]);
+
+  function handleVideoSelect(video: Video) {
+    setSelectedVideo(video);
+    if (typeof window !== "undefined") {
+      window.history.pushState({ videoSlug: video.slug }, "", `/videos/${video.slug}`);
+    }
+  }
+
+  function handleCloseModal() {
+    setSelectedVideo(null);
+    if (typeof window !== "undefined") {
+      const currentQuery = searchParams?.toString();
+      const returnUrl = `/videos${currentQuery ? `?${currentQuery}` : ""}`;
+      window.history.pushState(null, "", returnUrl);
+    }
+  }
 
   function handleCategorySelect(categorySlug: string, targetButton?: HTMLButtonElement | null) {
     if (activeCategory === categorySlug && page === 1) return;
@@ -236,22 +247,21 @@ export function VideosPageClient({
       setLoading(false);
       setIsFetching(true);
     } else {
+      setVideos([]);
       setLoading(true);
     }
 
-    // Update URL query parameters without unmounting component or triggering server actions
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (categorySlug) {
-        params.set("category", categorySlug);
-      } else {
-        params.delete("category");
-      }
-      params.delete("page");
-      const qs = params.toString();
-      const newUrl = `/videos${qs ? `?${qs}` : ""}`;
-      window.history.pushState({ category: categorySlug }, "", newUrl);
+    // Update URL via router.push so address bar, searchParams, and browser history are in sync
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    if (categorySlug) {
+      params.set("category", categorySlug);
+    } else {
+      params.delete("category");
     }
+    params.delete("page");
+    const qs = params.toString();
+    const newUrl = `/videos${qs ? `?${qs}` : ""}`;
+    router.push(newUrl, { scroll: false });
 
     // Smooth scroll chip into view on mobile/tablet
     if (targetButton && subCatContainerRef.current) {
@@ -273,17 +283,15 @@ export function VideosPageClient({
     const clamped = Math.min(Math.max(1, next), totalPages);
     setPage(clamped);
 
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (clamped > 1) {
-        params.set("page", String(clamped));
-      } else {
-        params.delete("page");
-      }
-      const qs = params.toString();
-      const newUrl = `/videos${qs ? `?${qs}` : ""}`;
-      window.history.pushState({ page: clamped }, "", newUrl);
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    if (clamped > 1) {
+      params.set("page", String(clamped));
+    } else {
+      params.delete("page");
     }
+    const qs = params.toString();
+    const newUrl = `/videos${qs ? `?${qs}` : ""}`;
+    router.push(newUrl, { scroll: false });
 
     document.getElementById("videos-list-top")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
