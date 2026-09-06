@@ -1,8 +1,8 @@
-import type { NextConfig } from "next";
+﻿import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   typescript: {
-    // Pre-existing type errors across non-robots modules — tracked separately
+    // Pre-existing type errors across non-robots modules â€” tracked separately
     ignoreBuildErrors: true,
   },
   images: {
@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: [
 
-      "lucide-react",          // 1000+ icons — biggest win: ~1 MiB per function
+      "lucide-react",          // 1000+ icons â€” biggest win: ~1 MiB per function
       "@tanstack/react-query",
       "sonner",
       "clsx",
@@ -30,6 +30,10 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: "/api-proxy/:path*",
+        destination: "https://ai-orbit.palamrendra-pm.workers.dev/:path*",
+      },
+      {
         source: "/models/compare",
         destination: "/models/compare",
       },
@@ -38,7 +42,7 @@ const nextConfig: NextConfig = {
         destination: "/tools",
       },
       {
-        source: "/:type(companies|countries|devices|fundraises|investors|news|repositories|robots|tasks|tools|videos|personal|creativity|models|agents)/:slug",
+        source: "/:type(companies|countries|devices|fundraises|investors|news|repositories|robots|tasks|tools|videos|personal|creativity|agents)/:slug",
         destination: "/p/:type/:slug",
       },
     ];
@@ -46,3 +50,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
