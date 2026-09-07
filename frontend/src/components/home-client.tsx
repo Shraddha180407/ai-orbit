@@ -18,7 +18,7 @@ export function HomeClient() {
 
   const [pageSize, setPageSize] = useState<number>(() => {
     const sizeFromUrl = searchParams.get("pageSize");
-    return sizeFromUrl ? parseInt(sizeFromUrl, 10) : 25;
+    return sizeFromUrl ? parseInt(sizeFromUrl, 10) : 24;
   });
 
   const showParam = searchParams.get("show");
@@ -83,6 +83,7 @@ export function HomeClient() {
             totalPages={totalPages}
             pageSize={pageSize}
             totalCount={total}
+            pageSizeOptions={[12, 24, 50, 100]}
             onPageChange={(p) => {
               setCurrentPage(p);
               const target = document.getElementById("tools");

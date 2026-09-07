@@ -17,28 +17,15 @@ function isToolCategory(value: string): value is ToolCategory {
   return (TOOL_CATEGORIES as readonly string[]).includes(value);
 }
 
-const CATEGORY_ALIASES: Record<string, string> = {
-  llms: "llm",
-  "ai-agents": "agents",
-  "generative-ai": "general-ai",
-};
-
 function categoryWhere(category?: string): Prisma.VideoWhereInput {
   if (!category) return {};
 
-  const normalized = category.trim().toLowerCase();
-  const canonical = CATEGORY_ALIASES[normalized] || normalized;
-
   const or: Prisma.VideoWhereInput[] = [
-    { tags: { has: canonical } },
+    { tags: { has: category } },
   ];
 
-  if (canonical !== normalized) {
-    or.push({ tags: { has: normalized } });
-  }
-
-  if (isToolCategory(canonical)) {
-    or.push({ toolCategory: canonical });
+  if (isToolCategory(category)) {
+    or.push({ toolCategory: category });
   }
 
   return { OR: or };
