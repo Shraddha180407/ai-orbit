@@ -48,10 +48,19 @@ function RobotRow({ robot }: { robot: RobotListItem }) {
     >
       {/* Col 1: Logo */}
       <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-[#18181C]">
-        {robot.logoUrl ? (
-          <Image src={robot.logoUrl} alt={robot.name} width={44} height={44} className="object-cover" unoptimized />
+        {robot.thumbnailUrl || robot.logoUrl ? (
+          <Image
+            src={(robot.thumbnailUrl || robot.logoUrl)!}
+            alt={robot.name}
+            width={44}
+            height={44}
+            className="object-cover"
+            unoptimized
+          />
         ) : (
-          <span className="text-base font-bold text-white uppercase">{robot.name.charAt(0)}</span>
+          <span className="text-base font-bold text-white uppercase">
+            {robot.name.charAt(0)}
+          </span>
         )}
       </div>
 

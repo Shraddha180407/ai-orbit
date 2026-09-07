@@ -198,7 +198,7 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
           
           {/* LEFT: Visual Hardware Stage */}
           <div className="lg:col-span-6 flex flex-col justify-between space-y-2">
-            <div className="relative w-full h-[380px] sm:h-[430px] rounded-2xl overflow-hidden border border-white/[0.08] bg-gradient-to-b from-white/[0.03] to-transparent flex items-center justify-center group shadow-2xl backdrop-blur-xl">
+            <div className="relative w-full h-[320px] sm:h-[360px] rounded-2xl overflow-hidden border border-white/[0.08] bg-gradient-to-b from-white/[0.03] to-transparent flex items-center justify-center group shadow-2xl backdrop-blur-xl">
               {!hasRealMedia ? (
                 <div className="flex flex-col items-center justify-center gap-2 text-center p-3 z-10">
                   <Bot size={24} className="text-zinc-600" />
@@ -215,11 +215,22 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
                 />
               ) : (
                 <div className="relative w-full h-full flex items-center justify-center z-10">
+  
+                  <Image
+                    src={activeMedia!.src}
+                    alt=""
+                    fill
+                    className="object-cover scale-110 blur-3xl opacity-15"
+                    unoptimized
+                  />
+
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/30" />
+
                   <Image
                     src={activeMedia!.src}
                     alt={robot.name}
                     fill
-                    className="object-contain p-4 drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)]"
+                    className="object-contain p-2 sm:p-4 drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)]"
                     unoptimized
                     priority
                   />
@@ -287,10 +298,10 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
           </div>
 
           {/* RIGHT: Telemetry & Actions Panel */}
-          <div className="lg:col-span-6 flex flex-col justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.015] p-5 sm:p-6 backdrop-blur-xl">
+          <div className="lg:col-span-6 flex flex-col justify-between gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.015] p-4 sm:p-5 backdrop-blur-xl">
             
             {/* Header + Title */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
                 <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold tracking-wide ${avail.badge}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${avail.dot}`} />
@@ -305,7 +316,7 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
               </div>
 
               <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
+                <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
                   {robot.name}
                 </h1>
                 <p className="text-xs font-medium text-teal-400/90 flex items-center gap-1.5 mt-0.5">
@@ -324,11 +335,11 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
 
             {/* Tight Metric Tiles */}
             <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition hover:border-white/15">
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-2.5 transition hover:border-white/15">
                 <span className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-zinc-400">
                   <DollarSign size={11} className="text-teal-400" /> Commercial Price
                 </span>
-                <p className="text-sm font-bold text-white mt-1 truncate">
+                <p className="text-sm font-semibold text-white mt-1 truncate">
                   {robot.price && robot.price !== "N/A" ? robot.price : "Available on Request"}
                 </p>
               </div>
@@ -337,7 +348,7 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
                 <span className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-zinc-400">
                   <Zap size={11} className="text-amber-400" /> Autonomy Level
                 </span>
-                <p className="text-sm font-bold text-white mt-1 truncate">
+                <p className="text-sm font-semibold text-white mt-1 truncate">
                   {robot.autonomyLevel || "Teleoperated"}
                 </p>
               </div>
@@ -368,7 +379,7 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
                   href={robot.websiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-teal-400 hover:bg-teal-300 px-4 py-3 text-xs font-bold text-black transition active:scale-[0.98]"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-teal-400 hover:bg-teal-300 px-4 py-2.5 text-xs font-bold text-black transition active:scale-[0.98] cursor-pointer"
                 >
                   <span>Visit Manufacturer Website</span>
                   <ArrowUpRight size={14} />
@@ -378,7 +389,7 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
               <button
                 onClick={handleShare}
                 type="button"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-white/[0.08] transition active:scale-95"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-white/[0.08] transition active:scale-95 cursor-pointer"
               >
                 {copied ? <Check size={14} className="text-teal-400" /> : <Share2 size={14} />}
                 <span>{copied ? "Copied" : "Share"}</span>
@@ -389,10 +400,10 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
         </section>
 
         {/* SECTION 2: EXECUTIVE SUMMARY & COMPACT BLUEPRINT */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        <section className="space-y-4">
           
           {/* Executive Overview (Col 5) */}
-          <div className="lg:col-span-5 rounded-2xl border border-white/[0.08] bg-white/[0.015] p-5 space-y-3 shadow-lg backdrop-blur-xl">
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.015] p-6 space-y-4 shadow-lg backdrop-blur-xl">
             <div className="space-y-0.5">
               <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-teal-400 flex items-center gap-1">
                 <Box size={11} /> Executive Summary
@@ -401,9 +412,29 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
             </div>
 
             {robot.about && (
-              <p className="text-xs leading-relaxed text-zinc-300 font-normal">
-                {robot.about}
-              </p>
+              <>
+                <div>
+                  <h3 className="text-sm font-semibold text-white mb-2">
+                    Overview
+                  </h3>
+
+                  <p className="text-sm leading-relaxed text-zinc-300">
+                    {robot.about}
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-white/[0.08]">
+                  <h3 className="text-sm font-semibold text-white mb-2">
+                    Deployment Context
+                  </h3>
+
+                  <p className="text-sm text-zinc-400 leading-relaxed">
+                    {robot.name} is designed for {robot.mainTask || "automation"} applications.
+                    It is categorized under {robot.category || "robotics"} and is developed
+                    by {robot.company}.
+                  </p>
+                </div>
+              </>
             )}
 
             {/* Primary Use Cases */}
@@ -427,7 +458,7 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
           </div>
 
           {/* DENSE TECHNICAL SPEC SHEET (Col 7) */}
-          <div className="lg:col-span-7 rounded-2xl border border-white/[0.08] bg-white/[0.015] p-5 space-y-3 shadow-lg backdrop-blur-xl">
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.015] p-6 space-y-4 shadow-lg backdrop-blur-xl">
             <div className="flex items-center justify-between border-b border-white/[0.08] pb-2">
               <div>
                 <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-teal-400 flex items-center gap-1">
@@ -439,12 +470,12 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
             </div>
 
             {/* Dense Key-Value List */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {specEntries.length > 0 ? (
                 specEntries.map((spec) => (
                   <div
                     key={spec.key}
-                    className="flex items-center justify-between py-2 border-b border-white/[0.04] text-xs"
+                    className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 flex items-center justify-between text-sm"
                   >
                     <span className="font-mono text-zinc-400">{spec.key}</span>
                     <span className="font-semibold text-zinc-100 text-right">{spec.val}</span>
@@ -493,56 +524,85 @@ export function RobotDetailClient({ id }: RobotDetailClientProps) {
 
         {/* SECTION 3: COMPARABLE HARDWARE DECK */}
         {similarRobots.length > 0 && (
-          <section className="rounded-2xl border border-white/[0.08] bg-white/[0.015] p-5 space-y-3 shadow-xl backdrop-blur-xl">
+          <section className="rounded-2xl border border-white/[0.08] bg-white/[0.015] p-6 space-y-5 shadow-xl backdrop-blur-xl">
             <div className="flex items-center justify-between border-b border-white/[0.08] pb-2">
               <div>
                 <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-teal-400">
                   Ecosystem
                 </span>
-                <h3 className="text-sm font-bold text-white tracking-tight">
+                <h3 className="text-xl font-bold text-white tracking-tight">
                   Comparable Systems in {robot.category}
                 </h3>
               </div>
-              <Link href={`/robots/${robot.category.toLowerCase().replace(/\s+/g, "-")}`} className="text-xs text-teal-400 hover:underline">
+              <Link href="/robots" className="text-xs text-teal-400 hover:underline">
                 View All Systems →
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {similarRobots.map((r) => {
                 const sAvail = getAvailabilityStyle(r.availability || "");
                 return (
                   <Link
                     key={r.id}
                     href={`/robots/${r.slug}`}
-                    className="group flex flex-col justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 hover:border-white/20 transition shadow-sm"
+                    className="group flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:border-teal-500/40 hover:-translate-y-1 transition-all duration-300 shadow-lg min-h-[320px]"
                   >
-                    <div className="flex items-start gap-2.5">
-                      <div className="relative h-9 w-9 shrink-0 rounded-lg overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center">
-                        {r.thumbnailUrl ? (
-                          <Image src={r.thumbnailUrl} alt={r.name} fill className="object-cover" unoptimized />
-                        ) : r.logoUrl ? (
-                          <Image src={r.logoUrl} alt={r.name} fill className="object-contain p-0.5" unoptimized />
-                        ) : (
-                          <Bot size={16} className="text-zinc-500" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-white group-hover:text-teal-400 transition truncate">
-                          {r.name}
-                        </p>
-                        <p className="text-[10px] text-zinc-400 truncate mt-0.5">{r.company}</p>
-                      </div>
+                    {/* Image */}
+                    <div className="relative h-44 w-full overflow-hidden">
+                      {r.thumbnailUrl ? (
+                        <Image
+                          src={r.thumbnailUrl}
+                          alt={r.name}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          unoptimized
+                        />
+                      ) : r.logoUrl ? (
+                        <Image
+                          src={r.logoUrl}
+                          alt={r.name}
+                          fill
+                          className="object-contain p-4 bg-black/30"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center bg-white/[0.03]">
+                          <Bot size={40} className="text-zinc-500" />
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/[0.04] text-[10px]">
-                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium ${sAvail.badge}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${sAvail.dot}`} />
-                        {r.availability}
-                      </span>
-                      {r.releaseDate && (
-                        <span className="font-mono text-zinc-500">{r.releaseDate.slice(0, 4)}</span>
+                    {/* Content */}
+                    <div className="flex flex-col flex-1 p-4">
+                      <h4 className="text-base font-bold text-white line-clamp-2 group-hover:text-teal-400 transition">
+                        {r.name}
+                      </h4>
+
+                      <p className="text-xs text-zinc-400 mt-1">
+                        {r.company}
+                      </p>
+
+                      {r.about && (
+                        <p className="mt-3 text-xs leading-relaxed text-zinc-400 line-clamp-3">
+                          {r.about}
+                        </p>
                       )}
+
+                      <div className="mt-auto flex items-center justify-between pt-4">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-medium ${sAvail.badge}`}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${sAvail.dot}`} />
+                          {r.availability}
+                        </span>
+
+                        {r.releaseDate && (
+                          <span className="text-[10px] text-zinc-500 font-mono">
+                            {r.releaseDate.slice(0, 4)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </Link>
                 );
