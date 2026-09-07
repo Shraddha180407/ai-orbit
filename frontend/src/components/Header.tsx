@@ -27,6 +27,7 @@ const MOBILE_NAV_LINKS = [
   { label: "Business AI", href: "/tools?category=business" },
   { label: "Leaderboard", href: "/leaderboard", highlight: true },
   { label: "Resources", href: "/tools" },
+  { label: "Press", href: "/press" },
   { label: "Newsletter", href: "/#newsletter" },
 ];
 
@@ -108,6 +109,13 @@ export function Header() {
           className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center cursor-pointer relative z-50"
         >
           Newsletter
+        </Link>
+        {/* Add Press Link Here */}
+        <Link
+          href="/press"
+          className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center cursor-pointer relative z-50"
+        >
+          Press
         </Link>
       </nav>
 

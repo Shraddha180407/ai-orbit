@@ -1629,6 +1629,15 @@ model MCPDirectoryClaim {
   @@index([userId])
 }
 
+model PressRelease {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  tag         String
+  date        String
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
 model Agent {
   id            String          @id
   slug          String          @unique
@@ -1694,15 +1703,4 @@ model AgentReview {
   @@index([agentId])
   @@index([rating])
   @@index([userId])
-}
-
-model PressRelease {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  tag         String
-  date        String
-  published   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
