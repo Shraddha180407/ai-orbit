@@ -25,14 +25,20 @@ export function SortDropdown() {
       <div className="relative inline-flex items-center">
         <select
           id="sort-select"
-          value={current.sort ?? "newest"}
+          value={current.sort ?? ""}
           onChange={(e) => {
-            const params = new URLSearchParams({ ...current, sort: e.target.value });
+            const params = new URLSearchParams({ ...current });
+            if (e.target.value) {
+              params.set("sort", e.target.value);
+            } else {
+              params.delete("sort");
+            }
             params.delete("page");
             router.push(`${pathname}?${params.toString()}`);
           }}
           className="appearance-none rounded-lg border border-[#232326] bg-[#131316] pl-3 pr-8 py-1 text-xs font-semibold text-white hover:border-neutral-500 focus:outline-none transition-all cursor-pointer h-7"
         >
+          <option value="">Default Sort</option>
           {SORT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
