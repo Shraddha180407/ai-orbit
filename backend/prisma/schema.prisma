@@ -1629,15 +1629,6 @@ model MCPDirectoryClaim {
   @@index([userId])
 }
 
-model PressRelease {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  tag         String
-  date        String
-  published   Boolean  @default(true)
-  createdAt   DateTime @default(now())
-}
 model Agent {
   id            String          @id
   slug          String          @unique

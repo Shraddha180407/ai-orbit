@@ -54,6 +54,11 @@ function isTruthy(...vals: Array<unknown>): boolean {
   return vals.some((v) => v === true || v === "true" || v === 1 || v === "1");
 }
 
+function resolveProviderLogo(src: string | null | undefined, name: string) {
+  if (name.trim().toLowerCase().includes("openai")) return "/logos/openai.svg";
+  return src ?? null;
+}
+
 function BoolPill({
   value,
   trueLabel,
@@ -381,7 +386,7 @@ function ModelRow({
   onToggleCompare: (model: AIModel) => void;
 }) {
   const companyName = model.provider?.name || model.creator || "—";
-  const companyLogo = model.provider?.logoUrl ?? null;
+  const companyLogo = resolveProviderLogo(model.provider?.logoUrl, companyName);
   const [logoFailed, setLogoFailed] = useState(false);
   const typeLabel = formatModelType(model.modelType) || model.modality || null;
 

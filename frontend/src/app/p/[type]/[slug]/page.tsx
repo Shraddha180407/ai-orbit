@@ -1,3 +1,4 @@
+export const runtime = "edge";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
@@ -21,6 +22,7 @@ import { TasksClient } from "@/components/tasks-client";
 import { CompaniesClient } from "@/components/companies-client";
 import { NewsListingClient } from "@/components/news/NewsListingClient";
 import { VideosPageClient } from "@/components/videos/VideosPageClient";
+import { getVideosPage, getVideosCount, getVideoBySlug } from "@/lib/videos-data";
 import { RobotsClient } from "@/components/robots-client";
 import { DevicesClient } from "@/components/devices-client";
 import { ModelsClient } from "@/components/models-client";
@@ -36,7 +38,27 @@ const VALID_CATEGORIES: Record<string, Set<string>> = {
   tasks: new Set(["content-creation", "image-creation", "video-creation", "audio", "coding", "data-analysis", "research", "productivity", "marketing", "customer-support", "translation", "presentation", "brainstorming", "prompting", "website-building"]),
   companies: new Set(["ai-model-providers", "infrastructure", "enterprise", "healthcare", "generative-ai", "marketing", "developer-tools", "robotics", "education", "open-source", "finance", "ai-native", "model-companies", "unicorns"]),
   news: new Set(["ai-industry", "product-launches", "innovations", "company-updates", "open-source", "regulations", "interviews", "market-trends", "breakthroughs", "security", "agents", "llms", "developer-ecosystem", "consumer"]),
-  videos: new Set(["product-demos", "tutorials", "ai-news", "model-showcases", "podcasts", "tool-walkthroughs", "webinars", "conferences", "coding", "case-studies", "comparisons", "educational-content", "success-stories", "ai-trends", "prompting"]),
+  videos: new Set([
+    "general-ai",
+    "llm",
+    "agents",
+    "multimodal-ai",
+    "robotics",
+    "educational-content",
+    "coding",
+    "model-showcases",
+    "tutorials",
+    "podcasts",
+    "ai-trends",
+    "comparisons",
+    "prompting",
+    "product-demos",
+    "case-studies",
+    "tool-walkthroughs",
+    "webinars",
+    "conferences",
+    "success-stories",
+  ]),
   robots: new Set(["humanoid-robots", "industrial", "service", "healthcare", "educational", "autonomous-mobile-robots", "drones", "companion", "agricultural", "research", "multi-agent", "task-specific", "autonomous-navigation", "reinforcement-learning", "surveillance"]),
   devices: new Set(["ai-pcs", "smartphones", "smart-home", "wearables", "ai-cameras", "audio", "ar-vr", "edge-ai", "robotics-hardware", "medical", "development-boards", "smart-sensors", "automotive-ai-devices"]),
   models: new Set(["llm", "image-generation", "video-generation", "speech", "multimodal", "code-generation", "embedding", "reasoning", "vision-models", "open-source-models", "testing", "e-commerce", "recruitment", "translation", "project-management"]),
@@ -220,16 +242,24 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     );
   }
   if (type === "videos" && VALID_CATEGORIES.videos.has(slug)) {
-    return (
-      <div className="flex flex-col flex-1">
+    const [initialVideos, initialTotal] = await Promise.all([
+      getVideosPage(100, 0, slug),
+      getVideosCount(slug),
+    ]);
 
+    return (
+      <div className="flex flex-col flex-1 bg-[#000000] text-white">
         <div className="relative z-[60]">
           <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
         </div>
-        <div className="relative z-10 flex-1 flex flex-col">
-          <VideosPageClient initialVideos={[]} initialTotal={0} pageSize={24} defaultCategory={slug} />
-        </div>
-
+        <main className="flex-1 w-full max-w-[1440px] mx-auto px-6 lg:px-10 xl:px-14 pb-8 pt-2">
+          <VideosPageClient
+            initialVideos={initialVideos}
+            initialTotal={initialTotal}
+            pageSize={100}
+            defaultCategory={slug}
+          />
+        </main>
       </div>
     );
   }
@@ -307,7 +337,11 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
       <MCPDetailClient item={item} initialAlternatives={undefined} />
     );
   }
-  if (type === "videos") return <VideoDetailsClient />;
+  if (type === "videos") {
+    const video = await getVideoBySlug(slug);
+    if (!video) return notFound();
+    return <VideoDetailsClient initialVideo={video} />;
+  }
   if (type === "news") return <ArticlePageClient />;
   if (type === "tasks") return <TaskDetailClient />;
   if (type === "repositories") return <RepositoryDetailPage slug={slug} />;
