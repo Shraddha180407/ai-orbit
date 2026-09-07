@@ -206,10 +206,9 @@ function AltDeviceCard({ device, index = 0 }: { device: DeviceData; index?: numb
         <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#1a1a1e] group-hover:border-transparent transition-colors duration-200">
           <div className="flex items-center gap-1 flex-wrap">
                        {device.category && (
-              <span className="text-[9px] font-mono font-semibold px-2 py-0.5 rounded-full shrink-0"
-  style={{ color: device.mainTaskColor, background: `${device.mainTaskColor}18`, border: `1px solid ${device.mainTaskColor}30` }}>
-  {device.category}
-</span>
+              <span className="text-[9px] font-mono font-semibold px-2 py-0.5 rounded-full shrink-0 text-[#d4d4d8] bg-white/8 border border-white/15">
+                {device.category}
+              </span>
             )}
           </div>
           <span className="text-[10px] font-bold text-[#4ade80] shrink-0">{device.price || "N/A"}</span>
@@ -247,11 +246,8 @@ function DeviceGallery({ name, imageUrl, images, videoUrl, color }: {
   const isSingle = mediaItems.length === 1;
   return (
     <div className="w-full flex flex-col h-full">
-      <div className={`relative rounded-xl border border-[#232326] overflow-hidden flex items-center justify-center ${isSingle ? "flex-1" : ""}`}
-  style={{
-    background: "linear-gradient(135deg, #f8f8f8, #eaeaea)",
-    ...(isSingle ? { minHeight: 350 } : { height: 350, maxHeight: 350 }),
-  }}>
+      <div className={`relative rounded-xl border border-[#232326] bg-white overflow-hidden flex items-center justify-center ${isSingle ? "flex-1" : ""}`}
+        style={isSingle ? { minHeight: 350 } : { height: 350, maxHeight: 350 }}>
         {active.type === "video" ? (
           <iframe src={getYoutubeEmbedUrl(active.src)} className="w-full" style={{ minHeight: 340 }}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
@@ -335,7 +331,7 @@ export function DeviceDetailClient() {
                 slug: dSlug,
                 name: d.name,
                 manufacturer,
-                manufacturerSlug: "",
+                manufacturerSlug: d.manufacturerSlug || "",
                 category: d.category || "Other",
                 availability: (d.availability as DeviceData["availability"]) || "Available",
                 price: d.price || null,
@@ -414,17 +410,6 @@ export function DeviceDetailClient() {
     device.price ? { label: "Price", value: device.price } : null,
   ].filter(Boolean) as { label: string; value: string }[];
 
-    const derivedPros = device.bestFor?.length
-    ? device.bestFor
-    : (device.aiFeatures || []).slice(0, 3);
-
-  const derivedCons = [
-    device.availability === "Discontinued" && "No longer sold — support may be limited",
-    !device.buyUrl && "No official purchase link available",
-    device.processingType === "Cloud" && "Requires an internet connection",
-    !device.price && "Pricing not publicly listed",
-  ].filter(Boolean) as string[];
-
   return (
     <main className="mx-auto max-w-[1400px] px-4 pt-2 pb-8 md:px-6 text-white">
 
@@ -437,13 +422,6 @@ export function DeviceDetailClient() {
         <span>›</span>
         <span className="text-[#A1A1AA]">{device.name}</span>
       </nav>
-      {device.lastVerifiedDate && (
-  <div className="flex items-center gap-1.5 text-[10px] text-[#52525B] font-mono">
-    <ShieldCheck size={11} className="text-[#4ade80]" />
-    Verified {device.lastVerifiedDate}
-    {device.officialSource && <span>· {device.officialSource}</span>}
-  </div>
-)}
 
       {/* ── HERO ── */}
       <header className="relative rounded-2xl border border-[#1e1e22] bg-[#09090c] overflow-hidden mb-5">
@@ -496,7 +474,7 @@ export function DeviceDetailClient() {
 
               {/* Name + manufacturer */}
               <div>
-                <div className="h-[3px] w-12 rounded-full mt-2" style={{ background: `linear-gradient(90deg, ${accentColor}, ${accentColor}00)` }} />
+                <h1 className="text-[28px] font-black text-white tracking-tight leading-tight">{device.name}</h1>
                 {device.manufacturer && (
                   <div className="flex items-center gap-2 mt-1.5">
                     <div className="h-5 w-5 rounded bg-white flex items-center justify-center overflow-hidden shrink-0">
@@ -509,20 +487,15 @@ export function DeviceDetailClient() {
                 )}
               </div>
 
-<div className="flex items-center gap-3 py-3 border-y border-[#1a1a1e]">
-  <span className="text-2xl font-black text-white">{device.price || "N/A"}</span>
-  {device.availability && (
-    <span className={`text-[11px] font-bold px-3 py-1 rounded-full ${AVAILABILITY_STYLES[device.availability]}`}>
-      {device.availability}
-    </span>
-  )}
-  {device.qualityScore != null && (
-    <span className="ml-auto flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full"
-      style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}40` }}>
-      <Sparkles size={11} /> {device.qualityScore}/100
-    </span>
-  )}
-</div>
+              {/* Price + availability */}
+              <div className="flex items-center gap-3 py-3 border-y border-[#1a1a1e]">
+                <span className="text-2xl font-black text-white">{device.price || "N/A"}</span>
+                {device.availability && (
+                  <span className={`text-[11px] font-bold px-3 py-1 rounded-full ${AVAILABILITY_STYLES[device.availability]}`}>
+                    {device.availability}
+                  </span>
+                )}
+              </div>
 
               {/* Short description */}
               <p className="text-sm text-[#A1A1AA] leading-relaxed">{device.description}</p>
@@ -544,20 +517,25 @@ export function DeviceDetailClient() {
                 </div>
               )}
 
-{/* Quick stat pills */}
-<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-  {[
-    device.formFactor && { label: "Form", value: device.formFactor },
-    { label: "Released", value: device.month || device.year || "—" },
-    device.country && { label: "Made in", value: device.country },
-    device.aiModel && { label: "AI Model", value: device.aiModel },
-  ].filter(Boolean).map((stat: any) => (
-    <div key={stat.label} className="flex flex-col gap-0.5 rounded-lg bg-[#111114] border border-[#1e1e22] px-3 py-2 cursor-default transition-colors duration-200 hover:border-[#3a3a3e] hover:bg-[#17171a]">
-      <span className="text-[9px] font-mono text-[#52525B] uppercase tracking-wider">{stat.label}</span>
-      <span className="text-[11px] font-semibold text-white truncate">{stat.value}</span>
-    </div>
-  ))}
-</div>
+              {/* Quick stat pills */}
+              <div className="grid grid-cols-3 gap-2">
+                {device.formFactor && (
+                  <div className="flex flex-col gap-0.5 rounded-lg bg-[#111114] border border-[#1e1e22] px-3 py-2 cursor-default transition-colors duration-200 hover:border-[#3a3a3e] hover:bg-[#17171a]">
+                    <span className="text-[9px] font-mono text-[#52525B] uppercase tracking-wider">Form</span>
+                    <span className="text-[11px] font-semibold text-white">{ device.formFactor}</span>
+                  </div>
+                )}
+                <div className="flex flex-col gap-0.5 rounded-lg bg-[#111114] border border-[#1e1e22] px-3 py-2 cursor-default transition-colors duration-200 hover:border-[#3a3a3e] hover:bg-[#17171a]">
+                  <span className="text-[9px] font-mono text-[#52525B] uppercase tracking-wider">Released</span>
+                  <span className="text-[11px] font-semibold text-white">{device.month || device.year || "—"}</span>
+                </div>
+                {device.country && (
+                  <div className="flex flex-col gap-0.5 rounded-lg bg-[#111114] border border-[#1e1e22] px-3 py-2 cursor-default transition-colors duration-200 hover:border-[#3a3a3e] hover:bg-[#17171a]">
+                    <span className="text-[9px] font-mono text-[#52525B] uppercase tracking-wider">Made in</span>
+                    <span className="text-[11px] font-semibold text-white">{device.country}</span>
+                  </div>
+                )}
+              </div>
 
               {/* Actions */}
               <div className="flex gap-2">
@@ -629,7 +607,7 @@ export function DeviceDetailClient() {
           </section>
 
                    {/* Specs — mobile only */}
-          <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 relative overflow-hidden lg:hidden shadow-lg shadow-black/20">
+          <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 relative overflow-hidden lg:hidden">
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
             <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full blur-2xl pointer-events-none bg-blue-600/6" />
             <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-transparent pointer-events-none" />
@@ -641,7 +619,7 @@ export function DeviceDetailClient() {
 
           {/* Key Features */}
           {device.aiFeatures && device.aiFeatures.length > 0 && (
-            <section className="rounded-xl border border-[#232326]/40 bg-[#0a0a0c]/60 p-5 space-y-3 relative overflow-hidden shadow-lg shadow-black/20">
+            <section className="rounded-xl border border-[#232326]/40 bg-[#0a0a0c]/60 p-5 space-y-3 relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-px"
                 style={{ background: `linear-gradient(90deg, transparent, ${accentColor}50, transparent)` }} />
               <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full blur-3xl pointer-events-none"
@@ -665,40 +643,9 @@ export function DeviceDetailClient() {
             </section>
           )}
 
-          {/* Pros & Cons */}
-          {(derivedPros.length > 0 || derivedCons.length > 0) && (
-            <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                           <div className="rounded-xl border border-[#2a5a3a]/40 bg-[#0d1611] p-4 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#4ade80]/60 to-transparent" />
-              <h4 className="text-xs font-bold text-[#4ade80] uppercase tracking-wide mb-2.5 flex items-center gap-1.5">
-                <Check size={12} /> Strengths
-              </h4>
-              <ul className="space-y-1.5">
-                {derivedPros.map((f) => (
-                  <li key={f} className="text-[12px] text-[#A1A1AA] flex items-start gap-2">
-                    <span className="text-[#4ade80] mt-0.5">+</span>{f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-              <div className="rounded-xl border border-[#5a2a2a]/40 bg-[#160d0d] p-4">
-                <h4 className="text-xs font-bold text-[#f87171] uppercase tracking-wide mb-2.5">Consider</h4>
-                <ul className="space-y-1.5">
-                  {derivedCons.length > 0 ? derivedCons.map((c) => (
-                    <li key={c} className="text-[12px] text-[#A1A1AA] flex items-start gap-2">
-                      <span className="text-[#f87171] mt-0.5">−</span>{c}
-                    </li>
-                  )) : (
-                    <li className="text-[12px] text-[#71717A] italic">No significant drawbacks noted.</li>
-                  )}
-                </ul>
-              </div>
-            </section>
-          )}
-
           {/* Use Cases */}
           {device.primaryUseCases && device.primaryUseCases.length > 0 && (
-            <section className="rounded-xl border border-[#232326]/40 bg-[#0a0a0c]/60 p-5 space-y-3 relative overflow-hidden shadow-lg shadow-black/20">
+            <section className="rounded-xl border border-[#232326]/40 bg-[#0a0a0c]/60 p-5 space-y-3 relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-px"
                 style={{ background: `linear-gradient(90deg, transparent, ${accentColor}40, transparent)` }} />
               <div className="absolute -top-16 -left-16 w-48 h-48 rounded-full blur-3xl pointer-events-none"
@@ -759,7 +706,7 @@ export function DeviceDetailClient() {
           </section>
 
                     {/* Manufacturer */}
-          <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 space-y-3 relative overflow-hidden shadow-lg shadow-black/20">
+          <section className="rounded-xl border border-[#1e1e22] bg-[#09090c] p-4 space-y-3 relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
             <div className="absolute -top-12 -left-12 w-40 h-40 rounded-full blur-3xl pointer-events-none bg-indigo-600/5" />
             <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-transparent pointer-events-none" />

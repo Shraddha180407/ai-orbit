@@ -161,8 +161,6 @@ const DEVICE_SLUGS: Record<string, string> = {
   "development-boards": "Development Boards",
   "smart-sensors": "Smart Sensors",
   "automotive-ai-devices": "Automotive AI Devices",
-  "microphones": "Microphones",
-  "farming": "Farming",
 };
 
 const DEVICE_TO_SLUG: Record<string, string> = {
@@ -179,8 +177,6 @@ const DEVICE_TO_SLUG: Record<string, string> = {
   "Development Boards": "development-boards",
   "Smart Sensors": "smart-sensors",
   "Automotive AI Devices": "automotive-ai-devices",
-  "Microphones": "microphones",
-  "Farming": "farming",
 };
 
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
@@ -224,25 +220,18 @@ export function DevicesClient({ defaultCategory }: { defaultCategory?: string })
 
 
 
-useEffect(() => {
-  if (defaultCategory) {
-    const normalized = defaultCategory.toLowerCase().trim();
-    // Resolve slug to display name (e.g., "microphones" -> "Microphones")
-    const matchedCategory = 
-      DEVICE_SLUGS[normalized] || 
-      DEVICE_SUBCATEGORIES.find((c) => c.toLowerCase() === normalized) || 
-      defaultCategory;
-
-    setSelectedCategory(matchedCategory);
-  }
-}, [defaultCategory]);
+  useEffect(() => {
+    if (defaultCategory !== undefined) {
+      setSelectedCategory(defaultCategory && DEVICE_SLUGS[defaultCategory] ? DEVICE_SLUGS[defaultCategory] : ALL_CATEGORIES);
+    }
+  }, [defaultCategory]);
   const [selectedAvailability, setSelectedAvailability] = useState("All");
-  const rawSort = searchParams.get("sort") ?? "";
-  const [sortKey, setSortKey] = useState<SortKey | null>(() => {
-    if (rawSort === "name-asc" || rawSort === "name-desc") return "name";
-    if (rawSort === "oldest" || rawSort === "newest") return "release";
-    return null;
-  });
+  const rawSort = searchParams.get("sort") ?? "newest";
+const [sortKey, setSortKey] = useState<SortKey>(() => {
+  if (rawSort === "name-asc" || rawSort === "name-desc") return "name";
+  if (rawSort === "oldest" || rawSort === "newest") return "release";
+  return "release";
+});
 const [sortDir, setSortDir] = useState<"asc" | "desc">(() => {
   if (rawSort === "oldest" || rawSort === "name-asc") return "asc";
   return "desc";
@@ -279,23 +268,13 @@ const [sortDir, setSortDir] = useState<"asc" | "desc">(() => {
   }
 
 useEffect(() => {
-    const s = searchParams.get("sort") ?? "";
-    if (s === "name-asc") {
-      setSortKey("name");
-      setSortDir("asc");
-    } else if (s === "name-desc") {
-      setSortKey("name");
-      setSortDir("desc");
-    } else if (s === "oldest") {
-      setSortKey("release");
-      setSortDir("asc");
-    } else if (s === "newest" || s === "rating") {
-      setSortKey("release");
-      setSortDir("desc");
-    } else {
-      setSortKey(null as any); // Keeps it neutral/grey by default!
-    }
-  }, [searchParams]);
+  const s = searchParams.get("sort") ?? "newest";
+  if (s === "name-asc")  { setSortKey("name");    setSortDir("asc");  }
+  else if (s === "name-desc") { setSortKey("name"); setSortDir("desc"); }
+  else if (s === "oldest")    { setSortKey("release"); setSortDir("asc"); }
+  else if (s === "rating")    { setSortKey("release"); setSortDir("desc"); } // fallback
+  else                        { setSortKey("release"); setSortDir("desc"); } // newest
+}, [searchParams]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -337,24 +316,40 @@ useEffect(() => {
       const q = nameSearch.toLowerCase();
       list = list.filter((d) => d.name.toLowerCase().includes(q) || d.manufacturer?.toLowerCase().includes(q));
     }
-  const CATEGORY_ALIASES: Record<string, string[]> = {
-  "AR/VR": ["ar / vr / spatial computing"],
-  "Edge AI": ["edge ai hardware"],
-  "Automotive AI Devices": ["automotive ai", "automotive"], // adjust once you confirm real DB value
-};
-
-if (selectedCategory !== ALL_CATEGORIES) {
-  const sel = selectedCategory.toLowerCase().trim();
-  const aliases = (CATEGORY_ALIASES[selectedCategory] || []).map(a => a.toLowerCase());
-
+    if (selectedCategory !== ALL_CATEGORIES) {
   list = list.filter((d) => {
-    const cat = (d.category || "").toLowerCase().trim();
-    const subCat = (d.subcategory || "").toLowerCase().trim();
+    const sel = selectedCategory.toLowerCase();
+    // Build a searchable text blob from multiple fields
+    const searchable = [
+      d.category || "",
+      d.name || "",
+      d.description || "",
+      d.mainTask || "",
+      d.formFactor || "",
+      ...(d.aiFeatures || []),
+      ...(d.primaryUseCases || []),
+    ].join(" ").toLowerCase();
 
-    if (cat === sel || subCat === sel) return true;
-    if (aliases.includes(cat) || aliases.includes(subCat)) return true;
-
-    return false;
+    // Map common slug aliases
+    if (sel.includes("assist") || sel.includes("companion")) {
+      return searchable.includes("assistant") || searchable.includes("companion") || searchable.includes("personal") || searchable.includes("ai companion");
+    }
+    if (sel.includes("audio") || sel.includes("headphone") || sel.includes("earbud")) {
+      return searchable.includes("audio") || searchable.includes("headphone") || searchable.includes("earbud") || searchable.includes("speaker") || searchable.includes("hearable");
+    }
+    if (sel.includes("smart home") || sel.includes("home")) {
+      return searchable.includes("home") || searchable.includes("smart home") || searchable.includes("speaker") || searchable.includes("hub");
+    }
+    if (sel.includes("wearable")) {
+      return searchable.includes("wearable") || searchable.includes("ring") || searchable.includes("pendant") || searchable.includes("pin") || searchable.includes("band") || searchable.includes("watch");
+    }
+    if (sel.includes("glass") || sel.includes("vision") || sel.includes("ar")) {
+      return searchable.includes("glasses") || searchable.includes("vision") || searchable.includes("spatial") || searchable.includes("ar ") || searchable.includes("headset") || searchable.includes("display");
+    }
+    if (sel.includes("robot")) {
+      return searchable.includes("robot") || searchable.includes("bot");
+    }
+    return searchable.includes(sel);
   });
 }
     if (selectedAvailability !== "All") {
@@ -463,10 +458,10 @@ if (selectedCategory !== ALL_CATEGORIES) {
           <button
             ref={(el) => { subCatRefs.current[ALL_CATEGORIES] = el; }}
             onClick={() => {
-  setSelectedCategory(ALL_CATEGORIES);
-  setCurrentPage(1);
-  router.push('/devices');
-}}
+              setSelectedCategory(ALL_CATEGORIES);
+              setCurrentPage(1);
+              router.push(`/devices`);
+            }}
             className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
               selectedCategory === ALL_CATEGORIES
                 ? "bg-white text-black border-white shadow-lg shadow-white/5"
@@ -475,24 +470,25 @@ if (selectedCategory !== ALL_CATEGORIES) {
           >
             All
           </button>
-         {DEVICE_SUBCATEGORIES.map((sub) => (
-  <button
-    key={sub}
-    ref={(el) => { subCatRefs.current[sub] = el; }}
-    onClick={() => {
-      setSelectedCategory(sub);
-      setCurrentPage(1);
-      router.push(`/devices?category=${DEVICE_TO_SLUG[sub] || ''}`, { scroll: false });
-    }}
-    className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
-      selectedCategory === sub
-        ? "bg-white text-black border-white shadow-lg shadow-white/5"
-        : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-    }`}
-  >
-    {sub}
-  </button>
-))}   </div>
+          {DEVICE_SUBCATEGORIES.map((sub) => (
+            <button
+              key={sub}
+              ref={(el) => { subCatRefs.current[sub] = el; }}
+              onClick={() => {
+                setSelectedCategory(sub);
+                setCurrentPage(1);
+                router.push(`/devices/${DEVICE_TO_SLUG[sub]}`);
+              }}
+              className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
+                selectedCategory === sub
+                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+              }`}
+            >
+              {sub}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── LIST VIEW ── */}
@@ -511,7 +507,7 @@ if (selectedCategory !== ALL_CATEGORIES) {
                     {/* NAME col — with filter dropdown */}
                     <div className="relative flex items-center gap-2">
                       <button onClick={() => handleSort("name")}
-                        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] hover:text-white transition-colors flex items-center gap-1">
+                        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1">
                         DEVICE <SortIcon col="name" />
                       </button>
                       <button onClick={() => setOpenDropdown(openDropdown === "name" ? null : "name")}
@@ -537,11 +533,11 @@ if (selectedCategory !== ALL_CATEGORIES) {
                     </div>
 
                     {/* COMPANY col */}
-                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] pl-4 hover:text-white transition-colors flex items-center gap-1">COMPANY</span>
+                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pl-4">COMPANY</span>
 
                     {/* CATEGORY col — with filter dropdown */}
                     <div className="relative flex items-center gap-2">
-                      <span className={`text-[9.5px] font-mono font-semibold tracking-wider ${selectedCategory !== ALL_CATEGORIES ? "text-[#6E56CF]" : "text-[#D4D4D8]"}`}>CATEGORY</span>
+                      <span className={`text-[9.5px] font-mono font-semibold tracking-wider ${selectedCategory !== ALL_CATEGORIES ? "text-[#6E56CF]" : "text-[#71717A]"}`}>CATEGORY</span>
                       <button onClick={() => setOpenDropdown(openDropdown === "category" ? null : "category")}
                         className="hover:text-white transition-colors">
                         <FilterIcon active={selectedCategory !== ALL_CATEGORIES} />
@@ -563,12 +559,12 @@ if (selectedCategory !== ALL_CATEGORIES) {
                     </div>
 
                     {/* COUNTRY col */}
-                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] hover:text-white transition-colors flex items-center gap-1">COUNTRY</span>
+                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">COUNTRY</span>
 
                     {/* AVAIL. col — with filter dropdown */}
                     <div className="relative flex items-center gap-2">
                       <button onClick={() => handleSort("availability")}
-                        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] hover:text-white transition-colors flex items-center gap-1">
+                        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1">
                         AVAIL. <SortIcon col="availability" />
                       </button>
                       <button onClick={() => setOpenDropdown(openDropdown === "availability" ? null : "availability")}
@@ -590,7 +586,7 @@ if (selectedCategory !== ALL_CATEGORIES) {
                     {/* PRICE col — with filter dropdown */}
                     <div className="relative flex items-center gap-2">
                       <button onClick={() => handleSort("price")}
-                        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] hover:text-white transition-colors flex items-center gap-1">
+                        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1">
                         PRICE <SortIcon col="price" />
                       </button>
                       <button onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
@@ -624,19 +620,17 @@ if (selectedCategory !== ALL_CATEGORIES) {
                       )}
                     </div>
 
-                  {/* RELEASE DATE col */}
-<button
-  onClick={() => handleSort("release")}
-  className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] hover:text-white transition-colors flex items-center gap-1"
->
-  RELEASE DATE <SortIcon col="release" />
-</button>
+                    {/* RELEASE DATE col */}
+                    <button onClick={() => handleSort("release")}
+                      className="text-[9.5px] font-mono font-semibold tracking-wider text-[#6E56CF] hover:text-white transition-colors flex items-center gap-1">
+                      RELEASE DATE <SortIcon col="release" />
+                    </button>
 
                     {/* MAIN TASK col */}
-                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] sm:pr-0 pr-4 hover:text-white transition-colors flex items-center gap-1">MAIN TASK</span>
+                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] sm:pr-0 pr-4">MAIN TASK</span>
 
                     {/* ACTIONS col */}
-                    <span className="hidden sm:block text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] pl-0 hover:text-white transition-colors flex items-center gap-1">ACTIONS</span>
+                    <span className="hidden sm:block text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pl-0">ACTIONS</span>
                   </div>
                 </div>
 
