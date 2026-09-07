@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getTools, getAllCategories, getToolDetails, getToolBySlug } from "@/lib/tools";
-import { invalidateClientCache } from "@/lib/api-cache";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -15,7 +14,6 @@ function jsonResponse(data: any, ok = true, status = 200) {
 
 beforeEach(() => {
   mockFetch.mockReset();
-  invalidateClientCache();
 });
 
 describe("getTools", () => {
@@ -25,7 +23,7 @@ describe("getTools", () => {
     expect(result.tools).toEqual([]);
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/v1/tools"),
-      expect.anything()
+      expect.objectContaining({ cache: "no-store" })
     );
   });
 
@@ -91,7 +89,7 @@ describe("getToolDetails", () => {
     expect(result).toEqual({ tool: { name: "TestTool" } });
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/v1/tools/testtool"),
-      expect.anything()
+      expect.objectContaining({ cache: "no-store" })
     );
   });
 
@@ -115,11 +113,11 @@ describe("getToolBySlug", () => {
 
   it("returns null when tool is missing", async () => {
     mockFetch.mockResolvedValue(jsonResponse({}));
-    expect(await getToolBySlug("test-missing")).toBeNull();
+    expect(await getToolBySlug("test")).toBeNull();
   });
 
   it("returns null on API failure", async () => {
     mockFetch.mockResolvedValue(jsonResponse(null, false, 500));
-    expect(await getToolBySlug("test-failed")).toBeNull();
+    expect(await getToolBySlug("test")).toBeNull();
   });
 });

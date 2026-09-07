@@ -30,31 +30,8 @@ function toApiShape(video: Video | null) {
   return { ...rest, author: { name: authorName, avatar: authorAvatar } };
 }
 
-const inMemoryCache = new Map<string, { data: any; expiresAt: number }>();
-const CACHE_TTL_MS = 5 * 60 * 1000;
-
-function getCached<T>(key: string): T | null {
-  const entry = inMemoryCache.get(key);
-  if (entry && entry.expiresAt > Date.now()) {
-    return entry.data as T;
-  }
-  if (entry) inMemoryCache.delete(key);
-  return null;
-}
-
-function setCache(key: string, data: any, ttl = CACHE_TTL_MS) {
-  inMemoryCache.set(key, { data, expiresAt: Date.now() + ttl });
-}
-
 // GET /api/videos?sort=latest|trending&limit=N&offset=N&category=slug&sortBy=name|duration|posted|views&sortDir=asc|desc
 export async function listVideos(c: Context) {
-  const cacheKey = `videos_list_${c.req.url}`;
-  const cached = getCached(cacheKey);
-  c.header("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
-  if (cached) {
-    return c.json(cached);
-  }
-
   const prisma = getPrisma(c);
   try {
     const result = ListQuerySchema.safeParse(c.req.query());
@@ -63,10 +40,8 @@ export async function listVideos(c: Context) {
     }
 
     const { sort, limit, offset, category, sortBy, sortDir } = result.data;
-    const rawVideos = await fetchVideos(prisma, sort, limit, offset, category, sortBy, sortDir);
-    const videos = rawVideos.map(toApiShape);
-    setCache(cacheKey, videos);
-    return c.json(videos);
+    const videos = await fetchVideos(prisma, sort, limit, offset, category, sortBy, sortDir);
+    return c.json(videos.map(toApiShape));
   } catch (error: unknown) {
     logger.error("Videos API Controller Error:", error);
     return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
@@ -79,13 +54,6 @@ export async function listVideos(c: Context) {
 
 // GET /api/videos/count?category=slug
 export async function getVideosCount(c: Context) {
-  const cacheKey = `videos_count_${c.req.url}`;
-  const cached = getCached(cacheKey);
-  c.header("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
-  if (cached) {
-    return c.json(cached);
-  }
-
   const prisma = getPrisma(c);
   try {
     const result = CountQuerySchema.safeParse(c.req.query());
@@ -94,9 +62,7 @@ export async function getVideosCount(c: Context) {
     }
 
     const total = await countVideos(prisma, result.data.category);
-    const data = { total };
-    setCache(cacheKey, data);
-    return c.json(data);
+    return c.json({ total });
   } catch (error: unknown) {
     logger.error("Videos API Controller Error:", error);
     return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);
@@ -109,17 +75,9 @@ export async function getVideosCount(c: Context) {
 
 // GET /api/videos/:slug
 export async function getVideoBySlug(c: Context) {
-  const slug = c.req.param("slug");
-  const cacheKey = `videos_slug_${slug}`;
-  const cached = getCached(cacheKey);
-  c.header("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
-  if (cached) {
-    return c.json(cached);
-  }
-
   const prisma = getPrisma(c);
   try {
-    const parsed = SlugParamSchema.safeParse({ slug });
+    const parsed = SlugParamSchema.safeParse({ slug: c.req.param("slug") });
     if (!parsed.success) {
       return c.json({ error: "Invalid slug" }, 400);
     }
@@ -127,9 +85,7 @@ export async function getVideoBySlug(c: Context) {
     const video = await fetchVideoBySlug(prisma, parsed.data.slug);
     if (!video) return c.json({ error: "Not found" }, 404);
 
-    const shaped = toApiShape(video);
-    setCache(cacheKey, shaped);
-    return c.json(shaped);
+    return c.json(toApiShape(video));
   } catch (error: unknown) {
     logger.error("Videos API Controller Error:", error);
     return c.json({ error: "Internal server error.", message: error instanceof Error ? error.message : "Unknown error" }, 500);

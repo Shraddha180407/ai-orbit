@@ -33,7 +33,6 @@ import type { RealSearchSuggestion } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { API_URL, fetchAllCompanies, fetchAllRobots, fetchAllDevices, fetchModels, fetchRepositories, fetchMCPItems, prefetchUrl } from "@/lib/api";
 import { fetchTasks as fetchTasksApi } from "@/lib/tasks-api";
-import { prefetchVideosCategory } from "@/lib/videos-data";
 
 // NEW: Import the unified filter dropdown
 import { UnifiedFilterDropdown } from "@/components/UnifiedFilterDropdown";
@@ -194,14 +193,10 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
         }).catch(() => { });
         break;
       case "Videos":
-        prefetchVideosCategory(undefined, 100, 0);
-        prefetchVideosCategory("general-ai", 100, 0);
-        prefetchVideosCategory("llm", 100, 0);
-        prefetchVideosCategory("agents", 100, 0);
         queryClient.prefetchQuery({
           queryKey: ["videos", { sort: "latest", page: 1 }],
           queryFn: async () => {
-            const res = await fetch(`${API_URL}/api/videos?sort=latest&limit=100&offset=0`);
+            const res = await fetch(`${API_URL}/api/videos?sort=latest&limit=24&offset=0`);
             return res.ok ? res.json() : [];
           },
           staleTime: 10 * 60 * 1000,
@@ -349,7 +344,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
     }
     const entityName = card.href.replace("/", "");
     return pathname.startsWith(card.href) || pathname.startsWith(`/p/${entityName}`);
-  }; const SCROLL_KEY = "global_hero_card_scroll_x";
+  };  const SCROLL_KEY = "global_hero_card_scroll_x";
 
   const handleContainerScroll = () => {
     const container = scrollContainerRef.current;
@@ -357,7 +352,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
       globalHeroScrollPos = container.scrollLeft;
       try {
         sessionStorage.setItem(SCROLL_KEY, container.scrollLeft.toString());
-      } catch { }
+      } catch {}
     }
   };
 
@@ -367,7 +362,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
       globalHeroScrollPos = container.scrollLeft;
       try {
         sessionStorage.setItem(SCROLL_KEY, container.scrollLeft.toString());
-      } catch { }
+      } catch {}
     }
   };
 
@@ -381,7 +376,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
           if (savedPos !== null && !isNaN(Number(savedPos))) {
             targetPos = Number(savedPos);
           }
-        } catch { }
+        } catch {}
       }
       if (targetPos) {
         el.scrollLeft = targetPos;
@@ -400,7 +395,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
         if (savedPos !== null && !isNaN(Number(savedPos))) {
           targetPos = Number(savedPos);
         }
-      } catch { }
+      } catch {}
     }
 
     if (targetPos) {
@@ -513,7 +508,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
             method="GET"
             onSubmit={handleSubmit}
             ref={searchContainerRef}
-            className="relative z-40 w-[92%] sm:w-full max-w-[520px] mx-auto mb-4 sm:mb-5 group"
+            className="relative z-40 w-full max-w-[520px] mx-auto mb-4 sm:mb-5 group"
           >
             <div
               className="relative w-full rounded-xl border border-[#232326]/70 bg-[#111113] h-[38px] sm:h-[42px] flex items-center px-3.5 sm:px-4 pr-[4.5rem] transition-colors duration-150"
@@ -538,9 +533,9 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
               </div>
             </div>
             <style jsx>{`
-              form:focus-within > div:first-of-type {
-                border-color: rgba(255, 255, 255, 0.15) !important;
-                box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
+              form:focus-within > div {
+                border-color: var(--color-signal) !important;
+                box-shadow: 0 0 0 3px var(--color-signal-dim);
               }
             `}</style>
 

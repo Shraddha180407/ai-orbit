@@ -182,23 +182,15 @@ export async function cachedFetchJson<T>(
 
 async function performFetch<T>(urlStr: string, fallback: T, ttlMs: number): Promise<T> {
   try {
-    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
-    const timeoutId = controller ? setTimeout(() => controller.abort(), urlStr.includes(":8787") ? 2500 : 8000) : null;
-    let res: Response;
-    try {
-      res = await fetch(urlStr, {
-        signal: controller?.signal,
-        headers: {
-          Accept: "application/json",
-        },
-      });
-    } finally {
-      if (timeoutId) clearTimeout(timeoutId);
-    }
+    const res = await fetch(urlStr, {
+      headers: {
+        Accept: "application/json",
+      },
+    });
 
     if (!res.ok) {
-      if (urlStr.includes(":8787")) {
-        const prodUrl = urlStr.replace(/https?:\/\/(localhost|127\.0\.0\.1):8787/, "https://ai-orbit.palamrendra-pm.workers.dev");
+      if (urlStr.includes("http://localhost:8787")) {
+        const prodUrl = urlStr.replace("http://localhost:8787", "https://ai-orbit.palamrendra-pm.workers.dev");
         try {
           const prodRes = await fetch(prodUrl, { headers: { Accept: "application/json" } });
           if (prodRes.ok) {
@@ -217,8 +209,8 @@ async function performFetch<T>(urlStr: string, fallback: T, ttlMs: number): Prom
     setInCache(urlStr, data, ttlMs);
     return data;
   } catch {
-    if (urlStr.includes(":8787")) {
-      const prodUrl = urlStr.replace(/https?:\/\/(localhost|127\.0\.0\.1):8787/, "https://ai-orbit.palamrendra-pm.workers.dev");
+    if (urlStr.includes("http://localhost:8787")) {
+      const prodUrl = urlStr.replace("http://localhost:8787", "https://ai-orbit.palamrendra-pm.workers.dev");
       try {
         const prodRes = await fetch(prodUrl, { headers: { Accept: "application/json" } });
         if (prodRes.ok) {

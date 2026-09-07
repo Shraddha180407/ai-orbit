@@ -1,5 +1,3 @@
-export const runtime = "edge";
-
 import type { Metadata } from "next";
 import { ModelDetailClient } from "@/components/detail/ModelDetailClient";
 import { SERVER_API_URL } from "@/lib/api";

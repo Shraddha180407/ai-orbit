@@ -55,9 +55,9 @@ export function ThumbImage({
     if (!sanitizedSrc) {
       setStatus("error");
       onError?.();
-    } else {
-      setStatus("loading");
     }
+    // Only re-check when the src itself changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sanitizedSrc]);
 
   if (status === "error") {

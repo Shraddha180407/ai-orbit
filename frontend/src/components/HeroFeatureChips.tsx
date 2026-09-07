@@ -93,8 +93,8 @@ export function HeroFeatureChips() {
   };
 
   return (
-    <div className="w-full max-w-[520px] mx-auto relative z-10 select-none px-1 sm:px-0">
-      <div className="flex flex-nowrap items-center justify-center mx-auto gap-1 sm:gap-2.5 w-full pb-1">
+    <div className="w-full max-w-4xl relative z-10 flex items-center justify-center touch-scroll-x scrollbar-none px-2 sm:px-2 select-none">
+      <div className="flex flex-nowrap items-center justify-center mx-auto gap-1 sm:gap-2.5 max-w-full">
         {FILTERS.map((f) => {
           const currentVal = searchParams.get(f.param);
           const isActive = currentVal === f.value;
@@ -125,7 +125,7 @@ export function HeroFeatureChips() {
                   toolsEl.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
               }}
-              className="group inline-flex shrink-0 whitespace-nowrap items-center rounded-full border font-medium transition-all duration-150 active:scale-95 cursor-pointer h-[22px] sm:h-[25px] px-1 sm:px-2.5 gap-1 sm:gap-1.5 text-[8.5px] sm:text-[11px] shadow-sm"
+              className="group inline-flex shrink-0 whitespace-nowrap items-center rounded-full border font-medium transition-all duration-150 active:scale-95 cursor-pointer h-[22px] sm:h-[25px] px-1.5 sm:px-2.5 gap-1 sm:gap-1.5 text-[9px] sm:text-[11px] shadow-sm"
               style={{
                 borderColor: filled ? f.color : `${f.color}40`,
                 backgroundColor: filled ? `${f.color}15` : "#0d0d10",

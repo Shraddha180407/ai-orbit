@@ -1,17 +1,11 @@
-﻿import { cachedFetchJson, prefetchUrl, setInCache, getFromCache } from "./api-cache";
+import { cachedFetchJson, prefetchUrl, setInCache, getFromCache } from "./api-cache";
 export { cachedFetchJson, prefetchUrl, setInCache, getFromCache };
 
 /**
- * The Hono/Workers backend's origin â€” every real data fetch and mutation
+ * The Hono/Workers backend's origin — every real data fetch and mutation
  * goes here, never direct DB access from this app.
  */
 function resolveApiUrl(): string {
-  if (
-    typeof window !== "undefined" &&
-    window.location.hostname.endsWith(".vercel.app")
-  ) {
-    return `${window.location.origin}/api-proxy`;
-  }
   const url = process.env.NEXT_PUBLIC_API_URL;
   if (url && url.startsWith("http") && url !== "undefined") {
     const isLocalUrl = url.includes("localhost") || url.includes("127.0.0.1");
@@ -210,7 +204,7 @@ export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListR
   return data as ModelsListResponse;
 }
 
-/** @deprecated Prefer fetchModels â€” kept for callers that only need the first page's items. */
+/** @deprecated Prefer fetchModels — kept for callers that only need the first page's items. */
 export async function fetchAllModels(): Promise<AIModel[]> {
   const data = await fetchModels({ page: 1, limit: 100 });
   return data.items;
