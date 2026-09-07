@@ -5,9 +5,48 @@ export function articleSourceUrl(article: Pick<NewsArticleRecord, "articleUrl">)
   return article.articleUrl;
 }
 
-export function sortArticles(list: NewsArticle[], sortVal: string, sources: Record<string, NewsSource>): NewsArticle[] {
+export function sortArticles(
+  list: NewsArticle[],
+  sort: string | SortState,
+  sources: Record<string, NewsSource> = {}
+): NewsArticle[] {
   const l = list.slice();
-  switch (sortVal) {
+  if (typeof sort === "object" && sort !== null) {
+    const { key, dir } = sort;
+    const mult = dir === "asc" ? 1 : -1;
+    switch (key) {
+      case "date":
+        // asc: oldest first (highest hours), desc: newest first (lowest hours)
+        return l.sort((a, b) => mult * (b.hours - a.hours));
+      case "title":
+        return l.sort((a, b) => mult * (a.headline || "").localeCompare(b.headline || ""));
+      case "source": {
+        return l.sort((a, b) => {
+          const sA = sources[a.source]?.name || a.source;
+          const sB = sources[b.source]?.name || b.source;
+          return mult * sA.localeCompare(sB);
+        });
+      }
+      case "trending": {
+        return l.sort((a, b) => {
+          const scoreA = a.score ?? a.up ?? 0;
+          const scoreB = b.score ?? b.up ?? 0;
+          return mult * (scoreA - scoreB);
+        });
+      }
+      case "topics": {
+        return l.sort((a, b) => {
+          const tA = a.topics[0] || "";
+          const tB = b.topics[0] || "";
+          return mult * tA.localeCompare(tB);
+        });
+      }
+      default:
+        return l;
+    }
+  }
+
+  switch (sort) {
     case "oldest":
       // Oldest first: largest hours ago first
       return l.sort((a, b) => b.hours - a.hours);

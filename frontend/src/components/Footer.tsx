@@ -6,6 +6,7 @@ import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right';
 import ArrowUp from 'lucide-react/dist/esm/icons/arrow-up';
 
 import { AiOrbitLogo } from "./AiOrbitLogo";
+import { MatrixLogo } from "./MatrixLogo";
 
 const XIcon = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
@@ -88,8 +89,10 @@ export function Footer() {
   };
 
   return (
-    <footer className="w-full bg-black text-white pt-2 sm:pt-4 lg:pt-6 pb-4 sm:pb-6 font-sans selection:bg-white/30 border-t border-[#1C1C1F]">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
+    <footer className="w-full bg-black text-white pt-0 font-sans selection:bg-white/30 border-t border-[#1C1C1F]">
+      <MatrixLogo />
+      
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 pt-6 sm:pt-10">
         <div className="flex flex-col lg:flex-row justify-between gap-6 sm:gap-16 lg:gap-32">
 
           {/* Left Column */}
@@ -144,17 +147,17 @@ export function Footer() {
         </div>
 
         {/* Bottom Row */}
-        <div className="mt-2 sm:mt-5 pt-3 sm:pt-5 border-t border-[#27272a] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+        <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-[#27272a] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
           <p className="text-[12px] sm:text-[13px] text-[#a1a1aa] text-center sm:text-left">
             &copy; 2026 AI Orbit. All rights reserved.
           </p>
 
           <button
             onClick={scrollToTop}
-            className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-[#3f3f46] hover:bg-white/5 active:scale-95 transition-all text-white cursor-pointer"
+            className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border border-[#3f3f46] hover:bg-white/5 active:scale-95 transition-all text-white cursor-pointer"
             aria-label="Scroll to top"
           >
-            <ArrowUp size={18} strokeWidth={1.5} />
+            <ArrowUp size={14} strokeWidth={1.5} />
           </button>
         </div>
       </div>
