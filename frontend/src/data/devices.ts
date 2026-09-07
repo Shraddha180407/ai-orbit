@@ -107,6 +107,7 @@ export const DEVICES_DATA: DeviceData[] = [
     processingType: "Cloud",
     bestFor: ["Early Adopters", "Tech Enthusiasts", "Minimalists"],
         qualityScore: 72,
+    subcategory: "Pocket AI Companion",
     platform: "RabbitOS (Custom Linux)",
     verdict: "The Rabbit r1 is a genuinely interesting experiment in rethinking how we interact with AI. The LAM concept is novel and the hardware is charming, but real-world performance still lags behind the promise. Worth watching as the platform matures, but not yet a daily driver replacement.",
   },
@@ -144,61 +145,6 @@ export const DEVICES_DATA: DeviceData[] = [
     bestFor: ["Minimalists", "Tech Pioneers"],
     qualityScore: 48,
     verdict: "A product ahead of its time — or simply ahead of the technology needed to make it viable. The AI Pin was discontinued less than a year after launch, a cautionary tale about shipping bold hardware before the underlying AI is ready.",
-  },
-  // --- Microphones Category Entry ---
-  {
-    id: "mock-plaudi-note-pin",
-    slug: "plaud-note-pin",
-    name: "Plaud NotePin AI Microphone",
-    manufacturer: "Plaud",
-    manufacturerSlug: "plaud",
-    category: "Microphones",
-    subcategory: "Microphones",
-    availability: "Available",
-    price: "$169.00",
-    year: "2024",
-    month: "Sep, 2024",
-    description: "Wearable AI capsule microphone that records, transcribes, and summarizes meetings, calls, and voice notes.",
-    imageUrl: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=400&q=80",
-    manufacturerLogoUrl: "https://www.google.com/s2/favicons?sz=64&domain=plaud.ai",
-    mainTask: "Audio & Transcription",
-    mainTaskColor: "#00BCD4",
-    formFactor: "Wearable Pin / Necklace",
-    country: "US",
-    ram: null,
-    aiFeatures: ["Dual-engine Noise Cancellation", "GPT-4o Summarization", "Speaker Identification", "Voice-to-Text"],
-    primaryUseCases: ["Meeting Summaries", "Voice Notes", "Interviews", "Lecture Recording"],
-    additionalInfo: "Features dual MEMS microphones, 64GB storage, and up to 20 hours of continuous recording battery life.",
-    buyUrl: "https://www.plaud.ai",
-    verdict: "A genuinely useful pocket recorder for anyone who sits in a lot of meetings or interviews. The AI summarization is accurate and the battery life is excellent, though it works best as a companion to your notes rather than a full replacement for them.",
-  },
-
-  // --- Farming Category Entry ---
-  {
-    id: "mock-john-deere-see-spray",
-    slug: "john-deere-see-spray",
-    name: "John Deere See & Spray Ultimate",
-    manufacturer: "John Deere",
-    manufacturerSlug: "john-deere",
-    category: "Farming",
-    subcategory: "Farming",
-    availability: "Available",
-    price: "$25,000.00",
-    year: "2024",
-    month: "Jan, 2024",
-    description: "AI-driven targeted spraying system utilizing computer vision and machine learning to detect and target weeds in real time.",
-    imageUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=400&q=80",
-    manufacturerLogoUrl: "https://www.google.com/s2/favicons?sz=64&domain=deere.com",
-    mainTask: "Agricultural AI",
-    mainTaskColor: "#34A853",
-    formFactor: "Tractor Attachment / Field Rig",
-    country: "US",
-    ram: null,
-    aiFeatures: ["Real-time Computer Vision", "Targeted Herbicide Delivery", "Field Analytics", "Edge AI Processing"],
-    primaryUseCases: ["Precision Farming", "Weed Control", "Crop Management", "Input Optimization"],
-    additionalInfo: "Equipped with 36 high-speed boom cameras that scan up to 2,100 square feet per second to differentiate weeds from crops.",
-    buyUrl: "https://www.deere.com",
-        verdict: "A serious investment aimed squarely at commercial farms, not hobbyists. The precision weed detection can meaningfully cut herbicide costs at scale, but the high price and specialized installation mean it only makes sense for larger operations.",
   },
   {
     id: "mock-meta-ray-ban",
@@ -262,7 +208,6 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Productivity", "Entertainment", "3D Design", "Collaboration"],
     additionalInfo: "Apple Vision Pro features dual micro-OLED displays with 23 million pixels combined. Powered by M2 and R1 chips working in tandem. The R1 chip processes sensor input in 12ms for a seamless mixed reality experience.",
     buyUrl: "https://www.apple.com/apple-vision-pro/",
-    verdict: "The most polished mixed-reality headset available, with best-in-class displays and tracking. The $3,499 price and limited native app library keep it a niche, early-adopter product rather than a mainstream computing device — for now.",
   },
   {
     id: "mock-google-home-speaker",
@@ -289,7 +234,6 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Smart Home", "Music", "Information"],
     additionalInfo: "Google Home Speaker features a 360-degree sound with a high-excursion speaker and two passive radiators. It supports Google Assistant for voice commands and can control thousands of smart home devices.",
     buyUrl: "https://store.google.com/product/google_home",
-    verdict: "A reliable, affordable entry point into the Google smart home ecosystem. Sound quality is solid for the price, though it lags behind premium speakers, and its usefulness scales directly with how many other Google-connected devices you own.",
   },
   {
     id: "mock-oura-ring",
@@ -316,7 +260,6 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Health", "Sleep", "Fitness", "Recovery"],
     additionalInfo: "Oura Ring 4 features 18 sensors including infrared PPG sensors, an NTC temperature sensor, and a 3D accelerometer. Battery life up to 8 days. The new generation adds improved accuracy and a titanium shell.",
     buyUrl: "https://ouraring.com/product/rings",
-    verdict: "One of the most accurate consumer sleep and recovery trackers on the market, in a genuinely comfortable form factor. The ongoing subscription for full insights is the main downside — worth it for health-focused users, less so for casual trackers.",
   },
   {
     id: "mock-amazon-echo",
@@ -343,7 +286,6 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Smart Home", "Video Calls", "Entertainment", "Cooking"],
     additionalInfo: "The Echo Show 10 features a 10.1-inch HD display with adaptive color and a 13MP camera. The motorized base rotates 350 degrees to follow you around the room during video calls.",
     buyUrl: "https://www.amazon.com/echo-show-10",
-    verdict: "The motorized tracking makes video calls feel less awkward than a fixed camera, and it remains a strong smart home hub. Alexa's voice recognition is solid, though some may find the display underused outside of calls and cooking timers.",
   },
   {
     id: "mock-samsung-galaxy-ring",
@@ -370,7 +312,6 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Health", "Sleep", "Fitness"],
     additionalInfo: "Samsung Galaxy Ring is made from titanium and weighs between 2.3g and 3g depending on size. No subscription required unlike competitors. Battery life up to 7 days.",
     buyUrl: "https://www.samsung.com/global/galaxy/galaxy-ring/",
-    verdict: "A strong alternative to Oura for anyone already in the Samsung ecosystem, especially since it skips the subscription fee. Battery life and comfort are excellent, though insights are less detailed than dedicated health-tracking competitors.",
   },
   {
     id: "mock-msi-edgexpert",
@@ -397,7 +338,6 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Productivity", "Education"],
     additionalInfo: "Up to 1,000 AI TOPS (FP4); NVIDIA NVLink-C2C CPU-GPU memory interconnect; full-stack AI development platform; designed for local LLM inference and AI agents; supports secure on-premises deployment.",
     buyUrl: null,
-    verdict: "A compelling option for developers who want serious local AI compute without cloud costs or data privacy concerns. The NVIDIA DGX Spark platform delivers real performance, but this is a specialist tool aimed at technical users, not general consumers.",
   },
   {
     id: "mock-mentra-live",
@@ -424,7 +364,6 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Productivity", "Navigation", "Communication"],
     additionalInfo: "Mentra Live features a 640x400 resolution display visible in daylight. Connects to smartphone via Bluetooth. Supports third-party app integrations through the Mentra SDK.",
     buyUrl: "https://mentra.glass",
-    verdict: "A promising entry in the AI smart glasses space with genuine developer flexibility through its SDK. Display visibility and battery life are competitive, though the ecosystem is younger than Meta's, so third-party app support is still catching up.",
   },
 ];
 
@@ -449,24 +388,4 @@ export function getSimilarDevices(device: DeviceData, count = 5): DeviceData[] {
   return sameCat.length > 0
     ? sameCat.slice(0, count)
     : DEVICES_DATA.filter((d) => d.id !== device.id).slice(0, count);
-}
-
-export function slugifyCategory(category: string): string {
-  return category
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
-}
-
-export function getDevicesByCategory(categorySlugOrName: string): DeviceData[] {
-  if (!categorySlugOrName || categorySlugOrName.toLowerCase() === "all") {
-    return DEVICES_DATA;
-  }
-  const target = categorySlugOrName.toLowerCase();
-  return DEVICES_DATA.filter((d) => {
-    const catSlug = slugifyCategory(d.category);
-    const catName = d.category.toLowerCase();
-    const subCatName = d.subcategory ? d.subcategory.toLowerCase() : "";
-    return catSlug === target || catName === target || subCatName === target;
-  });
 }
