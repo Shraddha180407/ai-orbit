@@ -152,56 +152,109 @@ export function VideosPageClient({
     return () => window.removeEventListener("popstate", handlePopState);
   }, [videos]);
 
-  // Fetch or revalidate videos whenever category, page, sort, or size changes
-  useEffect(() => {
-    // If we have initial SSR data on first mount for this category/page, skip duplicate fetch
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      if (initialVideos && initialVideos.length > 0) {
-        return;
-      }
+ // Fetch or revalidate videos whenever category, page, sort, or size changes
+useEffect(() => {
+  // If we have initial SSR data on first mount for this category/page,
+  // skip duplicate fetch.
+  if (isInitialMount.current) {
+    isInitialMount.current = false;
+
+    if (initialVideos && initialVideos.length > 0) {
+      return;
+    }
+  }
+
+  let cancelled = false;
+  const offset = (page - 1) * currentPageSize;
+
+  // Check synchronous cache first for 0ms instant display
+  const cached = getCachedVideosPage(
+    currentPageSize,
+    offset,
+    activeCategory || undefined,
+    sortBy,
+    sortDir
+  );
+
+  const cachedCount = getCachedVideosCount(
+    activeCategory || undefined
+  );
+
+  if (cached && cached.length > 0) {
+    // Show cached 100 videos immediately
+    setVideos(cached);
+
+    if (cachedCount !== null) {
+      setTotal(cachedCount);
     }
 
-    let cancelled = false;
-    const offset = (page - 1) * currentPageSize;
+    // Revalidate in the background
+    setLoading(false);
+    setIsFetching(true);
+  } else {
+    // IMPORTANT:
+    // Do NOT clear the existing videos here.
+    // Keep the current 100 videos visible while the new category loads.
+    setLoading(true);
+    setIsFetching(true);
+  }
 
-    // Check synchronous cache first for 0ms instant display
-    const cached = getCachedVideosPage(currentPageSize, offset, activeCategory || undefined, sortBy, sortDir);
-    const cachedCount = getCachedVideosCount(activeCategory || undefined);
+  // Fetch videos and count independently.
+  // The video list is rendered as soon as it arrives,
+  // without waiting for the count request.
+  const fetchVideos = async () => {
+    try {
+      const pageVideos = await getVideosPage(
+        currentPageSize,
+        offset,
+        activeCategory || undefined,
+        sortBy,
+        sortDir
+      );
 
-    if (cached && cached.length > 0) {
-      setVideos(cached);
-      if (cachedCount !== null) setTotal(cachedCount);
-      setIsFetching(true); // background silent revalidation
-    } else {
-      setLoading(true);
-    }
+      if (cancelled) return;
 
-    (async () => {
-      try {
-        const [pageVideos, count] = await Promise.all([
-          getVideosPage(currentPageSize, offset, activeCategory || undefined, sortBy, sortDir),
-          getVideosCount(activeCategory || undefined),
-        ]);
-
-        if (cancelled) return;
-
-        setVideos(pageVideos);
-        setTotal(count);
-      } catch (err) {
+      // Render the new 100 videos immediately.
+      setVideos(pageVideos);
+      setLoading(false);
+    } catch (err) {
+      if (!cancelled) {
         console.error("Failed to fetch videos:", err);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-          setIsFetching(false);
-        }
+        setLoading(false);
       }
-    })();
+    }
+  };
 
-    return () => {
-      cancelled = true;
-    };
-  }, [activeCategory, sortBy, sortDir, page, currentPageSize]);
+  const fetchCount = async () => {
+  try {
+    const count = await getVideosCount(
+      activeCategory || undefined
+    );
+
+    if (cancelled) return;
+
+    setTotal(count);
+  } catch (err) {
+    if (!cancelled) {
+      console.error("Failed to fetch video count:", err);
+    }
+  } finally {
+    if (!cancelled) {
+      setIsFetching(false);
+    }
+  }
+};
+
+  // Start both requests immediately.
+  // They run in parallel, but the video request no longer
+  // has to wait for the count request.
+  fetchVideos();
+  fetchCount();
+
+  return () => {
+    cancelled = true;
+  };
+}, [activeCategory, sortBy, sortDir, page, currentPageSize]);
 
   // Pre-cache other categories quietly after mount so clicking any tab is 0ms
   useEffect(() => {
@@ -247,7 +300,6 @@ export function VideosPageClient({
       setLoading(false);
       setIsFetching(true);
     } else {
-      setVideos([]);
       setLoading(true);
     }
 
