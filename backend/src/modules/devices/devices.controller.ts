@@ -9,16 +9,19 @@ export class DevicesController {
   }
 
   async listDevices(c: Context) {
-  const { service } = this.createService(c);
+    const { service } = this.createService(c);
 
-  try {
-    const devices = await service.listDevices();
-    return c.json(devices, 200);
-  } catch (error: unknown) {
-    // Return empty list on failure so frontend can render static mock data cleanly
-    return c.json([], 200);
+    try {
+      const devices = await service.listDevices();
+      return c.json(devices);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
+    } finally {
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
+    }
   }
-}
 
   async getDeviceById(c: Context) {
     const { service } = this.createService(c);
@@ -32,37 +35,43 @@ export class DevicesController {
       const device = await service.getDeviceById(id);
 
       if (!device) {
-        return c.json({ error: 'Device not found', device: null }, 404);
+        return c.json({ error: 'Device not found' }, 404);
       }
 
       return c.json(device);
     } catch (error: unknown) {
-      // Return 404 instead of 500 to prevent backend crashes on non-existent or category IDs
-      return c.json({ error: 'Device not found', device: null }, 404);
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
+    } finally {
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 
   async getDeviceBySlug(c: Context) {
-  const { service } = this.createService(c);
-  const slug = c.req.param('slug') || c.req.param('id');
+    const { service } = this.createService(c);
+    const slug = c.req.param('slug');
 
-  if (!slug) {
-    return c.json({ error: 'Device identifier is required' }, 400);
-  }
-
-  try {
-    const device = await service.getDeviceBySlug(slug);
-
-    if (!device) {
-      return c.json({ error: 'Device not found', device: null }, 404);
+    if (!slug) {
+      return c.json({ error: 'Device slug is required' }, 400);
     }
 
-    return c.json(device, 200);
-  } catch (error: unknown) {
-    // Return clean 404 instead of 500 when category slugs hit the API
-    return c.json({ error: 'Device not found', device: null }, 404);
+    try {
+      const device = await service.getDeviceBySlug(slug);
+
+      if (!device) {
+        return c.json({ error: 'Device not found' }, 404);
+      }
+
+      return c.json(device);
+    } catch (error: unknown) {
+      return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
+    } finally {
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
+    }
   }
-}
 
   async listDeviceSubCategories(c: Context) {
     const { service } = this.createService(c);
@@ -72,6 +81,10 @@ export class DevicesController {
       return c.json(subCategories);
     } catch (error: unknown) {
       return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
+    } finally {
+      // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
+      // it must stay connected across requests, so it is intentionally not
+      // disconnected here.
     }
   }
 }
