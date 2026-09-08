@@ -26,6 +26,7 @@ import { RobotsClient } from "@/components/robots-client";
 import { DevicesClient } from "@/components/devices-client";
 import { ModelsClient } from "@/components/models-client";
 import { RepositoriesClient } from "@/components/repositories-client";
+import AgentDetailClient from "@/components/AgentDetailClient";
 import { SERVER_API_URL, fetchMCPItemBySlug, fetchMCPItemAlternatives } from "@/lib/api";
 
 const VALID_CATEGORIES: Record<string, Set<string>> = {
@@ -88,7 +89,7 @@ export async function generateMetadata({ params }: UnifiedEntityPageProps): Prom
     };
   }
 
-  if (type === "tools" || type === "personal" || type === "creativity" || type === "agents") {
+  if (type === "tools" || type === "personal" || type === "creativity") {
     return {
       title: `${formattedSlug} — AI Tool Details, Pricing & Reviews | AI Orbit`,
       description: `Comprehensive details, features, reviews and pricing for ${formattedSlug}.`,
@@ -126,7 +127,17 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
   const resolvedParams = await params;
   const { type, slug } = resolvedParams;
 
-  if ((type === "tools" || type === "personal" || type === "creativity" || type === "agents") && VALID_CATEGORIES[type]?.has(slug)) {
+  if (type === "agents") {
+  return (
+    <div className="flex flex-col flex-1 bg-[#000000] text-white">
+      <div className="flex-1">
+        <AgentDetailClient slug={slug} />
+      </div>
+    </div>
+  );
+}
+
+  if ((type === "tools" || type === "personal" || type === "creativity") && VALID_CATEGORIES[type]?.has(slug)) {
     return (
       <div className="flex flex-col flex-1">
 
@@ -291,7 +302,7 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
     );
   }
 
-  if (type === "tools" || type === "personal" || type === "creativity" || type === "agents") return (
+  if (type === "tools" || type === "personal" || type === "creativity") return (
     <div className="flex flex-col flex-1 bg-[#000000] text-white">
 
       <div className="flex-1">
@@ -332,6 +343,7 @@ export default async function UnifiedEntityPage({ params }: UnifiedEntityPagePro
       </div>
     );
   }
+  
 
   const entityTypeMap: Record<string, "device" | "country" | "fundraise" | "investor"> = {
     devices: "device",
