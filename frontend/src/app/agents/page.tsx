@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Header } from "@/components/Header";
 import { GlobalHero } from "@/components/GlobalHero";
 import { Footer } from "@/components/Footer";
-import { ToolsClient } from "@/components/tools-client";
+import { AgentsClient } from "@/components/AgentsClient";
 
 export const metadata: Metadata = {
   title: "AI Agents — Browse Autonomous Agents Directory",
@@ -54,7 +54,7 @@ export default function AgentsPage() {
           }
         >
           <div className="flex-1 w-full">
-            <ToolsClient defaultMode="agents" />
+            <AgentsClient />
           </div>
         </Suspense>
       </div>

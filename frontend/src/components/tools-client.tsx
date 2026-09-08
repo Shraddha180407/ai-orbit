@@ -9,7 +9,8 @@ import { API_URL } from "@/lib/api";
 import type { SortOption } from "@/lib/types";
 import { scrollChipIntoView } from "@/lib/utils";
 
-type DirectoryMode = "tools" | "personal" | "creativity" | "agents";
+
+type DirectoryMode = "tools" | "personal" | "creativity";
 
 // Maps UI category slugs → task slugs and tag slugs present in API data
 const CATEGORY_FILTER_MAP: Record<string, { taskSlugs?: string[]; tagSlugs?: string[]; nameParts?: string[]; descriptionParts?: string[] }> = {
@@ -170,7 +171,6 @@ export function ToolsClient({
   const mode: DirectoryMode = defaultMode || (
     pathname?.includes("personal") ? "personal" :
       pathname?.includes("creativity") ? "creativity" :
-        pathname?.includes("agents") ? "agents" :
           "tools"
   );
 
@@ -199,7 +199,12 @@ export function ToolsClient({
     setActiveCategory(slug);
     setCurrentPage(1);
 
-    const base = mode === "personal" ? "/personal" : mode === "creativity" ? "/creativity" : mode === "agents" ? "/agents" : "/tools";
+    const base =
+  mode === "personal"
+    ? "/personal"
+    : mode === "creativity"
+      ? "/creativity"
+      : "/tools";
     const url = slug ? `${base}/${slug}` : base;
     window.history.pushState(null, "", url);
   };
@@ -208,21 +213,12 @@ export function ToolsClient({
   const pricing = searchParams.get("pricing") || undefined;
   const sort = (searchParams.get("sort") || undefined) as SortOption | undefined;
 
-  // Dynamic categories query for Agents mode
-  const { data: agentCategoriesData } = useQuery({
-    queryKey: ["agent-categories"],
-    queryFn: async () => {
-      const res = await fetch(`${API_URL}/api/v1/agents/categories`);
-      if (!res.ok) return [];
-      return res.json();
-    },
-    enabled: mode === "agents",
-    staleTime: 10 * 60 * 1000,
-  });
+  
+  
 
   // Single page Query
   const { data, isLoading, isPlaceholderData } = useQuery({
-    queryKey: ["tools", mode, mode === "agents" ? activeCategory : "", q, pricing, sort, currentPage],
+    queryKey: ["tools", mode, activeCategory, q, pricing, sort, currentPage],
     queryFn: async () => {
       const query = new URLSearchParams();
       if (q) query.set("q", q);
@@ -231,12 +227,6 @@ export function ToolsClient({
       query.set("page", String(currentPage));
       query.set("limit", "200");
 
-      if (mode === "agents") {
-        if (activeCategory) query.set("category", activeCategory);
-        const res = await fetch(`${API_URL}/api/v1/agents?${query.toString()}`);
-        if (!res.ok) return { tools: [], totalPages: 1 };
-        return res.json();
-      }
 
       const endpoint = mode === "personal"
         ? `${API_URL}/api/v1/tools/category/personal`
@@ -254,23 +244,15 @@ export function ToolsClient({
   });
 
   const rawTools = data?.tools || [];
-  const tools = (activeCategory && mode !== "agents")
+  const tools = activeCategory
     ? rawTools.filter((t: any) => matchesCategory(t, activeCategory))
     : rawTools;
   const totalPages = data?.totalPages || 1;
 
-  const categories = React.useMemo(() => {
-    if (mode === "agents" && Array.isArray(agentCategoriesData) && agentCategoriesData.length > 0) {
-      return [
-        { name: "All", slug: "" },
-        ...agentCategoriesData.map((c: { name: string; slug: string }) => ({
-          name: c.name,
-          slug: c.slug,
-        })),
-      ];
-    }
-    return CATEGORY_MAP[mode] || CATEGORY_MAP.tools;
-  }, [mode, agentCategoriesData]);
+  const categories = React.useMemo(
+  () => CATEGORY_MAP[mode] || CATEGORY_MAP.tools,
+  [mode]
+);
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
