@@ -1,3 +1,4 @@
+export const runtime = "edge";
 import AgentDetailClient from "../../../components/AgentDetailClient";
 
 interface AgentPageProps {
