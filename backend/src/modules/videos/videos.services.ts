@@ -105,12 +105,83 @@ export async function fetchVideos(
     });
   }
 
-  return prisma.video.findMany({
-    where,
-    orderBy: orderByFor(sortBy, sortDir),
-    take: limit,
-    skip: offset,
-  });
+  const startedAt = Date.now();
+
+const videos = await prisma.video.findMany({
+  where,
+  orderBy: orderByFor(sortBy, sortDir),
+  take: limit,
+  skip: offset,
+});
+
+console.log(
+  `[timing] fetchVideos db query: ${Date.now() - startedAt}ms`
+);
+
+return videos;
+}
+
+export async function fetchVideosWithCount(
+  prisma: PrismaClient,
+  sort: "latest" | "trending",
+  limit?: number,
+  offset?: number,
+  category?: string,
+  sortBy?: SortBy,
+  sortDir?: SortDir
+): Promise<{ videos: Awaited<ReturnType<typeof fetchVideos>>; total: number }> {
+  const where: Prisma.VideoWhereInput = {
+    ...categoryWhere(category),
+    ...AVAILABLE_ONLY,
+  };
+
+  const startedAt = Date.now();
+
+  if (sort === "trending") {
+    const cutoff = new Date(Date.now() - 60 * 86400000)
+      .toISOString()
+      .slice(0, 10);
+
+    const trendingWhere: Prisma.VideoWhereInput = {
+      ...where,
+      publishedAt: { gte: cutoff },
+    };
+
+    const [videos, total] = await Promise.all([
+      prisma.video.findMany({
+        where: trendingWhere,
+        orderBy: sortBy ? orderByFor(sortBy, sortDir) : { views: "desc" },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.video.count({ where: trendingWhere }),
+    ]);
+
+    console.log(
+      `[timing] fetchVideosWithCount (trending) db query: ${Date.now() - startedAt}ms`
+    );
+
+    return { videos, total };
+  }
+
+  // Run findMany and count concurrently against the same `where` clause
+  // instead of two sequential HTTP requests each doing its own query -
+  // this is what actually lets Postgres execute them at the same time.
+  const [videos, total] = await Promise.all([
+    prisma.video.findMany({
+      where,
+      orderBy: orderByFor(sortBy, sortDir),
+      take: limit,
+      skip: offset,
+    }),
+    prisma.video.count({ where }),
+  ]);
+
+  console.log(
+    `[timing] fetchVideosWithCount db query: ${Date.now() - startedAt}ms`
+  );
+
+  return { videos, total };
 }
 
 export async function countVideos(

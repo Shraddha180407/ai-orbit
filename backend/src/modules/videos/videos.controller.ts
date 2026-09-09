@@ -4,6 +4,7 @@ import type { Video } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import {
   fetchVideos,
+  fetchVideosWithCount,
   fetchVideoBySlug,
   fetchRelatedVideos,
   countVideos,
@@ -62,7 +63,24 @@ export async function listVideos(c: Context) {
       return c.json({ error: "Invalid query parameters", details: result.error.format() }, 400);
     }
 
-    const { sort, limit, offset, category, sortBy, sortDir } = result.data;
+    const { sort, limit, offset, category, sortBy, sortDir, withCount } = result.data;
+
+    if (withCount) {
+      const { videos: rawVideos, total } = await fetchVideosWithCount(
+        prisma,
+        sort,
+        limit,
+        offset,
+        category,
+        sortBy,
+        sortDir
+      );
+      const videos = rawVideos.map(toApiShape);
+      const data = { videos, total };
+      setCache(cacheKey, data);
+      return c.json(data);
+    }
+
     const rawVideos = await fetchVideos(prisma, sort, limit, offset, category, sortBy, sortDir);
     const videos = rawVideos.map(toApiShape);
     setCache(cacheKey, videos);

@@ -1,16 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import type { Video } from "@/lib/video-types";
 import {
-  getVideosPage,
-  getVideosCount,
+  getVideosPageWithCount,
   getCachedVideosPage,
   getCachedVideosCount,
   prefetchVideosCategory,
-  buildVideosPageUrl,
-  buildVideosCountUrl,
+  buildVideosPageWithCountUrl,
   setInCache,
   type VideoSortBy,
   type VideoSortDir,
@@ -19,6 +17,16 @@ import { VideoTable, VideoTableSkeleton } from "./VideoTable";
 import { VideoDetailsModal } from "./VideoDetailsModal";
 import { Pagination } from "./Pagination";
 import { scrollChipIntoView } from "@/lib/utils";
+
+// Builds the /videos URL for a given category + page without touching
+// Next's router - see the pushState usage below for why.
+function buildVideosListUrl(category: string, pageNum: number): string {
+  const params = new URLSearchParams();
+  if (category) params.set("category", category);
+  if (pageNum > 1) params.set("page", String(pageNum));
+  const qs = params.toString();
+  return `/videos${qs ? `?${qs}` : ""}`;
+}
 
 export const VIDEO_CATEGORIES = [
   { name: "All", slug: "" },
@@ -50,7 +58,6 @@ export function VideosPageClient({
   pageSize: number;
   defaultCategory?: string;
 }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [currentPageSize, setCurrentPageSize] = useState<number>(
@@ -100,7 +107,11 @@ export function VideosPageClient({
     }
 
     const cachedTotal = getCachedVideosCount(
-      initialCat || undefined
+      initialPageSize,
+      0,
+      initialCat || undefined,
+      "posted",
+      "desc"
     );
 
     return cachedTotal !== null ? cachedTotal : 0;
@@ -134,7 +145,7 @@ export function VideosPageClient({
   // Seed initial SSR data into cache immediately
   useEffect(() => {
     if (initialVideos && initialVideos.length > 0) {
-      const pageUrl = buildVideosPageUrl(
+      const pageUrl = buildVideosPageWithCountUrl(
         currentPageSize,
         0,
         initialCat || undefined,
@@ -144,21 +155,9 @@ export function VideosPageClient({
 
       setInCache(
         pageUrl,
-        initialVideos,
+        { videos: initialVideos, total: initialTotal > 0 ? initialTotal : 0 },
         15 * 60 * 1000
       );
-
-      if (initialTotal > 0) {
-        const countUrl = buildVideosCountUrl(
-          initialCat || undefined
-        );
-
-        setInCache(
-          countUrl,
-          { total: initialTotal },
-          15 * 60 * 1000
-        );
-      }
     }
   }, []);
 
@@ -178,28 +177,15 @@ export function VideosPageClient({
     }
   }, [initialTotal]);
 
-  // Synchronize state when URL searchParams change
-  // (back/forward navigation, direct URL updates)
-  useEffect(() => {
-    const catInUrl =
-      searchParams?.get("category") ??
-      defaultCategory ??
-      "";
-
-    if (catInUrl !== activeCategory) {
-      setActiveCategory(catInUrl);
-      setPage(1);
-    }
-
-    const pageInUrl = Math.max(
-      1,
-      Number(searchParams?.get("page")) || 1
-    );
-
-    if (pageInUrl !== page) {
-      setPage(pageInUrl);
-    }
-  }, [searchParams, defaultCategory]);
+  // NOTE: Category/page changes are now applied via window.history
+  // .pushState (see handleCategorySelect / goToPage below), not
+  // router.push - that's what stops every chip click from triggering
+  // a full Next.js page navigation (GET /videos?category=... hitting
+  // the server). Because of that, Next's useSearchParams() no longer
+  // reflects back/forward navigation for this page, so syncing state
+  // from it here would silently stop working. Back/forward is instead
+  // handled by the popstate listener below, which reads
+  // window.location.search directly.
 
   // Scroll active chip into view on mount or category change
   useEffect(() => {
@@ -215,7 +201,11 @@ export function VideosPageClient({
     }
   }, [activeCategory]);
 
-  // Handle browser back/forward navigation for video modal
+  // Handle browser back/forward navigation. Covers two things that can
+  // change via popstate: the video modal (pushed as /videos/:slug) and
+  // the category/page (pushed via history.pushState in
+  // handleCategorySelect/goToPage - Next's router doesn't see these,
+  // so we read the URL ourselves instead of relying on useSearchParams).
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
       if (e.state?.videoSlug) {
@@ -225,11 +215,32 @@ export function VideosPageClient({
 
         if (found) {
           setSelectedVideo(found);
-          return;
+        } else {
+          setSelectedVideo(null);
         }
+      } else {
+        setSelectedVideo(null);
       }
 
-      setSelectedVideo(null);
+      const params = new URLSearchParams(
+        window.location.search
+      );
+
+      const catInUrl =
+        params.get("category") ??
+        defaultCategory ??
+        "";
+
+      setActiveCategory((prev) =>
+        prev !== catInUrl ? catInUrl : prev
+      );
+
+      const pageInUrl = Math.max(
+        1,
+        Number(params.get("page")) || 1
+      );
+
+      setPage(pageInUrl);
     };
 
     window.addEventListener(
@@ -242,7 +253,7 @@ export function VideosPageClient({
         "popstate",
         handlePopState
       );
-  }, [videos]);
+  }, [videos, defaultCategory]);
 
   // Fetch or revalidate videos whenever category,
   // page, sort, or size changes
@@ -276,7 +287,11 @@ export function VideosPageClient({
 
     const cachedCount =
       getCachedVideosCount(
-        activeCategory || undefined
+        currentPageSize,
+        offset,
+        activeCategory || undefined,
+        sortBy,
+        sortDir
       );
 
     const isCategorySwitch =
@@ -309,17 +324,19 @@ export function VideosPageClient({
       setIsFetching(true);
     }
 
-    // Fetch videos independently so the video list
-    // does not wait for the count request.
-    const fetchVideos = async () => {
+    // Single request: the backend now runs findMany + count in
+    // parallel and returns { videos, total } together, instead of
+    // this making two separate HTTP round trips.
+    const fetchVideosAndCount = async () => {
       try {
-        const pageVideos = await getVideosPage(
-          currentPageSize,
-          offset,
-          activeCategory || undefined,
-          sortBy,
-          sortDir
-        );
+        const { videos: pageVideos, total: pageTotal } =
+          await getVideosPageWithCount(
+            currentPageSize,
+            offset,
+            activeCategory || undefined,
+            sortBy,
+            sortDir
+          );
 
         if (cancelled) {
           return;
@@ -337,6 +354,7 @@ export function VideosPageClient({
           setVideos(pageVideos);
         }
 
+        setTotal(pageTotal);
         loadedCategoryRef.current = activeCategory;
         setLoading(false);
       } catch (err) {
@@ -348,28 +366,6 @@ export function VideosPageClient({
 
           setLoading(false);
         }
-      }
-    };
-
-    // Fetch count independently.
-    const fetchCount = async () => {
-      try {
-        const count = await getVideosCount(
-          activeCategory || undefined
-        );
-
-        if (cancelled) {
-          return;
-        }
-
-        setTotal(count);
-      } catch (err) {
-        if (!cancelled) {
-          console.error(
-            "Failed to fetch video count:",
-            err
-          );
-        }
       } finally {
         if (!cancelled) {
           setIsFetching(false);
@@ -377,8 +373,7 @@ export function VideosPageClient({
       }
     };
 
-    fetchVideos();
-    fetchCount();
+    fetchVideosAndCount();
 
     return () => {
       cancelled = true;
@@ -391,29 +386,13 @@ export function VideosPageClient({
     currentPageSize,
   ]);
 
-  // Pre-cache other categories quietly after mount
-  // so clicking any tab is as fast as possible.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      VIDEO_CATEGORIES.forEach((cat) => {
-        if (cat.slug !== activeCategory) {
-          prefetchVideosCategory(
-            cat.slug || undefined,
-            currentPageSize,
-            0,
-            sortBy,
-            sortDir
-          );
-        }
-      });
-    }, 150);
-
-    return () => clearTimeout(timer);
-  }, [
-    currentPageSize,
-    sortBy,
-    sortDir,
-  ]);
+  // NOTE: We deliberately do NOT eagerly prefetch every category on
+  // mount. With 15 categories x 2 requests (page + count) each, that
+  // was firing ~30 concurrent requests before the user clicked
+  // anything, which was swamping the API and making the *actual*
+  // selected category's request take longer than it should. Category
+  // data is now only fetched on real interest: hover/touch-start on a
+  // chip, or an actual click (see below).
 
   function handleVideoSelect(video: Video) {
     setSelectedVideo(video);
@@ -431,14 +410,13 @@ export function VideosPageClient({
     setSelectedVideo(null);
 
     if (typeof window !== "undefined") {
-      const currentQuery =
-        searchParams?.toString();
-
-      const returnUrl = `/videos${
-        currentQuery
-          ? `?${currentQuery}`
-          : ""
-      }`;
+      // Built from our own state, not searchParams - Next's router
+      // no longer owns this URL (see handleCategorySelect/goToPage),
+      // so searchParams can be stale here.
+      const returnUrl = buildVideosListUrl(
+        activeCategory,
+        page
+      );
 
       window.history.pushState(
         null,
@@ -473,7 +451,11 @@ export function VideosPageClient({
 
     const cachedCount =
       getCachedVideosCount(
-        categorySlug || undefined
+        currentPageSize,
+        0,
+        categorySlug || undefined,
+        sortBy,
+        sortDir
       );
 
     if (cached && cached.length > 0) {
@@ -498,32 +480,22 @@ export function VideosPageClient({
       setIsFetching(true);
     }
 
-    // Update URL via router.push so address bar,
-    // searchParams, and browser history stay in sync.
-    const params = new URLSearchParams(
-      searchParams?.toString() || ""
+    // Update the address bar directly via history.pushState - this is
+    // the fix for the "GET /videos?category=... 200 in ~1-2s" server
+    // navigations we were seeing in the Next.js logs. router.push()
+    // always triggers a real Next.js navigation (fetching a fresh
+    // RSC payload from the server), even though every bit of data
+    // this page needs is already being fetched client-side above.
+    // pushState updates the URL/history without asking Next's router
+    // to do anything, so the only network activity on a category
+    // click is the actual /api/videos request.
+    const newUrl = buildVideosListUrl(categorySlug, 1);
+
+    window.history.pushState(
+      null,
+      "",
+      newUrl
     );
-
-    if (categorySlug) {
-      params.set(
-        "category",
-        categorySlug
-      );
-    } else {
-      params.delete("category");
-    }
-
-    params.delete("page");
-
-    const qs = params.toString();
-
-    const newUrl = `/videos${
-      qs ? `?${qs}` : ""
-    }`;
-
-    router.push(newUrl, {
-      scroll: false,
-    });
 
     // Smooth scroll chip into view on mobile/tablet.
     if (
@@ -565,28 +537,13 @@ export function VideosPageClient({
 
     setPage(clamped);
 
-    const params = new URLSearchParams(
-      searchParams?.toString() || ""
+    const newUrl = buildVideosListUrl(activeCategory, clamped);
+
+    window.history.pushState(
+      null,
+      "",
+      newUrl
     );
-
-    if (clamped > 1) {
-      params.set(
-        "page",
-        String(clamped)
-      );
-    } else {
-      params.delete("page");
-    }
-
-    const qs = params.toString();
-
-    const newUrl = `/videos${
-      qs ? `?${qs}` : ""
-    }`;
-
-    router.push(newUrl, {
-      scroll: false,
-    });
 
     document
       .getElementById("videos-list-top")
