@@ -21,6 +21,7 @@ import {
   Sparkles,
   DollarSign
 } from 'lucide-react';
+import SuperpowerBadge from '../components/leaderboard/SuperpowerBadge';
 
 export default function LeaderboardDetailPage({ 
   bookmarks = [], 
@@ -122,8 +123,8 @@ print(response.choices[0].message.content)`;
         {/* Model Hero Header */}
         <div className="flex flex-col lg:flex-row items-start justify-between gap-6 pb-6 border-b border-[#1C1C1F]">
           <div className="max-w-3xl">
-            {/* 3 clean items: What am I looking at? */}
-            <div className="flex items-center gap-2.5 mb-3">
+            {/* Context & Badges */}
+            <div className="flex items-center gap-2.5 mb-3 flex-wrap">
               <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#6E56CF] text-white font-bold font-mono text-xs">
                 #{model.rank}
               </span>
@@ -134,6 +135,14 @@ print(response.choices[0].message.content)`;
               <span className="text-xs text-[#A78BFA] font-medium bg-[#6E56CF]/10 px-2.5 py-0.5 rounded-full border border-[#6E56CF]/20">
                 {model.category}
               </span>
+              {model.superpower && (
+                <SuperpowerBadge superpower={model.superpower} category={model.category} />
+              )}
+              {model.isOpenWeights && (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  Open Weights
+                </span>
+              )}
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight mb-2">

@@ -1,600 +1,127 @@
+// AI Orbit Official Primary Ecosystem Leaderboard Data
+// Meticulously separated into AI_MODELS_DATA (modelsData.js) and AI_TOOLS_DATA (toolsData.js)
+// Exports all datasets, categories, and perspective configuration options.
+// Last Updated: March 2026
+
+import { AI_MODELS_DATA, MODEL_CATEGORIES } from './modelsData.js';
+import { AI_TOOLS_DATA, TOOL_CATEGORIES } from './toolsData.js';
+
+export { AI_MODELS_DATA, MODEL_CATEGORIES };
+export { AI_TOOLS_DATA, TOOL_CATEGORIES };
+
+// Combined unique categories for universal filters
 export const LEADERBOARD_CATEGORIES = [
   "All",
-  "Chatbot",
-  "Code Assistant",
+  // Core Model Categories
+  "Reasoning",
+  "Chat / General LLM",
+  "Coding",
+  "Open Weight",
+  "Multimodal",
+  "Image",
+  "Video",
+  "Audio / Voice",
+  "Embeddings",
+  // Core Tool Categories
+  "Coding / Developer",
+  "Research",
+  "Writing",
   "Image Generation",
-  "Audio & Voice",
-  "Video Editing",
+  "Voice / Audio",
+  "Design",
   "Productivity",
-  "Search & Answer",
-  "UI/UX Design",
-  "Data Analysis",
-  "Copywriting",
-  "Translation"
+  "Marketing",
+  "AI Agents",
+  "Automation"
 ];
 
-export const LEADERBOARD_DATA = [
-  {
-    id: "claude-3-7-sonnet",
-    slug: "claude-3-7-sonnet",
-    name: "Claude 3.7 Sonnet (Thinking)",
-    org: "Anthropic",
-    category: "Chatbot",
-    rank: 1,
-    arenaElo: 1388,
-    eloChange: "+24",
-    mmluPro: "92.4%",
-    codingScore: "94.8%",
-    mathScore: "96.2%",
-    monthlyVisits: "148.5M",
-    growth: "+54.2%",
-    growthTrend: "up",
-    price: "$3.00 / 1M input",
-    outputSpeed: "88 tok/s",
-    contextWindow: "200k tokens",
-    license: "Commercial API",
-    badge: "Frontier",
-    shortDescription: "Frontier hybrid reasoning model with dynamic adaptive thinking tokens for coding and deep system architecture.",
-    fullDescription: "Claude 3.7 Sonnet is Anthropic's flagship hybrid reasoning model. It seamlessly combines rapid standard responses with extended, verifiable chain-of-thought deliberation to solve complex full-stack engineering problems, refactoring tasks, and formal logic.",
-    website: "https://www.anthropic.com",
-    logoText: "Claude",
-    logoColor: "#D97706",
-    keyFeatures: [
-      "Dynamic Adaptive Thinking budget control",
-      "World #1 score on SWE-bench Verified coding",
-      "Multimodal high-resolution image analysis",
-      "Native computer use and tool calling API"
-    ],
-    benchmarks: [
-      { name: "LMSYS Chatbot Arena", score: "1,388 Elo", rank: "#1 Overall" },
-      { name: "SWE-bench Verified", score: "70.3%", rank: "#1 Coding" },
-      { name: "MMLU Pro (Advanced Reasoning)", score: "92.4%", rank: "Top 0.1%" },
-      { name: "MATH 500 Competition", score: "96.2%", rank: "Top Tier" }
-    ],
-    specs: {
-      inputPrice: "$3.00 / 1M tokens",
-      outputPrice: "$15.00 / 1M tokens",
-      contextWindow: "200,000 tokens",
-      maxOutput: "64,000 tokens",
-      cutoff: "January 2025",
-      modalities: "Text, Code, Vision (Images/PDFs)",
-      speed: "88 tok/s average throughput",
-      ttft: "340ms Time-To-First-Token"
-    }
-  },
-  {
-    id: "openai-o3-mini",
-    slug: "openai-o3-mini",
-    name: "OpenAI o3-mini",
-    org: "OpenAI",
-    category: "Chatbot",
-    rank: 2,
-    arenaElo: 1380,
-    eloChange: "+18",
-    mmluPro: "91.8%",
-    codingScore: "93.4%",
-    mathScore: "97.1%",
-    monthlyVisits: "220.0M",
-    growth: "+38.4%",
-    growthTrend: "up",
-    price: "$1.10 / 1M input",
-    outputSpeed: "142 tok/s",
-    contextWindow: "200k tokens",
-    license: "Commercial API",
-    badge: "High Speed",
-    shortDescription: "Cost-efficient STEM reasoning model specialized in competitive programming, math, and scientific proofing.",
-    fullDescription: "OpenAI o3-mini delivers high-tier mathematical and technical reasoning at a fraction of the inference cost and latency of previous reasoning generations. Engineered specifically for complex algorithmic generation, automated unit testing, and quantitative research.",
-    website: "https://openai.com",
-    logoText: "o3-mini",
-    logoColor: "#10A37F",
-    keyFeatures: [
-      "Low, medium, high reasoning effort parameters",
-      "Unmatched price-to-reasoning performance ratio",
-      "Built-in Python execution sandbox support",
-      "Exceptional competitive programming performance"
-    ],
-    benchmarks: [
-      { name: "LMSYS Chatbot Arena", score: "1,380 Elo", rank: "#2 Overall" },
-      { name: "Codeforces Rating", score: "2,042 Elo", rank: "Master Level" },
-      { name: "AIME 2024 Math Olympiad", score: "87.3%", rank: "#1 Math" },
-      { name: "MMLU Pro Reasoning", score: "91.8%", rank: "Top Tier" }
-    ],
-    specs: {
-      inputPrice: "$1.10 / 1M tokens",
-      outputPrice: "$4.40 / 1M tokens",
-      contextWindow: "200,000 tokens",
-      maxOutput: "100,000 tokens",
-      cutoff: "October 2024",
-      modalities: "Text, Code",
-      speed: "142 tok/s average throughput",
-      ttft: "410ms Time-To-First-Token"
-    }
-  },
-  {
-    id: "gemini-2-5-pro",
-    slug: "gemini-2-5-pro",
-    name: "Gemini 2.5 Pro",
-    org: "Google DeepMind",
-    category: "Chatbot",
-    rank: 3,
-    arenaElo: 1372,
-    eloChange: "+15",
-    mmluPro: "92.1%",
-    codingScore: "92.6%",
-    mathScore: "95.4%",
-    monthlyVisits: "185.0M",
-    growth: "+29.5%",
-    growthTrend: "up",
-    price: "$1.25 / 1M input",
-    outputSpeed: "125 tok/s",
-    contextWindow: "2,000k tokens (2M)",
-    license: "Commercial API",
-    badge: "2M Context",
-    shortDescription: "Frontier multimodal foundation model featuring 2-million-token native context window and deep cross-modal reasoning.",
-    fullDescription: "Gemini 2.5 Pro sets the gold standard for massive context ingestion, processing entire codebases, multi-hour video streams, and expansive technical documentation in a single prompt with near-perfect retrieval accuracy.",
-    website: "https://deepmind.google",
-    logoText: "Gemini",
-    logoColor: "#4285F4",
-    keyFeatures: [
-      "Industry-leading 2,000,000 token context window",
-      "Native audio, video, vision, and code processing",
-      "Google Search Grounding integration",
-      "Sub-second video stream understanding"
-    ],
-    benchmarks: [
-      { name: "LMSYS Chatbot Arena", score: "1,372 Elo", rank: "#3 Overall" },
-      { name: "Needle In A Haystack (2M tokens)", score: "99.8%", rank: "#1 Long-Context" },
-      { name: "MMLU Pro Reasoning", score: "92.1%", rank: "Top Tier" },
-      { name: "Video-MME (Multimodal)", score: "84.5%", rank: "#1 Video" }
-    ],
-    specs: {
-      inputPrice: "$1.25 / 1M tokens (<128k)",
-      outputPrice: "$5.00 / 1M tokens",
-      contextWindow: "2,097,152 tokens",
-      maxOutput: "8,192 tokens",
-      cutoff: "January 2025",
-      modalities: "Text, Code, Audio, Video, Images",
-      speed: "125 tok/s average throughput",
-      ttft: "290ms Time-To-First-Token"
-    }
-  },
-  {
-    id: "deepseek-r1",
-    slug: "deepseek-r1",
-    name: "DeepSeek R1",
-    org: "DeepSeek AI",
-    category: "Chatbot",
-    rank: 4,
-    arenaElo: 1365,
-    eloChange: "+32",
-    mmluPro: "90.8%",
-    codingScore: "91.5%",
-    mathScore: "95.8%",
-    monthlyVisits: "190.4M",
-    growth: "+142.0%",
-    growthTrend: "up",
-    price: "$0.55 / 1M input",
-    outputSpeed: "95 tok/s",
-    contextWindow: "128k tokens",
-    license: "MIT Open Weights",
-    badge: "Open Weights",
-    shortDescription: "High-performance open-weights reasoning model trained with large-scale reinforcement learning.",
-    fullDescription: "DeepSeek R1 demonstrated that pure reinforcement learning without supervised warm-up can produce frontier reasoning behaviors. Available under MIT open weights and via cloud APIs at ultra-low inference costs.",
-    website: "https://deepseek.com",
-    logoText: "DeepSeek",
-    logoColor: "#3B82F6",
-    keyFeatures: [
-      "100% open weights with MIT License",
-      "Transparent chain-of-thought reasoning tokens",
-      "Fraction of the training and inference cost",
-      "Self-hostable with vLLM and Ollama"
-    ],
-    benchmarks: [
-      { name: "LMSYS Chatbot Arena", score: "1,365 Elo", rank: "#4 Overall" },
-      { name: "AIME 2024 Math", score: "79.8%", rank: "#2 Open Weight" },
-      { name: "MATH 500", score: "93.6%", rank: "Top Tier" },
-      { name: "Codeforces Rating", score: "1,940 Elo", rank: "Candidate Master" }
-    ],
-    specs: {
-      inputPrice: "$0.55 / 1M tokens",
-      outputPrice: "$2.19 / 1M tokens",
-      contextWindow: "128,000 tokens",
-      maxOutput: "8,192 tokens",
-      cutoff: "July 2024",
-      modalities: "Text, Code",
-      speed: "95 tok/s average throughput",
-      ttft: "450ms Time-To-First-Token"
-    }
-  },
-  {
-    id: "cursor-composer",
-    slug: "cursor-composer",
-    name: "Cursor Composer",
-    org: "Anysphere",
-    category: "Code Assistant",
-    rank: 5,
-    arenaElo: 1358,
-    eloChange: "+14",
-    mmluPro: "89.5%",
-    codingScore: "96.4%",
-    mathScore: "88.0%",
-    monthlyVisits: "42.5M",
-    growth: "+62.1%",
-    growthTrend: "up",
-    price: "$20 / month",
-    outputSpeed: "110 tok/s",
-    contextWindow: "200k tokens",
-    license: "Commercial SaaS",
-    badge: "Editor",
-    shortDescription: "AI code editor with multi-file codebase understanding and agentic terminal execution.",
-    fullDescription: "Cursor Composer transforms developer workflows by indexing entire git repositories into semantic vectors, generating cross-file code diffs, and orchestrating shell commands autonomously.",
-    website: "https://cursor.com",
-    logoText: "Cursor",
-    logoColor: "#8B5CF6",
-    keyFeatures: [
-      "Instant multi-file diff application",
-      "Terminal command auto-debugging",
-      "Full repo indexing with privacy mode",
-      "Multi-model switching (Claude 3.7, GPT-4o, o3-mini)"
-    ],
-    benchmarks: [
-      { name: "Developer Velocity Multiplier", score: "2.4x", rank: "#1 IDE" },
-      { name: "Multi-file Refactoring Accuracy", score: "91.2%", rank: "#1 Multi-file" },
-      { name: "Codebase Semantic Recall", score: "98.4%", rank: "Top Tier" },
-      { name: "User Satisfaction Score", score: "96%", rank: "Top Rated" }
-    ],
-    specs: {
-      inputPrice: "$20 / month Pro tier",
-      outputPrice: "500 fast requests included",
-      contextWindow: "200,000 tokens",
-      maxOutput: "Unlimited multi-file chunks",
-      cutoff: "Live Web & Codebase",
-      modalities: "Code, Terminal, Docs",
-      speed: "Real-time IDE diffs",
-      ttft: "Instant"
-    }
-  },
-  {
-    id: "midjourney-v6-1",
-    slug: "midjourney-v6-1",
-    name: "Midjourney v6.1",
-    org: "Midjourney Inc.",
-    category: "Image Generation",
-    rank: 6,
-    arenaElo: 1352,
-    eloChange: "+11",
-    mmluPro: "N/A",
-    codingScore: "N/A",
-    mathScore: "N/A",
-    monthlyVisits: "85.2M",
-    growth: "+14.8%",
-    growthTrend: "up",
-    price: "$10 / month",
-    outputSpeed: "8s per render",
-    contextWindow: "Prompt based",
-    license: "Commercial SaaS",
-    badge: "Creative",
-    shortDescription: "Photorealistic image synthesis model with photometrics, skin textures, and typography coherence.",
-    fullDescription: "Midjourney v6.1 represents the benchmark in photorealistic visual aesthetics, cinematic lighting, complex hand rendering, and typography generation for editorial and advertising production.",
-    website: "https://midjourney.com",
-    logoText: "Midjourney",
-    logoColor: "#EC4899",
-    keyFeatures: [
-      "Sub-pixel skin texture and lighting rendering",
-      "Accurate multi-word typography within images",
-      "Web interface with pan, zoom, and regional inpainting",
-      "Style reference and character consistency codes"
-    ],
-    benchmarks: [
-      { name: "Image Arena Visual Elo", score: "1,352 Elo", rank: "#1 Visuals" },
-      { name: "Photorealism Human Evaluation", score: "94.6%", rank: "#1 Realism" },
-      { name: "Text Rendering Accuracy", score: "89.2%", rank: "Top Tier" },
-      { name: "Aesthetic Preference Score", score: "96.1%", rank: "#1 Aesthetics" }
-    ],
-    specs: {
-      inputPrice: "$10/mo Basic, $30/mo Standard",
-      outputPrice: "Unlimited relaxed GPU hours",
-      contextWindow: "Prompts up to 1024 chars",
-      maxOutput: "2048 x 2048 px upscaled",
-      cutoff: "Continuous model updates",
-      modalities: "Text-to-Image, Image-to-Image",
-      speed: "8 seconds fast mode",
-      ttft: "Immediate queue"
-    }
-  },
-  {
-    id: "elevenlabs-multilingual-v2",
-    slug: "elevenlabs-multilingual-v2",
-    name: "ElevenLabs Multilingual v2",
-    org: "ElevenLabs",
-    category: "Audio & Voice",
-    rank: 7,
-    arenaElo: 1345,
-    eloChange: "+9",
-    mmluPro: "N/A",
-    codingScore: "N/A",
-    mathScore: "N/A",
-    monthlyVisits: "34.1M",
-    growth: "+22.4%",
-    growthTrend: "up",
-    price: "$5 / month",
-    outputSpeed: "150ms latency",
-    contextWindow: "10k chars/call",
-    license: "Commercial SaaS & API",
-    badge: "Voice AI",
-    shortDescription: "Ultra-low-latency emotional voice synthesis and instant voice cloning across 29 languages.",
-    fullDescription: "ElevenLabs Multilingual v2 generates human-quality voice audio with accurate pacing, emotional inflection, whisper dynamics, and instant voice cloning from 1-minute audio samples.",
-    website: "https://elevenlabs.io",
-    logoText: "ElevenLabs",
-    logoColor: "#6366F1",
-    keyFeatures: [
-      "Instant voice cloning from 60 seconds of audio",
-      "Emotional context modulation and breath control",
-      "Sub-150ms Conversational AI WebSocket API",
-      "29 languages with native phonetic precision"
-    ],
-    benchmarks: [
-      { name: "Voice Arena MOS (Mean Opinion Score)", score: "4.82 / 5.0", rank: "#1 Audio" },
-      { name: "Voice Cloning Fidelity", score: "96.4%", rank: "#1 Similarity" },
-      { name: "Latency Benchmark", score: "145ms", rank: "#1 Real-time" },
-      { name: "Accent Naturalness", score: "94.8%", rank: "Top Tier" }
-    ],
-    specs: {
-      inputPrice: "$5.00/mo Starter tier",
-      outputPrice: "$0.15 per 1,000 characters",
-      contextWindow: "10,000 characters per call",
-      maxOutput: "44.1kHz Studio Quality WAV/MP3",
-      cutoff: "Continuous",
-      modalities: "Text-to-Speech, Speech-to-Speech",
-      speed: "Real-time streaming",
-      ttft: "145ms WebSocket Latency"
-    }
-  },
-  {
-    id: "runway-gen-3-alpha",
-    slug: "runway-gen-3-alpha",
-    name: "Runway Gen-3 Alpha Turbo",
-    org: "Runway",
-    category: "Video Editing",
-    rank: 8,
-    arenaElo: 1338,
-    eloChange: "+12",
-    mmluPro: "N/A",
-    codingScore: "N/A",
-    mathScore: "N/A",
-    monthlyVisits: "28.6M",
-    growth: "+31.0%",
-    growthTrend: "up",
-    price: "$12 / month",
-    outputSpeed: "12s per clip",
-    contextWindow: "Video prompts",
-    license: "Commercial SaaS & API",
-    badge: "Video AI",
-    shortDescription: "High-fidelity cinematic generative video with motion brush and camera trajectory controls.",
-    fullDescription: "Runway Gen-3 Alpha Turbo generates consistent, photorealistic video clips with precise camera director controls, physical world simulations, and synchronized audio effects.",
-    website: "https://runwayml.com",
-    logoText: "Runway",
-    logoColor: "#14B8A6",
-    keyFeatures: [
-      "Cinematic motion brush and camera control",
-      "High-speed Turbo generation in under 15 seconds",
-      "Text-to-Video and Image-to-Video fidelity",
-      "Industry adoption across Hollywood and commercials"
-    ],
-    benchmarks: [
-      { name: "Video Arena Elo Score", score: "1,338 Elo", rank: "#1 Video" },
-      { name: "Temporal Consistency", score: "91.8%", rank: "Top Tier" },
-      { name: "Camera Motion Adherence", score: "95.2%", rank: "#1 Control" },
-      { name: "Render Speed", score: "12s Turbo", rank: "#1 Velocity" }
-    ],
-    specs: {
-      inputPrice: "$12/mo Standard tier",
-      outputPrice: "5 credits per second of video",
-      contextWindow: "Prompts + Keyframe images",
-      maxOutput: "1080p 60fps video clips",
-      cutoff: "Continuous updates",
-      modalities: "Text-to-Video, Image-to-Video",
-      speed: "12 seconds for 5s clip",
-      ttft: "Instant render queue"
-    }
-  },
-  {
-    id: "v0-vercel",
-    slug: "v0-vercel",
-    name: "v0 by Vercel",
-    org: "Vercel",
-    category: "UI/UX Design",
-    rank: 9,
-    arenaElo: 1332,
-    eloChange: "+20",
-    mmluPro: "N/A",
-    codingScore: "93.0%",
-    mathScore: "N/A",
-    monthlyVisits: "22.4M",
-    growth: "+48.9%",
-    growthTrend: "up",
-    price: "$20 / month",
-    outputSpeed: "Instant preview",
-    contextWindow: "Full React tree",
-    license: "Commercial SaaS",
-    badge: "Frontend AI",
-    shortDescription: "Generative frontend developer that turns conversational prompts into production-ready React & Tailwind UI.",
-    fullDescription: "v0 by Vercel writes production-ready React components using Tailwind CSS and shadcn/ui. Featuring live side-by-side browser rendering, one-click npm copy commands, and direct Vercel deployment.",
-    website: "https://v0.dev",
-    logoText: "v0",
-    logoColor: "#FFFFFF",
-    keyFeatures: [
-      "Instant copy-paste React + Tailwind + Lucide code",
-      "Live interactive canvas preview with state manipulation",
-      "Forking and iterative component evolution",
-      "Direct integration with Next.js App Router"
-    ],
-    benchmarks: [
-      { name: "Frontend Design Elo", score: "1,332 Elo", rank: "#1 UI/UX" },
-      { name: "Tailwind Syntax Compliance", score: "99.4%", rank: "#1 Clean Code" },
-      { name: "React 19 Compatibility", score: "100%", rank: "Native" },
-      { name: "Component Generation Speed", score: "4.2s", rank: "#1 Velocity" }
-    ],
-    specs: {
-      inputPrice: "$20/mo Premium, Free tier available",
-      outputPrice: "Credits replenish monthly",
-      contextWindow: "Full React component trees",
-      maxOutput: "Full multi-file frontend blocks",
-      cutoff: "Continuous updates",
-      modalities: "Text prompt to React/Tailwind/HTML",
-      speed: "Live streaming component build",
-      ttft: "200ms"
-    }
-  },
-  {
-    id: "perplexity-pro",
-    slug: "perplexity-pro",
-    name: "Perplexity Pro (Sonar)",
-    org: "Perplexity AI",
-    category: "Search & Answer",
-    rank: 10,
-    arenaElo: 1328,
-    eloChange: "+8",
-    mmluPro: "89.4%",
-    codingScore: "87.5%",
-    mathScore: "89.0%",
-    monthlyVisits: "115.0M",
-    growth: "+34.5%",
-    growthTrend: "up",
-    price: "$20 / month",
-    outputSpeed: "105 tok/s",
-    contextWindow: "128k tokens",
-    license: "Commercial SaaS & API",
-    badge: "Search",
-    shortDescription: "Conversational answer engine with real-time web retrieval, inline citation grounding, and deep research synthesis.",
-    fullDescription: "Perplexity Pro replaces traditional search engines by synthesizing verified web sources into comprehensive structured briefs with cited inline links, mathematical derivations, and multi-step follow-ups.",
-    website: "https://perplexity.ai",
-    logoText: "Perplexity",
-    logoColor: "#00E5FF",
-    keyFeatures: [
-      "Real-time live multi-source citation verification",
-      "Pro Search multi-step autonomous exploration",
-      "Multi-model switching (Claude 3.7, GPT-4o, Sonar)",
-      "File upload for data analysis & synthesis"
-    ],
-    benchmarks: [
-      { name: "Search & Answer Elo", score: "1,328 Elo", rank: "#1 Search" },
-      { name: "Citation Precision & Accuracy", score: "94.2%", rank: "#1 Grounding" },
-      { name: "Hallucination Minimization", score: "98.1%", rank: "Top Tier" },
-      { name: "Answer Synthesis Speed", score: "1.8s", rank: "#1 Fast Search" }
-    ],
-    specs: {
-      inputPrice: "$20/mo Pro, Free tier available",
-      outputPrice: "API: $1.00 / 1M input",
-      contextWindow: "128,000 tokens",
-      maxOutput: "4,096 tokens",
-      cutoff: "Live Real-Time Web (Seconds ago)",
-      modalities: "Text, Web citations, Images, Code",
-      speed: "105 tok/s",
-      ttft: "250ms"
-    }
-  },
-  {
-    id: "notion-ai",
-    slug: "notion-ai",
-    name: "Notion AI",
-    org: "Notion Labs",
-    category: "Productivity",
-    rank: 11,
-    arenaElo: 1315,
-    eloChange: "+6",
-    mmluPro: "86.2%",
-    codingScore: "84.0%",
-    mathScore: "82.5%",
-    monthlyVisits: "160.0M",
-    growth: "+18.2%",
-    growthTrend: "up",
-    price: "$10 / month",
-    outputSpeed: "90 tok/s",
-    contextWindow: "Workspace wide",
-    license: "Commercial SaaS",
-    badge: "Workspace",
-    shortDescription: "Connected workspace intelligence that searches across Slack, Google Drive, and Notion documents.",
-    fullDescription: "Notion AI unifies organizational memory by providing natural-language Q&A across private company knowledge bases, meeting transcripts, project boards, and linked cloud drives.",
-    website: "https://notion.so",
-    logoText: "Notion",
-    logoColor: "#FFFFFF",
-    keyFeatures: [
-      "Universal Search across Notion, Slack & Google Drive",
-      "Automated meeting summary & action item extraction",
-      "Formula generation and table auto-fill",
-      "Enterprise SOC2 Type II security"
-    ],
-    benchmarks: [
-      { name: "Workplace Knowledge Retrieval", score: "93.4%", rank: "#1 Workspace" },
-      { name: "Meeting Action Item Accuracy", score: "91.0%", rank: "Top Tier" },
-      { name: "Document Synthesis Speed", score: "2.1s", rank: "Top Rated" },
-      { name: "User Adoption Rate", score: "88%", rank: "#1 Productivity" }
-    ],
-    specs: {
-      inputPrice: "$10 / member / month",
-      outputPrice: "Unlimited queries",
-      contextWindow: "Entire team workspace",
-      maxOutput: "Full documents and databases",
-      cutoff: "Live internal workspace sync",
-      modalities: "Text, Markdown, Tables, Database",
-      speed: "90 tok/s",
-      ttft: "300ms"
-    }
-  },
-  {
-    id: "deepl-pro",
-    slug: "deepl-pro",
-    name: "DeepL Pro",
-    org: "DeepL SE",
-    category: "Translation",
-    rank: 12,
-    arenaElo: 1310,
-    eloChange: "+5",
-    mmluPro: "N/A",
-    codingScore: "N/A",
-    mathScore: "N/A",
-    monthlyVisits: "78.4M",
-    growth: "+12.0%",
-    growthTrend: "up",
-    price: "$8.74 / month",
-    outputSpeed: "Instant",
-    contextWindow: "Document based",
-    license: "Commercial SaaS & API",
-    badge: "Language",
-    shortDescription: "Neural machine translation system renowned for idiomatic nuance, glossary control, and document formatting preservation.",
-    fullDescription: "DeepL Pro outperforms generic LLMs in nuanced linguistic translation, preserving document formatting (Word, PDF, PowerPoint) and adhering strictly to corporate terminology glossaries across 32 languages.",
-    website: "https://deepl.com",
-    logoText: "DeepL",
-    logoColor: "#0F2B48",
-    keyFeatures: [
-      "Preserves PDF, Word and PPT formatting exactly",
-      "Custom terminology glossaries and tone customization",
-      "Maximum data security with immediate text deletion",
-      "High-throughput developer REST API"
-    ],
-    benchmarks: [
-      { name: "BLEU Score Multi-language", score: "42.8", rank: "#1 Translation" },
-      { name: "Human Blind Evaluation Win Rate", score: "82.4%", rank: "#1 Precision" },
-      { name: "Glossary Adherence Rate", score: "99.8%", rank: "#1 Business" },
-      { name: "Speed per 1,000 words", score: "0.4s", rank: "#1 Throughput" }
-    ],
-    specs: {
-      inputPrice: "$8.74/mo Starter, API from $5.49",
-      outputPrice: "$20.00 / 1M characters",
-      contextWindow: "Unlimited document files",
-      maxOutput: "Full documents intact",
-      cutoff: "Continuous neural updates",
-      modalities: "Text, Documents (PDF, DOCX, PPTX)",
-      speed: "Instantaneous",
-      ttft: "110ms"
-    }
+// Unified composite ranking for All Ecosystem View
+// Combines frontier AI Models and flagship AI Tools into an integrated ecosystem ranking
+const composeLeaderboard = () => {
+  const models = AI_MODELS_DATA.map((m) => ({
+    ...m,
+    modelRank: m.rank
+  }));
+
+  const tools = AI_TOOLS_DATA.map((t) => ({
+    ...t,
+    toolRank: t.rank
+  }));
+
+  // Flagship tools that sit alongside frontier models in overall prominence
+  const flagshipToolIds = [
+    "cursor-composer",
+    "github-copilot",
+    "windsurf-codeium",
+    "v0-by-vercel",
+    "supermaven",
+    "perplexity-pro",
+    "google-notebooklm",
+    "midjourney-web",
+    "elevenlabs-studio",
+    "notion-ai",
+    "cognition-devin",
+    "figma-ai"
+  ];
+
+  const flagshipTools = tools.filter((t) => flagshipToolIds.includes(t.id));
+  const otherTools = tools.filter((t) => !flagshipToolIds.includes(t.id));
+
+  const combined = [];
+  let mIdx = 0;
+  let fIdx = 0;
+
+  // Tier 1: Top 6 Models
+  while (mIdx < 6 && mIdx < models.length) {
+    combined.push(models[mIdx++]);
   }
-];
+  // Tier 1 Flagship Tools: Cursor, GitHub Copilot
+  while (fIdx < 2 && fIdx < flagshipTools.length) {
+    combined.push(flagshipTools[fIdx++]);
+  }
+  // Tier 2: Next 6 Models (7-12)
+  while (mIdx < 12 && mIdx < models.length) {
+    combined.push(models[mIdx++]);
+  }
+  // Tier 2 Flagship Tools: Windsurf, v0, Supermaven
+  while (fIdx < 5 && fIdx < flagshipTools.length) {
+    combined.push(flagshipTools[fIdx++]);
+  }
+  // Tier 3: Next 8 Models (13-20)
+  while (mIdx < 20 && mIdx < models.length) {
+    combined.push(models[mIdx++]);
+  }
+  // Tier 3 Flagship Tools: Perplexity, NotebookLM, Midjourney, ElevenLabs, Notion, Devin, Figma
+  while (fIdx < flagshipTools.length) {
+    combined.push(flagshipTools[fIdx++]);
+  }
+  // Remaining Models
+  while (mIdx < models.length) {
+    combined.push(models[mIdx++]);
+  }
+  // Remaining Tools
+  otherTools.forEach((t) => combined.push(t));
+
+  // Assign sequential composite ecosystem rank 1..N
+  return combined.map((item, index) => ({
+    ...item,
+    rank: index + 1
+  }));
+};
+
+export const LEADERBOARD_DATA = composeLeaderboard();
 
 export const SORT_OPTIONS = [
   { label: "Sort by: Rank (Arena Elo)", value: "rank" },
   { label: "Sort by: Monthly Visits", value: "visits" },
   { label: "Sort by: Growth Rate", value: "growth" },
   { label: "Sort by: Newest Releases", value: "newest" }
+];
+
+export const PERSPECTIVE_OPTIONS = [
+  { id: "overall", label: "Overall", icon: "Trophy", description: "LMSYS Arena Elo & benchmark evaluation" },
+  { id: "risers", label: "Risers & Momentum", icon: "TrendingUp", description: "Fastest growth rate & climbing ranks" },
+  { id: "adopted", label: "Most Adopted", icon: "Flame", description: "Highest estimated monthly usage & reach" },
+  { id: "speed", label: "Speed & Efficiency", icon: "Zap", description: "Maximum token throughput (tok/s) & low latency" },
+  { id: "open_weights", label: "Open Weights", icon: "Unlock", description: "Publicly accessible & self-hostable model weights" }
 ];
