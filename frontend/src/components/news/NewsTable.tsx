@@ -12,6 +12,8 @@ import { PublisherIcon } from "./PublisherIcon";
 import { publishedLabel } from "@/lib/news/format";
 import type { NewsArticle, NewsSource } from "@/types/news";
 import { useUser } from "@/hooks/use-user";
+import { API_URL, prefetchUrl } from "@/lib/api";
+import { getClientId } from "@/lib/clientId";
 import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
 
@@ -21,6 +23,19 @@ interface NewsTableProps {
   isAdmin?: boolean;
   onEdit?: (news: NewsArticle) => void;
   onDelete?: (id: string) => void;
+}
+
+/**
+ * Warms the cache for a single article's detail data (article + related +
+ * sources + comments in one payload, same shape ArticlePageClient reads
+ * via react-query's initialData). Fired on hover/touch so the click that
+ * follows can render instantly instead of waiting on a cold network
+ * round trip - mirrors the category-chip prefetch in the videos module.
+ */
+function prefetchArticleDetail(articleId: string): void {
+  const clientId = getClientId();
+  const url = `${API_URL}/api/news/${encodeURIComponent(articleId)}${clientId ? `?clientId=${encodeURIComponent(clientId)}` : ""}`;
+  prefetchUrl(url, 15 * 60 * 1000);
 }
 
 function NewsRowActions({ article, isLoggedIn }: { article: NewsArticle; isLoggedIn: boolean }) {
@@ -126,11 +141,18 @@ function NewsRow({ article, sources, isAdmin, isLoggedIn, onEdit, onDelete }: { 
       key={article.id}
       className="group relative border-b border-white/[0.03] transition-all duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#18181C]/60 hover:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_8px_24px_rgba(0,0,0,0.18)]"
       style={{ ["--row-accent" as string]: "var(--color-signal)" }}
+      onMouseEnter={() => prefetchArticleDetail(article.id)}
+      onTouchStart={() => prefetchArticleDetail(article.id)}
     >
       {/* Column 1: Left accent line + Headline & Square Publisher logo */}
       <td className="relative py-2.5 pl-3 pr-3 overflow-hidden">
         <span className="absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal)] transition-all duration-200 group-hover:h-[70%]" />
-        <Link href={`/news/${article.id}`} className="flex items-center gap-3">
+        <Link
+          href={`/news/${article.id}`}
+          className="flex items-center gap-3"
+          onMouseEnter={() => prefetchArticleDetail(article.id)}
+          onTouchStart={() => prefetchArticleDetail(article.id)}
+        >
           {/* Square logo container */}
           <span className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-white p-1 transition-transform duration-300 ease-out group-hover:scale-[1.05] group-hover:shadow-[0_0_0_1.5px_var(--color-signal)] flex items-center justify-center shadow-sm">
             <PublisherIcon source={source} box={36} />

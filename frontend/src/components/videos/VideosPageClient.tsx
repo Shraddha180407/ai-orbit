@@ -119,6 +119,13 @@ export function VideosPageClient({
 
   const isInitialMount = useRef(true);
 
+  // Tracks which category the videos currently in state
+  // actually belong to, so we can tell a same-category
+  // revalidation (safe to keep old rows visible) apart
+  // from a category switch (must never show the previous
+  // category's videos, even briefly).
+  const loadedCategoryRef = useRef<string>(initialCat);
+
   const totalPages = Math.max(
     1,
     Math.ceil(total / currentPageSize)
@@ -272,8 +279,12 @@ export function VideosPageClient({
         activeCategory || undefined
       );
 
+    const isCategorySwitch =
+      loadedCategoryRef.current !== activeCategory;
+
     if (cached && cached.length > 0) {
       setVideos(cached);
+      loadedCategoryRef.current = activeCategory;
 
       if (cachedCount !== null) {
         setTotal(cachedCount);
@@ -282,11 +293,18 @@ export function VideosPageClient({
       // Revalidate in the background.
       setLoading(false);
       setIsFetching(true);
+    } else if (isCategorySwitch) {
+      // Switching to a category with no cached data yet.
+      // Never keep the previous category's videos on
+      // screen here - that would show the wrong content
+      // for the selected chip. Show the skeleton instead.
+      setVideos([]);
+      setLoading(true);
+      setIsFetching(true);
     } else {
-      // IMPORTANT:
-      // Do NOT clear the existing videos here.
-      // Keep the current table visible while the
-      // new category/sort/page is loading.
+      // Same category (e.g. page/sort change) with no
+      // cache hit - safe to keep the current rows visible
+      // while we revalidate in the background.
       setLoading(true);
       setIsFetching(true);
     }
@@ -313,11 +331,13 @@ export function VideosPageClient({
         // is still allowed to show the empty state.
         if (
           pageVideos.length > 0 ||
-          videos.length === 0
+          videos.length === 0 ||
+          isCategorySwitch
         ) {
           setVideos(pageVideos);
         }
 
+        loadedCategoryRef.current = activeCategory;
         setLoading(false);
       } catch (err) {
         if (!cancelled) {
@@ -458,6 +478,7 @@ export function VideosPageClient({
 
     if (cached && cached.length > 0) {
       setVideos(cached);
+      loadedCategoryRef.current = categorySlug;
 
       if (cachedCount !== null) {
         setTotal(cachedCount);
@@ -466,9 +487,13 @@ export function VideosPageClient({
       setLoading(false);
       setIsFetching(true);
     } else {
-      // IMPORTANT:
-      // Keep the currently visible videos instead
-      // of flashing "No videos found".
+      // No cache for the newly selected category yet.
+      // Clear the old category's videos immediately so we
+      // never show, say, "General AI" videos under the
+      // "Coding" chip while the real data loads - show the
+      // skeleton instead. The fetch effect (keyed off
+      // activeCategory) picks up the actual request.
+      setVideos([]);
       setLoading(true);
       setIsFetching(true);
     }
