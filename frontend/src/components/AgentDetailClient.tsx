@@ -8,19 +8,14 @@ import {
   CalendarDays,
   Check,
   ChevronRight,
-  CircleCheck,
   Code2,
-  Eye,
   Github,
   Globe,
-  Layers3,
-  Link2,
   Share2,
   Star,
-  Tag,
+  TrendingUp,
   Zap,
   Bot,
-  TrendingUp,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -121,13 +116,13 @@ function AgentLogo({
 }) {
   const dimensions =
     size === "large"
-      ? "h-28 w-28 sm:h-32 sm:w-32"
+      ? "h-24 w-24 sm:h-28 sm:w-28"
       : "h-12 w-12";
 
   if (src) {
     return (
       <div
-        className={`${dimensions} shrink-0 overflow-hidden rounded-2xl border border-[#29292f] bg-white`}
+        className={`${dimensions} shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white shadow-[0_0_40px_rgba(126,92,255,0.12)]`}
       >
         <img
           src={src}
@@ -140,34 +135,30 @@ function AgentLogo({
 
   return (
     <div
-      className={`${dimensions} shrink-0 flex items-center justify-center rounded-2xl border border-[#29292f] bg-[#15151a]`}
+      className={`${dimensions} flex shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-[#17151f]`}
     >
-      <Bot className="h-10 w-10 text-[#8066ff]" />
+      <Bot className="h-10 w-10 text-[#8b72ff]" />
     </div>
   );
 }
 
 function SectionHeader({
-  icon: Icon,
   title,
   count,
 }: {
-  icon: React.ElementType;
   title: string;
   count?: string;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-[#202025] px-6 py-5">
-      <div className="flex items-center gap-3">
-        <Icon className="h-4 w-4 text-[#8066ff]" />
-
-        <h2 className="text-sm font-bold uppercase tracking-wide text-white">
+    <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3.5 sm:px-5">
+      <div className="flex items-center gap-2.5">
+        <h2 className="text-xs font-bold uppercase tracking-[0.08em] text-white">
           {title}
         </h2>
       </div>
 
       {count && (
-        <span className="rounded-full border border-[#29292f] bg-[#15151a] px-3 py-1 text-xs text-[#71717a]">
+        <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-[10px] font-medium text-[#71717a]">
           {count}
         </span>
       )}
@@ -183,39 +174,62 @@ function SimilarAgentCard({
   return (
     <Link
       href={`/agents/${agent.slug}`}
-      className="group flex gap-4 rounded-xl border border-[#242429] bg-[#101014] p-4 transition hover:border-[#6E56CF]/60 hover:bg-[#141419]"
+      className="group rounded-xl border border-white/[0.07] bg-[#111116] p-3.5 transition duration-200 hover:-translate-y-0.5 hover:border-[#8066ff]/30 hover:bg-[#15141b]"
     >
-      <AgentLogo
-        src={agent.logoUrl}
-        name={agent.name}
-        size="small"
-      />
+      <div className="flex gap-3.5">
+        <AgentLogo
+          src={agent.logoUrl}
+          name={agent.name}
+          size="small"
+        />
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="truncate text-sm font-semibold text-white group-hover:text-[#a28cff]">
-            {agent.name}
-          </h3>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="truncate text-sm font-semibold text-white group-hover:text-[#b6a8ff]">
+              {agent.name}
+            </h3>
 
-          <ChevronRight className="h-4 w-4 shrink-0 text-[#52525b] transition group-hover:translate-x-1 group-hover:text-[#8b72ff]" />
-        </div>
+            <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-[#52525b] transition group-hover:translate-x-1 group-hover:text-[#8b72ff]" />
+          </div>
 
-        <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#71717a]">
-          {agent.description}
-        </p>
+          <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-[#71717a]">
+            {agent.description}
+          </p>
 
-        <div className="mt-3 flex items-center gap-3 text-[11px] text-[#71717a]">
-          <span>{agent.category}</span>
-
-          {agent.avgRating !== null && (
-            <span className="flex items-center gap-1">
-              <Star className="h-3 w-3 fill-current text-yellow-500" />
-              {agent.avgRating.toFixed(1)}
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px]">
+            <span className="rounded-full border border-white/[0.06] bg-white/[0.025] px-2 py-1 text-[#71717a]">
+              {agent.category}
             </span>
-          )}
+
+            {agent.avgRating !== null && (
+              <span className="flex items-center gap-1 text-[#a1a1aa]">
+                <Star className="h-3 w-3 fill-current text-yellow-500" />
+                {agent.avgRating.toFixed(1)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </Link>
+  );
+}
+
+function CapabilityCard({
+  title,
+  description,
+  available,
+}: {
+  title: string;
+  description: string;
+  available: boolean;
+}) {
+  return (
+    <div className="group rounded-xl border border-white/[0.07] bg-[#111116] p-3.5 transition hover:border-[#8066ff]/20">
+      <p className="text-sm font-semibold text-white">{title}</p>
+      <p className={`mt-1 text-[11px] ${available ? "text-[#a1a1aa]" : "text-[#71717a]"}`}>
+        {description}
+      </p>
+    </div>
   );
 }
 
@@ -229,39 +243,36 @@ export default function AgentDetailClient({
 
   const slug = slugProp;
 
-  const { data: agent, isLoading, isError } =
-    useQuery<Agent>({
-      queryKey: ["agent-detail", slug],
+  const { data: agent, isLoading, isError } = useQuery<Agent>({
+    queryKey: ["agent-detail", slug],
 
-      queryFn: async () => {
-        const response = await fetch(
-          `${API_URL}/api/v1/agents/${slug}`,
-          {
-            credentials: "include",
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Agent not found");
+    queryFn: async () => {
+      const response = await fetch(
+        `${API_URL}/api/v1/agents/${slug}`,
+        {
+          credentials: "include",
         }
+      );
 
-        return response.json();
-      },
+      if (!response.ok) {
+        throw new Error("Agent not found");
+      }
 
-      enabled: Boolean(slug),
-    });
+      return response.json();
+    },
+
+    enabled: Boolean(slug),
+  });
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-[#08080b] text-white">
-        <div className="mx-auto max-w-[1240px] px-5 py-10 sm:px-6">
-          <div className="h-4 w-48 animate-pulse rounded bg-[#17171c]" />
-
-          <div className="mt-6 h-64 animate-pulse rounded-2xl border border-[#202025] bg-[#0e0e12]" />
-
-          <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-            <div className="h-96 animate-pulse rounded-2xl bg-[#0e0e12]" />
-            <div className="h-80 animate-pulse rounded-2xl bg-[#0e0e12]" />
+      <main className="min-h-screen bg-[#07070a] text-white">
+        <div className="mx-auto max-w-[1240px] px-5 py-10 sm:px-6 lg:px-8">
+          <div className="h-3 w-44 animate-pulse rounded bg-white/[0.05]" />
+          <div className="mt-6 h-72 animate-pulse rounded-3xl border border-white/[0.05] bg-[#0d0d11]" />
+          <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="h-[700px] animate-pulse rounded-2xl bg-[#0d0d11]" />
+            <div className="h-96 animate-pulse rounded-2xl bg-[#0d0d11]" />
           </div>
         </div>
       </main>
@@ -270,21 +281,17 @@ export default function AgentDetailClient({
 
   if (isError || !agent) {
     return (
-      <main className="flex min-h-[70vh] items-center justify-center bg-[#08080b] text-white">
+      <main className="flex min-h-[70vh] items-center justify-center bg-[#07070a] text-white">
         <div className="text-center">
-          <Bot className="mx-auto h-10 w-10 text-[#6E56CF]" />
-
-          <h1 className="mt-4 text-2xl font-bold">
-            Agent not found
-          </h1>
-
+          <Bot className="mx-auto h-10 w-10 text-[#8066ff]" />
+          <h1 className="mt-4 text-2xl font-bold">Agent not found</h1>
           <p className="mt-2 text-sm text-[#71717a]">
             We couldn't find this agent.
           </p>
 
           <Link
             href="/agents"
-            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#7357d9] px-4 py-2 text-sm font-semibold"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#7357d9] px-4 py-2.5 text-sm font-semibold transition hover:bg-[#8066ef]"
           >
             Browse Agents
             <ArrowUpRight className="h-4 w-4" />
@@ -300,189 +307,172 @@ export default function AgentDetailClient({
   );
 
   return (
-    <main className="min-h-screen bg-[#08080b] text-white">
-      <div className="mx-auto max-w-[1240px] px-5 pb-20 pt-8 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#07070a] text-white">
+      <div className="mx-auto max-w-[1240px] px-5 pb-20 pt-7 sm:px-6 lg:px-8">
 
         {/* BREADCRUMB */}
-        <div className="mb-5 flex items-center gap-2 overflow-hidden text-xs text-[#71717a]">
-          <Link
-            href="/"
-            className="shrink-0 hover:text-white"
-          >
+        <div className="mb-6 flex items-center gap-2 overflow-hidden text-xs text-[#62626b]">
+          <Link href="/" className="shrink-0 transition hover:text-white">
             Home
           </Link>
-
           <ChevronRight className="h-3 w-3 shrink-0" />
-
           <Link
             href="/agents"
-            className="shrink-0 hover:text-white"
+            className="shrink-0 transition hover:text-white"
           >
             AI Agents
           </Link>
-
           <ChevronRight className="h-3 w-3 shrink-0" />
-
-          <span className="shrink-0 text-[#a1a1aa]">
+          <Link
+            href={`/agents?category=${agent.categorySlug}`}
+            className="shrink-0 transition hover:text-white"
+          >
             {agent.category}
-          </span>
-
+          </Link>
           <ChevronRight className="h-3 w-3 shrink-0" />
-
-          <span className="truncate text-white">
-            {agent.name}
-          </span>
+          <span className="truncate text-[#a1a1aa]">{agent.name}</span>
         </div>
 
         {/* ====================================================== */}
-        {/* HERO */}
+        {/* AGENT HERO */}
         {/* ====================================================== */}
 
-        <section className="overflow-hidden rounded-2xl border border-[#24242a] bg-gradient-to-br from-[#13131a] via-[#0e0e13] to-[#0a0a0d]">
-          <div className="p-6 sm:p-8 lg:p-10">
-            <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+        <section className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0d0d12]">
+          {/* subtle background glow */}
+          <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-[#8066ff]/10 blur-3xl" />
+          <div className="pointer-events-none absolute bottom-[-150px] left-[30%] h-64 w-64 rounded-full bg-[#5b43c7]/[0.06] blur-3xl" />
 
-              {/* AGENT INFO */}
-              <div className="flex min-w-0 flex-1 gap-5 sm:gap-7">
+          <div className="relative p-5 sm:p-6 lg:p-7">
+            <div className="flex flex-col gap-7 lg:flex-row lg:items-start lg:justify-between">
+
+              {/* MAIN AGENT IDENTITY */}
+              <div className="flex min-w-0 gap-4 sm:gap-5">
                 <AgentLogo
                   src={agent.logoUrl}
                   name={agent.name}
                 />
 
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
+                <div className="min-w-0 pt-1">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <h1 className="text-3xl font-black tracking-[-0.03em] sm:text-4xl lg:text-[42px]">
                       {agent.name}
                     </h1>
 
                     {agent.verified && (
                       <span
                         title="Verified Agent"
-                        className="flex h-6 w-6 items-center justify-center rounded-full bg-[#6E56CF]"
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-[#7357d9] shadow-lg shadow-[#7357d9]/20"
                       >
                         <Check className="h-3.5 w-3.5 text-white" />
                       </span>
                     )}
 
                     {agent.isTrending && (
-                      <span className="flex items-center gap-1 rounded-full border border-orange-500/20 bg-orange-500/10 px-2.5 py-1 text-[11px] font-semibold text-orange-400">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/10 px-2.5 py-1 text-[10px] font-bold text-orange-400">
                         <TrendingUp className="h-3 w-3" />
                         Trending
                       </span>
                     )}
                   </div>
 
-                  {/* META */}
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                    <span className="rounded-full border border-[#29292f] bg-[#17171c] px-3 py-1.5 text-[#d4d4d8]">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-400">
                       {pricing}
                     </span>
 
-                    {agent.avgRating !== null ? (
-                      <span className="flex items-center gap-1.5 text-[#a1a1aa]">
-                        <Star className="h-3.5 w-3.5 fill-current text-yellow-500" />
-
-                        <span className="font-semibold text-white">
-                          {agent.avgRating.toFixed(1)}
-                        </span>
-
-                        <span>
-                          ({agent.reviewCount}{" "}
-                          {agent.reviewCount === 1
-                            ? "review"
-                            : "reviews"}
-                          )
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="text-[#71717a]">
-                        No reviews yet
-                      </span>
-                    )}
-
-                    <span className="text-[#3f3f46]">•</span>
-
                     <Link
                       href={`/agents?category=${agent.categorySlug}`}
-                      className="rounded-full border border-[#29292f] bg-[#15151a] px-3 py-1.5 text-[#a1a1aa] transition hover:border-[#6E56CF]/50 hover:text-white"
+                      className="rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5 text-[11px] font-medium text-[#a1a1aa] transition hover:border-[#8066ff]/30 hover:text-white"
                     >
                       {agent.category}
                     </Link>
+
+                    <span className="flex items-center gap-1.5 text-[11px] text-[#71717a]">
+                      <Star className="h-3.5 w-3.5 fill-current text-yellow-500" />
+                      <span className="font-semibold text-white">
+                        {agent.avgRating !== null
+                          ? agent.avgRating.toFixed(1)
+                          : "—"}
+                      </span>
+                      <span>
+                        {agent.reviewCount}{" "}
+                        {agent.reviewCount === 1 ? "review" : "reviews"}
+                      </span>
+                    </span>
                   </div>
 
-                  {/* DESCRIPTION */}
-                  <p className="mt-5 max-w-2xl text-sm leading-7 text-[#a1a1aa] sm:text-base">
+                  <p className="mt-4 max-w-2xl text-sm leading-6 text-[#a1a1aa]">
                     {agent.description}
                   </p>
 
-                  {/* HERO DETAILS */}
-                  <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-[#71717a]">
-                    <span className="flex items-center gap-2">
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      Added {formatDate(agent.createdAt)}
-                    </span>
-
-                    <span className="flex items-center gap-2">
-                      <Zap className="h-3.5 w-3.5 text-[#8066ff]" />
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center rounded-lg border border-[#8066ff]/25 bg-[#8066ff]/10 px-2.5 py-1.5 text-[11px] font-medium text-[#b7a8ff]">
                       {agent.primaryTask}
                     </span>
 
                     {agent.compatibility.length > 0 && (
-                      <span className="flex items-center gap-2">
-                        <Globe className="h-3.5 w-3.5" />
+                      <span className="inline-flex items-center rounded-lg border border-white/[0.07] bg-white/[0.025] px-2.5 py-1.5 text-[11px] font-medium text-[#a1a1aa]">
                         {agent.compatibility.length} platform
-                        {agent.compatibility.length !== 1
-                          ? "s"
-                          : ""}
+                        {agent.compatibility.length !== 1 ? "s" : ""}
+                      </span>
+                    )}
+
+                    <span className="inline-flex items-center rounded-lg border border-white/[0.07] bg-white/[0.025] px-2.5 py-1.5 text-[11px] font-medium text-[#71717a]">
+                      Added {formatDate(agent.createdAt)}
+                    </span>
+
+                    {agent.hasApi && (
+                      <span className="inline-flex items-center rounded-lg border border-white/[0.07] bg-white/[0.025] px-2.5 py-1.5 text-[11px] font-medium text-[#a1a1aa]">
+                        API available
                       </span>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* ACTIONS */}
-              <div className="flex shrink-0 flex-col gap-3 lg:w-52">
+              {/* ACTION AREA */}
+              <div className="flex shrink-0 flex-col gap-2.5 lg:w-48">
                 <a
                   href={agent.websiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#7357d9] px-5 text-sm font-bold text-white shadow-lg shadow-[#7357d9]/20 transition hover:bg-[#8066ef]"
+                  className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#7357d9] px-5 text-sm font-bold text-white shadow-xl shadow-[#7357d9]/20 transition hover:bg-[#8066ef] hover:shadow-[#7357d9]/30"
                 >
                   Visit Website
                   <ArrowUpRight className="h-4 w-4" />
                 </a>
 
                 <div className="grid grid-cols-3 gap-2">
-                  {/* UPVOTE */}
                   <button
+                    type="button"
+                    aria-label="Upvote agent"
                     onClick={() =>
                       setUpvoted((value) => !value)
                     }
                     className={`flex h-11 flex-col items-center justify-center rounded-xl border transition ${
                       upvoted
-                        ? "border-[#6E56CF] bg-[#6E56CF]/15 text-[#a28cff]"
-                        : "border-[#25252b] bg-[#111115] text-[#71717a] hover:text-white"
+                        ? "border-[#8066ff]/40 bg-[#8066ff]/10 text-[#a28cff]"
+                        : "border-white/[0.07] bg-white/[0.025] text-[#71717a] hover:border-white/10 hover:text-white"
                     }`}
                   >
                     <ArrowUpRight className="h-4 w-4 rotate-[-45deg]" />
-
                     <span className="mt-0.5 text-[10px]">
                       {formatNumber(
-                        agent.upvoteCount +
-                          (upvoted ? 1 : 0)
+                        agent.upvoteCount + (upvoted ? 1 : 0)
                       )}
                     </span>
                   </button>
 
-                  {/* BOOKMARK */}
                   <button
+                    type="button"
+                    aria-label="Bookmark agent"
                     onClick={() =>
                       setBookmarked((value) => !value)
                     }
                     className={`flex h-11 items-center justify-center rounded-xl border transition ${
                       bookmarked
-                        ? "border-[#6E56CF] bg-[#6E56CF]/15 text-[#a28cff]"
-                        : "border-[#25252b] bg-[#111115] text-[#71717a] hover:text-white"
+                        ? "border-[#8066ff]/40 bg-[#8066ff]/10 text-[#a28cff]"
+                        : "border-white/[0.07] bg-white/[0.025] text-[#71717a] hover:border-white/10 hover:text-white"
                     }`}
                   >
                     <Bookmark
@@ -492,18 +482,17 @@ export default function AgentDetailClient({
                     />
                   </button>
 
-                  {/* SHARE */}
                   <button
+                    type="button"
+                    aria-label="Share agent"
                     onClick={() => {
-                      if (
-                        typeof window !== "undefined"
-                      ) {
+                      if (typeof window !== "undefined") {
                         navigator.clipboard?.writeText(
                           window.location.href
                         );
                       }
                     }}
-                    className="flex h-11 items-center justify-center rounded-xl border border-[#25252b] bg-[#111115] text-[#71717a] transition hover:text-white"
+                    className="flex h-11 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.025] text-[#71717a] transition hover:border-white/10 hover:text-white"
                   >
                     <Share2 className="h-4 w-4" />
                   </button>
@@ -514,169 +503,133 @@ export default function AgentDetailClient({
         </section>
 
         {/* ====================================================== */}
-        {/* TABS */}
+        {/* SECTION NAV */}
         {/* ====================================================== */}
 
-        <nav className="mt-5 flex overflow-x-auto border-b border-[#202025]">
-          <a
-            href="#overview"
-            className="border-b-2 border-[#8066ff] px-5 py-4 text-xs font-bold uppercase tracking-wide text-white"
-          >
-            Overview
-          </a>
-
-          <a
-            href="#capabilities"
-            className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-[#71717a] hover:text-white"
-          >
-            Capabilities
-          </a>
-
-          <a
-            href="#pricing"
-            className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-[#71717a] hover:text-white"
-          >
-            Pricing
-          </a>
-
-          <a
-            href="#reviews"
-            className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-[#71717a] hover:text-white"
-          >
-            Reviews ({agent.reviewCount})
-          </a>
+        <nav className="sticky top-0 z-20 mt-5 border-b border-white/[0.07] bg-[#07070a]/95 backdrop-blur-xl">
+          <div className="flex overflow-x-auto">
+            {[
+              ["overview", "Overview"],
+              ["capabilities", "Capabilities"],
+              ["pricing", "Pricing"],
+              ["reviews", `Reviews (${agent.reviewCount})`],
+            ].map(([href, label], index) => (
+              <a
+                key={href}
+                href={`#${href}`}
+                className={`whitespace-nowrap border-b-2 px-5 py-4 text-[11px] font-bold uppercase tracking-[0.08em] transition ${
+                  index === 0
+                    ? "border-[#8066ff] text-white"
+                    : "border-transparent text-[#62626b] hover:text-white"
+                }`}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
         </nav>
 
         {/* ====================================================== */}
         {/* CONTENT */}
         {/* ====================================================== */}
 
-        <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_285px]">
 
-          {/* MAIN */}
-          <div className="space-y-5">
+          {/* ================================================== */}
+          {/* MAIN COLUMN */}
+          {/* ================================================== */}
+
+          <div className="min-w-0 space-y-4">
 
             {/* OVERVIEW */}
             <section
               id="overview"
-              className="scroll-mt-6 overflow-hidden rounded-2xl border border-[#24242a] bg-[#0e0e12]"
+              className="scroll-mt-24 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d0d12]"
             >
-              <SectionHeader
-                icon={Layers3}
-                title="Overview"
-              />
+              <SectionHeader title="About this agent" />
 
-              <div className="space-y-7 p-6">
+              <div className="p-5">
+                <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_230px]">
+                  <div>
+                    <p className="text-sm leading-6 text-[#a1a1aa]">
+                      {agent.description}
+                    </p>
+                  </div>
 
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    What is {agent.name}?
-                  </h3>
+                  <div className="rounded-xl border border-white/[0.06] bg-[#111116] p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#52525b]">
+                      Primary task
+                    </p>
 
-                  <p className="mt-3 text-sm leading-7 text-[#a1a1aa]">
-                    {agent.description}
-                  </p>
-                </div>
+                    <div className="mt-3 flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#8066ff]/10">
+                        <Zap className="h-4 w-4 text-[#8b72ff]" />
+                      </div>
 
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    Primary Task
-                  </h3>
-
-                  <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[#29292f] bg-[#15151a] px-4 py-2.5 text-sm text-[#d4d4d8]">
-                    <Zap className="h-4 w-4 text-[#8066ff]" />
-                    {agent.primaryTask}
+                      <span className="text-sm font-semibold text-white">
+                        {agent.primaryTask}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-base font-bold text-white">
+                <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-white/[0.06] pt-4">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#52525b]">
                     Category
-                  </h3>
+                  </span>
 
                   <Link
                     href={`/agents?category=${agent.categorySlug}`}
-                    className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[#29292f] bg-[#15151a] px-4 py-2.5 text-sm text-[#d4d4d8] hover:border-[#6E56CF]/50 hover:text-white"
+                    className="inline-flex items-center rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-xs font-medium text-[#a1a1aa] transition hover:border-[#8066ff]/30 hover:text-white"
                   >
-                    <Tag className="h-4 w-4 text-[#8066ff]" />
                     {agent.category}
                   </Link>
                 </div>
-
               </div>
             </section>
 
             {/* CAPABILITIES */}
             <section
               id="capabilities"
-              className="scroll-mt-6 overflow-hidden rounded-2xl border border-[#24242a] bg-[#0e0e12]"
+              className="scroll-mt-24 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d0d12]"
             >
-              <SectionHeader
-                icon={CircleCheck}
-                title="Capabilities"
-              />
+              <SectionHeader title="Capabilities" />
 
-              <div className="grid gap-3 p-6 sm:grid-cols-2">
+              <div className="grid gap-3 p-5 sm:grid-cols-2 sm:p-6">
+                <CapabilityCard
+                  title="API Access"
+                  description={
+                    agent.hasApi
+                      ? "API available"
+                      : "No API listed"
+                  }
+                  available={agent.hasApi}
+                />
 
-                <div className="rounded-xl border border-[#29292f] bg-[#131318] p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-[#6E56CF]/10 p-2">
-                      <Code2 className="h-4 w-4 text-[#8066ff]" />
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-semibold text-white">
-                        API Access
-                      </p>
-
-                      <p className="mt-1 text-xs text-[#71717a]">
-                        {agent.hasApi
-                          ? "API available"
-                          : "No API listed"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-[#29292f] bg-[#131318] p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-[#6E56CF]/10 p-2">
-                      <Github className="h-4 w-4 text-[#8066ff]" />
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-semibold text-white">
-                        Open Source
-                      </p>
-
-                      <p className="mt-1 text-xs text-[#71717a]">
-                        {agent.isOpenSource
-                          ? "Open-source agent"
-                          : "Not listed as open source"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
+                <CapabilityCard
+                  title="Open Source"
+                  description={
+                    agent.isOpenSource
+                      ? "Open-source agent"
+                      : "Not listed as open source"
+                  }
+                  available={agent.isOpenSource}
+                />
               </div>
             </section>
 
-            {/* COMPATIBILITY */}
-            <section className="overflow-hidden rounded-2xl border border-[#24242a] bg-[#0e0e12]">
-              <SectionHeader
-                icon={Globe}
-                title="Platform & Compatibility"
-              />
+            {/* PLATFORM */}
+            <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d0d12]">
+              <SectionHeader title="Platform compatibility" />
 
-              <div className="p-6">
+              <div className="p-5">
                 {agent.compatibility.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {agent.compatibility.map((item) => (
                       <span
                         key={item}
-                        className="flex items-center gap-2 rounded-lg border border-[#29292f] bg-[#15151a] px-3.5 py-2 text-sm text-[#d4d4d8]"
+                        className="inline-flex items-center rounded-lg border border-white/[0.07] bg-[#111116] px-3 py-2 text-xs font-medium text-[#d4d4d8]"
                       >
-                        <CircleCheck className="h-3.5 w-3.5 text-[#8066ff]" />
                         {item}
                       </span>
                     ))}
@@ -692,33 +645,29 @@ export default function AgentDetailClient({
             {/* PRICING */}
             <section
               id="pricing"
-              className="scroll-mt-6 overflow-hidden rounded-2xl border border-[#24242a] bg-[#0e0e12]"
+              className="scroll-mt-24 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d0d12]"
             >
-              <SectionHeader
-                icon={Zap}
-                title="Pricing"
-              />
+              <SectionHeader title="Pricing" />
 
-              <div className="p-6">
-                <div className="rounded-xl border border-[#29292f] bg-[#131318] p-5">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
-                    <div>
+              <div className="p-5">
+                <div className="flex flex-col gap-3 rounded-xl border border-[#8066ff]/15 bg-gradient-to-r from-[#15121e] to-[#111116] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-3">
                       <p className="text-lg font-bold text-white">
                         {pricing}
                       </p>
-
-                      {agent.pricingRaw && (
-                        <p className="mt-2 text-sm leading-6 text-[#71717a]">
-                          {agent.pricingRaw}
-                        </p>
-                      )}
                     </div>
 
-                    <span className="w-fit rounded-full bg-[#6E56CF]/15 px-3 py-1.5 text-xs font-semibold text-[#a28cff]">
-                      {agent.pricingModel}
-                    </span>
+                    {agent.pricingRaw && (
+                      <p className="mt-2 max-w-xl text-xs leading-5 text-[#71717a]">
+                        {agent.pricingRaw}
+                      </p>
+                    )}
                   </div>
+
+                  <span className="w-fit rounded-full border border-[#8066ff]/20 bg-[#8066ff]/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#a28cff]">
+                    {agent.pricingModel}
+                  </span>
                 </div>
               </div>
             </section>
@@ -726,43 +675,42 @@ export default function AgentDetailClient({
             {/* REVIEWS */}
             <section
               id="reviews"
-              className="scroll-mt-6 overflow-hidden rounded-2xl border border-[#24242a] bg-[#0e0e12]"
+              className="scroll-mt-24 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d0d12]"
             >
               <SectionHeader
-                icon={Star}
                 title="Reviews"
                 count={`${agent.reviewCount} reviews`}
               />
 
-              <div className="p-6">
+              <div className="p-5">
                 {agent.reviewCount > 0 ? (
-                  <div className="flex items-center gap-5">
-
-                    <div className="text-5xl font-black">
-                      {agent.avgRating?.toFixed(1) ?? "—"}
-                    </div>
-
+                  <div className="flex items-center gap-6">
                     <div>
-                      <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map(
-                          (star) => (
-                            <Star
-                              key={star}
-                              className={`h-4 w-4 ${
-                                agent.avgRating &&
-                                star <=
-                                  Math.round(
-                                    agent.avgRating
-                                  )
-                                  ? "fill-current text-yellow-500"
-                                  : "text-[#3f3f46]"
-                              }`}
-                            />
-                          )
-                        )}
+                      <div className="text-5xl font-black tracking-tight text-white">
+                        {agent.avgRating?.toFixed(1) ?? "—"}
                       </div>
 
-                      <p className="mt-2 text-xs text-[#71717a]">
+                      <div className="mt-2 flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`h-4 w-4 ${
+                              agent.avgRating &&
+                              star <=
+                                Math.round(agent.avgRating)
+                                ? "fill-current text-yellow-500"
+                                : "text-[#3f3f46]"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="border-l border-white/[0.06] pl-6">
+                      <p className="text-sm font-semibold text-white">
+                        Community rating
+                      </p>
+                      <p className="mt-1 text-xs text-[#71717a]">
                         Based on {agent.reviewCount}{" "}
                         {agent.reviewCount === 1
                           ? "review"
@@ -771,10 +719,12 @@ export default function AgentDetailClient({
                     </div>
                   </div>
                 ) : (
-                  <div className="py-8 text-center">
-                    <Star className="mx-auto h-8 w-8 text-[#3f3f46]" />
+                  <div className="flex min-h-28 flex-col items-center justify-center text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.02]">
+                      <Star className="h-5 w-5 text-[#52525b]" />
+                    </div>
 
-                    <p className="mt-3 text-sm font-medium text-[#a1a1aa]">
+                    <p className="mt-4 text-sm font-semibold text-[#a1a1aa]">
                       No reviews yet
                     </p>
 
@@ -789,22 +739,19 @@ export default function AgentDetailClient({
             {/* SIMILAR AGENTS */}
             {agent.similarAgents &&
               agent.similarAgents.length > 0 && (
-                <section className="overflow-hidden rounded-2xl border border-[#24242a] bg-[#0e0e12]">
+                <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d0d12]">
                   <SectionHeader
-                    icon={Bot}
-                    title="Similar Agents"
+                    title="Similar agents"
                     count={`${agent.similarAgents.length}`}
                   />
 
                   <div className="grid gap-3 p-5 sm:grid-cols-2">
-                    {agent.similarAgents.map(
-                      (similar) => (
-                        <SimilarAgentCard
-                          key={similar.id}
-                          agent={similar}
-                        />
-                      )
-                    )}
+                    {agent.similarAgents.map((similar) => (
+                      <SimilarAgentCard
+                        key={similar.id}
+                        agent={similar}
+                      />
+                    ))}
                   </div>
                 </section>
               )}
@@ -814,155 +761,134 @@ export default function AgentDetailClient({
           {/* SIDEBAR */}
           {/* ================================================== */}
 
-          <aside className="space-y-5">
+          <aside className="space-y-4">
 
             {/* SPECIFICATIONS */}
-            <section className="overflow-hidden rounded-2xl border border-[#24242a] bg-[#0e0e12]">
-              <SectionHeader
-                icon={Layers3}
-                title="Specifications"
-              />
+            <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d0d12]">
+              <SectionHeader title="Specifications" />
 
               <div className="px-5">
-
-                <div className="flex items-center justify-between border-b border-[#202025] py-4">
-                  <span className="text-sm text-[#71717a]">
+                <div className="flex items-center justify-between border-b border-white/[0.06] py-3">
+                  <span className="text-xs text-[#62626b]">
                     Pricing
                   </span>
-
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-xs font-semibold text-white">
                     {pricing}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-[#202025] py-4">
-                  <span className="text-sm text-[#71717a]">
+                <div className="flex items-center justify-between border-b border-white/[0.06] py-3">
+                  <span className="text-xs text-[#62626b]">
                     Open Source
                   </span>
-
-                  <span className="text-sm font-semibold text-white">
-                    {agent.isOpenSource
-                      ? "Yes"
-                      : "No"}
+                  <span className="text-xs font-semibold text-white">
+                    {agent.isOpenSource ? "Yes" : "No"}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-[#202025] py-4">
-                  <span className="text-sm text-[#71717a]">
+                <div className="flex items-center justify-between border-b border-white/[0.06] py-3">
+                  <span className="text-xs text-[#62626b]">
                     API
                   </span>
-
-                  <span className="text-sm font-semibold text-white">
-                    {agent.hasApi
-                      ? "Available"
-                      : "Not available"}
+                  <span
+                    className={`text-xs font-semibold ${
+                      agent.hasApi
+                        ? "text-emerald-400"
+                        : "text-white"
+                    }`}
+                  >
+                    {agent.hasApi ? "Available" : "Not available"}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-[#202025] py-4">
-                  <span className="text-sm text-[#71717a]">
+                <div className="flex items-center justify-between border-b border-white/[0.06] py-3">
+                  <span className="text-xs text-[#62626b]">
                     Verified
                   </span>
-
-                  <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
+                  <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
                     {agent.verified && (
                       <Check className="h-3.5 w-3.5 text-[#8066ff]" />
                     )}
-
-                    {agent.verified
-                      ? "Yes"
-                      : "No"}
+                    {agent.verified ? "Yes" : "No"}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-[#202025] py-4">
-                  <span className="text-sm text-[#71717a]">
+                <div className="flex items-center justify-between border-b border-white/[0.06] py-3">
+                  <span className="text-xs text-[#62626b]">
                     Category
                   </span>
-
-                  <span className="max-w-[150px] truncate text-right text-sm font-semibold text-white">
+                  <span className="max-w-[150px] truncate text-right text-xs font-semibold text-white">
                     {agent.category}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between py-4">
-                  <span className="text-sm text-[#71717a]">
+                <div className="flex items-center justify-between py-3">
+                  <span className="text-xs text-[#62626b]">
                     Added
                   </span>
-
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-xs font-semibold text-white">
                     {formatDate(agent.createdAt)}
                   </span>
                 </div>
-
               </div>
             </section>
 
             {/* ACTIVITY */}
-            <section className="overflow-hidden rounded-2xl border border-[#24242a] bg-[#0e0e12]">
-              <SectionHeader
-                icon={Eye}
-                title="Activity"
-              />
+            <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d0d12]">
+              <SectionHeader title="Activity" />
 
-              <div className="px-5">
-
-                <div className="flex items-center justify-between border-b border-[#202025] py-4">
-                  <span className="text-sm text-[#71717a]">
-                    Views
-                  </span>
-
-                  <span className="text-sm font-semibold text-white">
+              <div className="grid grid-cols-3 divide-x divide-white/[0.06] p-2">
+                <div className="px-2.5 py-2.5 text-center">
+                  <p className="text-lg font-bold text-white">
                     {formatNumber(agent.views)}
-                  </span>
+                  </p>
+                  <p className="mt-1 text-[10px] text-[#52525b]">
+                    Views
+                  </p>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-[#202025] py-4">
-                  <span className="text-sm text-[#71717a]">
-                    Upvotes
-                  </span>
-
-                  <span className="text-sm font-semibold text-white">
+                <div className="px-2.5 py-2.5 text-center">
+                  <p className="text-lg font-bold text-white">
                     {formatNumber(agent.upvoteCount)}
-                  </span>
+                  </p>
+                  <p className="mt-1 text-[10px] text-[#52525b]">
+                    Upvotes
+                  </p>
                 </div>
 
-                <div className="flex items-center justify-between py-4">
-                  <span className="text-sm text-[#71717a]">
+                <div className="px-2.5 py-2.5 text-center">
+                  <p
+                    className={`text-lg font-bold ${
+                      agent.isTrending
+                        ? "text-orange-400"
+                        : "text-white"
+                    }`}
+                  >
+                    {agent.isTrending ? "Yes" : "No"}
+                  </p>
+                  <p className="mt-1 text-[10px] text-[#52525b]">
                     Trending
-                  </span>
-
-                  <span className="text-sm font-semibold text-white">
-                    {agent.isTrending
-                      ? "Yes"
-                      : "No"}
-                  </span>
+                  </p>
                 </div>
-
               </div>
             </section>
 
             {/* LINKS */}
-            <section className="overflow-hidden rounded-2xl border border-[#24242a] bg-[#0e0e12]">
-              <SectionHeader
-                icon={Link2}
-                title="Links"
-              />
+            <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d0d12]">
+              <SectionHeader title="Links" />
 
               <div className="space-y-2 p-4">
-
                 <a
                   href={agent.websiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between rounded-lg border border-[#25252b] bg-[#131318] px-4 py-3 text-sm text-[#a1a1aa] transition hover:border-[#6E56CF]/50 hover:text-white"
+                  className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[#111116] px-3.5 py-2.5 text-xs text-[#a1a1aa] transition hover:border-[#8066ff]/25 hover:text-white"
                 >
                   <span className="flex items-center gap-2">
                     <Globe className="h-4 w-4" />
                     Website
                   </span>
-
-                  <ArrowUpRight className="h-4 w-4" />
+                  <ArrowUpRight className="h-3.5 w-3.5" />
                 </a>
 
                 {agent.isOpenSource && (
@@ -970,24 +896,22 @@ export default function AgentDetailClient({
                     href={agent.websiteUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between rounded-lg border border-[#25252b] bg-[#131318] px-4 py-3 text-sm text-[#a1a1aa] transition hover:border-[#6E56CF]/50 hover:text-white"
+                    className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[#111116] px-3.5 py-2.5 text-xs text-[#a1a1aa] transition hover:border-[#8066ff]/25 hover:text-white"
                   >
                     <span className="flex items-center gap-2">
                       <Github className="h-4 w-4" />
                       Open Source
                     </span>
-
-                    <ArrowUpRight className="h-4 w-4" />
+                    <ArrowUpRight className="h-3.5 w-3.5" />
                   </a>
                 )}
 
                 {agent.hasApi && (
-                  <div className="flex items-center gap-2 rounded-lg border border-[#25252b] bg-[#131318] px-4 py-3 text-sm text-[#a1a1aa]">
+                  <div className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-[#111116] px-3.5 py-2.5 text-xs text-[#a1a1aa]">
                     <Code2 className="h-4 w-4" />
                     API Available
                   </div>
                 )}
-
               </div>
             </section>
 
