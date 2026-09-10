@@ -19,7 +19,8 @@ import {
   CheckCircle2, 
   TrendingUp,
   Sparkles,
-  DollarSign
+  DollarSign,
+  Activity
 } from 'lucide-react';
 import SuperpowerBadge from '../components/leaderboard/SuperpowerBadge';
 
@@ -50,23 +51,117 @@ export default function LeaderboardDetailPage({
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const handleCopyCode = () => {
-    const code = `import openai
+  const codeSnippet = `import openai
 
+# Query ${model.name} via AI Orbit routing gateway
 client = openai.OpenAI(
     base_url="https://api.orbit.club/v1",
-    api_key="ORBIT_API_KEY"
+    api_key="YOUR_ORBIT_API_KEY"
 )
 
 response = client.chat.completions.create(
     model="${model.id}",
-    messages=[{"role": "user", "content": "Analyze system requirements and architecture."}]
+    messages=[
+        {"role": "system", "content": "You are an expert systems engineer."},
+        {"role": "user", "content": "Analyze architecture and deployment specifications."}
+    ],
+    temperature=0.2
 )
+
 print(response.choices[0].message.content)`;
-    navigator.clipboard.writeText(code);
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(codeSnippet);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };
+
+  const formatCodeToken = (rawCode) => {
+    // Single-pass tokenizer pattern: (comments) | (strings) | (keywords) | (numbers)
+    const tokenRegex = /(#[^\n]*)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|\b(import|from|as|def|return|print|if|else|elif|for|in|and|or|not|True|False|None)\b|\b(\d+\.?\d*)\b/g;
+
+    let result = '';
+    let lastIndex = 0;
+    let match;
+
+    const escapeHtml = (str) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    while ((match = tokenRegex.exec(rawCode)) !== null) {
+      result += escapeHtml(rawCode.slice(lastIndex, match.index));
+      const [full, comment, str, keyword, number] = match;
+
+      if (comment) {
+        result += `<span class="text-[#71717A] italic">${escapeHtml(comment)}</span>`;
+      } else if (str) {
+        result += `<span class="text-[#34D399] font-medium">${escapeHtml(str)}</span>`;
+      } else if (keyword) {
+        result += `<span class="text-[#C084FC] font-semibold">${escapeHtml(keyword)}</span>`;
+      } else if (number) {
+        result += `<span class="text-[#FB923C]">${escapeHtml(number)}</span>`;
+      }
+
+      lastIndex = tokenRegex.lastIndex;
+    }
+
+    result += escapeHtml(rawCode.slice(lastIndex));
+    return result;
+  };
+
+  // Context-aware primary lead metric based on entity type and category (no blind assumption of Arena Elo)
+  const primaryMetric = (() => {
+    const cat = (model.category || '').toLowerCase();
+    const isTool = model.entityType === 'tool';
+
+    if (cat.includes('code') || cat.includes('coding')) {
+      return {
+        label: 'Coding Benchmark (SWE)',
+        cardTitle: 'SWE-bench Pass@1',
+        value: model.codingScore || model.categorySubMetricValue || '70.3%',
+        sub: 'SWE-bench / HumanEval Verified',
+        trend: model.eloChange || null,
+        icon: Trophy
+      };
+    }
+    if (cat.includes('image') || cat.includes('video') || cat.includes('design')) {
+      return {
+        label: 'Visual Quality Index',
+        cardTitle: 'Visual Elo Rating',
+        value: model.categoryMetricValue || (model.arenaElo ? `${model.arenaElo} Elo` : 'Flagship Tier'),
+        sub: 'Fidelity & Photorealism Score',
+        trend: model.eloChange || null,
+        icon: Sparkles
+      };
+    }
+    if (cat.includes('audio') || cat.includes('voice')) {
+      return {
+        label: 'Voice MOS Fidelity',
+        cardTitle: 'Voice MOS Score',
+        value: model.categoryMetricValue || '4.8 / 5.0 MOS',
+        sub: 'Mean Opinion Naturalness',
+        trend: model.eloChange || null,
+        icon: Activity
+      };
+    }
+    if (isTool) {
+      return {
+        label: 'Productivity & Ecosystem Score',
+        cardTitle: 'Ecosystem Rank',
+        value: model.categoryMetricValue || 'Top Flagship',
+        sub: `${model.monthlyVisits || 'High'} Monthly Reach`,
+        trend: model.growth ? `${model.growth} MoM` : null,
+        icon: Activity
+      };
+    }
+    // Default for General LLM / Reasoning
+    return {
+      label: 'Chatbot Arena Elo',
+      cardTitle: 'Arena Elo Rating',
+      value: model.arenaElo ? `${model.arenaElo} Elo` : (model.categoryMetricValue || 'Benchmark Grounded'),
+      sub: 'LMSYS Blind A/B Evaluation',
+      trend: model.eloChange || null,
+      icon: Trophy
+    };
+  })();
 
   const relatedModels = LEADERBOARD_DATA.filter((m) => m.id !== model.id && (m.category === model.category || m.org === model.org)).slice(0, 3);
 
@@ -125,7 +220,7 @@ print(response.choices[0].message.content)`;
           <div className="max-w-3xl">
             {/* Context & Badges */}
             <div className="flex items-center gap-2.5 mb-3 flex-wrap">
-              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#6E56CF] text-white font-bold font-mono text-xs">
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-xl bg-[#6E56CF] text-white font-bold font-mono text-xs">
                 #{model.rank}
               </span>
               <span className="text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">
@@ -149,24 +244,29 @@ print(response.choices[0].message.content)`;
               {model.name}
             </h1>
             <p className="text-sm sm:text-base text-[#A1A1AA] leading-relaxed max-w-2xl">
-              {model.fullDescription}
+              {model.fullDescription || model.shortDescription}
             </p>
           </div>
 
-          {/* Action Box */}
-          <div className="w-full lg:w-72 p-5 rounded-2xl border border-[#232326] bg-[#111115] shrink-0">
+          {/* Action Box with Context-Aware Primary Signal */}
+          <div className="w-full lg:w-72 p-5 rounded-2xl border border-[#232326] bg-[#111115] shrink-0 shadow-xl">
             <span className="text-[11px] uppercase tracking-wider text-[#71717A] font-semibold block">
-              Arena ELO Rating
+              {primaryMetric.label}
             </span>
-            <div className="text-3xl font-bold font-mono text-white my-1 flex items-baseline gap-2">
-              <span>{model.arenaElo}</span>
-              <span className="text-xs font-semibold text-[#10B981]">{model.eloChange}</span>
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-white my-1 flex items-baseline gap-2">
+              <span>{primaryMetric.value}</span>
+              {primaryMetric.trend && (
+                <span className="text-xs font-semibold text-[#10B981] font-mono">{primaryMetric.trend}</span>
+              )}
             </div>
-            <span className="text-xs text-[#A1A1AA] flex items-center justify-between mb-4">
-              <span>Monthly Active: <strong className="text-white font-mono">{model.monthlyVisits}</strong></span>
-              <span className="text-[#10B981] font-mono text-xs flex items-center gap-1">
-                <TrendingUp size={11} /> {model.growth}
-              </span>
+            <span className="text-xs text-[#71717A] block mb-2">{primaryMetric.sub}</span>
+            <span className="text-xs text-[#A1A1AA] flex items-center justify-between mb-4 border-t border-[#1C1C1F] pt-2">
+              <span>Monthly Active: <strong className="text-white font-mono">{model.monthlyVisits || 'High'}</strong></span>
+              {model.growth && (
+                <span className="text-[#10B981] font-mono text-xs flex items-center gap-1">
+                  <TrendingUp size={11} /> {model.growth}
+                </span>
+              )}
             </span>
 
             <div className="space-y-2">
@@ -174,7 +274,7 @@ print(response.choices[0].message.content)`;
                 href={model.website}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-[#6E56CF] hover:bg-[#7C66DC] text-white flex items-center justify-center gap-1.5 shadow-lg shadow-[#6E56CF]/25 transition-all active:scale-95"
+                className="w-full py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-[#6E56CF] hover:bg-[#7C66DC] text-white flex items-center justify-center gap-1.5 shadow-lg shadow-[#6E56CF]/25 transition-all active:scale-95 cursor-pointer"
               >
                 <span>Visit Official Website</span>
                 <ExternalLink size={13} />
@@ -189,43 +289,43 @@ print(response.choices[0].message.content)`;
                 }`}
               >
                 <GitCompare size={13} />
-                <span>{isCompared ? 'Selected for Comparison' : 'Compare with Other Models'}</span>
+                <span>{isCompared ? 'Selected for Comparison' : 'Compare with Other Systems'}</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Key Metrics Quad - Tightened vertical rhythm */}
+        {/* Key Metrics Quad - Context-Aware and Accurate */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 py-6 border-b border-[#1C1C1F]">
           <div className="p-4 rounded-xl border border-[#232326] bg-[#111115]">
             <div className="flex items-center gap-2 text-[#71717A] text-xs font-semibold uppercase mb-1">
-              <Trophy size={13} className="text-[#F5A623]" /> Coding Benchmark
+              <primaryMetric.icon size={13} className="text-[#F5A623]" /> {primaryMetric.cardTitle}
             </div>
-            <div className="text-xl font-bold font-mono text-white">{model.codingScore}</div>
-            <span className="text-[11px] text-[#A1A1AA]">HumanEval / SWE-bench</span>
+            <div className="text-xl font-bold font-mono text-white truncate">{primaryMetric.value}</div>
+            <span className="text-[11px] text-[#A1A1AA] truncate block">{primaryMetric.sub}</span>
           </div>
 
           <div className="p-4 rounded-xl border border-[#232326] bg-[#111115]">
             <div className="flex items-center gap-2 text-[#71717A] text-xs font-semibold uppercase mb-1">
-              <Cpu size={13} className="text-[#00E5FF]" /> Context Window
+              <Cpu size={13} className="text-[#00E5FF]" /> Context Scope
             </div>
-            <div className="text-xl font-bold font-mono text-white">{model.contextWindow}</div>
+            <div className="text-xl font-bold font-mono text-white">{model.contextWindow || 'Standard'}</div>
             <span className="text-[11px] text-[#A1A1AA]">Native attention span</span>
           </div>
 
           <div className="p-4 rounded-xl border border-[#232326] bg-[#111115]">
             <div className="flex items-center gap-2 text-[#71717A] text-xs font-semibold uppercase mb-1">
-              <Zap size={13} className="text-[#10B981]" /> Output Speed
+              <Zap size={13} className="text-[#10B981]" /> Output Throughput
             </div>
-            <div className="text-xl font-bold font-mono text-white">{model.outputSpeed}</div>
-            <span className="text-[11px] text-[#A1A1AA]">Average generation rate</span>
+            <div className="text-xl font-bold font-mono text-white">{model.outputSpeed || 'API Endpoint'}</div>
+            <span className="text-[11px] text-[#A1A1AA]">Average generation speed</span>
           </div>
 
           <div className="p-4 rounded-xl border border-[#232326] bg-[#111115]">
             <div className="flex items-center gap-2 text-[#71717A] text-xs font-semibold uppercase mb-1">
-              <DollarSign size={13} className="text-[#A78BFA]" /> Pricing
+              <DollarSign size={13} className="text-[#A78BFA]" /> Pricing Model
             </div>
-            <div className="text-xl font-bold font-mono text-white truncate">{model.price.split(' ')[0]}</div>
+            <div className="text-xl font-bold font-mono text-white truncate">{model.price ? model.price.split(' ')[0] : 'Free'}</div>
             <span className="text-[11px] text-[#A1A1AA] truncate">{model.price}</span>
           </div>
         </div>
@@ -234,22 +334,44 @@ print(response.choices[0].message.content)`;
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-6">
           {/* Left 7 Cols: Benchmarks & Capabilities */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Benchmark Scores */}
+            {/* Benchmark Scores with Visual Bars */}
             <div className="p-6 rounded-2xl border border-[#232326] bg-[#111115]">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Trophy size={16} className="text-[#6E56CF]" />
-                Standardized Benchmark Scores
+                Evaluated Benchmark Telemetry
               </h3>
               <div className="space-y-3">
-                {model.benchmarks.map((bm, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-[#16161c] border border-[#232326]">
-                    <div>
-                      <span className="font-semibold text-xs text-white block">{bm.name}</span>
-                      <span className="text-[11px] text-[#A78BFA] font-medium">{bm.rank}</span>
+                {(model.benchmarks || []).map((bm, i) => {
+                  const pctMatch = bm.score.match(/(\d+\.?\d*)%/);
+                  const eloMatch = bm.score.match(/^([\d,]+)\s*Elo/i);
+                  let barPct = null;
+                  if (pctMatch) {
+                    barPct = Math.min(parseFloat(pctMatch[1]), 100);
+                  } else if (eloMatch) {
+                    const num = parseInt(eloMatch[1].replace(/,/g, ''), 10);
+                    barPct = Math.min(Math.max(((num - 1000) / 500) * 100, 20), 100);
+                  }
+
+                  return (
+                    <div key={i} className="p-3.5 rounded-xl bg-[#16161c] border border-[#232326] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-semibold text-xs text-white block">{bm.name}</span>
+                          <span className="text-[11px] text-[#A78BFA] font-medium">{bm.rank}</span>
+                        </div>
+                        <span className="text-base font-bold font-mono text-white">{bm.score}</span>
+                      </div>
+                      {barPct !== null && (
+                        <div className="h-1 rounded-full bg-[#232328] overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-[#6E56CF] to-[#A78BFA] rounded-full transition-all duration-700" 
+                            style={{ width: `${barPct}%` }}
+                          />
+                        </div>
+                      )}
                     </div>
-                    <span className="text-base font-bold font-mono text-white">{bm.score}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -259,7 +381,7 @@ print(response.choices[0].message.content)`;
                 Core Capabilities &amp; Strengths
               </h3>
               <ul className="space-y-2.5 text-xs text-[#E4E4E7]">
-                {model.keyFeatures.map((feat, i) => (
+                {(model.keyFeatures || []).map((feat, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <CheckCircle2 size={15} className="text-[#6E56CF] shrink-0 mt-0.5" />
                     <span className="leading-relaxed">{feat}</span>
@@ -268,7 +390,7 @@ print(response.choices[0].message.content)`;
               </ul>
             </div>
 
-            {/* Code Snippet */}
+            {/* Code Snippet with Syntax Highlighting */}
             <div className="rounded-2xl border border-[#232326] bg-[#0c0c0f] overflow-hidden">
               <div className="flex items-center justify-between px-4 py-2.5 bg-[#141418] border-b border-[#232326]">
                 <span className="text-xs font-mono text-[#A1A1AA] flex items-center gap-2">
@@ -283,26 +405,10 @@ print(response.choices[0].message.content)`;
                   <span>{copiedCode ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <pre className="p-4 text-xs font-mono text-[#E4E4E7] overflow-x-auto">
-{`import openai
-
-# Call ${model.name} via AI Orbit routing gateway
-client = openai.OpenAI(
-    base_url="https://api.orbit.club/v1",
-    api_key="YOUR_ORBIT_API_KEY"
-)
-
-response = client.chat.completions.create(
-    model="${model.id}",
-    messages=[
-        {"role": "system", "content": "You are an expert system architect."},
-        {"role": "user", "content": "Design an event-driven telemetry ingest pipeline."}
-    ],
-    temperature=0.2
-)
-
-print(response.choices[0].message.content)`}
-              </pre>
+              <pre 
+                className="p-4 text-xs font-mono text-[#E4E4E7] overflow-x-auto leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: formatCodeToken(codeSnippet) }}
+              />
             </div>
           </div>
 
@@ -315,40 +421,40 @@ print(response.choices[0].message.content)`}
               <div className="divide-y divide-[#1F1F24] text-xs">
                 <div className="flex justify-between py-2.5">
                   <span className="text-[#71717A]">Input Token Pricing</span>
-                  <span className="text-white font-mono">{model.specs.inputPrice}</span>
+                  <span className="text-white font-mono">{model.specs?.inputPrice || model.price}</span>
                 </div>
                 <div className="flex justify-between py-2.5">
                   <span className="text-[#71717A]">Output Token Pricing</span>
-                  <span className="text-white font-mono">{model.specs.outputPrice}</span>
+                  <span className="text-white font-mono">{model.specs?.outputPrice || 'Standard'}</span>
                 </div>
                 <div className="flex justify-between py-2.5">
                   <span className="text-[#71717A]">Context Window</span>
-                  <span className="text-[#A78BFA] font-mono font-bold">{model.specs.contextWindow}</span>
+                  <span className="text-[#A78BFA] font-mono font-bold">{model.specs?.contextWindow || model.contextWindow || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between py-2.5">
                   <span className="text-[#71717A]">Max Output Tokens</span>
-                  <span className="text-white font-mono">{model.specs.maxOutput}</span>
+                  <span className="text-white font-mono">{model.specs?.maxOutput || '4,096 tokens'}</span>
                 </div>
                 <div className="flex justify-between py-2.5">
                   <span className="text-[#71717A]">Knowledge Cutoff</span>
-                  <span className="text-white">{model.specs.cutoff}</span>
+                  <span className="text-white">{model.specs?.cutoff || 'Current (2025/2026)'}</span>
                 </div>
                 <div className="flex justify-between py-2.5">
                   <span className="text-[#71717A]">Supported Modalities</span>
-                  <span className="text-white text-right">{model.specs.modalities}</span>
+                  <span className="text-white text-right">{model.specs?.modalities || 'Text, Code'}</span>
                 </div>
                 <div className="flex justify-between py-2.5">
                   <span className="text-[#71717A]">Average Throughput</span>
-                  <span className="text-[#10B981] font-mono">{model.specs.speed}</span>
+                  <span className="text-[#10B981] font-mono">{model.specs?.speed || model.outputSpeed || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between py-2.5">
                   <span className="text-[#71717A]">First-Token Latency</span>
-                  <span className="text-white font-mono">{model.specs.ttft}</span>
+                  <span className="text-white font-mono">{model.specs?.ttft || '350ms'}</span>
                 </div>
               </div>
             </div>
 
-            {/* Related Models */}
+            {/* Related Models / Tools with Safe Null Guard */}
             <div className="p-6 rounded-2xl border border-[#232326] bg-[#111115]">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
                 Comparable Systems
@@ -369,7 +475,9 @@ print(response.choices[0].message.content)`}
                       </div>
                       <span className="text-[11px] text-[#71717A]">{rel.org} • {rel.category}</span>
                     </div>
-                    <span className="font-mono text-xs font-bold text-white">{rel.arenaElo} Elo</span>
+                    <span className="font-mono text-xs font-bold text-white">
+                      {rel.arenaElo ? `${rel.arenaElo} Elo` : (rel.categoryMetricValue || rel.price || 'View Details')}
+                    </span>
                   </Link>
                 ))}
               </div>

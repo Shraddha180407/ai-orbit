@@ -53,6 +53,18 @@ export default function App() {
     }
   }, [bookmarks]);
 
+  // Global Cmd+K / Ctrl+K keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleToggleBookmark = (id) => {
     setBookmarks((prev) => 
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]

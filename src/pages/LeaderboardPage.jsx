@@ -4,8 +4,11 @@ import {
   LEADERBOARD_DATA, 
   LEADERBOARD_CATEGORIES, 
   SORT_OPTIONS, 
-  PERSPECTIVE_OPTIONS 
+  PERSPECTIVE_OPTIONS,
+  AI_MODELS_DATA,
+  AI_TOOLS_DATA
 } from '../data/leaderboardData';
+import { COMPANIES_DATA } from '../data/companiesData';
 import LeaderboardSkeleton from '../components/leaderboard/LeaderboardSkeleton';
 import PerspectiveTabs from '../components/leaderboard/PerspectiveTabs';
 import SuperpowerBadge from '../components/leaderboard/SuperpowerBadge';
@@ -32,6 +35,7 @@ import {
   ChevronLeft,
   Building2,
   Cpu,
+  Zap,
   HelpCircle
 } from 'lucide-react';
 
@@ -195,7 +199,87 @@ export default function LeaderboardPage({
           return a.rank - b.rank;
       }
     });
-  }, [activePerspective, selectedCategory, searchQuery, sortBy]);
+  }, [activePerspective, selectedCategory, searchQuery, sortBy, entityType]);
+
+  // Real dynamic ecosystem stats computed from actual datasets (no fabricated numbers)
+  const ecosystemStats = useMemo(() => {
+    const modelsCount = AI_MODELS_DATA.length;
+    const toolsCount = AI_TOOLS_DATA.length;
+    const companiesCount = COMPANIES_DATA.length;
+
+    // Real throughput calculation
+    const speeds = LEADERBOARD_DATA.map((m) => m.speedNum || parseInt(m.outputSpeed, 10) || 0).filter((s) => s > 0);
+    const maxSpeed = speeds.length > 0 ? Math.max(...speeds) : null;
+    const fastestSystem = maxSpeed ? LEADERBOARD_DATA.find((m) => (m.speedNum || parseInt(m.outputSpeed, 10)) === maxSpeed) : null;
+
+    // Real growth calculation
+    const growths = LEADERBOARD_DATA.map((m) => parseFloat((m.growth || '').replace(/[^0-9.-]/g, '')) || 0).filter((g) => g > 0);
+    const maxGrowth = growths.length > 0 ? Math.max(...growths) : null;
+    const topGrowthSystem = maxGrowth ? LEADERBOARD_DATA.find((m) => parseFloat((m.growth || '').replace(/[^0-9.-]/g, '')) === maxGrowth) : null;
+
+    return {
+      modelsCount,
+      toolsCount,
+      companiesCount,
+      maxSpeed,
+      fastestName: fastestSystem?.name || 'Top Model',
+      maxGrowth,
+      topGrowthName: topGrowthSystem?.name || 'Top Mover'
+    };
+  }, []);
+
+  // Compute winners across dimensions for the Compare Modal
+  const compareWinners = useMemo(() => {
+    if (selectedForCompare.length < 2) return {};
+    const w = {};
+    // Rank: lowest number = #1 rank
+    w.rank = [...selectedForCompare].sort((a, b) => a.rank - b.rank)[0]?.id;
+    // MMLU: highest score
+    const withMmlu = selectedForCompare.filter((m) => m.mmluPro && m.mmluPro !== 'N/A');
+    if (withMmlu.length >= 2) {
+      w.mmlu = [...withMmlu].sort((a, b) => parseFloat(b.mmluPro) - parseFloat(a.mmluPro))[0]?.id;
+    }
+    // Coding: highest score
+    const withCoding = selectedForCompare.filter((m) => m.codingScore && m.codingScore !== 'N/A');
+    if (withCoding.length >= 2) {
+      w.coding = [...withCoding].sort((a, b) => parseFloat(b.codingScore) - parseFloat(a.codingScore))[0]?.id;
+    }
+    // Speed: highest throughput
+    const withSpeed = selectedForCompare.filter((m) => m.speedNum || parseInt(m.outputSpeed, 10));
+    if (withSpeed.length >= 2) {
+      w.speed = [...withSpeed].sort((a, b) => (b.speedNum || parseInt(b.outputSpeed, 10) || 0) - (a.speedNum || parseInt(a.outputSpeed, 10) || 0))[0]?.id;
+    }
+
+    // Context Window: highest capacity (e.g. 2M > 1M > 200k)
+    const withContext = selectedForCompare.filter((m) => m.contextWindow);
+    if (withContext.length >= 2) {
+      const parseCtx = (str) => {
+        if (!str) return 0;
+        if (str.includes('M')) return parseFloat(str) * 1000000;
+        if (str.includes('k') || str.includes('K')) return parseFloat(str) * 1000;
+        return parseFloat(str) || 0;
+      };
+      w.context = [...withContext].sort((a, b) => parseCtx(b.contextWindow) - parseCtx(a.contextWindow))[0]?.id;
+    }
+
+    return w;
+  }, [selectedForCompare]);
+
+  // Animated cycling search placeholders
+  const SEARCH_PLACEHOLDERS = [
+    "Search models, superpowers, or providers...",
+    "Search by coding benchmark (SWE-bench)...",
+    "Filter by open weights or license...",
+    "Explore developer tools, agents & engines..."
+  ];
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % SEARCH_PLACEHOLDERS.length);
+    }, 3200);
+    return () => clearInterval(interval);
+  }, []);
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredModels.length / itemsPerPage) || 1;
@@ -277,48 +361,74 @@ export default function LeaderboardPage({
             </p>
           </div>
 
-          {/* Inline Stats Strip */}
-          <div className="flex flex-wrap items-center gap-y-3 gap-x-6 sm:gap-x-8 pt-1 mb-8">
-            <div>
-              <span className="text-[11px] uppercase tracking-wider text-[#71717A] font-semibold block mb-0.5">
-                Tracked Systems
-              </span>
-              <span className="text-xl sm:text-2xl font-bold font-mono text-white">
-                {LEADERBOARD_DATA.length} Models
-              </span>
+          {/* Real Dynamic Ecosystem Stat Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-1 mb-8">
+            <div className="p-3.5 rounded-xl border border-[#232326] bg-[#131316]/70 backdrop-blur-sm flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#6E56CF]/15 border border-[#6E56CF]/30 flex items-center justify-center shrink-0 text-[#A78BFA]">
+                <Cpu size={18} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10.5px] uppercase tracking-wider text-[#71717A] font-semibold block truncate">
+                  Tracked Systems
+                </span>
+                <span className="text-lg sm:text-xl font-bold font-mono text-white block">
+                  {LEADERBOARD_DATA.length}
+                </span>
+                <span className="text-[10px] text-[#A1A1AA] truncate block font-mono">
+                  {ecosystemStats.modelsCount} Models • {ecosystemStats.toolsCount} Tools
+                </span>
+              </div>
             </div>
 
-            <div className="hidden sm:block w-[1px] h-8 bg-[#27272A]" />
-
-            <div>
-              <span className="text-[11px] uppercase tracking-wider text-[#71717A] font-semibold block mb-0.5">
-                Tracked Companies
-              </span>
-              <span className="text-xl sm:text-2xl font-bold font-mono text-white">
-                100 Enterprises
-              </span>
+            <div className="p-3.5 rounded-xl border border-[#232326] bg-[#131316]/70 backdrop-blur-sm flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0 text-blue-400">
+                <Building2 size={18} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10.5px] uppercase tracking-wider text-[#71717A] font-semibold block truncate">
+                  AI Companies
+                </span>
+                <span className="text-lg sm:text-xl font-bold font-mono text-white block">
+                  {ecosystemStats.companiesCount}
+                </span>
+                <span className="text-[10px] text-[#A1A1AA] truncate block">
+                  Top 100 Enterprises
+                </span>
+              </div>
             </div>
 
-            <div className="hidden sm:block w-[1px] h-8 bg-[#27272A]" />
-
-            <div>
-              <span className="text-[11px] uppercase tracking-wider text-[#71717A] font-semibold block mb-0.5">
-                Top Speed
-              </span>
-              <span className="text-xl sm:text-2xl font-bold font-mono text-white">
-                142 tok/s
-              </span>
+            <div className="p-3.5 rounded-xl border border-[#232326] bg-[#131316]/70 backdrop-blur-sm flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-400">
+                <Zap size={18} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10.5px] uppercase tracking-wider text-[#71717A] font-semibold block truncate">
+                  Top Throughput
+                </span>
+                <span className="text-lg sm:text-xl font-bold font-mono text-white block">
+                  {ecosystemStats.maxSpeed ? `${ecosystemStats.maxSpeed} tok/s` : 'N/A'}
+                </span>
+                <span className="text-[10px] text-[#A1A1AA] truncate block">
+                  {ecosystemStats.fastestName}
+                </span>
+              </div>
             </div>
 
-            <div className="hidden sm:block w-[1px] h-8 bg-[#27272A]" />
-
-            <div>
-              <span className="text-[11px] uppercase tracking-wider text-[#71717A] font-semibold block mb-0.5">
-                Fastest Growth
-              </span>
-              <span className="text-xl sm:text-2xl font-bold font-mono text-white">
-                +142% MoM
-              </span>
+            <div className="p-3.5 rounded-xl border border-[#232326] bg-[#131316]/70 backdrop-blur-sm flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-400">
+                <TrendingUp size={18} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10.5px] uppercase tracking-wider text-[#71717A] font-semibold block truncate">
+                  Fastest Growth
+                </span>
+                <span className="text-lg sm:text-xl font-bold font-mono text-white block">
+                  {ecosystemStats.maxGrowth ? `+${ecosystemStats.maxGrowth}%` : 'N/A'}
+                </span>
+                <span className="text-[10px] text-[#A1A1AA] truncate block">
+                  {ecosystemStats.topGrowthName}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -328,14 +438,14 @@ export default function LeaderboardPage({
               onClick={() => setActiveTab('models')}
               className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                 activeTab === 'models'
-                  ? 'bg-white text-black shadow-md shadow-white/10'
+                  ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
                   : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181f]'
               }`}
             >
               <Cpu size={15} />
               <span>AI Models & Tools</span>
               <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'models' ? 'bg-black/15 text-black' : 'bg-[#1f1f26] text-[#71717A]'
+                activeTab === 'models' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
               }`}>
                 {LEADERBOARD_DATA.length}
               </span>
@@ -354,7 +464,7 @@ export default function LeaderboardPage({
               <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
                 activeTab === 'companies' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
               }`}>
-                New
+                {ecosystemStats.companiesCount}
               </span>
             </button>
           </div>
@@ -387,7 +497,7 @@ export default function LeaderboardPage({
               onClick={() => setEntityType('all')}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 entityType === 'all'
-                  ? 'bg-white text-black shadow-sm'
+                  ? 'bg-[#6E56CF] text-white shadow-sm shadow-[#6E56CF]/25'
                   : 'text-[#A1A1AA] hover:text-white'
               }`}
             >
@@ -397,21 +507,21 @@ export default function LeaderboardPage({
               onClick={() => setEntityType('models')}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 entityType === 'models'
-                  ? 'bg-white text-black shadow-sm'
+                  ? 'bg-[#6E56CF] text-white shadow-sm shadow-[#6E56CF]/25'
                   : 'text-[#A1A1AA] hover:text-white'
               }`}
             >
-              AI Models (75)
+              AI Models ({ecosystemStats.modelsCount})
             </button>
             <button
               onClick={() => setEntityType('tools')}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 entityType === 'tools'
-                  ? 'bg-white text-black shadow-sm'
+                  ? 'bg-[#6E56CF] text-white shadow-sm shadow-[#6E56CF]/25'
                   : 'text-[#A1A1AA] hover:text-white'
               }`}
             >
-              AI Tools (58)
+              AI Tools ({ecosystemStats.toolsCount})
             </button>
           </div>
 
@@ -429,7 +539,7 @@ export default function LeaderboardPage({
                   }}
                   className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
                     isSelected
-                      ? 'bg-white text-black border-white shadow-sm'
+                      ? 'bg-[#6E56CF] text-white border-[#6E56CF] shadow-sm shadow-[#6E56CF]/25'
                       : 'text-[#A1A1AA] hover:text-white bg-[#131316]/60 border-[#232326] hover:border-white/20'
                   }`}
                 >
@@ -441,7 +551,7 @@ export default function LeaderboardPage({
             {!isSelectedInPrimary && (
               <button
                 onClick={() => setIsMoreDropdownOpen(false)}
-                className="rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 bg-white text-black border-white shadow-sm"
+                className="rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 bg-[#6E56CF] text-white border-[#6E56CF] shadow-sm shadow-[#6E56CF]/25"
               >
                 {selectedCategory}
               </button>
@@ -453,7 +563,7 @@ export default function LeaderboardPage({
                 onClick={() => setIsMoreDropdownOpen((prev) => !prev)}
                 className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer flex items-center gap-1.5 shrink-0 ${
                   isMoreDropdownOpen || !isSelectedInPrimary
-                    ? 'text-white border-[#6E56CF] bg-[#1a1a24]'
+                    ? 'text-white border-[#6E56CF] bg-[#6E56CF]/15'
                     : 'text-[#A1A1AA] hover:text-white bg-[#131316]/60 border-[#232326] hover:border-white/20'
                 }`}
               >
@@ -480,7 +590,7 @@ export default function LeaderboardPage({
                         }}
                         className={`w-full text-left px-3.5 py-2 text-[12px] transition-colors cursor-pointer ${
                           selectedCategory === cat
-                            ? 'text-white bg-[#1F1F24] font-semibold'
+                            ? 'text-white bg-[#6E56CF]/20 font-semibold'
                             : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181C]'
                         }`}
                       >
@@ -503,8 +613,8 @@ export default function LeaderboardPage({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search models, superpowers, or providers..."
-              className="w-full rounded-xl border border-[#232326] bg-[#131316] pl-9 pr-8 text-[13px] text-white placeholder:text-[#71717A] hover:border-[#3a3a40] focus:border-[#6E56CF] focus:outline-none transition-all h-9"
+              placeholder={SEARCH_PLACEHOLDERS[placeholderIndex]}
+              className="w-full rounded-xl border border-[#232326] bg-[#131316] pl-9 pr-8 text-[13px] text-white placeholder:text-[#71717A] hover:border-[#3a3a40] focus:border-[#6E56CF] focus:ring-2 focus:ring-[#6E56CF]/30 focus:outline-none transition-all h-9"
             />
             {searchQuery && (
               <button
@@ -542,15 +652,19 @@ export default function LeaderboardPage({
               </button>
             )}
 
-            {hasActiveFilters && (
-              <button
-                onClick={handleClearFilters}
-                className="flex items-center gap-1 text-xs text-[#A78BFA] hover:text-white px-2.5 py-1 rounded-xl bg-[#6E56CF]/10 border border-[#6E56CF]/20 h-9 cursor-pointer transition-colors shrink-0"
-              >
-                <RotateCcw size={12} />
-                <span className="hidden sm:inline">Clear</span>
-              </button>
-            )}
+            <button
+              onClick={handleClearFilters}
+              disabled={!hasActiveFilters}
+              className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-xl border h-9 transition-all shrink-0 ${
+                hasActiveFilters
+                  ? 'text-[#A78BFA] hover:text-white bg-[#6E56CF]/15 border-[#6E56CF]/40 cursor-pointer shadow-sm shadow-[#6E56CF]/20'
+                  : 'text-[#52525B] bg-[#141418] border-[#232328] cursor-not-allowed opacity-50'
+              }`}
+              title={hasActiveFilters ? "Reset all search & filter criteria" : "No active filters to reset"}
+            >
+              <RotateCcw size={12} className={hasActiveFilters ? "text-[#A78BFA]" : "text-[#52525B]"} />
+              <span className="hidden sm:inline">Clear</span>
+            </button>
           </div>
         </div>
 
@@ -578,7 +692,7 @@ export default function LeaderboardPage({
         {/* State 3: Empty State */}
         {!isError && !isLoading && filteredModels.length === 0 && (
           <div className="p-12 rounded-2xl border border-[#232326] bg-[#111115] text-center max-w-md mx-auto my-8">
-            <Trophy size={36} className="text-[#71717A] mx-auto mb-3 opacity-50" />
+            <Search size={36} className="text-[#71717A] mx-auto mb-3 opacity-50" />
             <h3 className="text-base font-bold text-white mb-1">No results in this view</h3>
             <p className="text-xs text-[#A1A1AA] mb-5">
               Try switching back to the Overall tab or clearing your category filters.
@@ -609,20 +723,39 @@ export default function LeaderboardPage({
                       return (
                         <tr
                           key={model.id}
-                          className="hover:bg-[#181820] transition-colors group cursor-pointer"
+                          className={`transition-colors group cursor-pointer ${
+                            model.rank === 1
+                              ? 'hover:bg-[#1a1710]'
+                              : model.rank === 2
+                              ? 'hover:bg-[#18181e]'
+                              : model.rank === 3
+                              ? 'hover:bg-[#181512]'
+                              : 'hover:bg-[#181820]'
+                          }`}
                           onClick={() => navigate(`/leaderboard/${model.slug}`)}
                         >
                           {/* Rank badge with Delta */}
-                          <td className="p-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                          <td 
+                            className={`p-3.5 text-center transition-colors relative ${
+                              model.rank === 1
+                                ? 'border-l-4 border-l-[#F5A623] bg-[#F5A623]/[0.05]'
+                                : model.rank === 2
+                                ? 'border-l-4 border-l-[#CBD5E1] bg-white/[0.04]'
+                                : model.rank === 3
+                                ? 'border-l-4 border-l-[#EA580C] bg-[#EA580C]/[0.05]'
+                                : 'border-l-4 border-l-transparent'
+                            }`} 
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <div className="flex flex-col items-center">
                               <span
                                 className={`inline-flex items-center justify-center w-7 h-7 rounded-xl font-bold font-mono text-xs ${
                                   model.rank === 1
-                                    ? 'bg-[#F5A623] text-black shadow-md shadow-[#F5A623]/25'
+                                    ? 'bg-gradient-to-br from-[#F5A623] via-[#FBBF24] to-[#D97706] text-black font-extrabold shadow-md shadow-[#F5A623]/30 border border-[#FCD34D]/60'
                                     : model.rank === 2
-                                    ? 'bg-[#E4E4E7] text-black'
+                                    ? 'bg-gradient-to-br from-[#FFFFFF] via-[#E2E8F0] to-[#94A3B8] text-[#0F172A] font-extrabold shadow-md shadow-white/25 border border-white/80 ring-1 ring-white/30'
                                     : model.rank === 3
-                                    ? 'bg-[#CD7F32] text-black'
+                                    ? 'bg-gradient-to-br from-[#FDBA74] via-[#EA580C] to-[#9A3412] text-white font-extrabold shadow-md shadow-[#EA580C]/35 border border-[#FDBA74]/60 ring-1 ring-[#EA580C]/30'
                                     : 'text-[#A1A1AA] bg-[#16161c] border border-[#232328]'
                                 }`}
                               >
@@ -804,8 +937,14 @@ export default function LeaderboardPage({
 
       {/* Side-by-Side Direct Comparison Modal */}
       {isCompareModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-5xl rounded-2xl border border-[#27272a] bg-[#111114] shadow-2xl p-5 sm:p-7 my-auto text-white">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto cursor-pointer"
+          onClick={() => setIsCompareModalOpen(false)}
+        >
+          <div 
+            className="relative w-full max-w-5xl rounded-2xl border border-[#27272a] bg-[#111114] shadow-2xl p-5 sm:p-7 my-auto text-white animate-in fade-in zoom-in-95 duration-150 cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-4 border-b border-[#232326]">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-[#6E56CF]/20 text-[#A78BFA] flex items-center justify-center">
@@ -813,12 +952,12 @@ export default function LeaderboardPage({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white">Head-to-Head Model Comparison</h3>
-                  <p className="text-xs text-[#A1A1AA]">Benchmarking {selectedForCompare.length} AI systems side-by-side</p>
+                  <p className="text-xs text-[#A1A1AA]">Benchmarking {selectedForCompare.length} AI systems side-by-side with verified signals</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsCompareModalOpen(false)}
-                className="w-8 h-8 rounded-lg border border-[#232326] bg-[#16161a] flex items-center justify-center text-[#A1A1AA] hover:text-white cursor-pointer"
+                className="w-8 h-8 rounded-lg border border-[#232326] bg-[#16161a] flex items-center justify-center text-[#A1A1AA] hover:text-white cursor-pointer transition-colors"
               >
                 <X size={16} />
               </button>
@@ -828,7 +967,7 @@ export default function LeaderboardPage({
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-[#232326]">
+                  <tr className="border-b border-[#232326] bg-[#141418]">
                     <th className="p-3 text-[11px] uppercase tracking-wider text-[#71717A] font-semibold w-1/4">Metric</th>
                     {selectedForCompare.map((m) => (
                       <th key={m.id} className="p-3 w-1/3">
@@ -839,68 +978,88 @@ export default function LeaderboardPage({
                           </button>
                         </div>
                         <span className="text-[11px] text-[#A1A1AA] block">{m.org} • {m.category}</span>
-                        <span className="text-xs font-mono font-bold text-[#F5A623]">{m.arenaElo} Elo</span>
+                        <span className="text-xs font-mono font-bold text-[#F5A623]">{m.categoryMetricValue || `${m.arenaElo} Elo`}</span>
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#1F1F24] text-[#E4E4E7]">
-                  <tr>
-                    <td className="p-3 text-[#71717A]">Arena Ranking</td>
+                  <tr className="bg-[#131316]/50">
+                    <td className="p-3 text-[#71717A] font-medium">Arena Ranking</td>
                     {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 font-mono font-bold text-white">#{m.rank}</td>
+                      <td key={m.id} className="p-3 font-mono">
+                        <span className={compareWinners.rank === m.id ? 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold' : 'text-white font-bold'}>
+                          #{m.rank}
+                        </span>
+                      </td>
                     ))}
                   </tr>
                   <tr>
-                    <td className="p-3 text-[#71717A]">Superpower</td>
+                    <td className="p-3 text-[#71717A] font-medium">Superpower</td>
                     {selectedForCompare.map((m) => (
                       <td key={m.id} className="p-3 font-medium text-[#A78BFA]">
                         {m.superpower || 'N/A'}
                       </td>
                     ))}
                   </tr>
-                  <tr>
-                    <td className="p-3 text-[#71717A]">MMLU Pro Score</td>
+                  <tr className="bg-[#131316]/50">
+                    <td className="p-3 text-[#71717A] font-medium">MMLU Pro Score</td>
                     {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 font-mono text-[#10B981] font-semibold">{m.mmluPro}</td>
+                      <td key={m.id} className="p-3 font-mono">
+                        <span className={compareWinners.mmlu === m.id ? 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold' : 'text-[#10B981] font-semibold'}>
+                          {m.mmluPro || 'N/A'}
+                        </span>
+                      </td>
                     ))}
                   </tr>
                   <tr>
-                    <td className="p-3 text-[#71717A]">Coding Score</td>
+                    <td className="p-3 text-[#71717A] font-medium">Coding Score</td>
                     {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 font-mono text-[#A78BFA] font-bold">{m.codingScore}</td>
+                      <td key={m.id} className="p-3 font-mono">
+                        <span className={compareWinners.coding === m.id ? 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold' : 'text-[#A78BFA] font-bold'}>
+                          {m.codingScore || 'N/A'}
+                        </span>
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="bg-[#131316]/50">
+                    <td className="p-3 text-[#71717A] font-medium">Output Throughput</td>
+                    {selectedForCompare.map((m) => (
+                      <td key={m.id} className="p-3 font-mono">
+                        <span className={compareWinners.speed === m.id ? 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold' : 'text-[#E4E4E7]'}>
+                          {m.outputSpeed || 'N/A'}
+                        </span>
+                      </td>
                     ))}
                   </tr>
                   <tr>
-                    <td className="p-3 text-[#71717A]">Output Throughput</td>
+                    <td className="p-3 text-[#71717A] font-medium">Context Window</td>
                     {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 font-mono">{m.outputSpeed}</td>
+                      <td key={m.id} className="p-3 font-mono">
+                        <span className={compareWinners.context === m.id ? 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold' : 'text-[#E4E4E7]'}>
+                          {m.contextWindow || 'N/A'}
+                        </span>
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="bg-[#131316]/50">
+                    <td className="p-3 text-[#71717A] font-medium">Pricing Model</td>
+                    {selectedForCompare.map((m) => (
+                      <td key={m.id} className="p-3 font-mono text-xs text-[#E4E4E7]">{m.price}</td>
                     ))}
                   </tr>
                   <tr>
-                    <td className="p-3 text-[#71717A]">Context Window</td>
+                    <td className="p-3 text-[#71717A] font-medium">License / Delivery</td>
                     {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 font-mono">{m.contextWindow}</td>
+                      <td key={m.id} className="p-3 text-white">{m.licenseType || m.license || 'API'}</td>
                     ))}
                   </tr>
-                  <tr>
-                    <td className="p-3 text-[#71717A]">Pricing</td>
-                    {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 font-mono text-xs">{m.price}</td>
-                    ))}
-                  </tr>
-                  <tr>
-                    <td className="p-3 text-[#71717A]">License Model</td>
-                    {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3">{m.licenseType || m.license}</td>
-                    ))}
-                  </tr>
-                  <tr>
-                    <td className="p-3 text-[#71717A]">Key Highlights</td>
+                  <tr className="bg-[#131316]/50">
+                    <td className="p-3 text-[#71717A] font-medium">Key Highlights</td>
                     {selectedForCompare.map((m) => (
                       <td key={m.id} className="p-3">
                         <ul className="list-disc list-inside space-y-1 text-[11px] text-[#A1A1AA]">
-                          {m.keyFeatures.slice(0, 2).map((f, i) => (
+                          {(m.keyFeatures || []).slice(0, 2).map((f, i) => (
                             <li key={i}>{f}</li>
                           ))}
                         </ul>
@@ -912,14 +1071,17 @@ export default function LeaderboardPage({
             </div>
 
             <div className="mt-6 pt-4 border-t border-[#232326] flex items-center justify-between">
-              <button onClick={onClearCompare} className="text-xs text-[#71717A] hover:text-white cursor-pointer">
-                Clear all
+              <button 
+                onClick={onClearCompare} 
+                className="text-xs border border-red-900/40 text-red-400 hover:bg-red-950/30 hover:border-red-800/80 px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer"
+              >
+                Clear all models
               </button>
               <button
                 onClick={() => setIsCompareModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#232326] text-white hover:bg-[#2e2e33] cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#232326] text-white hover:bg-[#2e2e33] cursor-pointer transition-colors"
               >
-                Close
+                Close Comparison
               </button>
             </div>
           </div>

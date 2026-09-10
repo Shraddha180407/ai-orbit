@@ -15,6 +15,8 @@ export default function PerspectiveTabs({
   onSelectPerspective,
   perspectiveCounts = {}
 }) {
+  const activeTab = perspectives.find((p) => p.id === activePerspective);
+
   return (
     <div className="relative mb-6 sm:mb-8">
       <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
@@ -29,7 +31,7 @@ export default function PerspectiveTabs({
               onClick={() => onSelectPerspective(tab.id)}
               className={`group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
                 isActive
-                  ? 'bg-white text-black border-white shadow-md shadow-white/10'
+                  ? 'bg-[#6E56CF]/20 text-[#A78BFA] border-[#6E56CF]/50 shadow-md shadow-[#6E56CF]/10'
                   : 'bg-[#131316]/80 text-[#A1A1AA] hover:text-white border-[#232326] hover:border-white/20 hover:bg-[#18181c]'
               }`}
               title={tab.description}
@@ -37,18 +39,16 @@ export default function PerspectiveTabs({
               <Icon
                 size={13}
                 className={`transition-colors ${
-                  isActive
-                    ? 'text-black'
-                    : 'text-[#71717A] group-hover:text-white'
+                  isActive ? 'text-[#A78BFA]' : 'text-[#71717A] group-hover:text-white'
                 }`}
               />
               <span>{tab.label}</span>
               {typeof count === 'number' && (
                 <span
-                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold ${
                     isActive
-                      ? 'bg-black/15 text-black'
-                      : 'bg-[#1e1e24] text-[#71717A] group-hover:text-[#A1A1AA]'
+                      ? 'bg-[#6E56CF]/30 text-[#A78BFA]'
+                      : 'bg-[#27272e] text-[#A1A1AA] group-hover:text-[#A1A1AA]'
                   }`}
                 >
                   {count}
@@ -58,6 +58,14 @@ export default function PerspectiveTabs({
           );
         })}
       </div>
+
+      {/* Active tab description */}
+      {activeTab?.description && (
+        <p className="mt-2 text-[11px] text-[#71717A] pl-0.5 transition-all duration-200">
+          <span className="text-[#A78BFA] font-semibold">{activeTab.label}:</span>{' '}
+          {activeTab.description}
+        </p>
+      )}
     </div>
   );
 }

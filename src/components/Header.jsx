@@ -64,7 +64,7 @@ export default function Header({ onOpenSearch, bookmarksCount = 0, onOpenBookmar
         </div>
 
         {/* Center: Desktop Navigation (4 Core + More dropdown) */}
-        <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5">
+        <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-auto">
           {primaryNavLinks.map((link) => {
             const active = isActive(link.path);
             const Icon = link.icon;
@@ -212,13 +212,13 @@ export default function Header({ onOpenSearch, bookmarksCount = 0, onOpenBookmar
             )}
           </button>
 
-          {/* Calm, streamlined Submit CTA */}
+          {/* Vivid Submit CTA Pill matching original aiorbit.club */}
           <button
             onClick={onOpenSubmit}
-            className="inline-flex h-[32px] items-center gap-1.5 rounded-xl px-3 text-[12px] font-medium transition-all duration-200 border border-[#27272e] bg-[#16161a] hover:bg-[#202026] hover:border-white/20 text-[#E4E4E7] hover:text-white cursor-pointer whitespace-nowrap active:scale-95"
+            className="inline-flex h-[30px] sm:h-[32px] items-center gap-1.5 rounded-full px-3.5 sm:px-4 text-[11px] sm:text-[12px] font-semibold transition-all duration-200 bg-[#6E56CF] text-white hover:brightness-110 active:scale-95 shadow-md shadow-[#6E56CF]/25 cursor-pointer whitespace-nowrap"
           >
-            <Plus size={13} className="text-[#A78BFA]" />
-            <span className="hidden sm:inline">Submit</span>
+            <Plus size={13} strokeWidth={2.5} className="shrink-0" />
+            <span>Submit Tool</span>
           </button>
         </div>
       </div>

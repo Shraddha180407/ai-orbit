@@ -65,3 +65,42 @@ body {
 .glow-purple-sm {
   box-shadow: 0 0 15px -3px rgba(110, 86, 207, 0.25);
 }
+
+/* Shimmer skeleton animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #131316 25%, #1f1f26 50%, #131316 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Hide scrollbars while keeping scroll functionality */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Micro-interactions */
+.orbit-card-interactive {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease;
+}
+
+.orbit-card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px rgba(110, 86, 207, 0.2),
+              0 0 0 1px rgba(110, 86, 207, 0.15);
+  border-color: rgba(110, 86, 207, 0.3);
+}
+
+html {
+  scroll-behavior: smooth;
+}

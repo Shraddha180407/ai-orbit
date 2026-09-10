@@ -1,16 +1,93 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import BrandLogo from './BrandLogo';
 import { ArrowUp, Sparkles, MessageSquare } from 'lucide-react';
 
 export default function Footer() {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    let offset = 0;
+
+    const resize = () => {
+      if (canvas.parentElement) {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+      }
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const message = "AI ORBIT • THE HOME OF EVERYTHING AI • BENCHMARK EVALUATION • AUTONOMOUS AGENTS • ROBOTICS • ";
+    const dotSpacing = 14;
+    const dotRadius = 1.6;
+
+    const render = () => {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const rows = Math.floor(canvas.height / dotSpacing);
+      const cols = Math.floor(canvas.width / dotSpacing);
+
+      // Draw background ambient LED dot-matrix
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = c * dotSpacing + dotSpacing / 2;
+          const y = r * dotSpacing + dotSpacing / 2;
+          ctx.beginPath();
+          ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+          ctx.fillStyle = '#141418';
+          ctx.fill();
+        }
+      }
+
+      // Draw glowing marquee text
+      offset -= 0.7;
+      ctx.font = 'bold 24px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+
+      const totalWidth = 1400;
+      const textX = (offset % totalWidth);
+
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#6E56CF';
+      ctx.fillText(message, textX, canvas.height / 2);
+      ctx.fillText(message, textX + totalWidth, canvas.height / 2);
+      ctx.shadowBlur = 0;
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <footer className="w-full bg-black text-white pt-10 sm:pt-14 pb-8 font-sans selection:bg-[#6E56CF]/30 border-t border-[#1C1C1F]">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-8">
+    <footer className="w-full bg-black text-white pt-0 pb-8 font-sans selection:bg-[#6E56CF]/30 border-t border-[#1C1C1F]">
+      {/* Signature Animated LED Dot-Matrix Display matching original aiorbit.club */}
+      <section 
+        aria-label="AI Orbit LED display" 
+        className="w-full bg-black border-b border-[#1C1C1F] overflow-hidden" 
+        style={{ height: 'clamp(90px, 12vw, 160px)' }}
+      >
+        <canvas ref={canvasRef} className="block w-full h-full" />
+      </section>
+
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-8 pt-10 sm:pt-14">
         <div className="flex flex-col lg:flex-row justify-between gap-10 lg:gap-16 pb-12">
           {/* Brand Col */}
           <div className="w-full lg:w-[380px] shrink-0">

@@ -68,26 +68,33 @@ export default function QuickCompareDock({
     return winners;
   }, [selectedModels]);
 
+  const counterColorClass = 
+    selectedModels.length === 3 
+      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+      : selectedModels.length === 2 
+      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+      : 'bg-[#6E56CF]/20 text-[#C4B5FD] border-[#6E56CF]/40';
+
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-3xl">
-      <div className="p-3 sm:p-3.5 rounded-2xl border border-[#3b3b44] bg-[#111115]/95 backdrop-blur-xl shadow-2xl shadow-[#6E56CF]/25 text-white">
+      <div className="p-3 sm:p-3.5 rounded-2xl border-2 border-[#6E56CF] bg-[#0c0c10]/98 backdrop-blur-2xl shadow-[0_0_35px_-5px_rgba(110,86,207,0.5)] ring-1 ring-[#A78BFA]/40 text-white">
         {/* Top Row: Selected items + Action buttons */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5 min-w-0">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#6E56CF]/20 text-[#C4B5FD] text-xs font-semibold shrink-0">
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-colors shrink-0 ${counterColorClass}`}>
               <GitCompare size={14} />
-              <span>{selectedModels.length}/3 Compare</span>
+              <span>{selectedModels.length}/3 Selected</span>
             </div>
 
             {selectedModels.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1a1a20] border border-[#27272e] shrink-0 text-xs"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#16161c] border border-[#27272e] shrink-0 text-xs hover:border-[#3b3b44] transition-colors"
               >
                 <span className="text-white max-w-[120px] truncate font-medium">{m.name}</span>
                 <button
                   onClick={() => onToggleCompare(m)}
-                  className="text-[#71717A] hover:text-white cursor-pointer ml-0.5"
+                  className="text-[#71717A] hover:text-white cursor-pointer ml-0.5 transition-colors"
                 >
                   <X size={12} />
                 </button>
@@ -119,9 +126,9 @@ export default function QuickCompareDock({
 
         {/* Bottom Row: Instant Dimension Winners Pill Snapshot */}
         {dimensionWinners && dimensionWinners.length > 0 && (
-          <div className="mt-2.5 pt-2.5 border-t border-[#232328] flex items-center gap-2 overflow-x-auto scrollbar-none text-[11px]">
-            <span className="text-[#71717A] uppercase tracking-wider font-semibold text-[10px] shrink-0 font-mono">
-              Dimension Winners:
+          <div className="mt-2.5 pt-2.5 border-t border-[#232328] flex items-center gap-2 overflow-x-auto scrollbar-none text-xs">
+            <span className="text-[#A78BFA] uppercase tracking-wider font-bold text-[10.5px] shrink-0 font-mono flex items-center gap-1">
+              Top Signals:
             </span>
             <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
               {dimensionWinners.map((item, idx) => {
@@ -129,12 +136,12 @@ export default function QuickCompareDock({
                 return (
                   <span
                     key={idx}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#18181f] border border-[#2d2d38] text-white whitespace-nowrap"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-[#16161f] border border-[#2e2e3d] text-white whitespace-nowrap text-xs shadow-sm"
                   >
-                    <Icon size={10} className="text-[#A78BFA]" />
+                    <Icon size={12} className="text-[#A78BFA]" />
                     <span className="text-[#A1A1AA]">{item.dimension}:</span>
-                    <strong className="text-white font-semibold">{item.winner}</strong>
-                    <span className="text-[9.5px] font-mono text-[#10B981]">({item.stat})</span>
+                    <strong className="text-white font-bold">{item.winner}</strong>
+                    <span className="text-[10.5px] font-mono text-emerald-400 font-semibold">({item.stat})</span>
                   </span>
                 );
               })}
