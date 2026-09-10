@@ -43,11 +43,41 @@ export function buildVideosPageUrl(
   return `${API_URL}/api/videos?${params.toString()}`;
 }
 
+/**
+ * Same endpoint as buildVideosPageUrl, but with withCount=true - the
+ * backend runs findMany + count in parallel and returns both in one
+ * response ({ videos, total }), instead of the category chip flow
+ * needing two separate HTTP round trips.
+ */
+export function buildVideosPageWithCountUrl(
+  limit: number,
+  offset: number,
+  category?: string,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): string {
+  const params = new URLSearchParams({
+    sort: "latest",
+    limit: String(limit),
+    offset: String(offset),
+    withCount: "true",
+  });
+  if (category) params.set("category", category);
+  if (sortBy) params.set("sortBy", sortBy);
+  if (sortDir) params.set("sortDir", sortDir);
+  return `${API_URL}/api/videos?${params.toString()}`;
+}
+
 export function buildVideosCountUrl(category?: string): string {
   const params = new URLSearchParams();
   if (category) params.set("category", category);
   const qs = params.toString();
   return `${API_URL}/api/videos/count${qs ? `?${qs}` : ""}`;
+}
+
+export interface VideosPageWithCount {
+  videos: Video[];
+  total: number;
 }
 
 export function getCachedVideosPage(
@@ -57,13 +87,20 @@ export function getCachedVideosPage(
   sortBy?: VideoSortBy,
   sortDir?: VideoSortDir
 ): Video[] | null {
-  const url = buildVideosPageUrl(limit, offset, category, sortBy, sortDir);
-  return getFromCache<Video[]>(url);
+  const url = buildVideosPageWithCountUrl(limit, offset, category, sortBy, sortDir);
+  const cached = getFromCache<VideosPageWithCount>(url);
+  return cached?.videos ?? null;
 }
 
-export function getCachedVideosCount(category?: string): number | null {
-  const url = buildVideosCountUrl(category);
-  const cached = getFromCache<{ total: number }>(url);
+export function getCachedVideosCount(
+  limit: number,
+  offset: number,
+  category?: string,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): number | null {
+  const url = buildVideosPageWithCountUrl(limit, offset, category, sortBy, sortDir);
+  const cached = getFromCache<VideosPageWithCount>(url);
   return cached?.total ?? null;
 }
 
@@ -74,10 +111,24 @@ export function prefetchVideosCategory(
   sortBy?: VideoSortBy,
   sortDir?: VideoSortDir
 ): void {
-  const pageUrl = buildVideosPageUrl(limit, offset, category, sortBy, sortDir);
-  const countUrl = buildVideosCountUrl(category);
-  prefetchUrl(pageUrl, 15 * 60 * 1000);
-  prefetchUrl(countUrl, 15 * 60 * 1000);
+  // One request warms both the video list and the total count, since
+  // the backend now runs findMany + count in parallel for a single
+  // withCount=true call - no more doubling up on hover/touch.
+  const url = buildVideosPageWithCountUrl(limit, offset, category, sortBy, sortDir);
+  prefetchUrl(url, 15 * 60 * 1000);
+}
+
+/** Fetches a page of videos and its total count in a single request. */
+export async function getVideosPageWithCount(
+  limit: number,
+  offset: number,
+  category?: string,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): Promise<VideosPageWithCount> {
+  const url = buildVideosPageWithCountUrl(limit, offset, category, sortBy, sortDir);
+  const result = await cachedFetchJson<VideosPageWithCount | null>(url, null, { ttlMs: 15 * 60 * 1000 });
+  return result ?? { videos: [], total: 0 };
 }
 
 export async function getTrendingVideos(limit = 4): Promise<Video[]> {

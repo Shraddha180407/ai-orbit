@@ -27,6 +27,14 @@ export const ListQuerySchema = z.object({
   // above, which stays as-is for backward compatibility.
   sortBy: z.enum(["name", "duration", "posted", "views"]).optional(),
   sortDir: z.enum(["asc", "desc"]).optional(),
+  // Opt-in: when true, the response is { videos, total } (one query
+  // round trip, DB does findMany+count in parallel) instead of a plain
+  // array. Off by default so existing callers (trending feed, related
+  // rails, etc.) that expect Video[] keep working unchanged.
+  withCount: z
+    .string()
+    .optional()
+    .transform((val: string | undefined) => val === "true"),
 });
 export type ListQueryInput = z.infer<typeof ListQuerySchema>;
 
