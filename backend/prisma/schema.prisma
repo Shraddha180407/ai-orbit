@@ -1630,31 +1630,46 @@ model MCPDirectoryClaim {
 }
 
 model Agent {
-  id            String          @id
-  slug          String          @unique
-  name          String
-  description   String
-  websiteUrl    String
-  logoUrl       String?
-  category      String
-  categorySlug  String
-  primaryTask   String
-  pricingModel  PricingModel
-  pricingRaw    String?
-  hasApi        Boolean         @default(false)
-  isOpenSource  Boolean         @default(false)
-  isTrending    Boolean         @default(false)
-  verified      Boolean         @default(false)
-  compatibility String[]        @default([])
-  source        String?
-  avgRating     Float           @default(0)
-  reviewCount   Int             @default(0)
-  upvoteCount   Int             @default(0)
-  views         Int             @default(0)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @default(now())
-  AgentBookmark AgentBookmark[]
-  AgentReview   AgentReview[]
+  id             String          @id
+  slug           String          @unique
+  name           String
+  description    String
+  websiteUrl     String
+  logoUrl        String?
+  category       String
+  categorySlug   String
+  primaryTask    String
+  pricingModel   PricingModel
+  pricingRaw     String?
+  hasApi         Boolean         @default(false)
+  isOpenSource   Boolean         @default(false)
+  isTrending     Boolean         @default(false)
+  verified       Boolean         @default(false)
+  compatibility  String[]        @default([])
+  source         String?
+  avgRating      Float           @default(0)
+  reviewCount    Int             @default(0)
+  upvoteCount    Int             @default(0)
+  views          Int             @default(0)
+
+  shortDescription String?
+  longDescription  String?
+  features         String[]      @default([])
+  useCases        String[]      @default([])
+  integrations    String[]      @default([])
+  apiDocsUrl      String?
+  githubUrl       String?
+  provider        String?
+  providerWebsite String?
+  releaseDate     DateTime?
+  pros            String[]      @default([])
+  cons            String[]      @default([])
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @default(now())
+
+  AgentBookmark   AgentBookmark[]
+  AgentReview     AgentReview[]
 
   @@index([avgRating])
   @@index([categorySlug])
