@@ -13,7 +13,8 @@ export default function PerspectiveTabs({
   perspectives = [],
   activePerspective = 'overall',
   onSelectPerspective,
-  perspectiveCounts = {}
+  perspectiveCounts = {},
+  onOpenMethodology
 }) {
   const activeTab = perspectives.find((p) => p.id === activePerspective);
 
@@ -59,13 +60,25 @@ export default function PerspectiveTabs({
         })}
       </div>
 
-      {/* Active tab description */}
-      {activeTab?.description && (
-        <p className="mt-2 text-[11px] text-[#71717A] pl-0.5 transition-all duration-200">
-          <span className="text-[#A78BFA] font-semibold">{activeTab.label}:</span>{' '}
-          {activeTab.description}
-        </p>
-      )}
+      {/* Active tab description & ranking explanation trigger */}
+      <div className="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-[#71717A] pl-0.5">
+        {activeTab?.description ? (
+          <p>
+            <span className="text-[#A78BFA] font-semibold">{activeTab.label}:</span>{' '}
+            {activeTab.description}
+          </p>
+        ) : <div />}
+
+        {onOpenMethodology && (
+          <button
+            onClick={onOpenMethodology}
+            className="inline-flex items-center gap-1 text-[#A78BFA] hover:text-white transition-colors cursor-pointer self-start sm:self-auto shrink-0"
+          >
+            <span>How ranking works</span>
+            <span>→</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 }

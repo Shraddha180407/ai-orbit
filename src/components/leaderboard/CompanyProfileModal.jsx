@@ -9,7 +9,7 @@ import {
   Building2, 
   Calendar, 
   MapPin, 
-  CheckCircle2, 
+  Info, 
   Sparkles, 
   ArrowUpRight 
 } from 'lucide-react';
@@ -236,13 +236,15 @@ export default function CompanyProfileModal({ company, isOpen, onClose }) {
 
         {/* Footer: Data Source & Last Updated (Trust Anchor) */}
         <div className="pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-[#71717A]">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 size={13} className="text-[#10B981]" />
+          <div className="flex items-center gap-2 flex-wrap">
+            <Info size={13} className="text-[#A1A1AA] shrink-0" />
             <span>
-              Data Source: <strong>Norgard X & Disclosed SEC Filings</strong>
+              Source: <strong className="text-[#D4D4D8]">Norgard X &amp; Public Disclosures</strong>
             </span>
             <span className="opacity-40">•</span>
-            <span>Last Updated: <strong className="text-white">{company.lastUpdated}</strong></span>
+            <span>Last Disclosed: <strong className="text-[#D4D4D8]">{company.lastUpdated || 'Recent Disclosures'}</strong></span>
+            <span className="opacity-40">•</span>
+            <span className="text-[11px] text-[#71717A] italic">Figures may be estimated</span>
           </div>
 
           <button

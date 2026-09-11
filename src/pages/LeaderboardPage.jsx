@@ -265,21 +265,7 @@ export default function LeaderboardPage({
     return w;
   }, [selectedForCompare]);
 
-  // Animated cycling search placeholders
-  const SEARCH_PLACEHOLDERS = [
-    "Search models, superpowers, or providers...",
-    "Search by coding benchmark (SWE-bench)...",
-    "Filter by open weights or license...",
-    "Explore developer tools, agents & engines..."
-  ];
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % SEARCH_PLACEHOLDERS.length);
-    }, 3200);
-    return () => clearInterval(interval);
-  }, []);
+  const SEARCH_PLACEHOLDER = "Search models, tools, superpowers, or providers...";
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredModels.length / itemsPerPage) || 1;
@@ -335,11 +321,11 @@ export default function LeaderboardPage({
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-[#6E56CF]/15 text-[#A78BFA] border border-[#6E56CF]/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
                 Live Benchmark Index
               </span>
               <span className="text-xs text-[#71717A] hidden sm:inline font-mono">
-                Updated Hourly • LMSYS Arena Grounded
+                Independent Evaluation Index
               </span>
             </div>
 
@@ -356,79 +342,34 @@ export default function LeaderboardPage({
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-2.5">
               AI Ecosystem Leaderboard
             </h1>
-            <p className="text-sm sm:text-base text-[#A1A1AA] leading-relaxed max-w-2xl font-normal mb-6">
+            <p className="text-sm sm:text-base text-[#A1A1AA] leading-relaxed max-w-2xl font-normal mb-5">
               Track real-world evaluation benchmarks, Chatbot Arena Elo scores, inference speeds, and enterprise pricing across top AI foundation models and developer tools.
             </p>
           </div>
 
-          {/* Real Dynamic Ecosystem Stat Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-1 mb-8">
-            <div className="p-3.5 rounded-xl border border-[#232326] bg-[#131316]/70 backdrop-blur-sm flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#6E56CF]/15 border border-[#6E56CF]/30 flex items-center justify-center shrink-0 text-[#A78BFA]">
-                <Cpu size={18} />
-              </div>
-              <div className="min-w-0">
-                <span className="text-[10.5px] uppercase tracking-wider text-[#71717A] font-semibold block truncate">
-                  Tracked Systems
-                </span>
-                <span className="text-lg sm:text-xl font-bold font-mono text-white block">
-                  {LEADERBOARD_DATA.length}
-                </span>
-                <span className="text-[10px] text-[#A1A1AA] truncate block font-mono">
-                  {ecosystemStats.modelsCount} Models • {ecosystemStats.toolsCount} Tools
-                </span>
-              </div>
+          {/* Compact Metadata Strip (Quiet Context, Not Competing Cards) */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-2 text-xs text-[#71717A] font-mono border-y border-[#1C1C22] mb-6">
+            <div className="flex items-center gap-1.5">
+              <span>Tracked Systems:</span>
+              <strong className="text-[#E4E4E7] font-semibold">{LEADERBOARD_DATA.length}</strong>
+              <span className="text-[11px] text-[#52525B]">({ecosystemStats.modelsCount} models · {ecosystemStats.toolsCount} tools)</span>
             </div>
-
-            <div className="p-3.5 rounded-xl border border-[#232326] bg-[#131316]/70 backdrop-blur-sm flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0 text-blue-400">
-                <Building2 size={18} />
-              </div>
-              <div className="min-w-0">
-                <span className="text-[10.5px] uppercase tracking-wider text-[#71717A] font-semibold block truncate">
-                  AI Companies
-                </span>
-                <span className="text-lg sm:text-xl font-bold font-mono text-white block">
-                  {ecosystemStats.companiesCount}
-                </span>
-                <span className="text-[10px] text-[#A1A1AA] truncate block">
-                  Top 100 Enterprises
-                </span>
-              </div>
+            <span className="text-[#27272A] hidden sm:inline">•</span>
+            <div className="flex items-center gap-1.5">
+              <span>AI Companies:</span>
+              <strong className="text-[#E4E4E7] font-semibold">{ecosystemStats.companiesCount}</strong>
             </div>
-
-            <div className="p-3.5 rounded-xl border border-[#232326] bg-[#131316]/70 backdrop-blur-sm flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-400">
-                <Zap size={18} />
-              </div>
-              <div className="min-w-0">
-                <span className="text-[10.5px] uppercase tracking-wider text-[#71717A] font-semibold block truncate">
-                  Top Throughput
-                </span>
-                <span className="text-lg sm:text-xl font-bold font-mono text-white block">
-                  {ecosystemStats.maxSpeed ? `${ecosystemStats.maxSpeed} tok/s` : 'N/A'}
-                </span>
-                <span className="text-[10px] text-[#A1A1AA] truncate block">
-                  {ecosystemStats.fastestName}
-                </span>
-              </div>
+            <span className="text-[#27272A] hidden sm:inline">•</span>
+            <div className="flex items-center gap-1.5">
+              <span>Top Throughput:</span>
+              <strong className="text-emerald-400 font-semibold">{ecosystemStats.maxSpeed ? `${ecosystemStats.maxSpeed} tok/s` : 'N/A'}</strong>
+              <span className="text-[11px] text-[#52525B]">({ecosystemStats.fastestName})</span>
             </div>
-
-            <div className="p-3.5 rounded-xl border border-[#232326] bg-[#131316]/70 backdrop-blur-sm flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-400">
-                <TrendingUp size={18} />
-              </div>
-              <div className="min-w-0">
-                <span className="text-[10.5px] uppercase tracking-wider text-[#71717A] font-semibold block truncate">
-                  Fastest Growth
-                </span>
-                <span className="text-lg sm:text-xl font-bold font-mono text-white block">
-                  {ecosystemStats.maxGrowth ? `+${ecosystemStats.maxGrowth}%` : 'N/A'}
-                </span>
-                <span className="text-[10px] text-[#A1A1AA] truncate block">
-                  {ecosystemStats.topGrowthName}
-                </span>
-              </div>
+            <span className="text-[#27272A] hidden sm:inline">•</span>
+            <div className="flex items-center gap-1.5">
+              <span>Fastest Growth:</span>
+              <strong className="text-amber-400 font-semibold">{ecosystemStats.maxGrowth ? `+${ecosystemStats.maxGrowth}%` : 'N/A'}</strong>
+              <span className="text-[11px] text-[#52525B]">({ecosystemStats.topGrowthName})</span>
             </div>
           </div>
 
@@ -487,6 +428,7 @@ export default function LeaderboardPage({
               activePerspective={activePerspective}
               onSelectPerspective={setActivePerspective}
               perspectiveCounts={perspectiveCounts}
+              onOpenMethodology={() => setIsMethodologyOpen(true)}
             />
 
         {/* 2. Sub-Filter: Entity Type & Category Pills Bar */}
@@ -613,7 +555,7 @@ export default function LeaderboardPage({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={SEARCH_PLACEHOLDERS[placeholderIndex]}
+              placeholder={SEARCH_PLACEHOLDER}
               className="w-full rounded-xl border border-[#232326] bg-[#131316] pl-9 pr-8 text-[13px] text-white placeholder:text-[#71717A] hover:border-[#3a3a40] focus:border-[#6E56CF] focus:ring-2 focus:ring-[#6E56CF]/30 focus:outline-none transition-all h-9"
             />
             {searchQuery && (

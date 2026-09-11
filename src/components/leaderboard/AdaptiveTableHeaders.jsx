@@ -61,7 +61,10 @@ export default function AdaptiveTableHeaders({ category = 'All' }) {
 
   return (
     <tr className="bg-[#16161c] border-b border-[#232326] text-[#71717A] uppercase font-semibold text-[11px] tracking-wider">
-      <th className="p-3.5 w-14 text-center">Rank</th>
+      <th className="p-3.5 w-20 text-center">
+        <div>Rank</div>
+        <div className="text-[9px] text-[#71717A] lowercase font-normal tracking-normal">ai orbit score</div>
+      </th>
       <th className="p-3.5">Model / Tool</th>
       <th className="p-3.5">{metric1Label}</th>
       <th className="p-3.5">{metric2Label}</th>

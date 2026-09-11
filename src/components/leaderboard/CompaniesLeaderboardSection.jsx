@@ -117,6 +117,19 @@ export default function CompaniesLeaderboardSection() {
 
   return (
     <div className="space-y-6">
+      {/* Contextual Intelligence Header */}
+      <div className="border-l-2 border-[#6E56CF] pl-3.5 py-1">
+        <div className="flex items-center gap-2">
+          <Building2 size={16} className="text-[#A78BFA]" />
+          <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+            AI Company Intelligence
+          </h2>
+        </div>
+        <p className="text-xs sm:text-[13px] text-[#A1A1AA] mt-0.5 max-w-2xl font-normal leading-relaxed">
+          Track the enterprises shaping the AI economy — funding, valuation, growth, and market signals.
+        </p>
+      </div>
+
       {/* 1. Perspective Switcher Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
         {COMPANY_PERSPECTIVES.map((tab) => {

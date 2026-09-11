@@ -45,6 +45,17 @@ export default function MethodologyDrawer({ isOpen, onClose }) {
           </button>
         </div>
 
+        {/* Section 0: Overall Ranking Methodology */}
+        <div className="py-5 border-b border-[#1F1F24] space-y-2.5">
+          <div className="flex items-center gap-2 text-sm font-bold text-white">
+            <Scale size={16} className="text-[#A78BFA]" />
+            <h3>Overall Rank: AI Orbit Ranking Methodology</h3>
+          </div>
+          <p className="text-xs text-[#A1A1AA] leading-relaxed">
+            Overall Rank is calculated using the <strong className="text-white">AI Orbit ranking methodology</strong>, a composite framework balancing Chatbot Arena pairwise human preferences, verified standardized benchmarks, token efficiency, and adoption signals. No single sponsor or self-reported score dictates standing.
+          </p>
+        </div>
+
         {/* Section 1: AI Models & Tools Methodology */}
         <div className="py-5 border-b border-[#1F1F24] space-y-3">
           <div className="flex items-center gap-2 text-sm font-bold text-white">
@@ -131,14 +142,16 @@ export default function MethodologyDrawer({ isOpen, onClose }) {
 
         {/* Section 3: Data Freshness & Open Standards */}
         <div className="py-5 border-b border-[#1F1F24] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-[#A1A1AA]">
-            <Clock size={14} className="text-[#6E56CF]" />
-            <span>Benchmark indices updated: <strong className="text-white">Hourly</strong></span>
+          <div className="flex items-center gap-2 text-[#A1A1AA] flex-wrap">
+            <Clock size={14} className="text-[#6E56CF] shrink-0" />
+            <span>Benchmark indices: <strong className="text-white">Updated periodically</strong></span>
             <span className="opacity-40">•</span>
-            <span>Company venture data updated: <strong className="text-white">March 2026</strong></span>
+            <span>Company venture data: <strong className="text-white">As of each company's last disclosed round</strong></span>
+            <span className="opacity-40">•</span>
+            <span className="text-[11px] text-[#71717A] italic">Some figures are estimates</span>
           </div>
 
-          <span className="text-[11px] font-mono text-[#71717A]">
+          <span className="text-[11px] font-mono text-[#71717A] shrink-0">
             Independent &amp; Vendor Neutral
           </span>
         </div>
