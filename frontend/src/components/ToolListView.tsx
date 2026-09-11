@@ -113,8 +113,16 @@ function isTruthy(...vals: Array<unknown>): boolean {
 
 function FilterIcon({ active }: { active?: boolean }) {
   return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-      className={active ? "text-[#6E56CF]" : "text-[#A1A1AA] hover:text-white"}>
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      aria-hidden="true"
+      className={active ? "text-[#6E56CF]" : "text-[#A1A1AA] hover:text-white"}
+    >
       <line x1="4" y1="6" x2="20" y2="6" />
       <line x1="8" y1="12" x2="16" y2="12" />
       <line x1="11" y1="18" x2="13" y2="18" />
@@ -123,8 +131,8 @@ function FilterIcon({ active }: { active?: boolean }) {
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
-  if (!active) return <span className="text-[#3a3a3a] text-[10px]">↕</span>;
-  return <span className="text-[#6E56CF] text-[10px]">{dir === "desc" ? "↓" : "↑"}</span>;
+  if (!active) return <span className="text-[#A1A1AA] text-[10px]" aria-hidden="true">↕</span>;
+  return <span className="text-[#6E56CF] text-[10px]" aria-hidden="true">{dir === "desc" ? "↓" : "↑"}</span>;
 }
 
 function LogoCell({ name, logoUrl }: { name?: string; logoUrl?: string | null }) {
@@ -352,13 +360,13 @@ function ToolRow({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="text-[#71717A] hover:text-white transition-colors shrink-0 hidden md:inline-flex"
+                className="text-[#A1A1AA] hover:text-white transition-colors shrink-0 hidden md:inline-flex"
                 aria-label={`Visit ${tool.name} website`}
               >
-                <ExternalLink size={14} />
+                <ExternalLink size={14} aria-hidden="true" />
               </a>
             ) : (
-              <span className="text-[#71717A] opacity-30 shrink-0 hidden md:inline-flex"><ExternalLink size={14} /></span>
+              <span className="text-[#A1A1AA] opacity-30 shrink-0 hidden md:inline-flex"><ExternalLink size={14} aria-hidden="true" /></span>
             )}
           </div>
           <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug whitespace-nowrap overflow-hidden max-w-[420px]">
@@ -388,13 +396,13 @@ function ToolRow({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="text-[#71717A] hover:text-white transition-colors shrink-0 hidden md:inline-flex"
+                    className="text-[#A1A1AA] hover:text-white transition-colors shrink-0 hidden md:inline-flex"
                     aria-label={`Visit ${tool.name} website`}
                   >
-                    <ExternalLink size={13} />
+                    <ExternalLink size={13} aria-hidden="true" />
                   </a>
                 ) : (
-                  <span className="text-[#71717A] opacity-30 shrink-0 hidden md:inline-flex"><ExternalLink size={13} /></span>
+                  <span className="text-[#A1A1AA] opacity-30 shrink-0 hidden md:inline-flex"><ExternalLink size={13} aria-hidden="true" /></span>
                 )}
               </div>
             </div>
@@ -426,7 +434,7 @@ function ToolRow({
             {tool.categories[0].category.name}
           </span>
         ) : (
-          <span className="text-[11px] text-[#71717A] font-mono">—</span>
+          <span className="text-[11px] text-[#A1A1AA] font-mono">—</span>
         )}
       </div>
 
@@ -467,7 +475,7 @@ function ToolRow({
               )}
             </div>
           ) : (
-            <span className="text-[11px] text-[#71717A] font-mono">—</span>
+            <span className="text-[11px] text-[#A1A1AA] font-mono">—</span>
           )}
         </div>
       )}
@@ -652,7 +660,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
   if (tools.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-[#232326] bg-[#131316]/40 py-16 text-center">
-        <SearchX size={28} className="text-[#71717A]" />
+        <SearchX size={28} aria-hidden="true" className="text-[#A1A1AA]" />
         <div>
           <p className="text-sm font-medium text-white">No tools match your filters</p>
           <p className="mt-1 text-xs text-[#A1A1AA]">Try a different search term or clear a filter.</p>
@@ -664,34 +672,48 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
   const dropdownHTML = (
     <>
       <button
+        type="button"
         onClick={() => handleSort("name")}
-        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1"
+        aria-label={sortKey === "name" ? `Sort tools by name ${sortDir === "asc" ? "descending" : "ascending"}` : "Sort tools by name"}
+        aria-pressed={sortKey === "name"}
+        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#A1A1AA] hover:text-white transition-colors flex items-center gap-1"
       >
         TOOL <SortIcon active={sortKey === "name"} dir={sortDir} />
       </button>
-      <button onClick={() => setOpenDropdown(openDropdown === "name" ? null : "name")} className="hover:text-white transition-colors">
+      <button
+        type="button"
+        onClick={() => setOpenDropdown(openDropdown === "name" ? null : "name")}
+        aria-label="Filter tools by name"
+        aria-expanded={openDropdown === "name"}
+        className="hover:text-white transition-colors"
+      >
         <FilterIcon active={nameSearch.length > 0} />
       </button>
       {openDropdown === "name" && (
         <div className="absolute top-8 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-3 min-w-[210px]">
+          <label htmlFor="tool-name-filter" className="sr-only">Filter tools by name</label>
           <input
+            id="tool-name-filter"
             autoFocus
             type="text"
-            placeholder="Filter by name..."
+            name="tool-name"
+            placeholder="Filter by name…"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { setNameSearch(nameInput); setOpenDropdown(null); } }}
-            className="w-full bg-[#131316] border border-[#232326] text-white text-xs rounded px-2 py-1.5 placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF]"
+            className="w-full bg-[#131316] border border-[#232326] text-white text-xs rounded px-2 py-1.5 placeholder:text-[#A1A1AA] focus:outline-none focus:border-[#6E56CF]"
           />
           <div className="flex gap-2 mt-2">
             <button
+              type="button"
               onClick={() => { setNameSearch(nameInput); setOpenDropdown(null); }}
               className="flex-1 text-[12px] bg-[#6E56CF] hover:bg-[#7C66DF] text-white py-1.5 rounded transition-colors font-semibold"
             >Apply</button>
             {nameSearch && (
               <button
+                type="button"
                 onClick={() => { setNameSearch(""); setNameInput(""); setOpenDropdown(null); }}
-                className="flex-1 text-[12px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors"
+                className="flex-1 text-[12px] border border-[#232326] text-[#A1A1AA] hover:text-white py-1.5 rounded transition-colors"
               >Clear</button>
             )}
           </div>
@@ -702,6 +724,7 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
 
   return (
     <>
+      <h2 id="tool-directory-heading" className="sr-only">AI directory</h2>
       <div
         ref={dropdownRef}
         className="overflow-x-auto touch-scroll-x rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
@@ -724,43 +747,46 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
                   <div className="relative flex items-center gap-2 sticky left-[60px] md:static z-40 bg-[#131316] md:bg-transparent shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none h-full pr-2 md:pr-0 before:content-[''] before:absolute before:inset-y-0 before:-left-[12px] before:w-[12px] before:bg-[#131316] md:before:hidden">
                     {dropdownHTML}
                   </div>
-                  <span className="md:hidden text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pr-2">DESCRIPTION</span>
+                  <span className="md:hidden text-[9.5px] font-mono font-semibold tracking-wider text-[#A1A1AA] pr-2">DESCRIPTION</span>
                 </>
               )}
 
               {/* TASK */}
-              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pl-4 md:pl-0">TASK</span>
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#A1A1AA] pl-4 md:pl-0">TASK</span>
 
               {/* PRICING */}
-              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">PRICING</span>
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#A1A1AA]">PRICING</span>
 
               {/* API */}
-              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">API</span>
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#A1A1AA]">API</span>
 
               {/* OPEN-SOURCE */}
-              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">OPEN-SOURCE</span>
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#A1A1AA]">OPEN-SOURCE</span>
 
               {/* COMPATIBILITY (Hidden in Mixed Feed) */}
               {!isMixedFeed && (
-                <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">COMPATIBILITY</span>
+                <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#A1A1AA]">COMPATIBILITY</span>
               )}
 
               {/* RELEASED */}
               <button
+                type="button"
                 onClick={() => handleSort("released")}
-                className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1"
+                aria-label={sortKey === "released" ? `Sort tools by release date ${sortDir === "asc" ? "descending" : "ascending"}` : "Sort tools by release date"}
+                aria-pressed={sortKey === "released"}
+                className="text-[9.5px] font-mono font-semibold tracking-wider text-[#A1A1AA] hover:text-white transition-colors flex items-center gap-1"
               >
                 RELEASED <SortIcon active={sortKey === "released"} dir={sortDir} />
               </button>
 
               {/* SHARE */}
-              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">SHARE</span>
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#A1A1AA]">SHARE</span>
 
               {/* BOOKMARK */}
-              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">SAVE</span>
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#A1A1AA]">SAVE</span>
 
               {/* COMPARE */}
-              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] pr-4">COMPARE</span>
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#A1A1AA] pr-4">COMPARE</span>
             </div>
           </div>
 
@@ -794,12 +820,12 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
                     {t ? (
                       <>
                         <span className="truncate text-[11px] sm:text-[12px] font-semibold text-white">{t.name}</span>
-                        <button type="button" onClick={() => toggleCompare(t)} className="ml-auto shrink-0 text-[#71717A] hover:text-white p-0.5" aria-label={`Remove ${t.name}`}>
-                          <X size={12} />
+                        <button type="button" onClick={() => toggleCompare(t)} className="ml-auto shrink-0 text-[#A1A1AA] hover:text-white p-0.5" aria-label={`Remove ${t.name}`}>
+                          <X size={12} aria-hidden="true" />
                         </button>
                       </>
                     ) : (
-                      <span className="text-[10px] sm:text-[11px] text-[#71717A] truncate">Select another tool…</span>
+                      <span className="text-[10px] sm:text-[11px] text-[#A1A1AA] truncate">Select another tool…</span>
                     )}
                   </div>
                 );
@@ -809,14 +835,15 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
               type="button"
               onClick={goToCompare}
               disabled={compareSet.length !== MAX_COMPARE}
-              className={`shrink-0 inline-flex items-center gap-1 sm:gap-1.5 rounded-lg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold transition-colors ${compareSet.length === MAX_COMPARE ? "text-white shadow-md shadow-[#6E56CF]/30" : "cursor-not-allowed bg-[#18181C] text-[#4a4a4d]"
+              aria-label="Compare selected tools"
+              className={`shrink-0 inline-flex items-center gap-1 sm:gap-1.5 rounded-lg px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold transition-colors ${compareSet.length === MAX_COMPARE ? "text-white shadow-md shadow-[#6E56CF]/30" : "cursor-not-allowed bg-[#18181C] text-[#A1A1AA]"
                 }`}
               style={compareSet.length === MAX_COMPARE ? { backgroundColor: "#6E56CF" } : undefined}
             >
-              <GitCompare size={13} /> <span className="hidden 2xs:inline">Compare</span>
+              <GitCompare size={13} aria-hidden="true" /> <span className="hidden 2xs:inline">Compare</span>
             </button>
-            <button type="button" onClick={() => setCompareSet([])} className="shrink-0 text-[#71717A] hover:text-white p-1" aria-label="Clear compare">
-              <X size={16} />
+            <button type="button" onClick={() => setCompareSet([])} className="shrink-0 text-[#A1A1AA] hover:text-white p-1" aria-label="Clear compare">
+              <X size={16} aria-hidden="true" />
             </button>
           </div>
         </div>

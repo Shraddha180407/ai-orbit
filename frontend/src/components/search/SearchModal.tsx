@@ -9,6 +9,15 @@ import { useRecentSearches } from "@/hooks/useRecentSearches";
 import { ALL_ENTITY_TYPES, ENTITY_META } from "@/lib/entityMeta";
 import { EntityType } from "@/types/entities";
 
+const FOCUSABLE_SELECTOR = [
+  "button:not([disabled])",
+  "a[href]",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
 interface SearchModalProps {
   open: boolean;
   onClose: () => void;
@@ -19,6 +28,9 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const [value, setValue] = useState("");
   const [activeType, setActiveType] = useState<EntityType | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const wasOpenRef = useRef(false);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
 
   // Reset the field each time the modal transitions from closed to open.
   // This is the "adjusting state when a prop changes" pattern React docs
@@ -38,17 +50,30 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 
   useEffect(() => {
     if (open) {
+      if (!wasOpenRef.current) {
+        previousActiveElementRef.current =
+          document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        wasOpenRef.current = true;
+      }
+
       // Focus after the panel opens (a real external-system side effect).
       const id = requestAnimationFrame(() => inputRef.current?.focus());
       return () => cancelAnimationFrame(id);
+    }
+
+    if (!open && wasOpenRef.current) {
+      wasOpenRef.current = false;
+      previousActiveElementRef.current?.focus();
+      previousActiveElementRef.current = null;
     }
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 
@@ -60,6 +85,28 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [open, onClose]);
+
+  function handleDialogKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== "Tab") return;
+
+    const focusable = panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+    if (!focusable?.length) {
+      e.preventDefault();
+      panelRef.current?.focus();
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
 
   if (!open) return null;
 
@@ -84,18 +131,29 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
     <div className="fixed inset-0 z-50 flex justify-center px-3 sm:px-4 pt-4 sm:pt-[14vh]">
       {/* Backdrop */}
       <button
+        type="button"
+        tabIndex={-1}
         aria-label="Close search"
         onClick={onClose}
         className="fixed inset-0 bg-black/70 backdrop-blur-sm"
       />
 
       {/* Panel */}
-      <div className="relative z-10 flex h-fit max-h-[88vh] sm:max-h-[76vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-search-border bg-search-bg shadow-2xl shadow-black/20">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="search-dialog-title"
+        onKeyDown={handleDialogKeyDown}
+        className="relative z-10 flex h-fit max-h-[88vh] sm:max-h-[76vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-search-border bg-search-bg shadow-2xl shadow-black/20"
+      >
+        <h2 id="search-dialog-title" className="sr-only">Search AI Orbit</h2>
         {/* Search field row */}
         <div className="flex items-center gap-2.5 border-b border-search-border px-4 py-3.5">
           <Search size={18} className="shrink-0 text-search-text-tertiary" />
           <input
             ref={inputRef}
+            aria-label="Search"
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => {

@@ -477,7 +477,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
           className="relative z-10 flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md border transition-colors"
           style={{ backgroundColor: `${card.color}1a`, borderColor: `${card.color}40` }}
         >
-          <Icon size={10} strokeWidth={1.75} style={{ color: card.color }} />
+          <Icon size={10} strokeWidth={1.75} aria-hidden="true" style={{ color: card.color }} />
         </div>
         <span className="relative z-10 text-[9px] sm:text-[10.5px] font-bold tracking-tight text-white whitespace-nowrap">
           {card.name}
@@ -519,9 +519,11 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
               className="relative w-full rounded-xl border border-[#232326]/70 bg-[#111113] h-[38px] sm:h-[42px] flex items-center px-3.5 sm:px-4 pr-[4.5rem] transition-colors duration-150"
               style={{ borderColor: undefined }}
             >
-              <Search size={13} className="mr-2 sm:mr-2.5 text-[#71717A] shrink-0" />
+              <Search size={13} aria-hidden="true" className="mr-2 sm:mr-2.5 text-[#A1A1AA] shrink-0" />
+              <label htmlFor="global-search" className="sr-only">Search the AI ecosystem</label>
               <input
                 ref={searchInputRef}
+                id="global-search"
                 type="text"
                 name="q"
                 autoComplete="off"
@@ -529,10 +531,10 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                 onChange={(e) => setSearchValue(e.target.value)}
                 placeholder="Search AI tools, models, companies…"
                 onFocus={() => setSearchOpen(true)}
-                className="w-full bg-transparent text-[12px] sm:text-[13px] text-white placeholder:text-[#71717A] focus:outline-none"
+                className="w-full bg-transparent text-[12px] sm:text-[13px] text-white placeholder:text-[#A1A1AA] focus:outline-none"
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <kbd className="hidden sm:inline-flex h-6 select-none items-center gap-0.5 rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 font-mono text-[10px] text-[#71717A] pointer-events-none">
+                <kbd className="hidden sm:inline-flex h-6 select-none items-center gap-0.5 rounded-md border border-[#232326]/60 bg-[#18181C] px-1.5 font-mono text-[10px] text-[#A1A1AA] pointer-events-none">
                   <span>⌘</span>K
                 </kbd>
               </div>
@@ -656,7 +658,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border"
                               style={{ backgroundColor: `${link.color}1a`, borderColor: `${link.color}40` }}
                             >
-                              <Icon size={14} style={{ color: link.color }} />
+                              <Icon size={14} aria-hidden="true" style={{ color: link.color }} />
                             </span>
                             {link.label}
                           </Link>
@@ -678,7 +680,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border"
                               style={{ backgroundColor: `${card.color}1a`, borderColor: `${card.color}40` }}
                             >
-                              <Icon size={14} style={{ color: card.color }} />
+                              <Icon size={14} aria-hidden="true" style={{ color: card.color }} />
                             </span>
                             {card.name}
                           </Link>

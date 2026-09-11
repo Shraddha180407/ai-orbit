@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useMemo, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { AgentListView } from "@/components/AgentListView";
@@ -12,23 +12,19 @@ type AgentCategory = {
   slug: string;
 };
 
+type AgentsResponse = {
+  tools: any[];
+  totalPages: number;
+};
+
 export function AgentsClient() {
   const searchParams = useSearchParams();
-
-  const [currentPage, setCurrentPage] = useState(
-    Number(searchParams.get("page")) || 1
-  );
-
-  const [activeCategory, setActiveCategory] = useState(
-    searchParams.get("category") || ""
-  );
+  const router = useRouter();
+  const activeCategory = searchParams.get("category") || "";
+  const pageParam = Number(searchParams.get("page"));
+  const currentPage = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
 
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-
-  useEffect(() => {
-    setActiveCategory(searchParams.get("category") || "");
-    setCurrentPage(Number(searchParams.get("page")) || 1);
-  }, [searchParams]);
 
   const { data: categoriesData } = useQuery<AgentCategory[]>({
     queryKey: ["agent-categories"],
@@ -46,7 +42,7 @@ export function AgentsClient() {
   const pricing = searchParams.get("pricing") || undefined;
   const sort = searchParams.get("sort") || undefined;
 
-  const { data, isLoading, isPlaceholderData } = useQuery({
+  const { data, isError, isLoading, isPlaceholderData } = useQuery<AgentsResponse, Error>({
     queryKey: [
       "agents",
       activeCategory,
@@ -83,10 +79,7 @@ export function AgentsClient() {
       );
 
       if (!res.ok) {
-        return {
-          tools: [],
-          totalPages: 1,
-        };
+        throw new Error(`Failed to load agents (${res.status})`);
       }
 
       return res.json();
@@ -111,9 +104,6 @@ export function AgentsClient() {
   );
 
   const handleCategoryChange = (slug: string) => {
-    setActiveCategory(slug);
-    setCurrentPage(1);
-
     const params = new URLSearchParams(searchParams.toString());
 
     if (slug) {
@@ -126,19 +116,21 @@ export function AgentsClient() {
 
     const query = params.toString();
 
-    window.history.pushState(
-      null,
-      "",
-      query ? `/agents?${query}` : "/agents"
-    );
-
-    window.dispatchEvent(new PopStateEvent("popstate"));
+    router.push(query ? `/agents?${query}` : "/agents");
   };
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
 
-    setCurrentPage(page);
+    const params = new URLSearchParams(searchParams.toString());
+    if (page === 1) {
+      params.delete("page");
+    } else {
+      params.set("page", String(page));
+    }
+
+    const query = params.toString();
+    router.push(query ? `/agents?${query}` : "/agents");
 
     document
       .getElementById("agents")
@@ -175,10 +167,19 @@ export function AgentsClient() {
           })}
         </div>
 
-        <AgentListView
-          agents={agents}
-          loading={isLoading || isPlaceholderData}
-        />
+        {isError ? (
+          <div
+            role="alert"
+            className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-12 text-center text-sm text-red-200"
+          >
+            Unable to load agents. Please try again.
+          </div>
+        ) : (
+          <AgentListView
+            agents={agents}
+            loading={isLoading || isPlaceholderData}
+          />
+        )}
 
         {totalPages > 1 && (
           <div className="mt-8 flex items-center justify-center gap-2 pt-4 border-t border-[#232326]">

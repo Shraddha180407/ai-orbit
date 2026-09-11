@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import Bookmark from 'lucide-react/dist/esm/icons/bookmark';
 import { PricingBadge } from "@/components/PricingBadge";
 import { CategoryChip } from "@/components/CategoryChip";
@@ -20,13 +21,17 @@ export function ToolCard({
   onEdit?: (c: ToolCardData) => void;
   onDelete?: (id: string) => void;
 }) {
-  const primaryCategory = tool.categories[0]?.category;
+  const categories = tool.categories ?? [];
+  const primaryCategory = categories[0]?.category;
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   return (
     <div className="relative">
       {isAdmin && (
         <div className="absolute right-2 top-2 z-10 flex gap-1">
           <button
+            type="button"
+            aria-label="Edit tool"
             onClick={(e) => {
               e.preventDefault();
               onEdit?.(tool);
@@ -36,11 +41,11 @@ export function ToolCard({
             <Edit2 size={13} />
           </button>
           <button
+            type="button"
+            aria-label="Delete tool"
             onClick={(e) => {
               e.preventDefault();
-              if (confirm('Are you sure you want to delete this tool?')) {
-                onDelete?.(tool.id);
-              }
+              setDeleteDialogOpen(true);
             }}
             className="flex h-7 w-7 items-center justify-center rounded-md bg-surface border border-border text-foreground hover:text-red-500 transition-colors shadow-sm"
           >
@@ -48,9 +53,46 @@ export function ToolCard({
           </button>
         </div>
       )}
+      {deleteDialogOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`delete-tool-title-${tool.id}`}
+          className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+        >
+          <div className="w-full max-w-xs rounded-lg border border-border bg-surface p-4 shadow-2xl">
+            <h2 id={`delete-tool-title-${tool.id}`} className="text-sm font-semibold text-foreground">
+              Delete {tool.name}?
+            </h2>
+            <p className="mt-1.5 text-xs text-foreground-muted">
+              This action cannot be undone.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteDialogOpen(false)}
+                className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-background"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                aria-label="Confirm delete"
+                onClick={() => {
+                  setDeleteDialogOpen(false);
+                  onDelete?.(tool.id);
+                }}
+                className="rounded-md bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-400"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <Link
         href={`/tools/${tool.slug}`}
-        prefetch={true}
+        prefetch={false}
         onMouseEnter={() => prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`)}
         onTouchStart={() => prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`)}
         onFocus={() => prefetchUrl(`${API_URL}/api/v1/tools/${tool.slug}`)}
@@ -102,9 +144,9 @@ export function ToolCard({
       </div>
 
       {/* Column 3: Secondary Categories / Tags */}
-      {tool.categories.length > 1 && (
+      {categories.length > 1 && (
         <div className="flex flex-wrap items-center sm:justify-center gap-1.5 w-full sm:w-auto">
-          {tool.categories.slice(1, 3).map(({ category }) => (
+          {categories.slice(1, 3).map(({ category }) => (
             <CategoryChip key={category.slug} label={category.name} />
           ))}
         </div>

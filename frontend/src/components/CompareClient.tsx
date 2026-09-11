@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left';
 import Star from 'lucide-react/dist/esm/icons/star';
 import ExternalLink from 'lucide-react/dist/esm/icons/external-link';
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { PricingBadge } from "@/components/PricingBadge";
 import { API_URL } from "@/lib/api";
 import type { ToolDetailData } from "@/lib/types";
@@ -28,7 +26,11 @@ function formatPrice(tool: ToolDetailData): string {
 export function CompareClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const slugs = (searchParams.get("slugs") || "").split(",").filter(Boolean).slice(0, 2);
+  const slugsParam = searchParams.get("slugs") || "";
+  const slugs = useMemo(
+    () => slugsParam.split(",").filter(Boolean).slice(0, 2),
+    [slugsParam]
+  );
 
   const [tools, setTools] = useState<(ToolDetailData | null)[]>([null, null]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,36 +38,53 @@ export function CompareClient() {
 
   useEffect(() => {
     if (slugs.length < 2) {
+      setTools([null, null]);
       setError("Pick 2 tools from the list to compare.");
       setIsLoading(false);
       return;
     }
 
     let cancelled = false;
+    const controller = new AbortController();
     setIsLoading(true);
     setError(null);
 
-    Promise.all(
-      slugs.map(async (slug) => {
-        const res = await fetch(`${API_URL}/api/v1/tools/${slug}`);
-        if (!res.ok) return null;
-        const data = await res.json();
-        return (data?.tool ?? null) as ToolDetailData | null;
-      })
-    ).then((results) => {
-      if (cancelled) return;
-      if (results.some((r) => r === null)) {
-        setError("One of these tools couldn't be found. Try selecting again.");
+    async function loadTools() {
+      try {
+        const results = await Promise.all(
+          slugs.map(async (slug) => {
+            const res = await fetch(`${API_URL}/api/v1/tools/${slug}`, {
+              signal: controller.signal,
+            });
+            if (!res.ok) return null;
+            const data = await res.json();
+            return (data?.tool ?? null) as ToolDetailData | null;
+          })
+        );
+
+        if (cancelled) return;
+        if (results.some((r) => r === null)) {
+          setError("One of these tools couldn't be found. Try selecting again.");
+        }
+        setTools(results);
+      } catch {
+        if (cancelled || controller.signal.aborted) return;
+        setTools([null, null]);
+        setError("Unable to load comparison.");
+      } finally {
+        if (!cancelled && !controller.signal.aborted) {
+          setIsLoading(false);
+        }
       }
-      setTools(results);
-      setIsLoading(false);
-    });
+    }
+
+    void loadTools();
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams.toString()]);
+  }, [slugs]);
 
   const rows: { label: string; render: (t: ToolDetailData) => React.ReactNode }[] = [
     {

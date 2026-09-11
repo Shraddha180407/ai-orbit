@@ -51,7 +51,7 @@ describe("useUser", () => {
 
     expect(result.current.user).toBeNull();
     expect(result.current.isAuthenticated).toBe(false);
-    expect(result.current.error).toBeDefined();
+    expect(result.current.error).toBeNull();
   });
 
   it("returns null user on network error", async () => {
@@ -65,6 +65,7 @@ describe("useUser", () => {
 
     expect(result.current.user).toBeNull();
     expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.error).toBeNull();
   });
 
   it("provides an update function", async () => {

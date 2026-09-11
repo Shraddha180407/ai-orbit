@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { ToolCard } from "@/components/ToolCard";
 import type { ToolCardData } from "@/lib/types";
 
@@ -78,6 +78,17 @@ describe("ToolCard", () => {
     expect(screen.getByText("Productivity")).toBeInTheDocument();
   });
 
+  it("renders when categories are missing", () => {
+    const toolWithoutCategories = {
+      ...mockTool,
+      categories: undefined,
+    } as unknown as ToolCardData;
+
+    render(<ToolCard tool={toolWithoutCategories} />);
+
+    expect(screen.getByText("Test Tool")).toBeInTheDocument();
+  });
+
   it("renders rating and review count", () => {
     render(<ToolCard tool={mockTool} />);
     expect(screen.getByText("4.7")).toBeInTheDocument();
@@ -95,8 +106,22 @@ describe("ToolCard", () => {
     render(
       <ToolCard tool={mockTool} isAdmin onEdit={onEdit} onDelete={onDelete} />
     );
-    const buttons = screen.getAllByRole("button");
-    expect(buttons).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Edit tool" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete tool" })).toBeInTheDocument();
+  });
+
+  it("opens an in-app delete confirmation before deleting", () => {
+    const onDelete = vi.fn();
+    render(<ToolCard tool={mockTool} isAdmin onDelete={onDelete} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete tool" }));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(onDelete).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Confirm delete" }));
+
+    expect(onDelete).toHaveBeenCalledWith("t1");
   });
 
   it("does not render admin buttons when not isAdmin", () => {

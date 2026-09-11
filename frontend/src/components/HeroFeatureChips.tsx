@@ -142,6 +142,7 @@ export function HeroFeatureChips() {
               >
                 <Icon
                   strokeWidth={2.25}
+                  aria-hidden="true"
                   className="h-1.5 w-1.5 sm:h-2 sm:w-2"
                   style={{
                     color: filled ? "#000000" : f.color,

@@ -131,18 +131,19 @@ export function UnifiedFilterDropdown({ children }: { children: React.ReactNode 
           onMouseLeave={handleMouseLeave}
         >
           <div className="w-full bg-[#111113] rounded-xl border border-[#232326] p-4 flex flex-col gap-4 shadow-2xl backdrop-blur-md">
-            <h3 className="text-[10px] font-bold tracking-widest text-[#71717A] uppercase">Show</h3>
+            <p className="text-[10px] font-bold tracking-widest text-[#A1A1AA] uppercase">Show</p>
             {FILTER_OPTIONS.map((option) => {
               const isActive = activeFilters.includes(option.id);
               return (
                 <div key={option.id} className="flex items-center justify-between">
                   <span className="text-[13px] font-semibold text-white">{option.label}</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-[11px] font-mono text-[#71717A]">{option.count}</span>
+                    <span className="text-[11px] font-mono text-[#A1A1AA]">{option.count}</span>
                     <button
                       type="button"
                       onClick={(e) => toggleFilter(option.id, e)}
                       aria-label={`Toggle ${option.label}`}
+                      aria-pressed={isActive}
                       className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none cursor-pointer ${
                         isActive ? option.color : 'bg-[#232326]'
                       }`}

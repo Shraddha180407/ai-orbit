@@ -127,7 +127,7 @@ export function Pagination({
           {pageNumbers.map((n, i) => {
             if (n === "ellipsis") {
               return (
-                <span key={`e-${i}`} className="px-1 text-xs text-[#71717A] select-none font-mono">
+                <span key={`e-${i}`} className="px-1 text-xs text-[#A1A1AA] select-none font-mono" aria-hidden="true">
                   …
                 </span>
               );
@@ -211,7 +211,7 @@ export function Pagination({
               className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#232326] bg-[#0A0A0C] text-[#D4D4D8] hover:text-white hover:border-[#3A3A3E] text-[11px] sm:text-[11.5px] font-medium transition-all cursor-pointer"
             >
               <span>{pageSize} / page</span>
-              <ChevronDown size={11} className={cn("text-[#71717A] transition-transform", isDropdownOpen && "rotate-180")} />
+              <ChevronDown size={11} aria-hidden="true" className={cn("text-[#A1A1AA] transition-transform", isDropdownOpen && "rotate-180")} />
             </button>
 
             {isDropdownOpen && (

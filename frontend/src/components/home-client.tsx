@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { API_URL } from "@/lib/api";
+import { fetchHomeFeed } from "@/lib/home-feed";
 import { GlobalHero } from "@/components/GlobalHero";
 import { ToolListView } from "@/components/ToolListView";
 import { Pagination } from "@/components/Pagination";
@@ -40,17 +40,7 @@ export function HomeClient() {
     isPlaceholderData,
   } = useQuery({
     queryKey,
-    queryFn: async () => {
-      const query = new URLSearchParams();
-      query.set("show", show);
-      query.set("page", String(currentPage));
-      query.set("pageSize", String(pageSize));
-
-      // Hitting the unified feed endpoint
-      const res = await fetch(`${API_URL}/api/v1/feed?${query.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch feed");
-      return res.json();
-    },
+    queryFn: () => fetchHomeFeed({ show, page: currentPage, pageSize }),
     placeholderData: keepPreviousData,
     staleTime: 5 * 60 * 1000,
   });

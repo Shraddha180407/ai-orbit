@@ -121,7 +121,7 @@ export function Header() {
             className="flex md:hidden h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer relative z-20"
             aria-label="Open navigation menu"
           >
-            <Menu size={16} />
+            <Menu size={16} aria-hidden="true" />
           </button>
 
           <Link
@@ -188,7 +188,7 @@ export function Header() {
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
                 aria-label="Close navigation menu"
               >
-                <X size={16} />
+                <X size={16} aria-hidden="true" />
               </button>
             </div>
 
@@ -216,7 +216,7 @@ export function Header() {
 
               {/* Directory quick links */}
               <div className="p-3.5">
-                <p className="text-[10px] font-mono font-bold tracking-widest text-[#71717A] uppercase mb-3 px-1">
+                <p className="text-[10px] font-mono font-bold tracking-widest text-[#A1A1AA] uppercase mb-3 px-1">
                   Explore Ecosystem
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -236,7 +236,7 @@ export function Header() {
                             borderColor: `${dir.color}35`,
                           }}
                         >
-                          <Icon size={12} style={{ color: dir.color }} />
+                          <Icon size={12} aria-hidden="true" style={{ color: dir.color }} />
                         </span>
                         <span className="text-xs font-semibold text-white group-hover:text-white truncate">
                           {dir.name}

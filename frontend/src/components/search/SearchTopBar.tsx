@@ -19,9 +19,12 @@ export function SearchTopBar() {
     <>
       {/* Red banner — TAAFT's persistent "join for free" strip (static, no motion) */}
       <div className="bg-search-highlight py-1.5 text-center">
-        <span className="px-6 text-xs font-semibold tracking-wide text-white sm:text-sm">
+        <Link
+          href="/auth/signup"
+          className="inline-block px-6 text-xs font-semibold tracking-wide text-white hover:underline sm:text-sm"
+        >
           Click here to join for free!
-        </span>
+        </Link>
       </div>
 
       <header className="sticky top-0 z-40 border-b border-search-border bg-search-bg">
