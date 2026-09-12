@@ -346,11 +346,10 @@ print(response.choices[0].message.content)`;
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-6">
           {/* Left 7 Cols: Benchmarks & Capabilities */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Benchmark Scores with Visual Bars (Elo has no arbitrary progress bar) */}
+            {/* EVALUATED BENCHMARK TELEMETRY — styled to match design reference */}
             <div className="p-6 rounded-2xl border border-[#232326] bg-[#111115]">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Trophy size={16} className="text-[#6E56CF]" />
-                Evaluated Benchmark Telemetry
+              <h3 className="text-sm font-bold text-[#A78BFA] uppercase tracking-widest mb-5 flex items-center gap-2">
+                🏆 Evaluated Benchmark Telemetry
               </h3>
               <div className="space-y-3">
                 {(model.benchmarks || []).map((bm, i) => {
@@ -359,23 +358,29 @@ print(response.choices[0].message.content)`;
                   const barPct = pctMatch ? Math.min(parseFloat(pctMatch[1]), 100) : null;
 
                   return (
-                    <div key={i} className="p-3.5 rounded-xl bg-[#16161c] border border-[#232326] space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-semibold text-xs text-white block">{bm.name}</span>
-                          <span className="text-[11px] text-[#A78BFA] font-medium">{bm.rank}</span>
+                    <div key={i} className="p-4 rounded-xl bg-[#16161c] border border-[#232326]">
+                      {/* Top row: name+rank left, score right */}
+                      <div className="flex items-start justify-between gap-4 mb-3">
+                        <div className="min-w-0">
+                          <span className="font-bold text-sm text-white block leading-tight">{bm.name}</span>
+                          <span className="text-xs text-[#7C6FCD] font-semibold mt-0.5 block">{bm.rank}</span>
                         </div>
-                        <div className="text-right">
-                          <span className="text-base font-bold font-mono text-white block">{bm.score}</span>
+                        <div className="text-right shrink-0">
+                          <span className="text-2xl font-bold font-mono text-white tracking-tight leading-none block">
+                            {bm.score}
+                          </span>
                           {isElo && (
-                            <span className="text-[10.5px] text-[#71717A] font-mono block">#{model.rank} of 133 tracked</span>
+                            <span className="text-[11px] text-[#52525B] font-mono block mt-0.5">
+                              #{model.rank} of 133 tracked
+                            </span>
                           )}
                         </div>
                       </div>
+                      {/* Progress bar — only for percentage scores */}
                       {barPct !== null && (
-                        <div className="h-1 rounded-full bg-[#232328] overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-[#6E56CF] to-[#A78BFA] rounded-full transition-all duration-700" 
+                        <div className="h-[5px] rounded-full bg-[#1E1E24] overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-[#6E56CF] to-[#9B8AF0] transition-all duration-700"
                             style={{ width: `${barPct}%` }}
                           />
                         </div>
