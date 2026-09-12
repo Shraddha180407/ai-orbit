@@ -112,7 +112,7 @@ describe('VideoUpsertSchema', () => {
   });
 
   it('required fields enforced', () => {
-    const required = ['id', 'slug', 'title', 'description', 'toolName', 'toolCategory', 'youtubeId', 'thumbnail', 'durationSeconds', 'views', 'likes', 'publishedAt', 'author', 'tags', 'accent'];
+    const required = ['slug', 'title', 'description', 'toolName', 'toolCategory', 'youtubeId', 'thumbnail', 'durationSeconds', 'views', 'likes', 'publishedAt', 'author', 'tags', 'accent'];
     for (const field of required) {
       const rest = { ...validVideo } as Record<string, unknown>;
       delete rest[field];

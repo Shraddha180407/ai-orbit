@@ -16,8 +16,8 @@ export const jwtMiddleware = async (c: Context, next: Next) => {
   }
 
   try {
-    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
-    const decoded = await verify(token, jwtSecret!);
+    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET || 'aiorbit-jwt-secret-key-2026';
+    const decoded = await verify(token, jwtSecret);
     c.set('user', decoded);
     await next()
   } catch (_error) {
@@ -33,8 +33,8 @@ export const adminMiddleware = async (c: Context, next: Next) => {
   }
 
   try {
-    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
-    const decodedUser = await verify(token, jwtSecret!) as JwtUserPayload;
+    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET || 'aiorbit-jwt-secret-key-2026';
+    const decodedUser = await verify(token, jwtSecret) as JwtUserPayload;
     c.set('user', decodedUser);
 
     if (!decodedUser || !decodedUser.id) {
@@ -71,8 +71,8 @@ export const optionalJwtMiddleware = async (c: Context, next: Next) => {
   
   if (token) {
     try {
-      const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
-      const decoded = await verify(token, jwtSecret!);
+      const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET || 'aiorbit-jwt-secret-key-2026';
+      const decoded = await verify(token, jwtSecret);
       c.set('user', decoded);
     } catch (_error) {
       // Ignore invalid token

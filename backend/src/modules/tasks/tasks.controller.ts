@@ -1,5 +1,5 @@
 import { Context } from 'hono';
-import { getPrisma } from '../../lib/prisma.js';
+import { getPrisma, getPrismaTx } from '../../lib/prisma.js';
 import { TasksService } from './tasks.service.js';
 import { getCookie } from 'hono/cookie';
 import { verify } from 'hono/jwt';
@@ -35,6 +35,7 @@ export class TasksController {
       prisma = getPrisma(c.env);
       const service = new TasksService(prisma);
       const pageNum = Number.parseInt(parsed.data.page, 10) || 1;
+      const pageSizeNum = Number.parseInt(parsed.data.pageSize, 10) || 100;
       const result = await service.listTasks({
         q: parsed.data.q,
         category: parsed.data.category,
@@ -43,6 +44,7 @@ export class TasksController {
         featuredOnly: parsed.data.featuredOnly === 'true',
         sort: parsed.data.sort,
         page: pageNum,
+        pageSize: pageSizeNum,
         filterMode: parsed.data.filter,
         userId,
       });
@@ -96,8 +98,8 @@ export class TasksController {
     const user = c.get('user') as { id: string } | undefined;
     if (!user?.id) return c.json({ error: 'Unauthorized' }, 401);
 
-    const slug = c.req.param('slug') || '';   // ← fixed
-    prisma = getPrisma(c.env);
+    const slug = c.req.param('slug') || '';
+    prisma = getPrismaTx(c.env); 
     const service = new TasksService(prisma);
     const bookmarked = await service.toggleBookmarkBySlug(slug, user.id);
     if (bookmarked === null) return c.json({ error: 'Task not found' }, 404);
@@ -105,10 +107,6 @@ export class TasksController {
   } catch (error: unknown) {
     logger.error('toggleBookmark error:', error);
     return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
-  } finally {
-    // getPrisma() returns a Worker-isolate-scoped singleton (see lib/prisma.ts) —
-    // it must stay connected across requests, so it is intentionally not
-    // disconnected here.
   }
 }
 
@@ -118,8 +116,8 @@ async toggleLike(c: Context) {
     const user = c.get('user') as { id: string } | undefined;
     if (!user?.id) return c.json({ error: 'Unauthorized' }, 401);
 
-    const slug = c.req.param('slug') || '';   // ← fixed
-    prisma = getPrisma(c.env);
+    const slug = c.req.param('slug') || '';   
+    prisma = getPrismaTx(c.env); 
     const service = new TasksService(prisma);
     const liked = await service.toggleLikeBySlug(slug, user.id);
     if (liked === null) return c.json({ error: 'Task not found' }, 404);
@@ -140,8 +138,8 @@ async toggleSubscribe(c: Context) {
     const user = c.get('user') as { id: string } | undefined;
     if (!user?.id) return c.json({ error: 'Unauthorized' }, 401);
 
-    const slug = c.req.param('slug') || '';   // ← fixed
-    prisma = getPrisma(c.env);
+    const slug = c.req.param('slug') || '';  
+    prisma = getPrismaTx(c.env); 
     const service = new TasksService(prisma);
     const subscribed = await service.toggleSubscribeBySlug(slug, user.id);
     if (subscribed === null) return c.json({ error: 'Task not found' }, 404);

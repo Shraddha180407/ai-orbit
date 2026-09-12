@@ -23,6 +23,28 @@ export type DeviceData = {
   primaryUseCases: string[];
   additionalInfo: string | null;
   buyUrl: string | null;
+  // extended fields
+  longDescription?: string | null;
+  processor?: string | null;
+  storage?: string | null;
+  battery?: string | null;
+  display?: string | null;
+  connectivity?: string[] | null;
+  weight?: string | null;
+  aiModel?: string | null;
+  processingType?: "On-device" | "Cloud" | "Hybrid" | null;
+  bestFor?: string[] | null;
+  qualityScore?: number | null;
+  verdict?: string | null;
+  subcategory?: string | null;
+  platform?: string | null;
+  officialWebsite?: string | null;
+  officialProductUrl?: string | null;
+  regionsSupported?: string[] | null;
+  officialSource?: string | null;
+  secondarySource?: string | null;
+  lastVerifiedDate?: string | null;
+  verificationNotes?: string | null;
 };
 
 export const DEVICES_DATA: DeviceData[] = [
@@ -32,7 +54,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Rabbit r1",
     manufacturer: "Rabbit Inc.",
     manufacturerSlug: "rabbit-inc",
-    category: "AI Pocket Assistant",
+    category: "Wearables",
+    subcategory: "Pocket AI Companion",
     availability: "Available",
     price: "$199.00",
     year: "2024",
@@ -45,8 +68,25 @@ export const DEVICES_DATA: DeviceData[] = [
     formFactor: "Handheld",
     country: "US",
     ram: "4 GB",
-    aiFeatures: ["Large Action Model", "Voice Input", "App Control", "On-device AI"],
-    primaryUseCases: ["Productivity", "Automation", "Assistant"],
+    aiFeatures: [
+  "Large Action Model (LAM)",
+  "Voice Input & Push-to-Talk",
+  "App Control without APIs",
+  "360° Rotating AI Camera",
+  "Natural Language Commands",
+  "Cloud AI Processing",
+  "Music & Spotify Playback",
+  "Real-time Web Search",
+  "Task Execution Agent",
+],
+    primaryUseCases: [
+      "Hands-free task automation",
+      "Voice-first productivity",
+      "App navigation without phone",
+      "Quick information lookup",
+      "Music & media control",
+      "Calendar & reminders",
+    ],
     additionalInfo: "The Rabbit r1 runs on a Large Action Model (LAM) that can learn how to operate apps on behalf of users. It features a 2.88-inch touchscreen, a 360-degree rotating camera, and a push-to-talk button. The device connects to the cloud to process requests.",
     buyUrl: "https://www.rabbit.tech/rabbit-r1",
     images: [
@@ -56,6 +96,19 @@ export const DEVICES_DATA: DeviceData[] = [
       "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=800&q=80",
     ],
     videoUrl: "https://youtu.be/ddTV12hErTc?si=cXNHgrNH-hAIgABT",
+    longDescription: "The Rabbit r1 is a standalone AI pocket device built around a novel Large Action Model (LAM) — an AI architecture trained to operate apps on your behalf rather than just answering questions. Unlike a smartphone assistant, the r1 doesn't need app integrations or APIs; it learns how to use interfaces the way a human would. Designed by Teenage Engineering, the device features a distinctive orange plastic body with a scroll wheel, a 2.88-inch touchscreen, and a 360-degree rotating camera called the 'rabbit eye'. The r1 offloads all heavy computation to Rabbit's cloud, making it lightweight and low-power. It is aimed at users who want a dedicated AI companion without the distraction of a full smartphone.",
+    processor: "MediaTek Helio P35",
+    storage: "128 MB internal",
+    battery: "1000 mAh (~8 hours)",
+    display: "2.88-inch TFT touchscreen",
+    connectivity: ["WiFi 802.11 b/g/n", "Bluetooth 5.0", "4G LTE"],
+    weight: "115g",
+    aiModel: "Large Action Model (LAM) — proprietary by Rabbit Inc.",
+    processingType: "Cloud",
+    bestFor: ["Early Adopters", "Tech Enthusiasts", "Minimalists"],
+        qualityScore: 72,
+    platform: "RabbitOS (Custom Linux)",
+    verdict: "The Rabbit r1 is a genuinely interesting experiment in rethinking how we interact with AI. The LAM concept is novel and the hardware is charming, but real-world performance still lags behind the promise. Worth watching as the platform matures, but not yet a daily driver replacement.",
   },
   {
     id: "cmrkw7rs500755ov373gur8ua",
@@ -63,7 +116,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Humane AI Pin",
     manufacturer: "Humane",
     manufacturerSlug: "humane",
-    category: "Wearable Projector Pin",
+    category: "Wearables",
+    subcategory: "AI Pin",
     availability: "Discontinued",
     price: "$699.00",
     year: "2024",
@@ -80,6 +134,71 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Communication", "Productivity", "Hands-free"],
     additionalInfo: "The Humane AI Pin is a standalone wearable device that clips onto clothing. It uses a laser ink display to project information onto the user's hand. The device runs on its own operating system called Cosmos and includes a Snapdragon processor.",
     buyUrl: null,
+    longDescription: "The Humane AI Pin was an ambitious attempt to build a screenless AI-first wearable. Clipping onto clothing like a brooch, it projected a laser display onto the user's palm and responded to voice and gesture commands. Built on Snapdragon hardware and running Humane's proprietary Cosmos OS, it aimed to replace smartphone interactions entirely. Despite its innovative vision, the product was discontinued in 2024 after struggles with performance, battery life, and a lack of compelling use cases that couldn't be done faster on a phone.",
+    processor: "Snapdragon processor",
+    battery: "~2-3 hours active use",
+    connectivity: ["WiFi", "Bluetooth 5.3", "4G LTE (T-Mobile)"],
+    weight: "34.2g",
+    aiModel: "GPT-4 + proprietary Cosmos AI",
+    processingType: "Cloud",
+    bestFor: ["Minimalists", "Tech Pioneers"],
+    qualityScore: 48,
+    verdict: "A product ahead of its time — or simply ahead of the technology needed to make it viable. The AI Pin was discontinued less than a year after launch, a cautionary tale about shipping bold hardware before the underlying AI is ready.",
+  },
+  // --- Microphones Category Entry ---
+  {
+    id: "mock-plaudi-note-pin",
+    slug: "plaud-note-pin",
+    name: "Plaud NotePin AI Microphone",
+    manufacturer: "Plaud",
+    manufacturerSlug: "plaud",
+    category: "Microphones",
+    subcategory: "Microphones",
+    availability: "Available",
+    price: "$169.00",
+    year: "2024",
+    month: "Sep, 2024",
+    description: "Wearable AI capsule microphone that records, transcribes, and summarizes meetings, calls, and voice notes.",
+    imageUrl: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=400&q=80",
+    manufacturerLogoUrl: "https://www.google.com/s2/favicons?sz=64&domain=plaud.ai",
+    mainTask: "Audio & Transcription",
+    mainTaskColor: "#00BCD4",
+    formFactor: "Wearable Pin / Necklace",
+    country: "US",
+    ram: null,
+    aiFeatures: ["Dual-engine Noise Cancellation", "GPT-4o Summarization", "Speaker Identification", "Voice-to-Text"],
+    primaryUseCases: ["Meeting Summaries", "Voice Notes", "Interviews", "Lecture Recording"],
+    additionalInfo: "Features dual MEMS microphones, 64GB storage, and up to 20 hours of continuous recording battery life.",
+    buyUrl: "https://www.plaud.ai",
+    verdict: "A genuinely useful pocket recorder for anyone who sits in a lot of meetings or interviews. The AI summarization is accurate and the battery life is excellent, though it works best as a companion to your notes rather than a full replacement for them.",
+  },
+
+  // --- Farming Category Entry ---
+  {
+    id: "mock-john-deere-see-spray",
+    slug: "john-deere-see-spray",
+    name: "John Deere See & Spray Ultimate",
+    manufacturer: "John Deere",
+    manufacturerSlug: "john-deere",
+    category: "Farming",
+    subcategory: "Farming",
+    availability: "Available",
+    price: "$25,000.00",
+    year: "2024",
+    month: "Jan, 2024",
+    description: "AI-driven targeted spraying system utilizing computer vision and machine learning to detect and target weeds in real time.",
+    imageUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=400&q=80",
+    manufacturerLogoUrl: "https://www.google.com/s2/favicons?sz=64&domain=deere.com",
+    mainTask: "Agricultural AI",
+    mainTaskColor: "#34A853",
+    formFactor: "Tractor Attachment / Field Rig",
+    country: "US",
+    ram: null,
+    aiFeatures: ["Real-time Computer Vision", "Targeted Herbicide Delivery", "Field Analytics", "Edge AI Processing"],
+    primaryUseCases: ["Precision Farming", "Weed Control", "Crop Management", "Input Optimization"],
+    additionalInfo: "Equipped with 36 high-speed boom cameras that scan up to 2,100 square feet per second to differentiate weeds from crops.",
+    buyUrl: "https://www.deere.com",
+        verdict: "A serious investment aimed squarely at commercial farms, not hobbyists. The precision weed detection can meaningfully cut herbicide costs at scale, but the high price and specialized installation mean it only makes sense for larger operations.",
   },
   {
     id: "mock-meta-ray-ban",
@@ -87,7 +206,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Meta Ray-Ban Smart Glasses",
     manufacturer: "Meta",
     manufacturerSlug: "meta",
-    category: "Smart Glasses",
+    category: "AR / VR / Spatial Computing",
+    subcategory: "AI Smart Glasses",
     availability: "Available",
     price: "$299.00",
     year: "2024",
@@ -105,6 +225,17 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Photography", "Communication", "Navigation"],
     additionalInfo: "The Ray-Ban Meta Smart Glasses feature a 12MP camera, five-microphone array, and open-ear speakers. They connect to the Meta AI assistant for real-time help. The 2024 edition added a live AI view feature that can identify objects and answer questions about what you're seeing.",
     buyUrl: "https://www.meta.com/smart-glasses/",
+    longDescription: "The Ray-Ban Meta Smart Glasses represent the most mainstream AI wearable on the market. Built in collaboration with EssilorLuxottica, they look like regular Ray-Ban frames while packing a 12MP camera, five-mic array, open-ear speakers, and the Meta AI assistant. The 2024 generation added live AI vision — point your gaze at something and ask Meta AI about it in real time. Available in multiple classic Ray-Ban styles including Wayfarer and Headliner.",
+    processor: "Qualcomm AR1 Gen1",
+    battery: "~4 hours (open-ear audio)",
+    display: "Open-ear speakers (no visual display)",
+    connectivity: ["Bluetooth 5.3", "WiFi 802.11 b/g/n"],
+    weight: "49g",
+    aiModel: "Meta AI (Llama-based)",
+    processingType: "Cloud",
+    bestFor: ["Everyday Users", "Content Creators", "Travelers"],
+    qualityScore: 81,
+    verdict: "The best mainstream AI glasses available today. They look normal, sound great, and Meta AI is genuinely useful for on-the-go queries. The camera quality and live AI view are impressive. Battery life is the main limitation.",
   },
   {
     id: "mock-apple-vision-pro",
@@ -112,7 +243,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Apple Vision Pro",
     manufacturer: "Apple",
     manufacturerSlug: "apple",
-    category: "Mixed Reality Headset",
+    category: "AR / VR / Spatial Computing",
+    subcategory: "Mixed Reality Headset",
     availability: "Available",
     price: "$3,499.00",
     year: "2024",
@@ -130,6 +262,7 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Productivity", "Entertainment", "3D Design", "Collaboration"],
     additionalInfo: "Apple Vision Pro features dual micro-OLED displays with 23 million pixels combined. Powered by M2 and R1 chips working in tandem. The R1 chip processes sensor input in 12ms for a seamless mixed reality experience.",
     buyUrl: "https://www.apple.com/apple-vision-pro/",
+    verdict: "The most polished mixed-reality headset available, with best-in-class displays and tracking. The $3,499 price and limited native app library keep it a niche, early-adopter product rather than a mainstream computing device — for now.",
   },
   {
     id: "mock-google-home-speaker",
@@ -137,7 +270,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Google Home Speaker",
     manufacturer: "Google",
     manufacturerSlug: "google",
-    category: "Smart Speaker",
+    category: "Smart Home",
+    subcategory: "Smart Speaker",
     availability: "Available",
     price: "$99.00",
     year: "2024",
@@ -155,6 +289,7 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Smart Home", "Music", "Information"],
     additionalInfo: "Google Home Speaker features a 360-degree sound with a high-excursion speaker and two passive radiators. It supports Google Assistant for voice commands and can control thousands of smart home devices.",
     buyUrl: "https://store.google.com/product/google_home",
+    verdict: "A reliable, affordable entry point into the Google smart home ecosystem. Sound quality is solid for the price, though it lags behind premium speakers, and its usefulness scales directly with how many other Google-connected devices you own.",
   },
   {
     id: "mock-oura-ring",
@@ -162,7 +297,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Oura Ring 4",
     manufacturer: "Oura",
     manufacturerSlug: "oura",
-    category: "AI Wearable",
+    category: "Wearables",
+    subcategory: "AI Ring",
     availability: "Available",
     price: "$349.00",
     year: "2024",
@@ -180,6 +316,7 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Health", "Sleep", "Fitness", "Recovery"],
     additionalInfo: "Oura Ring 4 features 18 sensors including infrared PPG sensors, an NTC temperature sensor, and a 3D accelerometer. Battery life up to 8 days. The new generation adds improved accuracy and a titanium shell.",
     buyUrl: "https://ouraring.com/product/rings",
+    verdict: "One of the most accurate consumer sleep and recovery trackers on the market, in a genuinely comfortable form factor. The ongoing subscription for full insights is the main downside — worth it for health-focused users, less so for casual trackers.",
   },
   {
     id: "mock-amazon-echo",
@@ -187,7 +324,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Amazon Echo Show 10",
     manufacturer: "Amazon",
     manufacturerSlug: "amazon",
-    category: "Smart Display",
+    category: "Smart Home",
+    subcategory: "Smart Display",
     availability: "Available",
     price: "$249.00",
     year: "2023",
@@ -205,6 +343,7 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Smart Home", "Video Calls", "Entertainment", "Cooking"],
     additionalInfo: "The Echo Show 10 features a 10.1-inch HD display with adaptive color and a 13MP camera. The motorized base rotates 350 degrees to follow you around the room during video calls.",
     buyUrl: "https://www.amazon.com/echo-show-10",
+    verdict: "The motorized tracking makes video calls feel less awkward than a fixed camera, and it remains a strong smart home hub. Alexa's voice recognition is solid, though some may find the display underused outside of calls and cooking timers.",
   },
   {
     id: "mock-samsung-galaxy-ring",
@@ -212,7 +351,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Samsung Galaxy Ring",
     manufacturer: "Samsung",
     manufacturerSlug: "samsung",
-    category: "AI Wearable",
+    category: "Wearables",
+    subcategory: "AI Ring",
     availability: "Available",
     price: "$399.00",
     year: "2024",
@@ -230,6 +370,7 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Health", "Sleep", "Fitness"],
     additionalInfo: "Samsung Galaxy Ring is made from titanium and weighs between 2.3g and 3g depending on size. No subscription required unlike competitors. Battery life up to 7 days.",
     buyUrl: "https://www.samsung.com/global/galaxy/galaxy-ring/",
+    verdict: "A strong alternative to Oura for anyone already in the Samsung ecosystem, especially since it skips the subscription fee. Battery life and comfort are excellent, though insights are less detailed than dedicated health-tracking competitors.",
   },
   {
     id: "mock-msi-edgexpert",
@@ -237,7 +378,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "MSI EdgeXpert",
     manufacturer: "MSI",
     manufacturerSlug: "msi",
-    category: "Other",
+        category: "Edge AI Hardware",
+    subcategory: "AI Dev Kit",
     availability: "Available",
     price: "$311.00",
     year: "2026",
@@ -255,6 +397,7 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Productivity", "Education"],
     additionalInfo: "Up to 1,000 AI TOPS (FP4); NVIDIA NVLink-C2C CPU-GPU memory interconnect; full-stack AI development platform; designed for local LLM inference and AI agents; supports secure on-premises deployment.",
     buyUrl: null,
+    verdict: "A compelling option for developers who want serious local AI compute without cloud costs or data privacy concerns. The NVIDIA DGX Spark platform delivers real performance, but this is a specialist tool aimed at technical users, not general consumers.",
   },
   {
     id: "mock-mentra-live",
@@ -262,7 +405,8 @@ export const DEVICES_DATA: DeviceData[] = [
     name: "Mentra Live",
     manufacturer: "Mentra",
     manufacturerSlug: "mentra",
-    category: "Smart Glasses",
+    category: "AR / VR / Spatial Computing",
+    subcategory: "AI Smart Glasses",
     availability: "Available",
     price: "$349.00",
     year: "2024",
@@ -280,6 +424,7 @@ export const DEVICES_DATA: DeviceData[] = [
     primaryUseCases: ["Productivity", "Navigation", "Communication"],
     additionalInfo: "Mentra Live features a 640x400 resolution display visible in daylight. Connects to smartphone via Bluetooth. Supports third-party app integrations through the Mentra SDK.",
     buyUrl: "https://mentra.glass",
+    verdict: "A promising entry in the AI smart glasses space with genuine developer flexibility through its SDK. Display visibility and battery life are competitive, though the ecosystem is younger than Meta's, so third-party app support is still catching up.",
   },
 ];
 
@@ -299,10 +444,29 @@ export function getMainTaskColor(mainTask: string): string {
   return MAIN_TASK_COLORS[Math.abs(hash) % MAIN_TASK_COLORS.length];
 }
 
-export function getSimilarDevices(device: DeviceData, count = 4): DeviceData[] {
-  return DEVICES_DATA.filter(
-    (d) => d.id !== device.id && d.category === device.category
-  ).slice(0, count).length > 0
-    ? DEVICES_DATA.filter((d) => d.id !== device.id && d.category === device.category).slice(0, count)
+export function getSimilarDevices(device: DeviceData, count = 5): DeviceData[] {
+  const sameCat = DEVICES_DATA.filter((d) => d.id !== device.id && d.category === device.category);
+  return sameCat.length > 0
+    ? sameCat.slice(0, count)
     : DEVICES_DATA.filter((d) => d.id !== device.id).slice(0, count);
+}
+
+export function slugifyCategory(category: string): string {
+  return category
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
+
+export function getDevicesByCategory(categorySlugOrName: string): DeviceData[] {
+  if (!categorySlugOrName || categorySlugOrName.toLowerCase() === "all") {
+    return DEVICES_DATA;
+  }
+  const target = categorySlugOrName.toLowerCase();
+  return DEVICES_DATA.filter((d) => {
+    const catSlug = slugifyCategory(d.category);
+    const catName = d.category.toLowerCase();
+    const subCatName = d.subcategory ? d.subcategory.toLowerCase() : "";
+    return catSlug === target || catName === target || subCatName === target;
+  });
 }

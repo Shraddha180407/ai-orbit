@@ -19,9 +19,12 @@ export function SearchTopBar() {
     <>
       {/* Red banner — TAAFT's persistent "join for free" strip (static, no motion) */}
       <div className="bg-search-highlight py-1.5 text-center">
-        <span className="px-6 text-xs font-semibold tracking-wide text-white sm:text-sm">
+        <Link
+          href="/auth/signup"
+          className="inline-block px-6 text-xs font-semibold tracking-wide text-white hover:underline sm:text-sm"
+        >
           Click here to join for free!
-        </span>
+        </Link>
       </div>
 
       <header className="sticky top-0 z-40 border-b border-search-border bg-search-bg">
@@ -33,7 +36,7 @@ export function SearchTopBar() {
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-search-accent text-white">
               <Sparkles size={14} />
             </span>
-            <span className="hidden lg:inline">The&nbsp;AI&nbsp;Signal</span>
+            <span className="hidden lg:inline">AI&nbsp;Orbit</span>
           </Link>
 
           {/* Free mode toggle — cosmetic, matches the reference site's mode switch */}
@@ -51,14 +54,14 @@ export function SearchTopBar() {
               menuClassName="absolute left-0 mt-2 w-[280px] rounded-lg border border-search-border bg-search-surface p-2 shadow-2xl z-50 text-white"
             />
             <Link
-              href="/search/results?types=collection"
+              href="/search/results?types=tool"
               className="flex items-center gap-1.5 rounded-full border border-search-border px-3 py-1.5 text-sm text-search-text-secondary transition-colors hover:border-search-border-hover hover:text-search-text-primary"
             >
               <Tag size={14} />
               Prompts
             </Link>
             <Link
-              href="/search/results?types=collection"
+              href="/search/results?types=tool"
               className="flex items-center gap-1.5 rounded-full border border-search-border px-3 py-1.5 text-sm text-search-text-secondary transition-colors hover:border-search-border-hover hover:text-search-text-primary"
             >
               <Percent size={14} />

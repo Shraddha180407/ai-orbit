@@ -12,6 +12,8 @@ import {
   Landmark,
   Bot,
   Cpu,
+  Plug,
+  FolderHeart,
   LucideIcon,
 } from "lucide-react";
 import { EntityType } from "@/types/entities";
@@ -77,14 +79,6 @@ export const ENTITY_META: Record<
     tint: "bg-emerald-500/10 text-emerald-300",
     solidColor: "#059669",
   },
-  collection: {
-    label: "Collection",
-    plural: "Collections",
-    icon: Layers,
-    basePath: "/collections",
-    tint: "bg-lime-500/10 text-lime-300",
-    solidColor: "#65A30D",
-  },
   task: {
     label: "Task",
     plural: "Tasks",
@@ -133,6 +127,22 @@ export const ENTITY_META: Record<
     tint: "bg-fuchsia-500/10 text-fuchsia-300",
     solidColor: "#C026D3",
   },
+  mcp: {
+    label: "MCP",
+    plural: "MCP",
+    icon: Plug,
+    basePath: "/mcp",
+    tint: "bg-indigo-500/10 text-indigo-300",
+    solidColor: "#4F46E5",
+  },
+  collection: {
+    label: "Collection",
+    plural: "Collections",
+    icon: FolderHeart,
+    basePath: "/collections",
+    tint: "bg-purple-500/10 text-purple-300",
+    solidColor: "#9333EA",
+  },
 };
 
 export const ALL_ENTITY_TYPES: EntityType[] = [
@@ -142,11 +152,12 @@ export const ALL_ENTITY_TYPES: EntityType[] = [
   "news",
   "video",
   "repository",
-  "collection",
   "task",
   "country",
   "fundraise",
   "investor",
   "robot",
   "device",
+  "mcp",
+  "collection",
 ];

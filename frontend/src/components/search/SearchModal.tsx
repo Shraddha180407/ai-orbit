@@ -9,6 +9,15 @@ import { useRecentSearches } from "@/hooks/useRecentSearches";
 import { ALL_ENTITY_TYPES, ENTITY_META } from "@/lib/entityMeta";
 import { EntityType } from "@/types/entities";
 
+const FOCUSABLE_SELECTOR = [
+  "button:not([disabled])",
+  "a[href]",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
 interface SearchModalProps {
   open: boolean;
   onClose: () => void;
@@ -19,6 +28,9 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const [value, setValue] = useState("");
   const [activeType, setActiveType] = useState<EntityType | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const wasOpenRef = useRef(false);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
 
   // Reset the field each time the modal transitions from closed to open.
   // This is the "adjusting state when a prop changes" pattern React docs
@@ -38,17 +50,30 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 
   useEffect(() => {
     if (open) {
+      if (!wasOpenRef.current) {
+        previousActiveElementRef.current =
+          document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        wasOpenRef.current = true;
+      }
+
       // Focus after the panel opens (a real external-system side effect).
       const id = requestAnimationFrame(() => inputRef.current?.focus());
       return () => cancelAnimationFrame(id);
+    }
+
+    if (!open && wasOpenRef.current) {
+      wasOpenRef.current = false;
+      previousActiveElementRef.current?.focus();
+      previousActiveElementRef.current = null;
     }
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 
@@ -60,6 +85,28 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [open, onClose]);
+
+  function handleDialogKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== "Tab") return;
+
+    const focusable = panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+    if (!focusable?.length) {
+      e.preventDefault();
+      panelRef.current?.focus();
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
 
   if (!open) return null;
 
@@ -81,21 +128,32 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const showSuggestions = value.trim().length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center px-4 pt-[10vh] sm:pt-[14vh]">
+    <div className="fixed inset-0 z-50 flex justify-center px-3 sm:px-4 pt-4 sm:pt-[14vh]">
       {/* Backdrop */}
       <button
+        type="button"
+        tabIndex={-1}
         aria-label="Close search"
         onClick={onClose}
         className="fixed inset-0 bg-black/70 backdrop-blur-sm"
       />
 
       {/* Panel */}
-      <div className="relative z-10 flex h-fit max-h-[76vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-search-border bg-search-bg shadow-2xl shadow-black/20">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="search-dialog-title"
+        onKeyDown={handleDialogKeyDown}
+        className="relative z-10 flex h-fit max-h-[88vh] sm:max-h-[76vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-search-border bg-search-bg shadow-2xl shadow-black/20"
+      >
+        <h2 id="search-dialog-title" className="sr-only">Search AI Orbit</h2>
         {/* Search field row */}
         <div className="flex items-center gap-2.5 border-b border-search-border px-4 py-3.5">
           <Search size={18} className="shrink-0 text-search-text-tertiary" />
           <input
             ref={inputRef}
+            aria-label="Search"
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => {
@@ -148,6 +206,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
               suggestions={filteredSuggestions}
               query={value}
               onSelectTerm={(term) => submit(term, activeType)}
+              onSelectType={setActiveType}
             />
           ) : (
             <>
@@ -261,16 +320,21 @@ function TermRow({
   );
 }
 
+/** Max rows shown per entity-type group before collapsing behind "View N more". */
+const MAX_ROWS_PER_GROUP = 4;
+
 function SuggestionResults({
   isLoading,
   suggestions,
   query,
   onSelectTerm,
+  onSelectType,
 }: {
   isLoading: boolean;
   suggestions: { id: string; type: EntityType; title: string; category: string }[];
   query: string;
   onSelectTerm: (term: string) => void;
+  onSelectType: (type: EntityType) => void;
 }) {
   if (isLoading) {
     return (
@@ -296,9 +360,66 @@ function SuggestionResults({
     );
   }
 
+  // Group suggestions by entity type, preserving the order types first
+  // appear in the (already relevance-sorted) suggestions list — this keeps
+  // the most relevant category on top instead of a fixed alphabetical order.
+  const groups = new Map<EntityType, typeof suggestions>();
+  for (const s of suggestions) {
+    const bucket = groups.get(s.type);
+    if (bucket) {
+      bucket.push(s);
+    } else {
+      groups.set(s.type, [s]);
+    }
+  }
+
   return (
     <div className="p-2">
-      {suggestions.map((s) => {
+      {Array.from(groups.entries()).map(([type, items]) => (
+        <SuggestionGroup
+          key={type}
+          type={type}
+          items={items}
+          onSelectTerm={onSelectTerm}
+          onSelectType={onSelectType}
+        />
+      ))}
+      <button
+        onClick={() => onSelectTerm(query)}
+        className="mt-1 flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-search-accent hover:bg-search-surface-hover"
+      >
+        See all results for &ldquo;{query}&rdquo;
+      </button>
+    </div>
+  );
+}
+
+function SuggestionGroup({
+  type,
+  items,
+  onSelectTerm,
+  onSelectType,
+}: {
+  type: EntityType;
+  items: { id: string; type: EntityType; title: string; category: string }[];
+  onSelectTerm: (term: string) => void;
+  onSelectType: (type: EntityType) => void;
+}) {
+  const meta = ENTITY_META[type];
+  const GroupIcon = meta.icon;
+  const visible = items.slice(0, MAX_ROWS_PER_GROUP);
+  const remaining = items.length - visible.length;
+
+  return (
+    <div className="mb-1 last:mb-0">
+      {/* Section header — mirrors the "Tasks (10)" grouped-category header */}
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-search-text-tertiary">
+        <GroupIcon size={13} />
+        {meta.plural}
+        <span className="text-search-text-tertiary/70">({items.length})</span>
+      </div>
+
+      {visible.map((s) => {
         const Icon = ENTITY_META[s.type].icon;
         return (
           <Link
@@ -311,18 +432,19 @@ function SuggestionResults({
               <Icon size={14} />
             </span>
             <span className="flex-1 truncate text-search-text-primary">{s.title}</span>
-            <span className="shrink-0 text-xs text-search-text-tertiary">
-              {ENTITY_META[s.type].label} · {s.category}
-            </span>
+            <span className="shrink-0 text-xs text-search-text-tertiary">{s.category}</span>
           </Link>
         );
       })}
-      <button
-        onClick={() => onSelectTerm(query)}
-        className="mt-1 flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-search-accent hover:bg-search-surface-hover"
-      >
-        See all results for &ldquo;{query}&rdquo;
-      </button>
+
+      {remaining > 0 && (
+        <button
+          onClick={() => onSelectType(type)}
+          className="flex w-full items-center justify-center rounded-md px-2.5 py-1.5 text-xs text-search-text-tertiary hover:bg-search-surface-hover hover:text-search-text-primary"
+        >
+          View {remaining} more
+        </button>
+      )}
     </div>
   );
 }

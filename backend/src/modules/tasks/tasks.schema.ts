@@ -8,15 +8,16 @@ export const GetTasksQuerySchema = z.object({
   pricing: z.enum(['FREE', 'FREEMIUM', 'PAID', 'FREE_TRIAL']).optional(),
   featuredOnly: z.string().optional(),
   sort: z.enum([
-    "newest",
-    "oldest",
-    "rating",
-    "name-asc",
-    "name-desc",
-    "alphabetical",
-    "popular"
-]).optional().default('newest'),
+    "newest", "oldest",
+    "name-asc", "name-desc", "alphabetical",
+    "rating", "popular",
+    "tools-asc", "tools-desc",
+    "models-asc", "models-desc",
+    "robots-asc", "robots-desc",
+    "devices-asc", "devices-desc",
+  ]).optional().default('newest'),
   page: z.string().optional().default('1'),
+  pageSize: z.string().optional().default('100'),
   filter: z.enum(['all', 'for-you', 'following']).optional().default('all'),
 });
 

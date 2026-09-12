@@ -4,8 +4,8 @@ import { marked } from 'marked';
 const VALID_SORTS = ['stars_desc', 'newest', 'name_asc'] as const;
 type SortOption = (typeof VALID_SORTS)[number];
 
-const DEFAULT_LIMIT = 20;
-const MAX_LIMIT = 50;
+const DEFAULT_LIMIT = 100;
+const MAX_LIMIT = 100;
 
 // Cloudflare Workers extends CacheStorage with a `default` property that the
 // DOM's CacheStorage interface (lib.dom.d.ts) does not include.  We declare a
@@ -55,6 +55,7 @@ export class RepositoriesService {
   }
 
   async listRepositories(params: {
+    page?: number;
     cursor?: string;
     limit?: number;
     sort?: string;
@@ -82,13 +83,13 @@ export class RepositoriesService {
 
     const orderBy = this.buildOrderBy(sort);
 
+    const page = params.page ? Math.max(1, params.page) : undefined;
+    const skip = page ? (page - 1) * limit : (params.cursor ? 1 : undefined);
+
     const [items, total] = await Promise.all([
       this.prisma.repository.findMany({
         take: limit + 1,
-        ...(params.cursor && {
-          cursor: { id: params.cursor },
-          skip: 1,
-        }),
+        ...(page ? { skip } : params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
         where,
         orderBy,
         select: LIST_SELECT,
@@ -123,7 +124,7 @@ export class RepositoriesService {
 
     const itemsWithCompany = pageItems.map(item => ({
       ...item,
-      subCategories: item.subCategories.map(sc => sc.subCategory),
+      subCategories: Array.isArray(item.subCategories) ? item.subCategories.map((sc: any) => sc.subCategory || sc) : [],
       companySlug: companyMap.get(item.owner.toLowerCase()) || null
     }));
 

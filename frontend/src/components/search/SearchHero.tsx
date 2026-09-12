@@ -79,7 +79,7 @@ export function SearchHero({ q, onSubmitQuery, pills = "sections" }: SearchHeroP
           <p>The front page of AI. Used by 90M+ humans.</p>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-search-border bg-search-surface-active px-3 py-1 text-search-text-tertiary">
             <Flame size={13} className="text-search-accent" />
-            79,552 searches today
+            Explore the AI directory
           </span>
         </div>
 

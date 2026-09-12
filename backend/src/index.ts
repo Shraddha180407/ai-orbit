@@ -15,15 +15,19 @@ import { tasksRouter } from './modules/tasks/tasks.routes.js'
 import { modelsRouter } from './modules/models/models.routes.js'
 import { repositoriesRouter } from './modules/repositories/repositories.routes.js'
 import { robotsRouter } from './modules/robots/robots.routes.js'
-
+import feedRoutes from './modules/feed/feed.routes.js';
 import { homepageRouter } from './modules/homepage/homepage.routes.js'
 import { toolsRouter } from './modules/tools/tools.routes.js'
 import { userRouter } from './modules/user/user.routes.js'
 import { mcpRouter } from './modules/mcp/mcp.routes.js'
+import { agentsRouter } from './modules/agents/agents.routes.js'
 import { searchRouter } from './modules/search/search.routes.js'
 import { getPrisma } from './lib/prisma.js'
 import { runIngestion } from './modules/ingestion/ingestion.service.js'
 import type { IngestionContext } from './modules/ingestion/pipeline.js'
+import { adminRouter } from './modules/admin/admin.routes.js'
+import { bookmarksRouter } from './modules/bookmarks/bookmarks.routes.js'
+import press from './modules/press/index.js';
 
 type Bindings = {
   DATABASE_URL: string
@@ -52,7 +56,8 @@ app.use('*', cors({
       origin === 'https://aiorbit.club' ||
       origin.endsWith('.aiorbit.club') ||
       origin.endsWith('.pages.dev') ||
-      origin.startsWith('http://localhost:')
+      origin.startsWith('http://localhost:') ||
+      origin.startsWith('http://127.0.0.1:')
     ) {
       return origin;
     }
@@ -63,13 +68,11 @@ app.use('*', cors({
 
 // High-speed in-memory response cache for GET endpoints (120s TTL)
 app.use('*', cacheMiddleware(120))
-
+app.route('/api/v1/feed', feedRoutes);
 app.route('/api/videos', videosRouter)
 app.route('/api/news', newsRouter)
 app.route('/api/ingestion', ingestionRouter)
 app.route('/logos/publishers', logosRouter)
-import { adminRouter } from './modules/admin/admin.routes.js'
-import { bookmarksRouter } from './modules/bookmarks/bookmarks.routes.js'
 
 app.route('/api/auth', authRoutes)
 app.route('/api/v1/leaderboard', leaderboardRouter)
@@ -86,7 +89,9 @@ app.route('/api/v1/tools', toolsRouter)
 app.route('/api/user', userRouter)
 app.route('/api/bookmarks', bookmarksRouter)
 app.route('/api/v1/mcps', mcpRouter)
+app.route('/api/v1/agents', agentsRouter)
 app.route('/api/v1/search', searchRouter)
+app.route('/api/press', press);
 
 app.get('/', (c) => {
   return c.json({

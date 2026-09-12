@@ -43,7 +43,7 @@ export const modelSchema = z.object({
 });
 
 export const modelsIngestPayloadSchema = z.object({
-  models: z.array(modelSchema).min(1).max(100),
+  models: z.array(modelSchema).min(1).max(1000),
 });
 
 export type ModelIngestInput = z.infer<typeof modelSchema>;

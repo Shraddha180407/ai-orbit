@@ -121,9 +121,9 @@ authRoutes.get('/google/callback', async (c) => {
       });
     }
 
-    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
+    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET || 'aiorbit-jwt-secret-key-2026';
     const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
-    const jwtToken = await sign({ id: user.id, email: user.email, name: user.name, role: user.role, exp }, jwtSecret!);
+    const jwtToken = await sign({ id: user.id, email: user.email, name: user.name, role: user.role, exp }, jwtSecret);
     const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', jwtToken, {
       httpOnly: true,
@@ -137,7 +137,7 @@ authRoutes.get('/google/callback', async (c) => {
     if (user.role === 'ADMIN') {
       return c.redirect(`${frontendUrl}/admin`);
     }
-    return c.redirect(`${frontendUrl}/dashboard`);
+    return c.redirect(`${frontendUrl}/`);
   } catch (err) {
     return c.redirect(`${frontendUrl}/auth/signin?error=OAuthFailed&details=${encodeURIComponent(err instanceof Error ? err.message : String(err))}`);
   }
@@ -231,9 +231,9 @@ authRoutes.get('/github/callback', async (c) => {
       });
     }
 
-    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
+    const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET || 'aiorbit-jwt-secret-key-2026';
     const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
-    const jwtToken = await sign({ id: user.id, email: user.email, name: user.name, role: user.role, exp }, jwtSecret!);
+    const jwtToken = await sign({ id: user.id, email: user.email, name: user.name, role: user.role, exp }, jwtSecret);
     const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', jwtToken, {
       httpOnly: true,
@@ -247,7 +247,7 @@ authRoutes.get('/github/callback', async (c) => {
     if (user.role === 'ADMIN') {
       return c.redirect(`${frontendUrl}/admin`);
     }
-    return c.redirect(`${frontendUrl}/dashboard`);
+    return c.redirect(`${frontendUrl}/`);
   } catch (err) {
     return c.redirect(`${frontendUrl}/auth/signin?error=OAuthFailed&details=${encodeURIComponent(err instanceof Error ? err.message : String(err))}`);
   }

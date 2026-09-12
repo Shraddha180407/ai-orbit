@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { generateVerificationToken, hashToken } from '../../lib/tokens.js';
 import { sendVerificationLinkEmail, sendPasswordResetEmail } from '../../lib/mailer.js';
 import { AppError } from '../../lib/error.js';
+import { logger } from '../../lib/logger.js';
 import { z } from 'zod';
 import {
   signupSchema,
@@ -46,14 +47,14 @@ export class AuthService {
     const identifier = `verify:${email}`;
     const expires = new Date(Date.now() + 60 * 60 * 1000);
 
-    await this.prisma.$transaction([
-      this.prisma.verificationToken.deleteMany({ where: { identifier } }),
-      this.prisma.verificationToken.create({
-        data: { identifier, token: hashedToken, expires },
-      }),
-    ]);
+    await this.prisma.verificationToken.deleteMany({ where: { identifier } });
+    await this.prisma.verificationToken.create({
+      data: { identifier, token: hashedToken, expires },
+    });
 
-    await sendVerificationLinkEmail(email, rawToken, this.env);
+    await sendVerificationLinkEmail(email, rawToken, this.env).catch((err) => {
+      logger.warn('Verification email failed (non-fatal):', err?.message || err);
+    });
     return user;
   }
 
@@ -93,8 +94,8 @@ export class AuthService {
     }
 
     if (new Date() > verificationToken.expires) {
-      await this.prisma.verificationToken.delete({
-        where: { identifier_token: { identifier, token: hashedToken } },
+      await this.prisma.verificationToken.deleteMany({
+        where: { identifier, token: hashedToken },
       });
       throw AppError.BadRequest('This verification link has expired. Please request a new one.');
     }
@@ -104,17 +105,15 @@ export class AuthService {
       throw AppError.NotFound('User not found.');
     }
 
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { email },
-        data: { emailVerified: new Date() },
-      }),
-      this.prisma.verificationToken.delete({
-        where: { identifier_token: { identifier, token: hashedToken } },
-      }),
-    ]);
+    const updatedUser = await this.prisma.user.update({
+      where: { email },
+      data: { emailVerified: new Date() },
+    });
+    await this.prisma.verificationToken.deleteMany({
+      where: { identifier, token: hashedToken },
+    });
 
-    return user;
+    return updatedUser;
   }
 
   async resendVerification(data: z.infer<typeof emailOnlySchema>) {
@@ -136,12 +135,10 @@ export class AuthService {
     const identifier = `verify:${email}`;
     const expires = new Date(Date.now() + 60 * 60 * 1000);
 
-    await this.prisma.$transaction([
-      this.prisma.verificationToken.deleteMany({ where: { identifier } }),
-      this.prisma.verificationToken.create({
-        data: { identifier, token: hashedToken, expires },
-      }),
-    ]);
+    await this.prisma.verificationToken.deleteMany({ where: { identifier } });
+    await this.prisma.verificationToken.create({
+      data: { identifier, token: hashedToken, expires },
+    });
 
     await sendVerificationLinkEmail(email, rawToken, this.env);
     return { message: 'Verification email resent.' };
@@ -162,12 +159,10 @@ export class AuthService {
     const identifier = `reset:${email}`;
     const expires = new Date(Date.now() + 60 * 60 * 1000);
 
-    await this.prisma.$transaction([
-      this.prisma.verificationToken.deleteMany({ where: { identifier } }),
-      this.prisma.verificationToken.create({
-        data: { identifier, token: hashedToken, expires },
-      }),
-    ]);
+    await this.prisma.verificationToken.deleteMany({ where: { identifier } });
+    await this.prisma.verificationToken.create({
+      data: { identifier, token: hashedToken, expires },
+    });
 
     await sendPasswordResetEmail(email, rawToken, this.env);
     return { message: 'Password reset email sent.' };
@@ -187,23 +182,21 @@ export class AuthService {
     }
 
     if (new Date() > verificationToken.expires) {
-      await this.prisma.verificationToken.delete({
-        where: { identifier_token: { identifier, token: hashedToken } },
+      await this.prisma.verificationToken.deleteMany({
+        where: { identifier, token: hashedToken },
       });
       throw AppError.BadRequest('This reset link has expired. Please request a new one.');
     }
 
     const hashedPassword = await bcrypt.hash(data.newPassword, 12);
 
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { email },
-        data: { password: hashedPassword },
-      }),
-      this.prisma.verificationToken.delete({
-        where: { identifier_token: { identifier, token: hashedToken } },
-      }),
-    ]);
+    await this.prisma.user.update({
+      where: { email },
+      data: { password: hashedPassword },
+    });
+    await this.prisma.verificationToken.deleteMany({
+      where: { identifier, token: hashedToken },
+    });
   }
 
   async deleteAccount(userId: string) {

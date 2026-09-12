@@ -1,18 +1,29 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useRef, useCallback, useTransition } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Company, CompanyType } from "@/lib/types";
-import { API_URL, fetchAllCompanies } from "@/lib/api";
+import { Company } from "@/lib/types";
+import { API_URL, fetchCompanies, prefetchUrl } from "@/lib/api";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Plus, ChevronDown, ArrowUpDown, X, Filter } from "lucide-react";
+import {
+  Plus, ChevronDown, ChevronLeft, ChevronRight, ArrowUpDown, X, Filter,
+  Bookmark, Share2, ExternalLink, BadgeCheck, Check
+} from "lucide-react";
 import { Button } from "@/components/ui/shadcn-button";
-import { cn } from "@/lib/utils";
+import { Pagination } from "@/components/Pagination";
+import { cn, scrollChipIntoView } from "@/lib/utils";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
+
+const PAGE_SIZE = 100;
+
+const ROW_ACCENT_COLORS = [
+  "#6E56CF", "#E85D4A", "#0082FB", "#34A853",
+  "#FF9900", "#E91E8C", "#00BCD4", "#FF6B35",
+];
 
 const COMPANY_TYPES: { label: string; value: string; slug: string }[] = [
   { label: "All", value: "ALL", slug: "all" },
@@ -28,12 +39,29 @@ const COMPANY_TYPES: { label: string; value: string; slug: string }[] = [
   { label: "Open Source", value: "OPEN_SOURCE", slug: "open-source" },
   { label: "Finance", value: "FINANCE", slug: "finance" },
   { label: "AI Native", value: "AI_NATIVE", slug: "ai-native" },
-  { label: "Model Companies", value: "MODEL_COMPANIES", slug: "model-companies" },
-  { label: "Unicorns", value: "UNICORNS", slug: "unicorns" }
+  { label: "Profitable", value: "PROFITABLE", slug: "profitable" },
 ];
 
-type SortField = 'name' | 'country' | 'valuation' | 'valEmp' | 'aiNative' | 'profitable' | 'sector' | 'modelsCount' | 'toolsCount';
+type SortField = 'valuation' | 'valEmp' | 'name' | 'country' | 'sector' | 'modelsCount' | 'toolsCount' | 'aiNative' | 'profitable';
 type SortDir = 'asc' | 'desc';
+
+const COL_TEMPLATE = "grid-cols-[44px_minmax(180px,2fr)_minmax(90px,1fr)_minmax(90px,1fr)_minmax(90px,1fr)_minmax(75px,0.8fr)_minmax(75px,0.8fr)_minmax(120px,1.2fr)_minmax(65px,0.7fr)_minmax(65px,0.7fr)_44px_44px]";
+const COL_MIN_WIDTH = "min-w-[1050px]";
+
+function formatCompanyName(name: string): string {
+  if (!name) return "";
+  return name.replace(/^!\[+/, '').replace(/\]\(.*?\)/g, '').replace(/[\!\[\]]/g, '').trim();
+}
+
+function cleanCompanySlug(slug: string): string {
+  if (!slug) return "";
+  return slug.replace(/^!\[+/, '').replace(/\]\(.*?\)/g, '').replace(/[\!\[\]]/g, '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function getCompanyLogo(company: Company): string | null {
+  if (company.logoUrl && company.logoUrl.trim()) return company.logoUrl;
+  return null;
+}
 
 function formatValuation(val: string | number | null | undefined): string {
   if (!val) return "—";
@@ -69,57 +97,253 @@ function getValEmpNumeric(valuation: string | number | null | undefined, employe
   return val / employeeCount;
 }
 
-function TypeBadge({ status }: { status: boolean | null }) {
-  if (status === null) return <span className="text-xs text-[#52525B]">—</span>;
+function BoolPill({ value, trueLabel = "YES", falseLabel = "NO" }: { value: boolean | null; trueLabel?: string; falseLabel?: string }) {
+  if (value === null) return <span className="text-[11px] text-[#71717A] font-mono">—</span>;
   return (
-    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${status ? 'text-emerald-400 bg-emerald-400/10' : 'text-red-400 bg-red-400/10'}`}>
-      {status ? "Yes" : "No"}
+    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[10px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors">
+      {value ? trueLabel : falseLabel}
     </span>
+  );
+}
+
+function LogoCell({ name, logoUrl }: { name: string; logoUrl: string | null }) {
+  const [failed, setFailed] = useState(false);
+  if (!logoUrl || failed) {
+    return <span className="text-sm font-bold text-neutral-900">{name.charAt(0)}</span>;
+  }
+  return (
+    <img
+      src={logoUrl}
+      alt={name}
+      className="h-8 w-8 object-contain"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function BookmarkBtn({ companyId, companyName }: { companyId: string; companyName: string }) {
+  const router = useRouter();
+  const { isAuthenticated } = useUser();
+  const [bookmarked, setBookmarked] = useState(false);
+
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      toast.error("Sign in required to bookmark companies", {
+        description: "Please sign in or create an account to save companies to your bookmarks.",
+        action: {
+          label: "Sign In",
+          onClick: () => router.push("/auth/signin"),
+        },
+        duration: 5000,
+      });
+      return;
+    }
+
+    const nextState = !bookmarked;
+    setBookmarked(nextState);
+    toast.success(nextState ? `Saved ${companyName} to bookmarks` : `Removed ${companyName} from bookmarks`);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleBookmark}
+      className={`inline-flex items-center justify-center rounded-md border p-1.5 transition-colors cursor-pointer ${
+        bookmarked
+          ? "border-[#6E56CF] text-[#6E56CF]"
+          : "border-[#232326]/60 bg-[#18181C] text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white"
+      }`}
+      title={bookmarked ? "Remove bookmark" : "Bookmark company"}
+    >
+      {bookmarked ? <Check size={14} /> : <Bookmark size={14} />}
+    </button>
   );
 }
 
 function matchesSubcategory(c: Company, slug: string): boolean {
   if (!slug || slug === "all") return true;
   const slugLower = slug.toLowerCase().replace(/[-_]/g, " ");
-  const typeLower = (c.type || []).join(" ").toLowerCase().replace(/[-_]/g, " ");
-  const sectorLower = (c.sector || "").toLowerCase();
-  const nameLower = (c.name || "").toLowerCase();
-  const descLower = (c.description || "").toLowerCase();
-  const modelsLower = (c.aiModels || []).map(m => m.name).join(" ").toLowerCase();
 
-  const fullText = `${typeLower} ${sectorLower} ${nameLower} ${descLower} ${modelsLower}`;
-
-  switch (slug) {
-    case "ai-model-providers":
-    case "model-companies":
-      return fullText.includes("model") || fullText.includes("provider") || (c.aiModels && c.aiModels.length > 0) || typeLower.includes("model");
-    case "infrastructure":
-      return fullText.includes("infra") || fullText.includes("cloud") || fullText.includes("compute") || fullText.includes("chip") || typeLower.includes("infra");
-    case "enterprise":
-      return fullText.includes("enterprise") || fullText.includes("b2b") || fullText.includes("business") || typeLower.includes("enterprise");
-    case "healthcare":
-      return fullText.includes("health") || fullText.includes("med") || fullText.includes("bio") || typeLower.includes("health");
-    case "generative-ai":
-      return fullText.includes("generative") || fullText.includes("genai") || fullText.includes("llm") || fullText.includes("gpt") || typeLower.includes("generative");
-    case "marketing":
-      return fullText.includes("market") || fullText.includes("seo") || fullText.includes("ad") || typeLower.includes("market");
-    case "developer-tools":
-      return fullText.includes("dev") || fullText.includes("code") || fullText.includes("git") || typeLower.includes("developer");
-    case "robotics":
-      return fullText.includes("robot") || fullText.includes("hardware") || typeLower.includes("robot");
-    case "education":
-      return fullText.includes("edu") || fullText.includes("learn") || typeLower.includes("education");
-    case "open-source":
-      return fullText.includes("open") || fullText.includes("source") || typeLower.includes("open");
-    case "finance":
-      return fullText.includes("fin") || fullText.includes("bank") || fullText.includes("trad") || typeLower.includes("finance");
-    case "ai-native":
-      return typeLower.includes("native") || fullText.includes("ai native");
-    case "unicorns":
-      return fullText.includes("unicorn") || (c.valuation && Number(c.valuation) >= 1_000_000_000);
-    default:
-      return fullText.includes(slugLower);
+  const types = Array.isArray(c.type) ? c.type : [];
+  for (const t of types) {
+    if (t && t.toLowerCase().replace(/[-_]/g, " ").includes(slugLower)) return true;
   }
+
+  if (c.sector && c.sector.toLowerCase().replace(/[-_]/g, " ").includes(slugLower)) return true;
+  if (c.description && c.description.toLowerCase().includes(slugLower)) return true;
+
+  return false;
+}
+
+function ClearFilterChip({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClick();
+      }}
+      className="shrink-0 rounded-full border border-[#6E56CF]/50 bg-[#6E56CF]/10 px-1 py-0.5 text-[7px] leading-none font-medium normal-case tracking-normal text-[#A1A1AA] hover:text-white hover:border-[#6E56CF] transition-colors"
+      title="Clear filter"
+    >
+      Clear filter
+    </button>
+  );
+}
+
+function CompanyRow({
+  company,
+  index,
+  onShare,
+}: {
+  company: Company;
+  index: number;
+  onShare: (c: Company) => void;
+}) {
+  const accentColor = ROW_ACCENT_COLORS[index % ROW_ACCENT_COLORS.length];
+  const authenticModels = company.aiModels || [];
+  const typesList = company.type || [];
+  const hasAiNative = typesList.length > 0 ? typesList.includes('AI_NATIVE') : null;
+  const hasProfitable = typesList.length > 0 ? typesList.includes('PROFITABLE') : null;
+  const logoSrc = getCompanyLogo(company);
+  const cleanName = formatCompanyName(company.name);
+  const safeSlug = cleanCompanySlug(company.slug);
+
+  const hasModels = authenticModels.length > 0 || (company._count?.aiModels || 0) > 0;
+  const hasTools = (company.tools && company.tools.length > 0) || (company._count?.tools || 0) > 0;
+
+  const derivedAiNative = hasAiNative !== null ? hasAiNative : (hasModels || hasTools ? true : null);
+  const derivedSector = company.sector || (hasModels ? "Foundation Models" : (hasTools ? "Generative AI" : null));
+
+  return (
+    <Link
+      href={`/companies/${safeSlug}`}
+      role="listitem"
+      className={`group grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-3 transition-all duration-200 focus-visible:outline-none border-b border-[#232326]/60 relative hover:bg-[#131316]/70`}
+      onMouseEnter={(e) => {
+        prefetchUrl(`${API_URL}/api/v1/companies/${safeSlug}`);
+        const el = e.currentTarget;
+        el.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
+        const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
+        if (logoEl) { logoEl.style.borderColor = accentColor; logoEl.style.boxShadow = `0 0 8px ${accentColor}55`; }
+        const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
+        if (nameEl) nameEl.style.color = accentColor;
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget;
+        el.style.boxShadow = "";
+        const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
+        if (logoEl) { logoEl.style.borderColor = ""; logoEl.style.boxShadow = ""; }
+        const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
+        if (nameEl) nameEl.style.color = "";
+      }}
+    >
+      {/* Col 1: Logo */}
+      <div
+        data-logo="true"
+        className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white transition-all duration-200"
+      >
+        <LogoCell name={cleanName} logoUrl={logoSrc} />
+      </div>
+
+      {/* Col 2: Name + Models */}
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <h3
+            data-name="true"
+            className="truncate text-[13px] font-semibold text-white transition-colors duration-200"
+          >
+            {cleanName}
+          </h3>
+          {company.verified && (
+            <BadgeCheck size={14} className="shrink-0 text-blue-400" aria-label="Verified" />
+          )}
+          {company.website && (
+            <a
+              href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-[#71717A] hover:text-white transition-colors shrink-0"
+            >
+              <ExternalLink size={14} />
+            </a>
+          )}
+        </div>
+        {authenticModels.length > 0 ? (
+          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+            {authenticModels.slice(0, 2).map((m) => (
+              <span key={m.id} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[9px] font-mono text-[#A1A1AA] truncate max-w-[100px]">
+                {m.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-0.5 text-[11px] text-[#71717A] font-mono">—</p>
+        )}
+      </div>
+
+      {/* Col 3: Country */}
+      <div className="min-w-0 text-[11px] font-mono text-[#A1A1AA] truncate">
+        {company.country || "—"}
+      </div>
+
+      {/* Col 4: Valuation */}
+      <div className="text-[11px] font-mono text-white font-medium">
+        {formatValuation(company.valuation)}
+      </div>
+
+      {/* Col 5: Val/Emp */}
+      <div className="text-[11px] font-mono text-[#A1A1AA]">
+        {formatValEmp(company.valuation, company.employeeCount)}
+      </div>
+
+      {/* Col 6: AI Native */}
+      <div>
+        <BoolPill value={derivedAiNative} />
+      </div>
+
+      {/* Col 7: Profitable */}
+      <div>
+        <BoolPill value={hasProfitable} />
+      </div>
+
+      {/* Col 8: Sector */}
+      <div className="min-w-0 text-[11px] font-mono text-[#A1A1AA] truncate">
+        {derivedSector || "—"}
+      </div>
+
+      {/* Col 9: Models Count */}
+      <div className="text-[11px] font-mono text-white font-semibold">
+        {company._count?.aiModels || company.aiModels?.length || 0}
+      </div>
+
+      {/* Col 10: Tools Count */}
+      <div className="text-[11px] font-mono text-white font-semibold">
+        {company._count?.tools || company.tools?.length || 0}
+      </div>
+
+      {/* Col 11: Share */}
+      <div onClick={(e) => e.preventDefault()}>
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onShare(company); }}
+          className="inline-flex items-center justify-center rounded-md border border-[#232326]/60 bg-[#18181C] p-1.5 text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors cursor-pointer"
+        >
+          <Share2 size={14} />
+        </button>
+      </div>
+
+      {/* Col 12: Bookmark */}
+      <div>
+        <BookmarkBtn companyId={company.id} companyName={cleanName} />
+      </div>
+    </Link>
+  );
 }
 
 export function CompaniesClient({ defaultCategory }: { defaultCategory?: string }) {
@@ -127,15 +351,6 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const queryClient = useQueryClient();
   const isAdmin = user?.role === 'ADMIN';
 
-  const { data: companiesData, isLoading } = useQuery<Company[]>({
-    queryKey: ["companies"],
-    queryFn: () => fetchAllCompanies(),
-    placeholderData: keepPreviousData,
-    staleTime: 10 * 60 * 1000,
-  });
-
-  const allCompanies = companiesData || [];
-  const [visibleCount, setVisibleCount] = useState(30);
   const searchParams = useSearchParams();
   const [query, setQuery] = useState((searchParams.get("q") || "").trim());
 
@@ -143,18 +358,189 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const urlFilterParam = searchParams.get("filter") || searchParams.get("category");
 
   const [activeCategorySlug, setActiveCategorySlug] = useState<string>(() => {
-    return defaultCategory || urlFilterParam || "all";
+    return defaultCategory || urlFilterParam || "";
   });
+
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+
 
   const [selectedCountry, setSelectedCountry] = useState<string>("all");
   const [isCountryPopoverOpen, setIsCountryPopoverOpen] = useState<boolean>(false);
   const [countrySearch, setCountrySearch] = useState<string>("");
+  const [allCompanyCountries, setAllCompanyCountries] = useState<string[]>([]);
   const countryPopoverRef = useRef<HTMLDivElement>(null);
 
-  const [sortField, setSortField] = useState<SortField>('valuation');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
-  // React to top-right header SortDropdown URL parameter changes
+  // Company name filter
+  const [isCompanyNamePopoverOpen, setIsCompanyNamePopoverOpen] = useState(false);
+  const [companyNameInput, setCompanyNameInput] = useState("");
+  const [companyNameFilter, setCompanyNameFilter] = useState("");
+  const companyNamePopoverRef = useRef<HTMLDivElement>(null);
+
+  const [aiNativeFilter, setAiNativeFilter] = useState<'all' | 'yes' | 'no'>('all');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(100);
+
+  const matchedTypeEnum = useMemo(() => {
+    if (!activeCategorySlug || activeCategorySlug === "all") return undefined;
+    const matched = COMPANY_TYPES.find(ct => ct.slug === activeCategorySlug);
+    return matched && matched.value !== "ALL" ? matched.value : activeCategorySlug;
+  }, [activeCategorySlug]);
+
+  /*
+   * Load the complete company directory once and filter/sort it locally.
+   *
+   * This is deliberate: the directory has several UI-only filters
+   * (especially AI Native = No and the COMPANY name popup). Applying them
+   * to an already-paginated API response caused filters to appear broken.
+   * We now have one source dataset, then:
+   *   1. category
+   *   2. country
+   *   3. company name
+   *   4. AI Native
+   *   5. general search
+   *   6. sorting
+   *   7. pagination
+   */
+  const { data: companiesResponse, isLoading, isFetching } = useQuery<any>({
+    queryKey: [
+      "companies",
+      currentPage,
+      pageSize,
+      query,
+      companyNameFilter,
+      activeCategorySlug,
+      selectedCountry,
+      sortField,
+      sortDir,
+    ],
+    queryFn: async () => {
+      const sort =
+        sortField === "valuation"
+          ? (sortDir === "asc" ? "valuation-asc" : "valuation-desc")
+          : sortField === "name"
+            ? (sortDir === "asc" ? "name-asc" : "name-desc")
+            : undefined;
+
+      const type = matchedTypeEnum;
+      const country =
+        selectedCountry !== "all" ? selectedCountry : undefined;
+
+      /*
+       * Normal page:
+       * One API request only. This keeps the page fast and prevents the
+       * endless skeleton/loading problem caused by downloading the whole DB.
+       */
+      if (!companyNameFilter.trim()) {
+        return fetchCompanies({
+          page: currentPage,
+          pageSize,
+          q: query.trim() || undefined,
+          type,
+          country,
+          sort,
+        });
+      }
+
+      /*
+       * COMPANY filter:
+       * Use q only to narrow the server-side candidate set, then check
+       * company.name locally so description/sector matches are discarded.
+       *
+       * We fetch the q-result pages, not the entire company database.
+       */
+      const firstResponse = await fetchCompanies({
+        page: 1,
+        pageSize: 200,
+        q: companyNameFilter.trim(),
+        type,
+        country,
+        sort,
+      });
+
+      const firstCompanies: Company[] = Array.isArray(firstResponse)
+        ? (firstResponse as Company[])
+        : ((firstResponse?.companies || []) as Company[]);
+
+      let candidates = firstCompanies;
+
+      const totalPagesFromApi =
+        typeof firstResponse?.totalPages === "number"
+          ? firstResponse.totalPages
+          : 1;
+
+      // Fetch the remaining search-result pages in parallel, with a hard cap
+      // so a malformed API response can never freeze the page.
+      if (totalPagesFromApi > 1) {
+        const remainingPages = Math.min(totalPagesFromApi, 20);
+
+        const responses = await Promise.all(
+          Array.from({ length: remainingPages - 1 }, (_, index) =>
+            fetchCompanies({
+              page: index + 2,
+              pageSize: 200,
+              q: companyNameFilter.trim(),
+              type,
+              country,
+              sort,
+            })
+          )
+        );
+
+        for (const response of responses) {
+          const companies: Company[] = Array.isArray(response)
+            ? (response as Company[])
+            : ((response?.companies || []) as Company[]);
+          candidates = candidates.concat(companies);
+        }
+      }
+
+      const needle = companyNameFilter.trim().toLocaleLowerCase();
+
+      const matchingCompanies = candidates.filter((company) =>
+        formatCompanyName(String(company?.name ?? ""))
+          .trim()
+          .toLocaleLowerCase()
+          .includes(needle)
+      );
+
+      const startIndex = (currentPage - 1) * pageSize;
+
+      return {
+        companies: matchingCompanies.slice(startIndex, startIndex + pageSize),
+        total: matchingCompanies.length,
+        page: currentPage,
+        pageSize,
+        totalPages: Math.max(
+          1,
+          Math.ceil(matchingCompanies.length / pageSize)
+        ),
+      };
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 60 * 1000,
+  });
+
+  const allCompanies: Company[] = Array.isArray(companiesResponse)
+    ? companiesResponse
+    : (companiesResponse?.companies || []);
+
+  const totalCount =
+    typeof companiesResponse?.total === "number"
+      ? companiesResponse.total
+      : allCompanies.length;
+
+  const totalPages =
+    typeof companiesResponse?.totalPages === "number"
+      ? companiesResponse.totalPages
+      : Math.max(1, Math.ceil(totalCount / pageSize));
+
+  const paginatedCompanies: Company[] = allCompanies;
+
   useEffect(() => {
     if (urlSortParam) {
       if (urlSortParam === "name-asc") { setSortField("name"); setSortDir("asc"); }
@@ -171,8 +557,6 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     }
   }, [urlFilterParam]);
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
   // Admin Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -183,25 +567,95 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     queryClient.invalidateQueries({ queryKey: ["companies"] });
   }, [queryClient]);
 
-  // Click outside to close country popover
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (countryPopoverRef.current && !countryPopoverRef.current.contains(e.target as Node)) {
         setIsCountryPopoverOpen(false);
+      }
+      if (companyNamePopoverRef.current && !companyNamePopoverRef.current.contains(e.target as Node)) {
+        setIsCompanyNamePopoverOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Compute unique countries from DB for Country popover filter
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCountries = async () => {
+      try {
+        const firstResponse = await fetchCompanies({
+          page: 1,
+          pageSize: 200,
+        });
+
+        const firstCompanies: Company[] = Array.isArray(firstResponse)
+          ? (firstResponse as Company[])
+          : ((firstResponse?.companies || []) as Company[]);
+
+        const countries = new Set<string>();
+
+        firstCompanies.forEach((company) => {
+          const country = company.country?.trim();
+          if (country) countries.add(country);
+        });
+
+        const totalPagesFromApi =
+          typeof firstResponse?.totalPages === "number"
+            ? firstResponse.totalPages
+            : 1;
+
+        if (totalPagesFromApi > 1) {
+          const pages = Math.min(totalPagesFromApi, 20);
+
+          const responses = await Promise.all(
+            Array.from({ length: pages - 1 }, (_, index) =>
+              fetchCompanies({
+                page: index + 2,
+                pageSize: 200,
+              })
+            )
+          );
+
+          responses.forEach((response) => {
+            const companies: Company[] = Array.isArray(response)
+              ? (response as Company[])
+              : ((response?.companies || []) as Company[]);
+
+            companies.forEach((company) => {
+              const country = company.country?.trim();
+              if (country) countries.add(country);
+            });
+          });
+        }
+
+        if (!cancelled) {
+          setAllCompanyCountries(Array.from(countries).sort());
+        }
+      } catch {
+        // Current-page countries remain as fallback.
+      }
+    };
+
+    loadCountries();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const availableCountries = useMemo(() => {
+    if (allCompanyCountries.length > 0) return allCompanyCountries;
+
     const set = new Set<string>();
-    allCompanies.forEach((c) => {
-      if (c.country && c.country.trim()) set.add(c.country.trim());
+    allCompanies.forEach((company) => {
+      if (company.country && company.country.trim()) {
+        set.add(company.country.trim());
+      }
     });
     return Array.from(set).sort();
-  }, [allCompanies]);
+  }, [allCompanyCountries, allCompanies]);
 
   const filteredCountriesList = useMemo(() => {
     if (!countrySearch.trim()) return availableCountries;
@@ -209,92 +663,16 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     return availableCountries.filter((c) => c.toLowerCase().includes(q));
   }, [availableCountries, countrySearch]);
 
-  // Instant Client-Side Subcategory, Country, Search, and Sort
-  const filteredAndSorted = useMemo(() => {
-    let list = allCompanies;
-
-    // 1. Subcategory filter
-    if (activeCategorySlug && activeCategorySlug !== "all") {
-      list = list.filter((c) => matchesSubcategory(c, activeCategorySlug));
-    }
-
-    // 2. Country filter
-    if (selectedCountry && selectedCountry !== "all") {
-      list = list.filter((c) => (c.country || "").toLowerCase() === selectedCountry.toLowerCase());
-    }
-
-    // 3. Search query
-    if (query) {
-      const needle = query.toLowerCase();
-      list = list.filter((c) =>
-        c.name.toLowerCase().includes(needle) ||
-        (c.country || "").toLowerCase().includes(needle) ||
-        (c.sector || "").toLowerCase().includes(needle)
-      );
-    }
-
-    // 4. Sort
-    list = [...list].sort((a, b) => {
-      let cmp = 0;
-      switch (sortField) {
-        case 'name':
-          cmp = a.name.localeCompare(b.name);
-          break;
-        case 'country':
-          cmp = (a.country || "").localeCompare(b.country || "");
-          break;
-        case 'valuation':
-          cmp = getNumericValuation(a.valuation) - getNumericValuation(b.valuation);
-          break;
-        case 'valEmp':
-          cmp = getValEmpNumeric(a.valuation, a.employeeCount) - getValEmpNumeric(b.valuation, b.employeeCount);
-          break;
-        case 'aiNative':
-          const aNative = (a.type || []).includes('AI_NATIVE') ? 1 : 0;
-          const bNative = (b.type || []).includes('AI_NATIVE') ? 1 : 0;
-          cmp = aNative - bNative;
-          break;
-        case 'profitable':
-          const aProf = (a.type || []).includes('PROFITABLE') ? 1 : 0;
-          const bProf = (b.type || []).includes('PROFITABLE') ? 1 : 0;
-          cmp = aProf - bProf;
-          break;
-        case 'sector':
-          cmp = (a.sector || "").localeCompare(b.sector || "");
-          break;
-        case 'modelsCount':
-          cmp = (a._count?.aiModels || a.aiModels?.length || 0) - (b._count?.aiModels || b.aiModels?.length || 0);
-          break;
-        case 'toolsCount':
-          cmp = (a._count?.tools || a.tools?.length || 0) - (b._count?.tools || b.tools?.length || 0);
-          break;
-      }
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-
-    return list;
-  }, [allCompanies, activeCategorySlug, selectedCountry, query, sortField, sortDir]);
 
   useEffect(() => {
-    setVisibleCount(30);
-  }, [query, activeCategorySlug, selectedCountry]);
+    setCurrentPage(1);
+  }, [query, companyNameFilter, activeCategorySlug, selectedCountry, pageSize]);
 
-  // IntersectionObserver for client-side endless scroll
-  useEffect(() => {
-    if (isLoading || visibleCount >= filteredAndSorted.length) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        setVisibleCount(prev => prev + 30);
-      }
-    }, { threshold: 0.1 });
-
-    const currentSentinel = sentinelRef.current;
-    if (currentSentinel) observer.observe(currentSentinel);
-    return () => { if (currentSentinel) observer.unobserve(currentSentinel); };
-  }, [isLoading, visibleCount, filteredAndSorted.length]);
-
-  const visibleCompanies = filteredAndSorted.slice(0, visibleCount);
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -310,6 +688,14 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     if (typeof window !== "undefined") {
       const url = slug === "all" ? "/companies" : `/companies/${slug}`;
       window.history.pushState(null, "", url);
+    }
+  };
+
+  const handleShare = (company: Company) => {
+    const url = typeof window !== "undefined" ? `${window.location.origin}/companies/${cleanCompanySlug(company.slug)}` : "";
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      toast.success(`Copied ${formatCompanyName(company.name)} link to clipboard!`);
     }
   };
 
@@ -329,42 +715,57 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
 
   const openAdd = () => { setEditingId(null); setFormData({ name: '', slug: '', logoUrl: '' }); setIsModalOpen(true); };
 
-  const SortableHeader = ({ label, field, className = '' }: { label: string; field: SortField; className?: string }) => (
+  const SortHeader = ({ label, field }: { label: string; field: SortField }) => (
     <button
+      type="button"
       onClick={() => toggleSort(field)}
-      className={`flex items-center gap-1 text-[11px] uppercase tracking-wider font-semibold hover:text-white transition-colors cursor-pointer select-none ${sortField === field ? 'text-[#F5A623]' : 'text-[#71717A]'} ${className}`}
+      className={`flex items-center gap-1 font-mono hover:text-white transition-colors cursor-pointer select-none ${
+        sortField === field ? 'text-white' : 'text-[#A1A1AA]'
+      }`}
     >
-      {label}
-      {sortField === field && (
-        <ChevronDown className={`w-3 h-3 transition-transform ${sortDir === 'asc' ? 'rotate-180' : ''}`} />
+      <span>{label}</span>
+      {sortField === field ? (
+        <span className="text-[10px] text-white">{sortDir === 'desc' ? '↓' : '↑'}</span>
+      ) : (
+        <span className="text-[10px] opacity-40">↕</span>
       )}
-      {sortField !== field && <ArrowUpDown className="w-3 h-3 opacity-40" />}
     </button>
   );
 
   return (
     <>
-      <main className="w-full px-2 sm:px-4 py-3 flex-1 flex flex-col selection:bg-neutral-800 selection:text-white">
+      <main className="w-full px-3 sm:px-6 lg:px-8 py-3 flex-1 flex flex-col selection:bg-neutral-800 selection:text-white">
         <div className="w-full space-y-4">
-          {/* Clean Subcategories Horizontal Scrollbar */}
+          {/* Subcategories Horizontal Scrollbar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1 w-full">
+            <div
+              ref={subCatContainerRef}
+              className="flex items-center gap-1.5 touch-scroll-x scrollbar-none pb-1 md:pb-0 flex-1 w-auto sm:w-full -mx-3 sm:mx-0 px-3 sm:px-0 overflow-x-auto scroll-smooth"
+            >
               {COMPANY_TYPES.map((ct) => {
                 const isSelected = activeCategorySlug === ct.slug;
                 return (
-                  <button
-                    key={ct.slug}
-                    type="button"
-                    onClick={() => handleSubcategoryClick(ct.slug)}
-                    className={cn(
-                      "rounded-full px-3 py-1 text-[12px] font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer",
-                      isSelected
-                        ? "bg-white text-black border-transparent font-bold shadow-sm"
-                        : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#F5A623]/50 hover:text-white"
+                  <div key={ct.slug} className="flex items-center gap-1 shrink-0">
+                    <button
+                      ref={(el) => { subCatRefs.current[ct.slug] = el; }}
+                      type="button"
+                      onClick={() => handleSubcategoryClick(ct.slug)}
+                      className={cn(
+                        "rounded-full px-3.5 py-1 text-xs font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0",
+                        isSelected
+                          ? "bg-[#6E56CF] text-white border-[#6E56CF] font-bold shadow-sm"
+                          : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/50 hover:text-white"
+                      )}
+                    >
+                      <span>{ct.label}</span>
+                    </button>
+
+                    {isSelected && ct.slug !== "all" && (
+                      <ClearFilterChip
+                        onClick={() => handleSubcategoryClick("all")}
+                      />
                     )}
-                  >
-                    <span>{ct.label}</span>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -378,255 +779,221 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
             )}
           </div>
 
-          {/* Active Filter Pills Bar */}
-          {selectedCountry !== "all" && (
-            <div className="flex items-center gap-2 pb-2">
-              <span className="text-xs text-[#71717A]">Country:</span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#232326] bg-[#131316] px-2.5 py-1 text-xs font-medium text-white">
-                {selectedCountry}
-                <button onClick={() => setSelectedCountry("all")} className="text-[#71717A] hover:text-white">
-                  <X size={12} />
-                </button>
-              </span>
-            </div>
-          )}
-
-          {/* Companies Table (Fixed Table Layout to Prevent Column Shifting) */}
-          {isLoading ? (
+          {/* Companies List Container */}
+          {isLoading || isFetching && allCompanies.length === 0 ? (
             <div className="w-full space-y-2">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-16 animate-pulse bg-[#131316]/50 rounded-xl border border-[#1C1C1F]" />
+                <div key={i} className="h-16 animate-pulse bg-[#131316]/50 rounded-xl border border-[#232326]/60" />
               ))}
             </div>
-          ) : filteredAndSorted.length === 0 ? (
+          ) : allCompanies.length === 0 ? (
             <div className="text-center py-20 bg-[#111113] rounded-xl border border-[#232326]">
               <p className="text-[#71717A] text-sm">
-                {query ? `No companies match "${query}".` : "No companies found."}
+                {companyNameFilter
+                  ? `No companies match "${companyNameFilter}".`
+                  : query
+                    ? `No companies match "${query}".`
+                    : "No companies found."}
               </p>
             </div>
           ) : (
             <div className="w-full rounded-xl border border-[#232326] bg-[#0A0A0C] overflow-hidden shadow-xl">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1150px] border-collapse table-fixed">
-                  <colgroup>
-                    <col className="w-[280px]" />
-                    <col className="w-[140px]" />
-                    <col className="w-[120px]" />
-                    <col className="w-[120px]" />
-                    <col className="w-[90px]" />
-                    <col className="w-[90px]" />
-                    <col className="w-[150px]" />
-                    <col className="w-[80px]" />
-                    <col className="w-[80px]" />
-                  </colgroup>
-                  <thead>
-                    <tr className="bg-[#131316] border-b border-[#232326]">
-                      <th className="px-4 py-3 text-left">
-                        <SortableHeader label="Company" field="name" />
-                      </th>
+              <div className="overflow-x-auto touch-scroll-x relative">
+                {/* Header Row */}
+                <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2.5 bg-[#131316] border-b border-[#232326]/60 text-[10px] font-bold font-mono tracking-wider uppercase text-[#A1A1AA]`}>
+                  <div></div>
+                  <div>
+                    <div className="relative" ref={companyNamePopoverRef}>
+                      <div className="flex items-center gap-1">
+                        {/* Existing company-name sort */}
+                        <SortHeader label="COMPANY" field="name" />
 
-                      {/* Country Header with Searchable Popover Dropdown matching theresanaiforthat */}
-                      <th className="px-4 py-3 text-left">
-                        <div className="relative" ref={countryPopoverRef}>
+                        {companyNameFilter && (
+                          <ClearFilterChip
+                            onClick={() => {
+                              setCompanyNameFilter("");
+                              setCompanyNameInput("");
+                              setCurrentPage(1);
+                            }}
+                          />
+                        )}
+
+                        {/* Company-name filter */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCompanyNameInput(companyNameFilter);
+                            setIsCompanyNamePopoverOpen((open) => !open);
+                          }}
+                          className={`flex items-center justify-center transition-colors cursor-pointer ${
+                            companyNameFilter
+                              ? "text-[#6E56CF]"
+                              : "text-[#71717A] hover:text-white"
+                          }`}
+                          aria-label="Filter by company name"
+                          title="Filter by name"
+                        >
+                          <Filter size={12} />
+                        </button>
+                      </div>
+
+                      {isCompanyNamePopoverOpen && (
+                        <div
+                          className="absolute left-0 top-full mt-2 w-[190px] rounded-xl border border-[#232326] bg-[#18181C] p-2 shadow-2xl z-[60] text-xs normal-case font-sans flex flex-col gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            autoFocus
+                            type="text"
+                            value={companyNameInput}
+                            onChange={(e) => setCompanyNameInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                setCompanyNameFilter(companyNameInput.trim());
+                                setIsCompanyNamePopoverOpen(false);
+                              }
+                            }}
+                            placeholder="Filter by name..."
+                            className="w-full h-7 shrink-0 rounded-md border border-[#6E56CF] bg-[#131316] px-2 text-xs text-white placeholder:text-[#71717A] focus:outline-none focus:ring-0"
+                          />
+
                           <button
                             type="button"
-                            onClick={() => setIsCountryPopoverOpen(!isCountryPopoverOpen)}
-                            className={`flex items-center gap-1 text-[11px] uppercase tracking-wider font-semibold hover:text-white transition-colors cursor-pointer select-none ${
-                              selectedCountry !== 'all' || sortField === 'country' ? 'text-[#F5A623]' : 'text-[#71717A]'
-                            }`}
+                            onClick={() => {
+                              setCompanyNameFilter(companyNameInput.trim());
+                              setIsCompanyNamePopoverOpen(false);
+                            }}
+                            className="w-full h-7 shrink-0 rounded-md bg-[#6E56CF] text-white text-xs font-semibold hover:bg-[#7C66DF] transition-colors"
                           >
-                            <span>Country</span>
-                            <Filter size={11} className="ml-0.5" />
-                            <ChevronDown size={12} className={`transition-transform ${isCountryPopoverOpen ? 'rotate-180' : ''}`} />
+                            Apply
                           </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="relative" ref={countryPopoverRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsCountryPopoverOpen(!isCountryPopoverOpen)}
+                        className={`flex items-center gap-1 font-mono hover:text-white transition-colors cursor-pointer select-none ${
+                          selectedCountry !== 'all' ? 'text-[#6E56CF]' : 'text-[#A1A1AA]'
+                        }`}
+                      >
+                        <span>COUNTRY</span>
+                        <Filter size={12} className="ml-0.5" />
+                        {selectedCountry !== "all" && (
+                          <ClearFilterChip
+                            onClick={() => {
+                              setSelectedCountry("all");
+                              setCountrySearch("");
+                              setCurrentPage(1);
+                            }}
+                          />
+                        )}
+                      </button>
 
-                          {/* Country Search & Filter Popover */}
-                          {isCountryPopoverOpen && (
-                            <div className="absolute left-0 top-full mt-2 w-64 rounded-xl border border-[#232326] bg-[#131316] p-3 shadow-2xl z-50">
-                              <div className="relative mb-2.5">
-                                <input
-                                  type="text"
-                                  value={countrySearch}
-                                  onChange={(e) => setCountrySearch(e.target.value)}
-                                  placeholder="Search countries..."
-                                  className="w-full rounded-lg border border-[#232326] bg-[#0A0A0C] px-3 py-1.5 text-xs text-white placeholder-[#71717A] focus:border-[#F5A623] focus:outline-none"
-                                />
-                              </div>
+                      {isCountryPopoverOpen && (
+                        <div
+                          className="absolute left-0 top-full mt-2 w-[220px] rounded-xl border border-[#232326] bg-[#131316] p-2.5 shadow-2xl z-[70] text-xs normal-case font-sans"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="text"
+                            value={countrySearch}
+                            onChange={(e) => setCountrySearch(e.target.value)}
+                            placeholder="Search countries..."
+                            className="w-full h-9 rounded-lg border border-[#232326] bg-[#0A0A0C] px-3 text-xs leading-9 text-white placeholder:text-[#71717A] focus:border-[#6E56CF] focus:outline-none mb-2"
+                          />
 
-                              <div className="flex items-center justify-between border-b border-[#232326] pb-2 mb-2">
-                                <button
-                                  onClick={() => { toggleSort('country'); }}
-                                  className="text-[11px] text-[#A1A1AA] hover:text-white flex items-center gap-1"
-                                >
-                                  <span>Sort {sortDir === 'asc' ? 'A-Z' : 'Z-A'}</span>
-                                  <ArrowUpDown size={11} />
-                                </button>
-
-                                {selectedCountry !== 'all' && (
-                                  <button
-                                    onClick={() => { setSelectedCountry('all'); setIsCountryPopoverOpen(false); }}
-                                    className="text-[11px] text-[#F5A623] hover:underline"
-                                  >
-                                    Reset
-                                  </button>
-                                )}
-                              </div>
-
-                              <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-thin">
+                          <div className="max-h-[150px] overflow-y-auto overflow-x-hidden pr-1">
+                            <div className="flex flex-col gap-0.5">
+                              {selectedCountry !== "all" && (
                                 <button
                                   type="button"
-                                  onClick={() => { setSelectedCountry('all'); setIsCountryPopoverOpen(false); }}
-                                  className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                                    selectedCountry === 'all' ? 'bg-white text-black font-bold' : 'text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white'
+                                  onClick={() => {
+                                    setSelectedCountry("all");
+                                    setCountrySearch("");
+                                    setCurrentPage(1);
+                                    setIsCountryPopoverOpen(false);
+                                  }}
+                                  className="w-full h-7 shrink-0 flex items-center rounded-md px-2 text-left text-[11px] leading-none font-semibold text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white"
+                                >
+                                  Clear filter
+                                </button>
+                              )}
+
+                              {filteredCountriesList.map((countryName) => (
+                                <button
+                                  key={countryName}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCountry(countryName);
+                                    setCurrentPage(1);
+                                    setIsCountryPopoverOpen(false);
+                                  }}
+                                  className={`w-full h-7 shrink-0 flex items-center rounded-md px-2 text-left text-[11px] leading-none font-semibold truncate ${
+                                    selectedCountry.toLowerCase() === countryName.toLowerCase()
+                                      ? "bg-white text-black font-bold"
+                                      : "text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white"
                                   }`}
                                 >
-                                  All countries
+                                  <span className="truncate">{countryName}</span>
                                 </button>
+                              ))}
 
-                                {filteredCountriesList.map((countryName) => (
-                                  <button
-                                    key={countryName}
-                                    type="button"
-                                    onClick={() => { setSelectedCountry(countryName); setIsCountryPopoverOpen(false); }}
-                                    className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors truncate ${
-                                      selectedCountry.toLowerCase() === countryName.toLowerCase()
-                                        ? 'bg-white text-black font-bold'
-                                        : 'text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white'
-                                    }`}
-                                  >
-                                    {countryName}
-                                  </button>
-                                ))}
-                              </div>
+                              {filteredCountriesList.length === 0 && (
+                                <div className="px-2 py-3 text-[11px] text-[#71717A]">
+                                  No countries found
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
-                      </th>
-
-                      <th className="px-4 py-3 text-left">
-                        <SortableHeader label="Valuation" field="valuation" />
-                      </th>
-                      <th className="px-4 py-3 text-left">
-                        <SortableHeader label="Val/Emp" field="valEmp" />
-                      </th>
-                      <th className="px-4 py-3 text-left">
-                        <SortableHeader label="AI Native" field="aiNative" />
-                      </th>
-                      <th className="px-4 py-3 text-left">
-                        <SortableHeader label="Profitable" field="profitable" />
-                      </th>
-                      <th className="px-4 py-3 text-left">
-                        <SortableHeader label="Sector" field="sector" />
-                      </th>
-                      <th className="px-4 py-3 text-right">
-                        <SortableHeader label="Models" field="modelsCount" className="justify-end" />
-                      </th>
-                      <th className="px-4 py-3 text-right">
-                        <SortableHeader label="Tools" field="toolsCount" className="justify-end" />
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {visibleCompanies.map((company) => {
-                      const authenticModels = company.aiModels || [];
-                      const typesList = company.type || [];
-                      const hasAiNative = typesList.length > 0 ? typesList.includes('AI_NATIVE') : null;
-                      const hasProfitable = typesList.length > 0 ? typesList.includes('PROFITABLE') : null;
-
-                      return (
-                        <tr
-                          key={company.id}
-                          className="border-b border-[#1C1C1F] last:border-b-0 hover:bg-[#131316]/70 transition-colors"
-                        >
-                          {/* Company Name + Separate Small Logo Box + Authentic Models/Tags */}
-                          <td className="px-4 py-3">
-                            <Link href={`/companies/${company.slug}`} className="flex items-center gap-3 min-w-0 group">
-                              {/* Separate small square logo box matching Tools */}
-                              <div className="h-10 w-10 shrink-0 rounded-lg bg-[#141418] border border-[#26262B] p-1.5 flex items-center justify-center shadow-sm overflow-hidden">
-                                {company.logoUrl ? (
-                                  <img src={company.logoUrl} alt={company.name} className="object-contain w-full h-full rounded" />
-                                ) : (
-                                  <span className="text-sm font-black text-white">{company.name.charAt(0)}</span>
-                                )}
-                              </div>
-
-                              <div className="min-w-0 flex-1">
-                                <h3 className="font-semibold text-sm text-white truncate group-hover:text-[#F5A623] transition-colors">{company.name}</h3>
-                                {/* Authentic Models / Tags strictly from DB */}
-                                {authenticModels.length > 0 ? (
-                                  <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                                    {authenticModels.slice(0, 3).map((m) => (
-                                      <span
-                                        key={m.id}
-                                        className="text-[10px] text-[#A1A1AA] bg-[#1A1A1E] border border-[#2A2A2E] rounded px-1.5 py-0.5 truncate max-w-[110px]"
-                                      >
-                                        {m.name}
-                                      </span>
-                                    ))}
-                                    {authenticModels.length > 3 && (
-                                      <span className="text-[10px] text-[#71717A]">+{authenticModels.length - 3}</span>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div className="text-[10px] text-[#52525B]">—</div>
-                                )}
-                              </div>
-                            </Link>
-                          </td>
-
-                          {/* Country */}
-                          <td className="px-4 py-3 text-xs text-[#A1A1AA] truncate">
-                            {company.country || "—"}
-                          </td>
-
-                          {/* Valuation */}
-                          <td className="px-4 py-3 text-xs text-white font-medium">
-                            {formatValuation(company.valuation)}
-                          </td>
-
-                          {/* Val/Emp */}
-                          <td className="px-4 py-3 text-xs text-white font-medium">
-                            {formatValEmp(company.valuation, company.employeeCount)}
-                          </td>
-
-                          {/* AI Native */}
-                          <td className="px-4 py-3">
-                            <TypeBadge status={hasAiNative} />
-                          </td>
-
-                          {/* Profitable */}
-                          <td className="px-4 py-3">
-                            <TypeBadge status={hasProfitable} />
-                          </td>
-
-                          {/* Sector */}
-                          <td className="px-4 py-3 text-xs text-[#A1A1AA] truncate">
-                            {company.sector || "—"}
-                          </td>
-
-                          {/* Models count */}
-                          <td className="px-4 py-3 text-xs text-white font-medium text-right">
-                            {company._count?.aiModels || company.aiModels?.length || 0}
-                          </td>
-
-                          {/* Tools count */}
-                          <td className="px-4 py-3 text-xs text-white font-medium text-right">
-                            {company._count?.tools || company.tools?.length || 0}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-
-                {/* Sentinel for infinite scroll */}
-                {filteredAndSorted.length > 0 && visibleCount < filteredAndSorted.length && (
-                  <div ref={sentinelRef} className="h-16 flex items-center justify-center">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                      )}
+                    </div>
                   </div>
-                )}
+                  <div><SortHeader label="VALUATION" field="valuation" /></div>
+                  <div><SortHeader label="VAL/EMP" field="valEmp" /></div>
+                  <div className="font-mono">AI NATIVE</div>
+                  <div className="font-mono">PROFITABLE</div>
+                  <div className="font-mono">SECTOR</div>
+                  <div><SortHeader label="MODELS" field="modelsCount" /></div>
+                  <div><SortHeader label="TOOLS" field="toolsCount" /></div>
+                  <div>SHARE</div>
+                  <div>BOOKMARK</div>
+                </div>
+
+                {/* Data Rows */}
+                <div role="list" className="divide-y divide-[#232326]/60">
+                  {paginatedCompanies.map((company, idx) => (
+                    <CompanyRow
+                      key={company.id}
+                      company={company}
+                      index={idx}
+                      onShare={handleShare}
+                    />
+                  ))}
+                </div>
               </div>
+
+              {/* Unified Floating Pill Pagination */}
+              <Pagination
+                page={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                totalCount={totalCount}
+                onPageChange={(p) => {
+                  handlePageChange(p);
+                  const target = document.getElementById("companies-container");
+                  if (target) target.scrollIntoView({ behavior: "smooth" });
+                }}
+                onPageSizeChange={(s) => {
+                  setPageSize(s);
+                  setCurrentPage(1);
+                }}
+              />
             </div>
           )}
         </div>

@@ -20,10 +20,13 @@ export class RepositoriesController {
         );
       }
 
-      const limitParam = c.req.query('limit');
+      const pageParam = c.req.query('page');
+      const page = pageParam ? Number.parseInt(pageParam, 10) : undefined;
+      const limitParam = c.req.query('limit') || c.req.query('pageSize');
       const limit = limitParam ? Number.parseInt(limitParam, 10) : undefined;
 
       const result = await service.listRepositories({
+        page,
         cursor: c.req.query('cursor') || undefined,
         limit,
         sort: sort || undefined,

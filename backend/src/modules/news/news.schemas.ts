@@ -14,7 +14,7 @@ export const newsListingQuerySchema = z.object({
   perPage: z
     .string()
     .optional()
-    .transform((v) => (v ? Math.max(1, Math.min(50, parseInt(v, 10) || 25)) : undefined)),
+    .transform((v) => (v ? Math.max(1, Math.min(100, parseInt(v, 10) || 100)) : undefined)),
   /** Optional — when present, each returned article's `bookmarked` field reflects this clientId's real NewsBookmark rows; absent means every article defaults to bookmarked:false. */
   clientId: z.string().optional(),
 });

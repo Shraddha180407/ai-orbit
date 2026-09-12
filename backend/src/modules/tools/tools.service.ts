@@ -23,6 +23,52 @@ type ToolCard = {
   company: { slug: string; name: string } | null;
 };
 
+const CATEGORY_ALIASES: Record<string, { categories: string[]; keywords?: string[] }> = {
+  // Main directory modes
+  'creativity': {
+    categories: ['3d-generation', 'presentations', 'marketing', 'no-code', 'productivity'],
+    keywords: ['image', 'video', 'art', 'design', 'music', 'animation', 'render', 'write', 'draw', 'photo', 'code', 'game']
+  },
+  'personal': {
+    categories: ['education', 'chatbots', 'productivity', 'workflow-automation', 'business'],
+    keywords: ['learn', 'health', 'fitness', 'wellness', 'travel', 'food', 'fashion', 'mindful', 'habit', 'money', 'finance', 'companion']
+  },
+
+  // Creativity subcategories
+  'image-generation': { categories: ['3d-generation'], keywords: ['image', 'photo', 'art', 'draw', 'picture', 'design'] },
+  'video-creation': { categories: ['presentations'], keywords: ['video', 'animation', 'render', 'movie', 'clip'] },
+  'writing': { categories: ['marketing', 'productivity'], keywords: ['write', 'copy', 'content', 'text', 'essay', 'blog'] },
+  'software-development': { categories: ['no-code'], keywords: ['code', 'developer', 'programming', 'software', 'git'] },
+  'music': { categories: [], keywords: ['music', 'song', 'audio', 'sound', 'melody', 'beat', 'voice'] },
+  'graphic-design': { categories: ['marketing', '3d-generation'], keywords: ['design', 'graphic', 'logo', 'banner', 'canvas'] },
+  'digital-art': { categories: ['3d-generation'], keywords: ['art', 'illustration', 'draw', 'anime', 'canvas'] },
+  'brainstorming': { categories: ['chatbots', 'productivity'], keywords: ['idea', 'brainstorm', 'think', 'mindmap', 'plan'] },
+  '3d-creation': { categories: ['3d-generation'], keywords: ['3d', 'model', 'mesh', 'render', 'blender', 'spatial'] },
+  'presentation-design': { categories: ['presentations'], keywords: ['presentation', 'slide', 'deck', 'pitch'] },
+  'storytelling': { categories: ['marketing'], keywords: ['story', 'novel', 'script', 'narrative', 'character', 'write'] },
+  'content-creation': { categories: ['marketing', 'productivity'], keywords: ['content', 'creator', 'social', 'media', 'post'] },
+  'branding': { categories: ['marketing'], keywords: ['brand', 'logo', 'identity', 'business'] },
+  'motion-graphics': { categories: [], keywords: ['motion', 'animation', 'vfx', 'graphics', 'video'] },
+  'game-creation': { categories: ['3d-generation'], keywords: ['game', 'unity', 'unreal', 'gaming', 'engine'] },
+
+  // Personal subcategories
+  'relationships': { categories: ['chatbots'], keywords: ['companion', 'dating', 'relationship', 'friend', 'chat'] },
+  'education': { categories: ['education'], keywords: ['learn', 'study', 'course', 'tutor', 'student', 'school'] },
+  'learning': { categories: ['education'], keywords: ['learn', 'study', 'read', 'knowledge', 'skill'] },
+  'health-wellness': { categories: [], keywords: ['health', 'fitness', 'wellness', 'diet', 'workout', 'sleep', 'medical'] },
+  'personal-development': { categories: ['productivity', 'workflow-automation'], keywords: ['habit', 'goal', 'routine', 'self-improvement', 'growth'] },
+  'travel': { categories: [], keywords: ['travel', 'trip', 'flight', 'hotel', 'itinerary', 'vacation'] },
+  'finance-wealth': { categories: ['business'], keywords: ['finance', 'money', 'budget', 'invest', 'crypto', 'wealth'] },
+  'entertainment': { categories: ['chatbots'], keywords: ['entertainment', 'game', 'play', 'movie', 'music'] },
+  'food-nutrition': { categories: [], keywords: ['food', 'recipe', 'meal', 'diet', 'nutrition', 'cook'] },
+  'shopping': { categories: ['business', 'marketing'], keywords: ['shop', 'store', 'buy', 'product', 'deal', 'ecommerce'] },
+  'fashion-style': { categories: [], keywords: ['fashion', 'style', 'outfit', 'clothes', 'wear'] },
+  'mindfulness': { categories: [], keywords: ['meditation', 'mindful', 'calm', 'peace', 'mental', 'relax'] },
+  'life-coaching': { categories: ['chatbots'], keywords: ['coach', 'advice', 'mentor', 'guide', 'career'] },
+  'home-decor': { categories: ['3d-generation'], keywords: ['home', 'decor', 'interior', 'room', 'furniture', 'house'] },
+  'insurance-advisor': { categories: ['business'], keywords: ['insurance', 'policy', 'claim', 'advisor', 'coverage'] },
+};
+
 export class ToolsService {
   private prisma: PrismaClient;
 
@@ -39,7 +85,7 @@ export class ToolsService {
     pageSize?: number;
   }) {
     const pageNum = Math.max(1, filters.page || 1);
-    const limit = filters.pageSize || 12;
+    const limit = filters.pageSize || 100;
     const skip = (pageNum - 1) * limit;
 
     const where: Prisma.ToolWhereInput = {};
@@ -52,28 +98,55 @@ export class ToolsService {
     }
 
     if (filters.category) {
-      where.categories = { some: { category: { slug: filters.category } } };
+      const catSlug = filters.category.toLowerCase().trim();
+      const aliasConfig = CATEGORY_ALIASES[catSlug];
+      if (aliasConfig) {
+        const categoryConditions: Prisma.ToolWhereInput[] = [
+          { categories: { some: { category: { slug: { in: [catSlug, ...aliasConfig.categories] } } } } },
+          { tags: { some: { tag: { slug: { in: [catSlug, ...aliasConfig.categories] } } } } },
+        ];
+        if (aliasConfig.keywords && aliasConfig.keywords.length > 0) {
+          categoryConditions.push({
+            OR: aliasConfig.keywords.map(kw => ({
+              OR: [
+                { name: { contains: kw, mode: 'insensitive' as const } },
+                { description: { contains: kw, mode: 'insensitive' as const } },
+              ]
+            }))
+          });
+        }
+        where.AND = [
+          ...(where.AND ? (Array.isArray(where.AND) ? where.AND : [where.AND]) : []),
+          { OR: categoryConditions }
+        ];
+      } else {
+        where.categories = { some: { category: { slug: catSlug } } };
+      }
     }
 
     if (filters.pricing) {
       where.pricingModel = filters.pricing;
     }
 
-    let orderBy: Prisma.ToolOrderByWithRelationInput = { createdAt: 'desc' };
+    // 🔥 1. Define the normal sort from the UI dropdown
+    let userSort: Prisma.ToolOrderByWithRelationInput = { createdAt: 'desc' };
+
     switch (filters.sort) {
-      case 'oldest':
-        orderBy = { createdAt: 'asc' };
-        break;
-      case 'name-asc':
-        orderBy = { name: 'asc' };
-        break;
-      case 'name-desc':
-        orderBy = { name: 'desc' };
-        break;
+      case 'oldest': userSort = { createdAt: 'asc' }; break;
+      case 'newest': userSort = { createdAt: 'desc' }; break;
+      case 'name-asc': userSort = { name: 'asc' }; break;
+      case 'name-desc': userSort = { name: 'desc' }; break;
       case 'rating':
-        orderBy = { avgRating: 'desc' };
-        break;
+      case 'top-rated': userSort = { avgRating: 'desc' }; break;
+      case 'popular': userSort = { upvoteCount: 'desc' }; break;
+      case 'trending': userSort = { isTrending: 'desc' }; break;
     }
+
+    // 🔥 2. Force Prisma to prioritize tools with tasks first!
+    const orderBy: Prisma.ToolOrderByWithRelationInput[] = [
+      { ttasks: { _count: 'desc' } }, // Priority 1: Highest task count goes to the top
+      userSort                        // Priority 2: Then apply the dropdown sort (Newest, Popular, etc.)
+    ];
 
     const selectFields = {
       id: true,
@@ -91,6 +164,10 @@ export class ToolsService {
       isTrending: true,
       verified: true,
       upvoteCount: true,
+      compatibility: true,
+      launchDate: true,
+      hasApi: true,
+      useCases: true,
       categories: { select: { category: { select: { slug: true, name: true } } } },
       tags: { select: { tag: { select: { slug: true, name: true } } } },
       ttasks: { select: { task: { select: { slug: true, title: true } } } },
@@ -162,7 +239,6 @@ export class ToolsService {
         performanceScore: true,
         createdAt: true,
 
-        // --- NEW FIELDS SELECTED FOR API ---
         longDescription: true,
         videoUrl: true,
         releasedBy: true,
@@ -188,7 +264,6 @@ export class ToolsService {
 
     if (!tool) return null;
 
-    // Fetch similar tools
     const withRelations = await this.prisma.tool.findUnique({
       where: { id: tool.id },
       select: {

@@ -19,17 +19,22 @@ import { Footer } from "@/components/Footer";
 
 export default function NewsPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-      <Header />
-      <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
-      <Suspense fallback={
-        <div className="flex-1 flex items-center justify-center">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white " />
-        </div>
-      }>
-        <NewsPageClient />
-      </Suspense>
-      <Footer />
+    <div className="flex flex-col flex-1">
+
+      <div className="relative z-[60]">
+        <Suspense fallback={<div className="h-[300px]" />}><GlobalHero /></Suspense>
+      </div>
+
+      <div className="relative z-10 flex-1 flex flex-col">
+        <Suspense fallback={
+          <div className="flex-1 flex items-center justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white " />
+          </div>
+        }>
+          <NewsPageClient />
+        </Suspense>
+      </div>
+
     </div>
   );
 }

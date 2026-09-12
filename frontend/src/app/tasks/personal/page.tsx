@@ -73,8 +73,8 @@ export default function PersonalTasksPage() {
   }, [categoryTools, selectedTopic]);
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col justify-between">
-      <Header />
+    <div className="flex flex-col flex-1 justify-between">
+
 
       <main className="flex-1 mx-auto max-w-[1600px] w-full px-6 py-10">
         <Link
@@ -99,11 +99,23 @@ export default function PersonalTasksPage() {
                 setSelectedTopic(topic.slug);
                 const url = topic.slug ? `/personal/${topic.slug}` : `/personal`;
                 window.history.pushState(null, "", url);
-                e.currentTarget.scrollIntoView({
-                  behavior: "smooth",
-                  block: "nearest",
-                  inline: "center"
-                });
+                
+                const btn = e.currentTarget;
+                const container = btn.parentElement;
+                if (container && window.innerWidth < 768) {
+                  requestAnimationFrame(() => {
+                    const cRect = container.getBoundingClientRect();
+                    const bRect = btn.getBoundingClientRect();
+                    const bLeft = bRect.left - cRect.left + container.scrollLeft;
+                    const bRight = bLeft + bRect.width;
+
+                    if (bLeft < container.scrollLeft) {
+                      container.scrollTo({ left: bLeft - 16, behavior: "smooth" });
+                    } else if (bRight > container.scrollLeft + container.clientWidth) {
+                      container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: "smooth" });
+                    }
+                  });
+                }
               }}
               className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
                 selectedTopic === topic.slug
@@ -120,7 +132,7 @@ export default function PersonalTasksPage() {
         <ToolListView tools={filteredTools} loading={isLoading} />
       </main>
 
-      <Footer />
+
     </div>
   );
 }

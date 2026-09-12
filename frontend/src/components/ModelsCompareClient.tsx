@@ -7,8 +7,9 @@ import { useSearchParams } from "next/navigation";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { fetchModelById } from "@/lib/api";
+import { fetchModelsCompare } from "@/lib/api";
 import type { ModelDetail } from "@/lib/types";
+import { formatModelType } from "@/lib/types";
 
 const ROWS: { key: string; label: string; get: (m: ModelDetail) => string }[] = [
   {
@@ -19,7 +20,7 @@ const ROWS: { key: string; label: string; get: (m: ModelDetail) => string }[] = 
   {
     key: "type",
     label: "Type",
-    get: (m) => m.type || m.modality || "—",
+    get: (m) => formatModelType(m.modelType) || m.modality || "—",
   },
   {
     key: "primaryTask",
@@ -54,7 +55,7 @@ export function ModelsCompareClient() {
     .filter(Boolean)
     .slice(0, 2);
 
-  const [models, setModels] = useState<(ModelDetail | null)[]>([]);
+  const [models, setModels] = useState<ModelDetail[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,7 +65,7 @@ export function ModelsCompareClient() {
       return;
     }
     setLoading(true);
-    Promise.all(ids.map((id) => fetchModelById(id))).then((results) => {
+    fetchModelsCompare(ids).then((results) => {
       setModels(results);
       setLoading(false);
     });
@@ -72,9 +73,9 @@ export function ModelsCompareClient() {
   }, [searchParams.get("ids")]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
-      <Header />
-      <main className="mx-auto w-full max-w-[1100px] px-4 py-8 md:px-6 flex-1">
+    <div className="flex flex-col flex-1">
+
+      <main className="mx-auto w-full max-w-[1100px] px-3 sm:px-6 py-6 sm:py-8 flex-1">
         <Link
           href="/models"
           className="mb-6 inline-flex items-center gap-1.5 text-sm text-[#A1A1AA] hover:text-white transition-colors"
@@ -83,8 +84,8 @@ export function ModelsCompareClient() {
           Back to models
         </Link>
 
-        <h1 className="text-2xl font-black tracking-tight text-white mb-2">Compare models</h1>
-        <p className="text-sm text-[#A1A1AA] mb-8">
+        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white mb-2">Compare models</h1>
+        <p className="text-xs sm:text-sm text-[#A1A1AA] mb-6 sm:mb-8">
           Side-by-side specs for the models you selected.
         </p>
 
@@ -102,7 +103,7 @@ export function ModelsCompareClient() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-[#232326]/60 bg-[#131316]/10">
+          <div className="overflow-x-auto scrollbar-none rounded-xl border border-[#232326]/60 bg-[#131316]/10">
             <table className="w-full min-w-[640px] text-left">
               <thead>
                 <tr className="border-b border-[#232326]/60 bg-[#131316]/40">
@@ -165,7 +166,7 @@ export function ModelsCompareClient() {
           </div>
         )}
       </main>
-      <Footer />
+
     </div>
   );
 }

@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Plus from 'lucide-react/dist/esm/icons/plus';
 import Pencil from 'lucide-react/dist/esm/icons/pencil';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
 import { AIModel, ModelSubCategory } from "@/lib/types";
-import { API_URL, fetchModels, fetchModelSubCategories } from "@/lib/api";
+import { API_URL, fetchModels, fetchModelSubCategories, fetchModelFilters } from "@/lib/api";
 import { ModelListView } from "@/components/ModelListView";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/ui/modal";
@@ -14,24 +14,33 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/shadcn-button";
 import { toast } from "sonner";
 
-import { useInfiniteQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { Pagination } from "@/components/Pagination";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { scrollChipIntoView } from "@/lib/utils";
 
-const MODEL_SUBCATEGORIES: ModelSubCategory[] = [
-  { id: "1", name: "LLM", slug: "llm" },
-  { id: "2", name: "Image Generation", slug: "image-generation" },
-  { id: "3", name: "Video Generation", slug: "video-generation" },
-  { id: "4", name: "Speech", slug: "speech" },
-  { id: "5", name: "Multimodal", slug: "multimodal" },
-  { id: "6", name: "Code Generation", slug: "code-generation" },
-  { id: "7", name: "Embedding", slug: "embedding" },
-  { id: "8", name: "Reasoning", slug: "reasoning" },
-  { id: "9", name: "Vision Models", slug: "vision-models" },
-  { id: "10", name: "Open Source Models", slug: "open-source-models" },
-  { id: "11", name: "Testing", slug: "testing" },
-  { id: "12", name: "E-commerce", slug: "e-commerce" },
-  { id: "13", name: "Recruitment", slug: "recruitment" },
-  { id: "14", name: "Translation", slug: "translation" },
-  { id: "15", name: "Project Management", slug: "project-management" },
+/**
+ * Static fallback used only when GET /api/v1/models/subcategories comes
+ * back empty (no rows seeded yet, or the endpoint is temporarily down).
+ * This guarantees the chip row is never fully missing from the page.
+ * Clicking a fallback chip still filters through the real backend
+ * `subCategory` query param — nothing here is faked client-side.
+ */
+const FALLBACK_MODEL_SUBCATEGORIES: ModelSubCategory[] = [
+  { id: "fallback-1", name: "LLM", slug: "llm" },
+  { id: "fallback-2", name: "Image Generation", slug: "image-generation" },
+  { id: "fallback-3", name: "Video Generation", slug: "video-generation" },
+  { id: "fallback-4", name: "Speech", slug: "speech" },
+  { id: "fallback-5", name: "Multimodal", slug: "multimodal" },
+  { id: "fallback-6", name: "Code Generation", slug: "code-generation" },
+  { id: "fallback-7", name: "Embedding", slug: "embedding" },
+  { id: "fallback-8", name: "Reasoning", slug: "reasoning" },
+  { id: "fallback-9", name: "Vision Models", slug: "vision-models" },
+  { id: "fallback-10", name: "Open Source Models", slug: "open-source-models" },
+  { id: "fallback-11", name: "Testing", slug: "testing" },
+  { id: "fallback-12", name: "E-Commerce", slug: "ecommerce" },
+  { id: "fallback-13", name: "Recruitment", slug: "recruitment" },
+  { id: "fallback-14", name: "Translation", slug: "translation" },
+  { id: "fallback-15", name: "Project Management", slug: "project-management" },
 ];
 
 export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: string }) {
@@ -42,16 +51,43 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   const router = useRouter();
 
   const selectedSubCategorySlug = defaultSubCategory || searchParams.get("subCategory") || null;
+
+  // Auto-scrolls the active subcategory chip into view (centered) within
+  // its horizontally-scrolling row when the selection changes.
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+
+
   const rawSort = searchParams.get("sort") || "newest";
   const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
     ? "alphabetical"
     : rawSort === "oldest"
-    ? "oldest"
-    : rawSort === "rating"
-    ? "releaseDate"
-    : "newest";
+      ? "oldest"
+      : rawSort === "rating"
+        ? "releaseDate"
+        : "newest";
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  // Driven by the global search bar, which writes `?q=` to the URL — same
+  // convention as ToolsClient. The Models API's own query param is named
+  // `search`; we translate at the fetch call only.
+  const q = searchParams.get("q") || undefined;
+
+  const selectedProvider = searchParams.get("provider") || "";
+  const selectedModelType = searchParams.get("modelType") || "";
+  const selectedOpenSource = searchParams.get("openSource") || "";
+  const selectedReleaseSort = searchParams.get("releaseSort") === "asc" ? "asc" : "desc";
+
+  const [currentPage, setCurrentPage] = useState<number>(() => {
+    const pageFromUrl = searchParams.get("page");
+    return pageFromUrl ? parseInt(pageFromUrl, 10) : 1;
+  });
+  const [pageSize, setPageSize] = useState<number>(100);
+
+  // Reset to page 1 whenever search or filters change.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q, selectedProvider, selectedModelType, selectedOpenSource, selectedReleaseSort, selectedSubCategorySlug]);
 
   // Admin modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,54 +103,90 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSelectSubCategory = (slug: string | null) => {
-    if (slug) {
-      router.push(`/models/${slug}`);
-    } else {
-      router.push(`/models`);
+  const updateParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
     }
+
+    const query = params.toString();
+    router.push(query ? `?${query}` : "?");
   };
+
+  const handleSelectSubCategory = (slug: string | null) => {
+    setCurrentPage(1);
+    const params = new URLSearchParams(searchParams.toString());
+    if (slug) {
+      params.set("subCategory", slug);
+    } else {
+      params.delete("subCategory");
+    }
+    params.delete("page");
+    const query = params.toString();
+    router.push(query ? `/models?${query}` : "/models");
+  };
+
+  const { data: apiSubCategories = [] } = useQuery<ModelSubCategory[]>({
+    queryKey: ["model-subcategories"],
+    queryFn: fetchModelSubCategories,
+    staleTime: 30 * 60 * 1000,
+  });
+
+  // Never let the chip row disappear entirely: fall back to a static
+  // frontend list if the backend hasn't got any subcategories seeded (or
+  // the endpoint fails). Selecting a fallback chip still filters through
+  // the real /api/v1/models?subCategory= backend query.
+  const subCategories = apiSubCategories.length > 0 ? apiSubCategories : FALLBACK_MODEL_SUBCATEGORIES;
+
+  const { data: filterOptions } = useQuery({
+    queryKey: ["model-filters"],
+    queryFn: fetchModelFilters,
+    staleTime: 30 * 60 * 1000,
+  });
 
   const {
     data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
     isLoading,
     isPlaceholderData,
-  } = useInfiniteQuery({
-    queryKey: ["models", { subCategory: selectedSubCategorySlug, sort: selectedSort }],
-    queryFn: async ({ pageParam = 1 }) => {
-      return fetchModels({ page: pageParam, subCategory: selectedSubCategorySlug || undefined, sort: selectedSort as any });
-    },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage: any) => {
-      if (lastPage?.pagination?.hasMore) {
-        return (lastPage?.pagination?.page || 1) + 1;
-      }
-      return undefined;
+  } = useQuery({
+    queryKey: [
+      "models",
+      {
+        subCategory: selectedSubCategorySlug,
+        sort: selectedSort,
+        page: currentPage,
+        limit: pageSize,
+        search: q,
+        provider: selectedProvider,
+        modelType: selectedModelType,
+        openSource: selectedOpenSource,
+        releaseSort: selectedReleaseSort,
+      },
+    ],
+    queryFn: async () => {
+      return (fetchModels as any)({
+        page: currentPage,
+        limit: pageSize,
+        subCategory: selectedSubCategorySlug || undefined,
+        search: q,
+        provider: selectedProvider || undefined,
+        modelType: (selectedModelType || undefined) as any,
+        openSource: selectedOpenSource || undefined,
+        sort: selectedReleaseSort === "asc" ? "oldest" : "newest",
+      });
     },
     placeholderData: keepPreviousData,
     staleTime: 10 * 60 * 1000,
   });
 
-  const models = data?.pages.flatMap((p: any) => p.items || []) || [];
-
-  // Infinite scroll
-  useEffect(() => {
-    if (isLoading || isFetchingNextPage || !hasNextPage) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) fetchNextPage();
-      },
-      { threshold: 0.1 }
-    );
-    const el = sentinelRef.current;
-    if (el) observer.observe(el);
-    return () => {
-      if (el) observer.unobserve(el);
-    };
-  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
+  const models = data?.items || [];
+  const totalPages = data?.pagination?.totalPages || 1;
+  const hasActiveFilters = Boolean(q || selectedProvider || selectedModelType || selectedOpenSource);
 
   const reloadFirstPage = async () => {
     queryClient.invalidateQueries({ queryKey: ["models"] });
@@ -201,27 +273,31 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
           )}
 
           {/* Subcategory Filter Chips */}
-          {MODEL_SUBCATEGORIES.length > 0 && (
-            <div className="mb-2 flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+          {subCategories.length > 0 && (
+            <div
+              ref={subCatContainerRef}
+              className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+            >
               <button
+                ref={(el) => { subCatRefs.current["all"] = el; }}
                 onClick={() => handleSelectSubCategory(null)}
-                  className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
-                  !selectedSubCategorySlug
+                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${!selectedSubCategorySlug
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                }`}
+                  }`}
               >
                 All
               </button>
-              {MODEL_SUBCATEGORIES.map((sub) => (
+              {subCategories.map((sub) => (
                 <button
                   key={sub.id}
-                  onClick={() => handleSelectSubCategory(sub.slug)}
-                    className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
-                    selectedSubCategorySlug === sub.slug
+                  onClick={() => {
+                    handleSelectSubCategory(sub.slug);
+                  }}
+                  className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${selectedSubCategorySlug === sub.slug
                       ? "bg-white text-black border-white shadow-lg shadow-white/5"
                       : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-                  }`}
+                    }`}
                 >
                   {sub.name}
                 </button>
@@ -229,7 +305,27 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
             </div>
           )}
 
-          <ModelListView models={models} loading={isLoading && models.length === 0} />
+
+
+          <ModelListView
+            models={models}
+            loading={isLoading && models.length === 0}
+            selectedModelType={selectedModelType}
+            onModelTypeChange={(v) => updateParams({ modelType: v || null })}
+            selectedProvider={selectedProvider}
+            providerOptions={filterOptions?.providers || []}
+            onProviderChange={(v) => updateParams({ provider: v || null })}
+            selectedReleaseSort={selectedReleaseSort}
+            onReleaseSortChange={(v) => updateParams({ releaseSort: v })}
+            selectedOpenSource={selectedOpenSource as "" | "true" | "false"}
+            onOpenSourceChange={(v) => updateParams({ openSource: v || null })}
+          />
+
+          {!isLoading && models.length === 0 && hasActiveFilters && (
+            <p className="text-center text-[12px] text-[#71717A]">
+              {q ? `No models match “${q}”.` : "No models match the selected filters."}
+            </p>
+          )}
 
           {/* Admin quick-edit strip (kept out of row chrome) */}
           {isAdmin && !isLoading && models.length > 0 && (
@@ -238,7 +334,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
                 Admin — edit / delete
               </p>
               <div className="flex flex-wrap gap-2">
-                {models.slice(0, 12).map((m) => (
+                {models.slice(0, 12).map((m: AIModel) => (
                   <div
                     key={m.id}
                     className="inline-flex items-center gap-1 rounded-md border border-[#232326]/60 bg-[#18181C] px-2 py-1"
@@ -268,11 +364,21 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
             </div>
           )}
 
-          {models.length > 0 && hasNextPage && (
-            <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-            </div>
-          )}
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalCount={data?.pagination?.total}
+            onPageChange={(p) => {
+              setCurrentPage(p);
+              const target = document.getElementById("models-grid");
+              if (target) target.scrollIntoView({ behavior: "smooth" });
+            }}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       </div>
 

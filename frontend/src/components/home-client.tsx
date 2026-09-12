@@ -1,116 +1,93 @@
 'use client';
 
-import React, { useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
-import { API_URL } from "@/lib/api";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { fetchHomeFeed } from "@/lib/home-feed";
 import { GlobalHero } from "@/components/GlobalHero";
 import { ToolListView } from "@/components/ToolListView";
-
-import type { SortOption } from "@/lib/types";
-
-const INITIAL_PAGE_SIZE = 50;
-const DEFAULT_PAGE_SIZE = 12;
+import { Pagination } from "@/components/Pagination";
 
 export function HomeClient() {
   const searchParams = useSearchParams();
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Build params object from URL search params
-  const q = searchParams.get("q") || undefined;
-  const category = searchParams.get("category") || undefined;
-  const pricing = searchParams.get("pricing") || undefined;
-  const sort = (searchParams.get("sort") || undefined) as SortOption | undefined;
+  const [currentPage, setCurrentPage] = useState<number>(() => {
+    const pageFromUrl = searchParams.get("page");
+    return pageFromUrl ? parseInt(pageFromUrl, 10) : 1;
+  });
 
-  const queryKey = ["home-tools", { q, category, pricing, sort }];
+  const [pageSize, setPageSize] = useState<number>(() => {
+    const sizeFromUrl = searchParams.get("pageSize");
+    return sizeFromUrl ? parseInt(sizeFromUrl, 10) : 25;
+  });
+
+  const showParam = searchParams.get("show");
+  const show = showParam !== null ? showParam : "tools,devices,robots,news,models";
+
+  // Reset to page 1 whenever show filter changes
+  const prevShowRef = React.useRef(show);
+  React.useEffect(() => {
+    if (prevShowRef.current !== show) {
+      prevShowRef.current = show;
+      setCurrentPage(1);
+    }
+  }, [show]);
+  const queryKey = ["unified-feed", { show, page: currentPage, pageSize }];
 
   const {
     data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
     isLoading,
     isPlaceholderData,
-  } = useInfiniteQuery({
+  } = useQuery({
     queryKey,
-    queryFn: async ({ pageParam = 1 }) => {
-      const query = new URLSearchParams();
-      if (q) query.set("q", q);
-      if (category) query.set("category", category);
-      if (pricing) query.set("pricing", pricing);
-      if (sort) query.set("sort", sort);
-      query.set("page", String(pageParam));
-      query.set("pageSize", String(pageParam === 1 ? INITIAL_PAGE_SIZE : DEFAULT_PAGE_SIZE));
-
-      const res = await fetch(`${API_URL}/api/v1/tools?${query.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch tools");
-      return res.json();
-    },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage: any) => {
-      const currentPage = lastPage?.page || 1;
-      const totalPages = lastPage?.totalPages || 1;
-      if (currentPage < totalPages) {
-        return currentPage + 1;
-      }
-      return undefined;
-    },
+    queryFn: () => fetchHomeFeed({ show, page: currentPage, pageSize }),
     placeholderData: keepPreviousData,
-    staleTime: 10 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const tools = data?.pages.flatMap((p: any) => p?.tools || []) || [];
-
-  // IntersectionObserver for endless scrolling
-  useEffect(() => {
-    if (isLoading || isFetchingNextPage || !hasNextPage) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        fetchNextPage();
-      }
-    }, { threshold: 0.1 });
-
-    const currentSentinel = sentinelRef.current;
-    if (currentSentinel) {
-      observer.observe(currentSentinel);
-    }
-
-    return () => {
-      if (currentSentinel) {
-        observer.unobserve(currentSentinel);
-      }
-    };
-  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
+  const tools = data?.items || data?.tools || [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white overflow-x-hidden">
-      {/* 1. Sticky Header */}
-      <Header />
+    <div className="flex flex-col flex-1">
+      
+      {/* FIXED: Wrapped GlobalHero in a very high z-index so any dropdowns inside it will float above the table below */}
+      <div className="relative z-[60]">
+        <GlobalHero />
+      </div>
 
-      <GlobalHero />
-
-      {/* Tools Section — full width so the data table can use the whole screen */}
-      <div id="tools" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2">
-        <div className={`mx-auto w-full max-w-[1600px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
+      {/* FIXED: Confined the table wrapper to a lower z-index (z-10) so its sticky columns can never overlap the Hero */}
+      <div id="tools" className="relative z-10 scroll-mt-28 w-full px-3 sm:px-6 lg:px-8 pt-2 pb-8">
+        <div className={`mx-auto w-full max-w-[1600px] space-y-4 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
+          
+          {/* Feed the unified items directly into your full-width table */}
           <ToolListView
             tools={tools}
             loading={isLoading && tools.length === 0}
           />
 
-          {/* Sentinel for infinite scroll */}
-          {hasNextPage && (
-            <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-            </div>
-          )}
+          {/* Unified Floating Pill Pagination */}
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalCount={total}
+            onPageChange={(p) => {
+              setCurrentPage(p);
+              const target = document.getElementById("tools");
+              if (target) {
+                target.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       </div>
 
-      {/* 4. Footer */}
-      <Footer />
     </div>
   );
 }

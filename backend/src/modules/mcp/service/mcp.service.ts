@@ -233,65 +233,120 @@ export class MCPService {
       search,
       sortBy = 'recently-updated',
       page = 1,
-      limit = 20,
+      limit = 100,
     } = query;
 
     const skip = (page - 1) * limit;
 
     // Build where clause
-    const where: Prisma.MCPItemWhereInput = {};
+    const andConditions: Prisma.MCPItemWhereInput[] = [];
 
     if (type) {
-      where.itemType = type;
+      andConditions.push({ itemType: type });
     }
 
     if (pricingType) {
-      where.pricingType = pricingType;
+      andConditions.push({ pricingType });
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { shortDescription: { contains: search, mode: 'insensitive' } },
-        { fullDescription: { contains: search, mode: 'insensitive' } },
-        { providerName: { contains: search, mode: 'insensitive' } },
-      ];
+      andConditions.push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { shortDescription: { contains: search, mode: 'insensitive' } },
+          { fullDescription: { contains: search, mode: 'insensitive' } },
+          { providerName: { contains: search, mode: 'insensitive' } },
+        ],
+      });
     }
 
-    if (category) {
-      where.categories = {
-        some: {
-          category: {
-            slug: category,
-          },
-        },
+    const filterTarget = subCategory || category;
+    if (filterTarget && filterTarget.toLowerCase() !== 'all') {
+      const normalized = filterTarget.toLowerCase().trim();
+      const variants = [normalized];
+      if (normalized.endsWith('s')) variants.push(normalized.slice(0, -1));
+      if (normalized.endsWith('es')) variants.push(normalized.slice(0, -2));
+      if (!normalized.endsWith('s')) variants.push(`${normalized}s`);
+
+      const taxonomyMap: Record<string, string[]> = {
+        databases: ['database', 'databases', 'db', 'sql', 'postgres', 'mysql', 'mongo', 'redis', 'sqlite'],
+        apis: ['api', 'apis', 'rest', 'graphql', 'integration', 'search', 'weather', 'payment', 'webhook'],
+        'file-systems': ['file-system', 'file-systems', 'filesystem', 'storage', 'files', 'fs', 'file'],
+        'developer-tools': ['developer-tools', 'developer-tool', 'dev-tools', 'dev-tool', 'git', 'github', 'security', 'testing', 'code'],
+        'mcp-servers': ['mcp-servers', 'mcp-server', 'server', 'mcp'],
+        'mcp-clients': ['mcp-clients', 'mcp-client', 'client', 'extension', 'vscode'],
+        'ml-platforms': ['ml-platforms', 'ml-platform', 'ml', 'ai', 'ai-powered', 'model', 'media', 'llm', 'inference', 'training'],
+        'core-mcp-servers': ['core-mcp-servers', 'core-mcp-server', 'core', 'mcp-servers'],
+        'specialized-mcp-servers': ['specialized-mcp-servers', 'specialized-mcp-server', 'specialized', 'mcp-servers'],
+        'sdks-frameworks': ['sdks-frameworks', 'sdk', 'sdks', 'framework', 'frameworks', 'developer-tools', 'typescript', 'python', 'javascript'],
+        'testing-tools': ['testing-tools', 'testing-tool', 'testing', 'test', 'tests', 'developer-tools', 'debug', 'lint'],
+        'version-control': ['version-control', 'git', 'github', 'gitlab', 'vcs', 'developer-tools'],
+        automation: ['automation', 'automated', 'workflow', 'browser', 'scrape', 'playwright'],
+        'smart-devices': ['smart-devices', 'smart-device', 'iot', 'devices', 'hardware'],
+        'data-analytics': ['data-analytics', 'analytics', 'data-analysis', 'database', 'sql'],
+        productivity: ['productivity', 'productive', 'chat', 'messaging', 'slack', 'discord', 'email', 'calendar', 'docs'],
+        browser: ['browser', 'browsers', 'web', 'automation', 'web-scraping', 'playwright', 'puppeteer', 'selenium', 'search', 'scrape', 'scraper'],
+        cloud: ['cloud', 'cloud-services', 'deploy', 'kubernetes', 'docker', 'aws', 'gcp', 'azure'],
+        community: ['community', 'open-source'],
       };
-    }
 
-    if (subCategory) {
-      where.OR = [
-        {
-          subCategories: {
-            some: {
-              subCategory: {
-                slug: subCategory,
+      if (taxonomyMap[normalized]) {
+        variants.push(...taxonomyMap[normalized]);
+      }
+
+      const uniqueVariants = Array.from(new Set(variants));
+
+      andConditions.push({
+        OR: [
+          {
+            categories: {
+              some: {
+                category: {
+                  slug: { in: uniqueVariants, mode: 'insensitive' },
+                },
               },
             },
           },
-        },
-        {
-          categories: {
-            some: {
-              category: {
-                slug: subCategory,
+          {
+            subCategories: {
+              some: {
+                subCategory: {
+                  slug: { in: uniqueVariants, mode: 'insensitive' },
+                },
               },
             },
           },
-        },
-      ];
+          {
+            mcpSubCategories: {
+              some: {
+                subCategory: {
+                  slug: { in: uniqueVariants, mode: 'insensitive' },
+                },
+              },
+            },
+          },
+          {
+            tags: {
+              some: {
+                tag: {
+                  slug: { in: uniqueVariants, mode: 'insensitive' },
+                },
+              },
+            },
+          },
+          ...uniqueVariants.map((v) => ({
+            name: { contains: v, mode: 'insensitive' as const },
+          })),
+          ...uniqueVariants.map((v) => ({
+            shortDescription: { contains: v, mode: 'insensitive' as const },
+          })),
+        ],
+      });
     }
 
-    // Build orderBy clause based on sortBy parameter
+    const where: Prisma.MCPItemWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
+
+    // Build orderBy clause to guarantee items with launch dates and high engagement float to the top
     let orderBy: Prisma.MCPItemOrderByWithRelationInput[] = [];
     
     switch (sortBy) {
@@ -299,23 +354,29 @@ export class MCPService {
         orderBy = [
           { monthlyVisits: 'desc' },
           { viewCount: 'desc' },
+          { launchDate: 'desc' },
         ];
         break;
       case 'top-rated':
         orderBy = [
           { qualityScore: 'desc' },
+          { launchDate: 'desc' },
           { reviews: { _count: 'desc' } },
         ];
         break;
       case 'most-upvoted':
         orderBy = [
           { upvoteCount: 'desc' },
+          { launchDate: 'desc' },
         ];
         break;
       case 'recently-updated':
       default:
+        // This forces items with a real launchDate to take absolute priority over null ones!
         orderBy = [
+          { launchDate: 'desc' },
           { lastUpdatedDate: 'desc' },
+          { viewCount: 'desc' },
         ];
         break;
     }
@@ -1063,10 +1124,24 @@ export class MCPService {
       where.category = { slug: categorySlug };
     }
 
-    return this.prisma.mCPDirectorySubCategory.findMany({
+    const dirSubCategories = await this.prisma.mCPDirectorySubCategory.findMany({
       where,
       orderBy: { name: 'asc' },
       select: { id: true, name: true, slug: true, description: true, categoryId: true },
     });
+
+    if (dirSubCategories.length > 0 || categorySlug) {
+      return dirSubCategories;
+    }
+
+    try {
+      const legacy = await this.prisma.mCPSubCategory.findMany({
+        orderBy: { name: 'asc' },
+        select: { id: true, name: true, slug: true, description: true },
+      });
+      return legacy.map((l) => ({ ...l, categoryId: '' }));
+    } catch {
+      return [];
+    }
   }
 }

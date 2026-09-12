@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Device, DeviceSubCategory } from "@/lib/types";
 import { fetchAllDevices } from "@/lib/api";
+import { scrollChipIntoView } from "@/lib/utils";
 import { DEVICES_DATA, DeviceData, getMainTaskColor } from "@/data/devices";
 import Flame    from 'lucide-react/dist/esm/icons/flame';
 import Wrench      from 'lucide-react/dist/esm/icons/wrench';
@@ -122,10 +123,12 @@ function LogoCell({ name, logoUrl, color }: { name: string; logoUrl: string; col
   return <img src={logoUrl} alt={name} className="h-9 w-9 object-contain" onError={() => setFailed(true)} />;
 }
 
-const PAGE_SIZE = 20;
+import { Pagination } from "@/components/Pagination";
+
+const PAGE_SIZE = 100;
 
 // Matches ToolListView column template exactly
-const COL_TEMPLATE = "grid-cols-[40px_minmax(200px,2.4fr)_minmax(120px,1.2fr)_minmax(120px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)] sm:grid-cols-[40px_minmax(200px,2.4fr)_minmax(120px,1.2fr)_minmax(120px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)_80px]";
+const COL_TEMPLATE = "grid-cols-[40px_minmax(220px,2.4fr)_minmax(140px,1.2fr)_minmax(140px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)] sm:grid-cols-[40px_minmax(220px,2.4fr)_minmax(140px,1.2fr)_minmax(140px,1.3fr)_minmax(80px,0.8fr)_minmax(100px,1.1fr)_minmax(90px,0.9fr)_minmax(110px,1.1fr)_minmax(160px,1.8fr)_80px]";
 const COL_MIN_WIDTH = "min-w-[1050px]";
 
 const COLUMN_HEADERS = [
@@ -154,6 +157,8 @@ const DEVICE_SLUGS: Record<string, string> = {
   "development-boards": "Development Boards",
   "smart-sensors": "Smart Sensors",
   "automotive-ai-devices": "Automotive AI Devices",
+  "microphones": "Microphones",
+  "farming": "Farming",
 };
 
 const DEVICE_TO_SLUG: Record<string, string> = {
@@ -170,6 +175,8 @@ const DEVICE_TO_SLUG: Record<string, string> = {
   "Development Boards": "development-boards",
   "Smart Sensors": "smart-sensors",
   "Automotive AI Devices": "automotive-ai-devices",
+  "Microphones": "microphones",
+  "Farming": "farming",
 };
 
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
@@ -192,9 +199,11 @@ export function DevicesClient({ defaultCategory }: { defaultCategory?: string })
     staleTime: 10 * 60 * 1000,
   });
 
-  const devices = fetchedDevices || DEVICES_DATA;
+  const devices = (fetchedDevices && fetchedDevices.length > 0) 
+    ? (fetchedDevices[0]?.slug && fetchedDevices[0]?.name ? fetchedDevices : mergeWithDummy(fetchedDevices as any)) 
+    : DEVICES_DATA;
   const [currentPage, setCurrentPage] = useState(1);
-  const loaderRef = useRef<HTMLDivElement>(null);
+  const [pageSize, setPageSize] = useState(100);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const [nameSearch, setNameSearch] = useState("");
@@ -206,18 +215,30 @@ export function DevicesClient({ defaultCategory }: { defaultCategory?: string })
     return ALL_CATEGORIES;
   });
 
-  useEffect(() => {
-    if (defaultCategory !== undefined) {
-      setSelectedCategory(defaultCategory && DEVICE_SLUGS[defaultCategory] ? DEVICE_SLUGS[defaultCategory] : ALL_CATEGORIES);
-    }
-  }, [defaultCategory]);
+  const subCatContainerRef = useRef<HTMLDivElement>(null);
+  const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+
+
+useEffect(() => {
+  if (defaultCategory) {
+    const normalized = defaultCategory.toLowerCase().trim();
+    // Resolve slug to display name (e.g., "microphones" -> "Microphones")
+    const matchedCategory = 
+      DEVICE_SLUGS[normalized] || 
+      DEVICE_SUBCATEGORIES.find((c) => c.toLowerCase() === normalized) || 
+      defaultCategory;
+
+    setSelectedCategory(matchedCategory);
+  }
+}, [defaultCategory]);
   const [selectedAvailability, setSelectedAvailability] = useState("All");
-  const rawSort = searchParams.get("sort") ?? "newest";
-const [sortKey, setSortKey] = useState<SortKey>(() => {
-  if (rawSort === "name-asc" || rawSort === "name-desc") return "name";
-  if (rawSort === "oldest" || rawSort === "newest") return "release";
-  return "release";
-});
+  const rawSort = searchParams.get("sort") ?? "";
+  const [sortKey, setSortKey] = useState<SortKey | null>(() => {
+    if (rawSort === "name-asc" || rawSort === "name-desc") return "name";
+    if (rawSort === "oldest" || rawSort === "newest") return "release";
+    return null;
+  });
 const [sortDir, setSortDir] = useState<"asc" | "desc">(() => {
   if (rawSort === "oldest" || rawSort === "name-asc") return "asc";
   return "desc";
@@ -254,13 +275,23 @@ const [sortDir, setSortDir] = useState<"asc" | "desc">(() => {
   }
 
 useEffect(() => {
-  const s = searchParams.get("sort") ?? "newest";
-  if (s === "name-asc")  { setSortKey("name");    setSortDir("asc");  }
-  else if (s === "name-desc") { setSortKey("name"); setSortDir("desc"); }
-  else if (s === "oldest")    { setSortKey("release"); setSortDir("asc"); }
-  else if (s === "rating")    { setSortKey("release"); setSortDir("desc"); } // fallback
-  else                        { setSortKey("release"); setSortDir("desc"); } // newest
-}, [searchParams]);
+    const s = searchParams.get("sort") ?? "";
+    if (s === "name-asc") {
+      setSortKey("name");
+      setSortDir("asc");
+    } else if (s === "name-desc") {
+      setSortKey("name");
+      setSortDir("desc");
+    } else if (s === "oldest") {
+      setSortKey("release");
+      setSortDir("asc");
+    } else if (s === "newest" || s === "rating") {
+      setSortKey("release");
+      setSortDir("desc");
+    } else {
+      setSortKey(null as any); // Keeps it neutral/grey by default!
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -302,57 +333,45 @@ useEffect(() => {
       const q = nameSearch.toLowerCase();
       list = list.filter((d) => d.name.toLowerCase().includes(q) || d.manufacturer?.toLowerCase().includes(q));
     }
-    if (selectedCategory !== ALL_CATEGORIES) {
+  const CATEGORY_ALIASES: Record<string, string[]> = {
+  "AR/VR": ["ar / vr / spatial computing"],
+  "Edge AI": ["edge ai hardware"],
+  "Automotive AI Devices": ["automotive ai", "automotive"], // adjust once you confirm real DB value
+};
+
+if (selectedCategory !== ALL_CATEGORIES) {
+  const sel = selectedCategory.toLowerCase().trim();
+  const aliases = (CATEGORY_ALIASES[selectedCategory] || []).map(a => a.toLowerCase());
+
   list = list.filter((d) => {
-    const sel = selectedCategory.toLowerCase();
-    // Build a searchable text blob from multiple fields
-    const searchable = [
-      d.category || "",
-      d.name || "",
-      d.description || "",
-      d.mainTask || "",
-      d.formFactor || "",
-      ...(d.aiFeatures || []),
-      ...(d.primaryUseCases || []),
-    ].join(" ").toLowerCase();
+    const cat = (d.category || "").toLowerCase().trim();
+    const subCat = (d.subcategory || "").toLowerCase().trim();
 
-    const keywords: Record<string, string[]> = {
-      "ai pcs": ["pc", "laptop", "computer", "chromebook", "desktop", "notebook", "ai pc"],
-      "smartphones": ["smartphone", "phone", "mobile", "iphone", "android", "pixel", "galaxy", "lumia", "blackberry", "xperia", "pinephone"],
-      "smart home": ["smart home", "home automation", "thermostat", "smart speaker", "echo", "nest", "alexa", "hub", "smart plug", "smart meter", "smart display", "homepod", "smartthings"],
-      "wearables": ["wearable", "smartwatch", "watch", "ring", "fitness", "band", "pendant", "glasses", "eyewear", "pin", "clip", "smart glasses"],
-      "ai cameras": ["camera", "surveillance", "vision", "facial", "ai camera"],
-      "audio": ["audio", "headphone", "earbud", "speaker", "microphone", "mic", "sound", "voice recorder"],
-      "ar/vr": ["ar", "vr", "augmented", "virtual reality", "mixed reality", "headset", "spatial", "xr", "webxr", "reality labs"],
-      "edge ai": ["edge ai", "edge ai hardware", "iot", "embedded", "accelerator", "fpga", "soc", "microcontroller", "neural processing unit", "npu", "tpu", "gpu", "tensor processing"],
-      "robotics hardware": ["robot", "robotics", "actuator", "lego mindstorms", "drone", "robotic"],
-      "medical": ["medical", "health", "diagnostics", "clinical", "wellness", "prosthesis", "medtronic", "abbott"],
-      "development boards": ["development board", "raspberry pi", "jetson", "arduino", "odroid", "banana pi", "nodemcu", "esp32", "esp8266", "risc-v", "rockchip", "allwinner"],
-      "smart sensors": ["sensor", "smart sensor", "environmental", "motion sensor"],
-      "automotive ai devices": ["automotive", "dashcam", "navigation", "autopilot", "self-driving", "lane centering", "tesla autopilot", "nvidia drive"],
-      "microphones": ["microphone", "mic", "voice recorder", "transcription", "recording", "plaud"],
-      "farming": ["farming", "agriculture", "digital agriculture", "precision farming"],
-    };
+    if (cat === sel || subCat === sel) return true;
+    if (aliases.includes(cat) || aliases.includes(subCat)) return true;
 
-    const keywordList = keywords[sel] || [sel];
-    return keywordList.some((kw) => searchable.includes(kw));
+    return false;
   });
 }
-    if (selectedAvailability !== "All") list = list.filter((d) => d.availability === selectedAvailability);
+    if (selectedAvailability !== "All") {
+      list = list.filter((d) => (d.availability || "").toLowerCase() === selectedAvailability.toLowerCase());
+    }
     if (activePriceFilter) {
       list = list.filter((d) => {
         if (!d.price) return false;
-        const p = parseFloat(d.price.replace(/[^0-9.]/g, "")) || 0;
-        return p >= priceMin && p <= priceMax;
+        const num = Number(d.price.replace(/[^0-9.]/g, ""));
+        return !isNaN(num) && num >= priceMin && num <= priceMax;
       });
     }
     list.sort((a, b) => {
       let cmp = 0;
-      if (sortKey === "name") cmp = a.name.localeCompare(b.name);
-      else if (sortKey === "availability") cmp = (a.availability || "").localeCompare(b.availability || "");
-      else if (sortKey === "price") {
-        const pa = parseFloat((a.price || "0").replace(/[^0-9.]/g, "")) || 0;
-        const pb = parseFloat((b.price || "0").replace(/[^0-9.]/g, "")) || 0;
+      if (sortKey === "name") {
+        cmp = a.name.localeCompare(b.name);
+      } else if (sortKey === "availability") {
+        cmp = (a.availability || "").localeCompare(b.availability || "");
+      } else if (sortKey === "price") {
+        const pa = a.price ? Number(a.price.replace(/[^0-9.]/g, "")) || 0 : 0;
+        const pb = b.price ? Number(b.price.replace(/[^0-9.]/g, "")) || 0 : 0;
         cmp = pa - pb;
       } else {
         cmp = (b.year || "").localeCompare(a.year || "");
@@ -364,21 +383,10 @@ useEffect(() => {
 
   useEffect(() => { setCurrentPage(1); }, [nameSearch, selectedCategory, selectedAvailability, sortKey, sortDir, activePriceFilter]);
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const visible = filtered.slice(0, currentPage * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const visible = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && currentPage < totalPages) {
-          setCurrentPage((p) => p + 1);
-        }
-      },
-      { threshold: 0.1 }
-    );
-    if (loaderRef.current) observer.observe(loaderRef.current);
-    return () => observer.disconnect();
-  }, [currentPage, totalPages]);
+
 
   function handleSort(key: SortKey) {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -441,15 +449,19 @@ useEffect(() => {
   return (
     <>
     <div className="w-full flex-1 flex flex-col">
-      <div className="w-full px-4 sm:px-6 lg:px-8 pt-2 pb-1">
-        <div className="flex flex-nowrap items-center justify-start gap-1.5 overflow-x-auto pb-2.5 scrollbar-none w-full px-4 md:px-0">
+      <div className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-1">
+        <div
+          ref={subCatContainerRef}
+          className="flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full -mx-3 sm:mx-0 px-3 sm:px-0 overflow-x-auto scroll-smooth"
+        >
           <button
+            ref={(el) => { subCatRefs.current[ALL_CATEGORIES] = el; }}
             onClick={() => {
-              setSelectedCategory(ALL_CATEGORIES);
-              setCurrentPage(1);
-              router.push(`/devices`);
-            }}
-            className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+  setSelectedCategory(ALL_CATEGORIES);
+  setCurrentPage(1);
+  router.push('/devices');
+}}
+            className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
               selectedCategory === ALL_CATEGORIES
                 ? "bg-white text-black border-white shadow-lg shadow-white/5"
                 : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
@@ -457,44 +469,44 @@ useEffect(() => {
           >
             All
           </button>
-          {DEVICE_SUBCATEGORIES.map((sub) => (
-            <button
-              key={sub}
-              onClick={() => {
-                setSelectedCategory(sub);
-                setCurrentPage(1);
-                router.push(`/devices/${DEVICE_TO_SLUG[sub]}`);
-              }}
-              className={`rounded-full px-3 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
-                selectedCategory === sub
-                  ? "bg-white text-black border-white shadow-lg shadow-white/5"
-                  : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
-              }`}
-            >
-              {sub}
-            </button>
-          ))}
-        </div>
+         {DEVICE_SUBCATEGORIES.map((sub) => (
+  <button
+    key={sub}
+    ref={(el) => { subCatRefs.current[sub] = el; }}
+    onClick={() => {
+      setSelectedCategory(sub);
+      setCurrentPage(1);
+      router.push(`/devices?category=${DEVICE_TO_SLUG[sub] || ''}`, { scroll: false });
+    }}
+    className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
+      selectedCategory === sub
+        ? "bg-white text-black border-white shadow-lg shadow-white/5"
+        : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+    }`}
+  >
+    {sub}
+  </button>
+))}   </div>
       </div>
 
       {/* ── LIST VIEW ── */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 pt-0.5 pb-8">
+      <div className="w-full px-3 sm:px-6 lg:px-8 pt-0.5 pb-8">
           {/*  Outer container matches ToolListView exactly */}
-          <div className="overflow-x-auto rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
+          <div className="overflow-x-auto touch-scroll-x rounded-lg border border-[#232326]/60 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-[#131316] [&::-webkit-scrollbar-thumb]:bg-[#6E56CF]/40 [&::-webkit-scrollbar-thumb]:rounded-full">
               <div ref={dropdownRef} style={{ minWidth: '1150px' }} className={`relative bg-[#000000] transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
 
-                {/* Header row matches ToolListView exactly */}
+                {/* Header row */}
                 <div className="border-b border-[#232326]/60 bg-[#131316]/40">
                   <div className={`grid ${COL_TEMPLATE} items-center gap-4 px-4 py-2`}>
 
-                    {/* TOOL col — no filter */}
-                    <div />
+                    {/* TOOL col */}
+                    <div className="pl-4" />
 
                     {/* NAME col — with filter dropdown */}
                     <div className="relative flex items-center gap-2">
                       <button onClick={() => handleSort("name")}
-                        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1">
-                        NAME <SortIcon col="name" />
+                        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] hover:text-white transition-colors flex items-center gap-1">
+                        DEVICE <SortIcon col="name" />
                       </button>
                       <button onClick={() => setOpenDropdown(openDropdown === "name" ? null : "name")}
                         className="hover:text-white transition-colors">
@@ -508,10 +520,10 @@ useEffect(() => {
                             className="w-full bg-[#131316] border border-[#232326] text-white text-xs rounded px-2 py-1.5 placeholder:text-[#52525B] focus:outline-none focus:border-[#6E56CF]" />
                           <div className="flex gap-2 mt-2">
                             <button onClick={() => { setNameSearch(nameInput); setOpenDropdown(null); setCurrentPage(1); }}
-                              className="flex-1 text-[10px] bg-[#6E56CF] hover:bg-[#7C66DF] text-white py-1.5 rounded transition-colors font-semibold">Apply</button>
+                              className="flex-1 text-[12px] bg-[#6E56CF] hover:bg-[#7C66DF] text-white py-1.5 rounded transition-colors font-semibold">Apply</button>
                             {nameSearch && (
                               <button onClick={() => { setNameSearch(""); setNameInput(""); setOpenDropdown(null); setCurrentPage(1); }}
-                                className="flex-1 text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors">Clear</button>
+                                className="flex-1 text-[12px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors">Clear</button>
                             )}
                           </div>
                         </div>
@@ -519,11 +531,11 @@ useEffect(() => {
                     </div>
 
                     {/* COMPANY col */}
-                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">COMPANY</span>
+                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] pl-4 hover:text-white transition-colors flex items-center gap-1">COMPANY</span>
 
                     {/* CATEGORY col — with filter dropdown */}
                     <div className="relative flex items-center gap-2">
-                      <span className={`text-[9.5px] font-mono font-semibold tracking-wider ${selectedCategory !== ALL_CATEGORIES ? "text-[#6E56CF]" : "text-[#71717A]"}`}>CATEGORY</span>
+                      <span className={`text-[9.5px] font-mono font-semibold tracking-wider ${selectedCategory !== ALL_CATEGORIES ? "text-[#6E56CF]" : "text-[#D4D4D8]"}`}>CATEGORY</span>
                       <button onClick={() => setOpenDropdown(openDropdown === "category" ? null : "category")}
                         className="hover:text-white transition-colors">
                         <FilterIcon active={selectedCategory !== ALL_CATEGORIES} />
@@ -545,12 +557,12 @@ useEffect(() => {
                     </div>
 
                     {/* COUNTRY col */}
-                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">COUNTRY</span>
+                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] hover:text-white transition-colors flex items-center gap-1">COUNTRY</span>
 
                     {/* AVAIL. col — with filter dropdown */}
                     <div className="relative flex items-center gap-2">
                       <button onClick={() => handleSort("availability")}
-                        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1">
+                        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] hover:text-white transition-colors flex items-center gap-1">
                         AVAIL. <SortIcon col="availability" />
                       </button>
                       <button onClick={() => setOpenDropdown(openDropdown === "availability" ? null : "availability")}
@@ -572,7 +584,7 @@ useEffect(() => {
                     {/* PRICE col — with filter dropdown */}
                     <div className="relative flex items-center gap-2">
                       <button onClick={() => handleSort("price")}
-                        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] hover:text-white transition-colors flex items-center gap-1">
+                        className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] hover:text-white transition-colors flex items-center gap-1">
                         PRICE <SortIcon col="price" />
                       </button>
                       <button onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
@@ -581,7 +593,7 @@ useEffect(() => {
                       </button>
                       {openDropdown === "price" && (
                         <div className="absolute top-8 left-0 z-50 bg-[#18181C] border border-[#232326] rounded-lg shadow-xl p-4 min-w-[220px]">
-                          <div className="flex justify-between text-[10px] text-[#A1A1AA] mb-3">
+                          <div className="flex justify-between text-[12px] text-[#A1A1AA] mb-3">
                             <span>Min: <span className="text-white font-bold">${priceMin.toLocaleString("en-US")}</span></span>
                             <span>Max: <span className="text-white font-bold">${priceMax.toLocaleString("en-US")}</span></span>
                           </div>
@@ -601,50 +613,49 @@ useEffect(() => {
               style={{ left: `calc(${(priceMax/10000)*100}% - 7px)` }} />
           </div>
           <button onClick={() => { setPriceMin(0); setPriceMax(10000);setActivePriceFilter(false); setCurrentPage(1); setOpenDropdown(null); }}
-                            className="w-full text-[10px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors">Reset</button>
+                            className="w-full text-[12px] border border-[#232326] text-[#52525B] hover:text-white py-1.5 rounded transition-colors">Reset</button>
                         </div>
                       )}
                     </div>
 
-                    {/* RELEASE DATE col */}
-                    <button onClick={() => handleSort("release")}
-                      className="text-[9.5px] font-mono font-semibold tracking-wider text-[#6E56CF] hover:text-white transition-colors flex items-center gap-1">
-                      RELEASE DATE <SortIcon col="release" />
-                    </button>
+                  {/* RELEASE DATE col */}
+<button
+  onClick={() => handleSort("release")}
+  className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] hover:text-white transition-colors flex items-center gap-1"
+>
+  RELEASE DATE <SortIcon col="release" />
+</button>
 
                     {/* MAIN TASK col */}
-                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] sm:pr-0 pr-4">MAIN TASK</span>
+                    <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] sm:pr-0 pr-4 hover:text-white transition-colors flex items-center gap-1">MAIN TASK</span>
 
                     {/* ACTIONS col */}
-                    <span className="hidden sm:block text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">ACTIONS</span>
+                    <span className="hidden sm:block text-[9.5px] font-mono font-semibold tracking-wider text-[#D4D4D8] pl-0 hover:text-white transition-colors flex items-center gap-1">ACTIONS</span>
                   </div>
                 </div>
 
-                {/*  Rows — matches ToolListView row structure exactly */}
+                {/*  Rows */}
                 {isLoading ? (
                   <div className="flex flex-col divide-y divide-[#232326]/60">
                     {[...Array(8)].map((_, i) => (
                       <div key={i} className={`grid ${COL_TEMPLATE} items-center gap-4 px-4 py-2.5`}>
                         <div className="h-11 w-11 animate-pulse rounded-lg bg-[#18181C]" />
-                        <div className="space-y-1.5">
-                          <div className="h-3 w-32 animate-pulse rounded bg-[#18181C]" />
-                          <div className="h-2 w-48 animate-pulse rounded bg-[#18181C]" />
-                        </div>
+                        <div className="space-y-1.5"><div className="h-3 w-32 animate-pulse rounded bg-[#18181C]" /><div className="h-2 w-48 animate-pulse rounded bg-[#18181C]" /></div>
                         <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
-                        <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
+                        <div className="h-3 w-16 animate-pulse rounded bg-[#18181C]" />
                         <div className="h-3 w-14 animate-pulse rounded bg-[#18181C]" />
-                        <div className="h-4 w-16 animate-pulse rounded-full bg-[#18181C]" />
+                        <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
                         <div className="h-3 w-12 animate-pulse rounded bg-[#18181C]" />
                         <div className="h-3 w-16 animate-pulse rounded bg-[#18181C]" />
-                        <div className="h-4 w-20 animate-pulse rounded-md bg-[#18181C]" />
-                        <div className="h-4 w-12 animate-pulse rounded-md bg-[#18181C]" />
+                        <div className="h-4 w-20 animate-pulse rounded bg-[#18181C]" />
+                        <div className="h-4 w-12 animate-pulse rounded bg-[#18181C]" />
                       </div>
                     ))}
                   </div>
                 ) : filtered.length === 0 ? (
-                  <div className="py-20 text-center text-[#52525B] text-sm">No devices found.</div>
+                  <div className="py-20 text-center text-[#71717A]">No devices match your filters.</div>
                 ) : (
-                  <div role="list" className="flex flex-col">
+                  <div role="list" className="flex flex-col divide-y divide-[#232326]/60">
                     {visible.map((device, visibleIndex) => (
                       <Link
   key={device.id}
@@ -702,13 +713,13 @@ useEffect(() => {
 >
   {device.name}
 </h3>
-                          <p className="mt-0.5 line-clamp-1 text-[11px] text-[#A1A1AA] leading-snug">
+                          <p className="mt-0.5 text-[11px] text-[#A1A1AA] leading-snug overflow-hidden whitespace-nowrap" style={{ textOverflow: 'clip' }}>
                             {device.description}
                           </p>
                         </div>
 
                         {/* Col 3: Company */}
-                        <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="flex items-center gap-1.5 min-w-0 pl-4">
                           <div className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded bg-white">
                             <LogoCell name={device.manufacturer || device.name} logoUrl={device.manufacturerLogoUrl} color={device.mainTaskColor} />
                           </div>
@@ -747,16 +758,16 @@ useEffect(() => {
                         </div>
 
                         {/* Col 8: Main Task */}
-<div className="sm:pr-0 pr-4">
-  {device.mainTask ? (
-    <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors whitespace-nowrap">
-      {device.mainTask}
-    </span>
-  ) : <span className="text-[12px] font-mono text-[#71717A]">—</span>}
-</div>
+                        <div className="sm:pr-0 pr-4 min-w-0 max-w-[160px]">
+                          {device.mainTask ? (
+                            <span className="inline-flex items-center rounded-full border border-[#232326]/60 bg-[#18181C] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors max-w-full">
+                              <span className="truncate">{device.mainTask}</span>
+                            </span>
+                          ) : <span className="text-[12px] font-mono text-[#71717A]">—</span>}
+                        </div>
 
                         {/* Col 9: Actions */}
-                        <div className="hidden sm:flex items-center gap-2" onClick={(e) => e.preventDefault()}>
+                        <div className="hidden sm:flex items-center gap-2 pl-0 -ml-2" onClick={(e) => e.preventDefault()}>
                           <button
                             onClick={(e) => toggleBookmark(e, device.id)}
                             className={`p-1.5 rounded-md transition-colors ${bookmarked.has(device.id) ? "text-[#6E56CF]" : "text-[#52525B] hover:text-white"}`}
@@ -782,12 +793,22 @@ useEffect(() => {
                   </div>
                 )}
 
-                {/* Infinite scroll sentinel */}
-                {currentPage < totalPages && (
-                  <div ref={loaderRef} className="flex items-center justify-center py-6 border-t border-[#232326]/60">
-                    <div className="h-4 w-4 rounded-full border-2 border-[#6E56CF] border-t-transparent animate-spin" />
-                  </div>
-                )}
+                {/* Unified Floating Pill Pagination */}
+                <Pagination
+                  page={currentPage}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalCount={filtered.length}
+                  onPageChange={(p) => {
+                    setCurrentPage(p);
+                    const target = document.getElementById("devices-table-container");
+                    if (target) target.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  onPageSizeChange={(s) => {
+                    setPageSize(s);
+                    setCurrentPage(1);
+                  }}
+                />
 
               </div>
           </div>

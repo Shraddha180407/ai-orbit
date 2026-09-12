@@ -8,9 +8,9 @@ interface CacheEntry {
   expiresAt: number;
 }
 
-// In-memory cache map for high-frequency GET queries (2 minutes TTL by default)
+// In-memory cache map for high-frequency GET queries (5 minutes TTL by default)
 const memoryCache = new Map<string, CacheEntry>();
-const MAX_CACHE_ENTRIES = 500;
+const MAX_CACHE_ENTRIES = 2000;
 
 export function invalidateCache(pattern?: string | RegExp) {
   if (!pattern) {
@@ -29,7 +29,7 @@ export function invalidateCache(pattern?: string | RegExp) {
  * Returns cached responses in < 1ms, dramatically reducing database load
  * and eliminating loading delays for the frontend.
  */
-export function cacheMiddleware(ttlSeconds = 120): MiddlewareHandler {
+export function cacheMiddleware(ttlSeconds = 300): MiddlewareHandler {
   return async (c, next) => {
     // Only cache GET requests
     if (c.req.method !== 'GET') {
@@ -51,12 +51,8 @@ export function cacheMiddleware(ttlSeconds = 120): MiddlewareHandler {
       return next();
     }
 
-    // Do not cache authenticated or private user routes or requests with auth headers/cookies
+    // Do not cache authenticated or private user routes
     const path = c.req.path;
-    const authHeader = c.req.header('Authorization');
-    const cookieHeader = c.req.header('Cookie') || '';
-    const hasAuthCookie = cookieHeader.includes('token') || cookieHeader.includes('session') || cookieHeader.includes('auth');
-
     const isPrivate = (
       path.startsWith('/api/auth') ||
       path.startsWith('/api/user') ||
@@ -64,9 +60,7 @@ export function cacheMiddleware(ttlSeconds = 120): MiddlewareHandler {
       path.includes('/user/') ||
       path.includes('/bookmarks') ||
       path.includes('/favorites') ||
-      path.includes('/personal/user') ||
-      Boolean(authHeader) ||
-      hasAuthCookie
+      path.includes('/personal/user')
     );
 
     if (isPrivate) {
@@ -80,7 +74,7 @@ export function cacheMiddleware(ttlSeconds = 120): MiddlewareHandler {
 
     if (cached && cached.expiresAt > now) {
       c.header('X-Cache', 'HIT');
-      c.header('Cache-Control', 'public, no-cache, stale-while-revalidate=120');
+      c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
       for (const [k, v] of Object.entries(cached.headers)) {
         if (k.toLowerCase() !== 'content-length' && k.toLowerCase() !== 'cache-control') {
           c.header(k, v);
@@ -116,8 +110,8 @@ export function cacheMiddleware(ttlSeconds = 120): MiddlewareHandler {
         });
 
         c.header('X-Cache', 'MISS');
-        c.header('Cache-Control', 'public, no-cache, stale-while-revalidate=120');
-      } catch (e) {
+        c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
+      } catch {
         // Continue normally if caching fails
       }
     }

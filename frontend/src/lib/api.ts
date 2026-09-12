@@ -1,18 +1,24 @@
+﻿import { cachedFetchJson, prefetchUrl, setInCache, getFromCache } from "./api-cache";
+export { cachedFetchJson, prefetchUrl, setInCache, getFromCache };
+
 /**
- * The Hono/Workers backend's origin — every real data fetch and mutation
+ * The Hono/Workers backend's origin â€” every real data fetch and mutation
  * goes here, never direct DB access from this app.
- *
- * Falls back to the production API, same as frontend/src/app/page.tsx's
- * own API_URL — that fallback is what's kept the homepage working
- * whether or not NEXT_PUBLIC_API_URL is actually configured in Cloudflare
- * Pages' dashboard. This was the only code path in the app that didn't
- * have it, and was throwing at module load on every /news request in
- * production as a result.
  */
 function resolveApiUrl(): string {
+  if (
+    typeof window !== "undefined" &&
+    window.location.hostname.endsWith(".vercel.app")
+  ) {
+    return `${window.location.origin}/api-proxy`;
+  }
   const url = process.env.NEXT_PUBLIC_API_URL;
   if (url && url.startsWith("http") && url !== "undefined") {
-    return url.replace(/\/$/, "");
+    const isLocalUrl = url.includes("localhost") || url.includes("127.0.0.1");
+    const isNonLocalClient = typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+    if (!(isLocalUrl && isNonLocalClient)) {
+      return url.replace(/\/$/, "");
+    }
   }
   if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
     return "http://localhost:8787";
@@ -20,17 +26,25 @@ function resolveApiUrl(): string {
   return "https://ai-orbit.palamrendra-pm.workers.dev";
 }
 
-/** Used by the client components (CommentBox, PublisherIcon, SaveButton, VoteButtons) — unchanged. */
+/** Used by the client components (CommentBox, PublisherIcon, SaveButton, VoteButtons). */
 export const API_URL = resolveApiUrl();
 
-async function fetchJsonSafe<T>(url: string | URL, fallback: T): Promise<T> {
-  try {
-    const res = await fetch(url.toString());
-    if (!res.ok) return fallback;
-    return (await res.json()) as T;
-  } catch {
-    return fallback;
-  }
+export async function fetchJsonSafe<T>(url: string | URL, fallback: T): Promise<T> {
+  return cachedFetchJson<T>(url, fallback, { ttlMs: 15 * 60 * 1000 });
+}
+
+export async function fetchToolDetails(slug: string): Promise<any> {
+  if (!slug) return null;
+  const safeSlug = encodeURIComponent(slug.trim());
+  const url = `${API_URL}/api/v1/tools/${safeSlug}`;
+  return cachedFetchJson<any>(url, null, { ttlMs: 15 * 60 * 1000 });
+}
+
+export async function fetchAllTools(page = 1, category?: string): Promise<any> {
+  const url = new URL(`${API_URL}/api/v1/tools`);
+  url.searchParams.set("page", String(page));
+  if (category) url.searchParams.set("category", category);
+  return cachedFetchJson<any>(url.toString(), { tools: [], totalPages: 1, page }, { ttlMs: 15 * 60 * 1000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -40,37 +54,103 @@ async function fetchJsonSafe<T>(url: string | URL, fallback: T): Promise<T> {
 export async function fetchLeaderboardTools(category?: string): Promise<any[]> {
   const url = new URL(`${API_URL}/api/v1/leaderboard/tools`);
   if (category && category !== "All Categories") url.searchParams.set("category", category);
-  return fetchJsonSafe(url, []);
+  return cachedFetchJson<any[]>(url.toString(), [], { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchLeaderboardModels(category?: string): Promise<any[]> {
   const url = new URL(`${API_URL}/api/v1/leaderboard/models`);
   if (category && category !== "All Categories") url.searchParams.set("category", category);
-  return fetchJsonSafe(url, []);
+  return cachedFetchJson<any[]>(url.toString(), [], { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchLeaderboardCompanies(): Promise<any[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/leaderboard/companies`, []);
+  return cachedFetchJson<any[]>(`${API_URL}/api/v1/leaderboard/companies`, [], { ttlMs: 15 * 60 * 1000 });
+}
+
+export interface FetchCompaniesOptions {
+  page?: number;
+  pageSize?: number;
+  limit?: number;
+  q?: string;
+  type?: string;
+  category?: string;
+  country?: string;
+  sort?: string;
+}
+
+export interface CompaniesListResponse {
+  companies: any[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export async function fetchCompanies(options: FetchCompaniesOptions = {}): Promise<CompaniesListResponse> {
+  const url = new URL(`${API_URL}/api/v1/companies`);
+  if (options.page) url.searchParams.set("page", options.page.toString());
+  if (options.pageSize || options.limit) url.searchParams.set("pageSize", (options.pageSize || options.limit)!.toString());
+  if (options.q) url.searchParams.set("q", options.q);
+  if (options.type || options.category) url.searchParams.set("type", (options.type || options.category)!);
+  if (options.country && options.country !== "all") url.searchParams.set("country", options.country);
+  if (options.sort) url.searchParams.set("sort", options.sort);
+
+  const fallback: CompaniesListResponse = { companies: [], total: 0, page: 1, pageSize: 100, totalPages: 1 };
+  const raw = await cachedFetchJson<any>(url.toString(), fallback, { ttlMs: 60 * 1000 });
+
+  if (Array.isArray(raw)) {
+    return { companies: raw, total: raw.length, page: 1, pageSize: raw.length, totalPages: 1 };
+  }
+  return raw as CompaniesListResponse;
 }
 
 export async function fetchAllCompanies(): Promise<any[]> {
-  try {
-    const res = await fetch(`${API_URL}/api/v1/companies`);
-    if (!res.ok) return [];
-    const data = await res.json();
-    if (Array.isArray(data)) return data;
-    if (data && Array.isArray(data.companies)) return data.companies;
-    return [];
-  } catch {
-    return [];
-  }
+  const data = await fetchCompanies({ page: 1, pageSize: 100 });
+  return data.companies || [];
+}
+
+function sanitizeSlug(raw: string): string {
+  if (!raw) return "";
+  return raw
+    .replace(/^!\[+/, '')
+    .replace(/\]\(.*?\)/g, '')
+    .replace(/[\!\[\]]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 export async function fetchCompanyDetails(slug: string): Promise<any> {
-  return fetchJsonSafe(`${API_URL}/api/v1/companies/${slug}`, null);
+  if (!slug) return null;
+  const decoded = decodeURIComponent(slug);
+  const targetSlug = sanitizeSlug(decoded);
+  if (!targetSlug) return null;
+
+  const safeSlug = encodeURIComponent(targetSlug);
+  const primaryUrl = `${API_URL}/api/v1/companies/${safeSlug}`;
+  const res = await cachedFetchJson<any>(primaryUrl, null, { ttlMs: 15 * 60 * 1000 });
+  if (res && !res.error && res.id) return res;
+
+  if (API_URL !== "https://ai-orbit.palamrendra-pm.workers.dev") {
+    const prodRes = await cachedFetchJson<any>(`https://ai-orbit.palamrendra-pm.workers.dev/api/v1/companies/${safeSlug}`, null, { ttlMs: 15 * 60 * 1000 });
+    if (prodRes && !prodRes.error && prodRes.id) return prodRes;
+  }
+
+  try {
+    const all = await fetchAllCompanies();
+    const match = all.find((c: any) => {
+      const cSlug = sanitizeSlug(c.slug || "");
+      const cNameSlug = sanitizeSlug(c.name || "");
+      return cSlug === targetSlug || cNameSlug === targetSlug || (cSlug && targetSlug.includes(cSlug)) || (cNameSlug && targetSlug.includes(cNameSlug));
+    });
+    if (match) return match;
+  } catch {}
+
+  return (res && !res.error) ? res : null;
 }
 
-import type { AIModel, ModelsListResponse, ModelsSortOption } from "./types";
+import type { AIModel, ModelsListResponse, ModelsSortOption, ModelFilterOptions, ModelType } from "./types";
 
 export interface ModelsQuery {
   search?: string;
@@ -78,6 +158,9 @@ export interface ModelsQuery {
   modality?: string;
   creator?: string;
   subCategory?: string;
+  modelType?: ModelType;
+  openSource?: boolean;
+  primaryTask?: string;
   sort?: ModelsSortOption;
   page?: number;
   limit?: number;
@@ -90,6 +173,9 @@ export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListR
   if (params.modality) url.searchParams.set("modality", params.modality);
   if (params.creator) url.searchParams.set("creator", params.creator);
   if (params.subCategory) url.searchParams.set("subCategory", params.subCategory);
+  if (params.modelType) url.searchParams.set("modelType", params.modelType);
+  if (params.openSource !== undefined) url.searchParams.set("openSource", String(params.openSource));
+  if (params.primaryTask) url.searchParams.set("primaryTask", params.primaryTask);
   if (params.sort) url.searchParams.set("sort", params.sort);
   if (params.page) url.searchParams.set("page", String(params.page));
   if (params.limit) url.searchParams.set("limit", String(params.limit));
@@ -98,7 +184,7 @@ export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListR
     items: [],
     pagination: {
       page: params.page ?? 1,
-      limit: params.limit ?? 20,
+      limit: params.limit ?? 100,
       total: 0,
       totalPages: 1,
       hasMore: false,
@@ -106,32 +192,25 @@ export async function fetchModels(params: ModelsQuery = {}): Promise<ModelsListR
     filters: { providers: [], modalities: [] },
   };
 
-  try {
-    const res = await fetch(url.toString());
-    if (!res.ok) return empty;
-    const data = await res.json();
-    if (!data) return empty;
-    // Tolerate legacy array responses during rollout.
-    if (Array.isArray(data)) {
-      return {
-        items: data as AIModel[],
-        pagination: {
-          page: 1,
-          limit: data.length,
-          total: data.length,
-          totalPages: 1,
-          hasMore: false,
-        },
-        filters: { providers: [], modalities: [] },
-      };
-    }
-    return data as ModelsListResponse;
-  } catch {
-    return empty;
+  const data = await cachedFetchJson<any>(url.toString(), empty, { ttlMs: 15 * 60 * 1000 });
+  if (!data) return empty;
+  if (Array.isArray(data)) {
+    return {
+      items: data as AIModel[],
+      pagination: {
+        page: 1,
+        limit: data.length,
+        total: data.length,
+        totalPages: 1,
+        hasMore: false,
+      },
+      filters: { providers: [], modalities: [] },
+    };
   }
+  return data as ModelsListResponse;
 }
 
-/** @deprecated Prefer fetchModels — kept for callers that only need the first page's items. */
+/** @deprecated Prefer fetchModels â€” kept for callers that only need the first page's items. */
 export async function fetchAllModels(): Promise<AIModel[]> {
   const data = await fetchModels({ page: 1, limit: 100 });
   return data.items;
@@ -139,18 +218,39 @@ export async function fetchAllModels(): Promise<AIModel[]> {
 
 export async function fetchModelById(id: string): Promise<import("./types").ModelDetail | null> {
   const url = `${API_URL}/api/v1/models/${encodeURIComponent(id)}`;
-  return fetchJsonSafe(url, null);
+  return cachedFetchJson(url, null, { ttlMs: 15 * 60 * 1000 });
+}
+
+/** Provider / primary-task / model-type options for the models filter UI. */
+export async function fetchModelFilters(): Promise<ModelFilterOptions> {
+  const url = `${API_URL}/api/v1/models/filters`;
+  const empty: ModelFilterOptions = { providers: [], primaryTasks: [], modelTypes: [] };
+  return cachedFetchJson<ModelFilterOptions>(url, empty, { ttlMs: 30 * 60 * 1000 });
+}
+
+export interface ModelsCompareResponse {
+  items: import("./types").ModelDetail[];
+}
+
+/** Uses the backend's dedicated compare endpoint (validates count, 404s on missing ids, preserves order). */
+export async function fetchModelsCompare(ids: string[]): Promise<import("./types").ModelDetail[]> {
+  if (ids.length === 0) return [];
+  const url = `${API_URL}/api/v1/models/compare?ids=${encodeURIComponent(ids.join(","))}`;
+  const data = await cachedFetchJson<ModelsCompareResponse | null>(url, null, { ttlMs: 5 * 60 * 1000 });
+  return data?.items ?? [];
 }
 
 export async function fetchAllNews(): Promise<any[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/news`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/news`, [], { ttlMs: 10 * 60 * 1000 });
 }
 
 import { Repository, RepositoryListResponse, RepositoryDetailResponse, RepositoryOwnerListItem, RepositorySubCategory } from "./types";
 import type { ModelSubCategory } from "./types";
 
 export interface FetchRepositoriesOptions {
+  page?: number;
   limit?: number;
+  pageSize?: number;
   cursor?: string | null;
   sort?: string;
   language?: string;
@@ -161,10 +261,11 @@ export interface FetchRepositoriesOptions {
 }
 
 export async function fetchRepositories(options: FetchRepositoriesOptions = {}): Promise<RepositoryListResponse> {
-  const { limit, cursor, sort, language, topic, q, owner, subCategory } = options;
+  const { page, limit, pageSize, cursor, sort, language, topic, q, owner, subCategory } = options;
 
   const url = new URL(`${API_URL}/api/v1/repositories`);
-  if (limit) url.searchParams.set("limit", limit.toString());
+  if (page) url.searchParams.set("page", page.toString());
+  if (limit || pageSize) url.searchParams.set("limit", (limit || pageSize)!.toString());
   if (cursor) url.searchParams.set("cursor", cursor);
   if (sort) url.searchParams.set("sort", sort);
   if (language) url.searchParams.set("language", language);
@@ -173,80 +274,65 @@ export async function fetchRepositories(options: FetchRepositoriesOptions = {}):
   if (owner) url.searchParams.set("owner", owner);
   if (subCategory) url.searchParams.set("subCategory", subCategory);
 
-  try {
-    const res = await fetch(url.toString());
-    if (!res.ok) {
-      return { items: [], nextCursor: null, hasMore: false, total: 0 };
-    }
-    return await res.json();
-  } catch {
-    return {
-      items: [],
-      nextCursor: null,
-      hasMore: false,
-      total: 0
-    };
-  }
+  const fallback: RepositoryListResponse = { items: [], nextCursor: null, hasMore: false, total: 0 };
+  return cachedFetchJson(url.toString(), fallback, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchRepositoryBySlug(slug: string): Promise<RepositoryDetailResponse | null> {
-  return fetchJsonSafe(`${API_URL}/api/v1/repositories/${slug}`, null);
+  return cachedFetchJson(`${API_URL}/api/v1/repositories/${slug}`, null, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchAllRepos(): Promise<Repository[]> {
   try {
     const data = await fetchRepositories();
     return Array.isArray(data?.items) ? data.items : [];
-  } catch (e) {
-    console.error("Failed to fetch repositories:", e);
+  } catch {
     return [];
   }
 }
 
 export async function fetchRepositorySubCategories(): Promise<RepositorySubCategory[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/repositories/subcategories`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/repositories/subcategories`, [], { ttlMs: 30 * 60 * 1000 });
 }
 
 export async function fetchModelSubCategories(): Promise<ModelSubCategory[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/models/subcategories`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/models/subcategories`, [], { ttlMs: 30 * 60 * 1000 });
 }
 
 export async function fetchMCPCategories(): Promise<import("./types").MCPCategory[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/mcps/categories`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/mcps/categories`, [], { ttlMs: 30 * 60 * 1000 });
 }
 
 export async function fetchMCPSubCategories(categorySlug?: string): Promise<import("./types").MCPSubCategory[]> {
   const url = new URL(`${API_URL}/api/v1/mcps/subcategories`);
   if (categorySlug) url.searchParams.set("category", categorySlug);
-  return fetchJsonSafe(url, []);
+  return cachedFetchJson(url.toString(), [], { ttlMs: 30 * 60 * 1000 });
 }
 
 export async function fetchDeviceSubCategories(): Promise<import("./types").DeviceSubCategory[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/devices/subcategories`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/devices/subcategories`, [], { ttlMs: 30 * 60 * 1000 });
 }
 
-// MCP Items fetch helpers are defined below at the end of the file.
-
 export async function fetchAllVideos(): Promise<any[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/videos`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/videos`, [], { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchAllRobots(): Promise<any[]> {
-  return fetchJsonSafe(`${API_URL}/api/v1/robots`, []);
+  return cachedFetchJson(`${API_URL}/api/v1/robots`, [], { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchRobotById(idOrSlug: string): Promise<any | null> {
-  return fetchJsonSafe(`${API_URL}/api/v1/robots/${idOrSlug}`, null);
+  return cachedFetchJson(`${API_URL}/api/v1/robots/${idOrSlug}`, null, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchAllDevices(options: { subCategory?: string } = {}): Promise<any[]> {
   const url = new URL(`${API_URL}/api/v1/devices`);
   if (options.subCategory) url.searchParams.set("subCategory", options.subCategory);
-  return fetchJsonSafe(url, []);
+  return cachedFetchJson(url.toString(), [], { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function fetchDeviceById(id: string): Promise<any | null> {
-  return fetchJsonSafe(`${API_URL}/api/v1/devices/${id}`, null);
+  return cachedFetchJson(`${API_URL}/api/v1/devices/${id}`, null, { ttlMs: 15 * 60 * 1000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -255,7 +341,7 @@ export async function fetchDeviceById(id: string): Promise<any | null> {
 
 export interface RealSearchSuggestion {
   id: string;
-  type: "tool" | "company" | "model" | "repository" | "robot" | "device";
+  type: "tool" | "company" | "model" | "repository" | "robot" | "device" | "news" | "video" | "collection" | "task" | "mcp";
   title: string;
   category: string;
   slug: string | null;
@@ -266,67 +352,64 @@ export async function fetchSearchAutocomplete(q: string): Promise<RealSearchSugg
   const trimmed = q.trim();
   if (!trimmed) return [];
   const url = `${API_URL}/api/v1/search/autocomplete?q=${encodeURIComponent(trimmed)}`;
-  const res = await fetch(url);
-  if (!res.ok) return [];
-  const data = await res.json();
+  const data = await cachedFetchJson<{ suggestions?: RealSearchSuggestion[] }>(url, { suggestions: [] }, { ttlMs: 10 * 60 * 1000 });
   return data.suggestions ?? [];
 }
 
 export async function fetchPopularSearches(): Promise<string[]> {
   const url = `${API_URL}/api/v1/search/popular`;
-  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
-  if (!res.ok) return [];
-  const data = await res.json();
+  const data = await cachedFetchJson<{ popular?: string[] }>(url, { popular: [] }, { ttlMs: 30 * 60 * 1000 });
   return data.popular ?? [];
 }
 
 /** Featured tools for the search dropdown's empty-query "Featured" section. */
 export async function fetchFeaturedTools(): Promise<RealSearchSuggestion[]> {
   const url = `${API_URL}/api/v1/search/featured`;
-  const res = await fetch(url, { next: { revalidate: 300 } } as RequestInit);
-  if (!res.ok) return [];
-  const data = await res.json();
+  const data = await cachedFetchJson<{ featured?: RealSearchSuggestion[] }>(url, { featured: [] }, { ttlMs: 30 * 60 * 1000 });
   return data.featured ?? [];
 }
 
-/**
- * Server-side-only origin, for the two News page.tsx server components.
- * api.aiorbit.club is a Cloudflare-proxied custom domain; a Pages Function
- * (this app's server-side render) fetching another Cloudflare-proxied zone
- * on the same account hits Cloudflare's same-account loop-prevention and
- * fails — confirmed via the news module's own build succeeding while every
- * server-side render of it failed in production. The Worker's own
- * `*.workers.dev` subdomain bypasses that proxy layer entirely (same
- * pattern already proven working in GraphOne's production app). Client-side
- * calls (API_URL above) are unaffected — a real browser request, not a
- * same-account Cloudflare-to-Cloudflare hop — so they're left untouched.
- */
 function resolveServerApiUrl(): string {
   const raw = process.env.NEWS_SERVER_API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (raw && raw !== "undefined") {
     const withScheme = /^https?:\/\//.test(raw) ? raw : (raw.includes("localhost") || raw.includes("127.0.0.1") ? `http://${raw}` : `https://${raw}`);
     return withScheme.replace(/\/$/, "");
   }
-  
-  // Hardcoded fallback that bypasses the proxy (legacy)
   return "https://ai-orbit.palamrendra-pm.workers.dev";
 }
 
 export const SERVER_API_URL = resolveServerApiUrl();
 
+export interface FetchTasksOptions {
+  category?: string;
+  q?: string;
+  sort?: string;
+  filter?: string;
+  difficulty?: string;
+  pricing?: string;
+  page?: number;
+  pageSize?: number;
+  limit?: number;
+}
+
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-export async function fetchTasks(category?: string): Promise<any> {
+export async function fetchTasks(optionsOrCategory?: string | FetchTasksOptions): Promise<any> {
   const url = new URL(`${API_URL}/api/v1/tasks`);
-  if (category) url.searchParams.set("category", category);
-  
-  try {
-    const res = await fetch(url.toString());
-    if (!res.ok) return { tasks: [], total: 0 };
-    return await res.json();
-  } catch (err) {
-    console.error("Failed to fetch tasks:", err);
-    return { tasks: [], total: 0 };
+  if (typeof optionsOrCategory === "string") {
+    if (optionsOrCategory) url.searchParams.set("category", optionsOrCategory);
+  } else if (optionsOrCategory && typeof optionsOrCategory === "object") {
+    if (optionsOrCategory.category) url.searchParams.set("category", optionsOrCategory.category);
+    if (optionsOrCategory.q) url.searchParams.set("q", optionsOrCategory.q);
+    if (optionsOrCategory.sort) url.searchParams.set("sort", optionsOrCategory.sort);
+    if (optionsOrCategory.filter) url.searchParams.set("filter", optionsOrCategory.filter);
+    if (optionsOrCategory.difficulty) url.searchParams.set("difficulty", optionsOrCategory.difficulty);
+    if (optionsOrCategory.pricing) url.searchParams.set("pricing", optionsOrCategory.pricing);
+    if (optionsOrCategory.page) url.searchParams.set("page", String(optionsOrCategory.page));
+    if (optionsOrCategory.pageSize || optionsOrCategory.limit) {
+      url.searchParams.set("pageSize", String(optionsOrCategory.pageSize || optionsOrCategory.limit));
+    }
   }
+  return cachedFetchJson(url.toString(), { tasks: [], total: 0, totalPages: 1 }, { ttlMs: 15 * 60 * 1000 });
 }
 
 export async function toggleTaskSubscription(slug: string): Promise<boolean> {
@@ -336,17 +419,14 @@ export async function toggleTaskSubscription(slug: string): Promise<boolean> {
       headers: { "Content-Type": "application/json" }
     });
     return res.ok;
-  } catch (err) {
-    console.error("Failed to subscribe to task:", err);
+  } catch {
     return false;
   }
 }
 
 export async function fetchRepositoryOwners(): Promise<RepositoryOwnerListItem[]> {
   const url = `${API_URL}/api/v1/repositories/owners`;
-  const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
-  if (!res.ok) return [];
-  return res.json();
+  return cachedFetchJson(url, [], { ttlMs: 30 * 60 * 1000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -381,47 +461,29 @@ export async function fetchMCPItems(params: MCPQuery = {}): Promise<MCPListRespo
     totalPages: 1,
   };
 
-  try {
-    const res = await fetch(url.toString(), { next: { revalidate: 60 } } as RequestInit);
-    if (!res.ok) return empty;
-    const responseJson = await res.json();
-    if (responseJson && responseJson.success && responseJson.data) {
-      return responseJson.data;
-    }
-    return empty;
-  } catch (err: any) {
-    console.warn("Failed to fetch MCP items:", err?.message || err);
-    return empty;
+  const responseJson = await cachedFetchJson<any>(url.toString(), null, { ttlMs: 15 * 60 * 1000 });
+  if (responseJson && responseJson.success && responseJson.data) {
+    return responseJson.data;
   }
+  return empty;
 }
 
 export async function fetchMCPItemBySlug(slug: string): Promise<MCPItem | null> {
-  try {
-    const res = await fetch(`${SERVER_API_URL}/api/v1/mcps/${encodeURIComponent(slug)}`);
-    if (!res.ok) return null;
-    const responseJson = await res.json();
-    if (responseJson && responseJson.success && responseJson.data) {
-      return responseJson.data;
-    }
-    return null;
-  } catch (err: any) {
-    console.warn(`Failed to fetch MCP item ${slug}:`, err?.message || err);
-    return null;
+  const url = `${API_URL}/api/v1/mcps/${encodeURIComponent(slug)}`;
+  const responseJson = await cachedFetchJson<any>(url, null, { ttlMs: 15 * 60 * 1000 });
+  if (responseJson && responseJson.success && responseJson.data) {
+    return responseJson.data;
   }
+  // Fall back to hardcoded data when API returns nothing (e.g. local dev with empty DB)
+  const { FALLBACK_MCP_ITEMS } = await import("@/data/mcp");
+  return FALLBACK_MCP_ITEMS.find((item) => item.slug === slug) ?? null;
 }
 
 export async function fetchMCPItemAlternatives(slug: string): Promise<MCPItem[]> {
-  try {
-    const res = await fetch(`${SERVER_API_URL}/api/v1/mcps/${encodeURIComponent(slug)}/alternatives`);
-    if (!res.ok) return [];
-    const responseJson = await res.json();
-    if (responseJson && responseJson.success && responseJson.data) {
-      return responseJson.data;
-    }
-    return [];
-  } catch (err: any) {
-    console.warn(`Failed to fetch alternatives for ${slug}:`, err?.message || err);
-    return [];
+  const url = `${API_URL}/api/v1/mcps/${encodeURIComponent(slug)}/alternatives`;
+  const responseJson = await cachedFetchJson<any>(url, null, { ttlMs: 15 * 60 * 1000 });
+  if (responseJson && responseJson.success && responseJson.data) {
+    return responseJson.data;
   }
+  return [];
 }
-

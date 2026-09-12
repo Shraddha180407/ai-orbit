@@ -17,6 +17,7 @@ export type ToolDetailDataExtended = ToolDetailData & {
   githubUrl: string | null;
   launchDate: string | null;              // human-readable e.g. "March 2023"
   alternativeIds: string[];               // slugs of alternative tools
+  ttasks?: { task: { slug: string; title: string } }[];
 };
 
 export type PricingTier = {
@@ -152,6 +153,20 @@ export const SAMPLE_TOOL_DESCRIPT: ToolDetailDataExtended = {
     { integration: { slug: "dropbox", name: "Dropbox", logoUrl: "https://www.google.com/s2/favicons?sz=64&domain=dropbox.com" } },
     { integration: { slug: "riverside", name: "Riverside", logoUrl: "https://www.google.com/s2/favicons?sz=64&domain=riverside.fm" } },
   ],
+    ttasks: [
+    { task: { slug: "edit-video-transcripts", title: "Edit Video Transcripts" } },
+    { task: { slug: "remove-filler-words", title: "Remove Filler Words" } },
+    { task: { slug: "record-screen", title: "Record Screen" } },
+    { task: { slug: "clone-voice", title: "Clone Voice" } },
+    { task: { slug: "transcribe-audio", title: "Transcribe Audio" } },
+    { task: { slug: "collaborate-on-video", title: "Collaborate On Video" } },
+    { task: { slug: "export-captions", title: "Export Captions" } },
+    { task: { slug: "create-podcast-episodes", title: "Create Podcast Episodes" } },
+    { task: { slug: "generate-show-notes", title: "Generate Show Notes" } },
+    { task: { slug: "create-video-clips", title: "Create Video Clips" } },
+    { task: { slug: "overdub-mistakes", title: "Overdub Mistakes" } },
+    { task: { slug: "publish-to-youtube", title: "Publish To YouTube" } },
+  ],
   _count: { reviews: 284, bookmarks: 3100 },
 };
 
@@ -164,7 +179,9 @@ export const SAMPLE_TOOL_JULIUS: ToolDetailDataExtended = {
   name: "Julius AI",
   logoUrl: "https://www.google.com/s2/favicons?sz=128&domain=julius.ai",
   description: "An advanced AI data analyst that executes Python code to clean data and generate graphs.",
-  longDescription: `Julius AI is a conversational data analyst that lets anyone — from business analysts to researchers — upload spreadsheets, CSVs, and databases and ask questions in plain English. Julius runs real Python code under the hood, generates visualizations, and explains every step of its reasoning.\n\nUnlike traditional BI tools, Julius requires no SQL knowledge and no drag-and-drop setup. Just paste your data, ask "show me sales by region for Q3", and Julius produces an interactive chart with a written explanation.\n\nThe platform supports pandas, matplotlib, seaborn, scikit-learn, and dozens of other Python libraries — meaning complex statistical analyses, ML model training, and data cleaning tasks that would normally require a data engineer can be completed in minutes by a non-technical user.`,
+  longDescription: `Julius AI is an AI-powered data analysis platform that enables users to explore, analyze, and visualize data through natural language. Users can upload spreadsheets, CSV files, and other datasets, then ask questions conversationally instead of relying on traditional SQL queries, complex dashboard tools, or manual data analysis workflows.\n\nThe platform translates user requests into analytical tasks, using Python to process data, perform calculations, generate visualizations, and return results with supporting explanations. Users can ask questions such as “Show me sales by region for Q3,” identify trends and anomalies, compare datasets, create forecasts, or perform statistical analysis through a conversational interface.\n\nJulius AI supports a range of data science and machine learning workflows, allowing users to perform tasks including data cleaning, exploratory analysis, statistical modeling, visualization, and predictive analysis. By combining generative AI with executable code and data analysis tools, the platform is designed to make advanced analytical capabilities more accessible to business users, researchers, analysts, and other non-technical users.
+\n\nPositioned at the intersection of generative AI, data science, and business intelligence, Julius AI provides a conversational alternative to traditional analytics workflows, helping users move from raw data to insights through natural-language interaction.
+`,
   websiteUrl: "https://julius.ai",
   screenshots: [
     "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80",
@@ -265,6 +282,21 @@ export const SAMPLE_TOOL_JULIUS: ToolDetailDataExtended = {
     { integration: { slug: "excel", name: "Excel", logoUrl: "https://www.google.com/s2/favicons?sz=64&domain=microsoft.com" } },
     { integration: { slug: "notion", name: "Notion", logoUrl: "https://www.google.com/s2/favicons?sz=64&domain=notion.so" } },
     { integration: { slug: "airtable", name: "Airtable", logoUrl: "https://www.google.com/s2/favicons?sz=64&domain=airtable.com" } },
+  ],
+  ttasks: [
+    { task: { slug: "analyze-data", title: "Analyze Data" } },
+    { task: { slug: "visualize-metrics", title: "Visualize Metrics" } },
+    { task: { slug: "clean-datasets", title: "Clean Datasets" } },
+    { task: { slug: "generate-synthetic-data", title: "Generate Synthetic Data" } },
+    { task: { slug: "forecast-demand", title: "Forecast Demand" } },
+    { task: { slug: "detect-anomalies", title: "Detect Anomalies" } },
+    { task: { slug: "cluster-customer-segments", title: "Cluster Customer Segments" } },
+    { task: { slug: "build-etl-pipelines", title: "Build ETL Pipelines" } },
+    { task: { slug: "write-data-dictionaries", title: "Write Data Dictionaries" } },
+    { task: { slug: "label-training-data", title: "Label Training Data" } },
+    { task: { slug: "forecast-churn-risk", title: "Forecast Churn Risk" } },
+    { task: { slug: "analyze-survey-results", title: "Analyze Survey Results" } },
+    { task: { slug: "fine-tune-language-models", title: "Fine Tune Language Models" } },
   ],
   _count: { reviews: 127, bookmarks: 1870 },
 };

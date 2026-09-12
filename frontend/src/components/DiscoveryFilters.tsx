@@ -96,9 +96,9 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
   return (
     <div className="space-y-4 w-full">
       {/* 1. Discovery Bar (Toolbar) */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-3 border-b border-[#232326]/60">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 pb-3 border-b border-[#232326]/60">
         {/* Left: small rounded pills */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <button
             onPointerEnter={() => prefetchTools({ sort: "rating", pricing: null })}
             onFocus={() => prefetchTools({ sort: "rating", pricing: null })}
@@ -162,13 +162,13 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
         </div>
 
         {/* Right: Sort select dropdown, View toggle, Filter button */}
-        <div className="flex items-center gap-3 self-end sm:self-auto">
+        <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
           {/* Custom Sort selector */}
-          <div className="relative inline-flex items-center">
+          <div className="relative inline-flex items-center flex-1 sm:flex-initial">
             <select
               value={currentSort}
               onChange={(e) => updateParam({ sort: e.target.value })}
-              className="appearance-none rounded-lg border border-[#232326] bg-[#131316] pl-3 pr-8 py-1.5 text-xs font-semibold text-[#A1A1AA] hover:text-white hover:border-[#6E56CF]/40 focus:outline-none transition-all cursor-pointer h-8"
+              className="w-full sm:w-auto appearance-none rounded-lg border border-[#232326] bg-[#131316] pl-3 pr-8 py-1.5 text-xs font-semibold text-[#A1A1AA] hover:text-white hover:border-[#6E56CF]/40 focus:outline-none transition-all cursor-pointer h-8"
             >
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
@@ -180,7 +180,7 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
           </div>
 
           {/* View Toggle */}
-          <div className="flex items-center border border-[#232326] bg-[#131316] rounded-lg p-0.5 h-8">
+          <div className="flex items-center border border-[#232326] bg-[#131316] rounded-lg p-0.5 h-8 shrink-0">
             <button 
               className="p-1 rounded bg-[#18181C] text-white hover:bg-neutral-800 transition-colors" 
               aria-label="Grid view"
@@ -198,23 +198,23 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
           {/* Filter button */}
           <button 
             onClick={() => updateParam({ category: null, pricing: null, sort: null })}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-xs font-semibold text-[#A1A1AA] hover:text-white hover:border-[#6E56CF]/40 transition-all h-8"
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#232326] bg-[#131316] text-xs font-semibold text-[#A1A1AA] hover:text-white hover:border-[#6E56CF]/40 transition-all h-8 shrink-0"
           >
             <SlidersHorizontal size={12} />
-            <span>Filters</span>
+            <span className="hidden 2xs:inline">Filters</span>
           </button>
         </div>
       </div>
 
       {/* 2. Secondary Filter Row (Category chips scrolling) */}
-      <div className="relative w-full">
-        <div className="flex flex-nowrap gap-3 overflow-x-auto scrollbar-none pb-2 w-full">
+      <div className="relative w-full -mx-3 sm:mx-0 px-3 sm:px-0">
+        <div className="flex flex-nowrap gap-2 sm:gap-3 touch-scroll-x scrollbar-none pb-2 w-full">
           {/* All category pill */}
           <button
             onPointerEnter={() => prefetchTools({ category: null })}
             onFocus={() => prefetchTools({ category: null })}
             onClick={() => updateParam({ category: null })}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all active:scale-95 whitespace-nowrap cursor-pointer ${
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all active:scale-95 whitespace-nowrap cursor-pointer shrink-0 ${
               !currentCategory
                 ? "bg-white text-[#0B0B0E] border-transparent shadow-sm"
                 : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white"
@@ -232,7 +232,7 @@ export function DiscoveryFilters({ categories }: DiscoveryFiltersProps) {
                 onPointerEnter={() => prefetchTools({ category: isActive ? null : cat.slug })}
                 onFocus={() => prefetchTools({ category: isActive ? null : cat.slug })}
                 onClick={() => updateParam({ category: isActive ? null : cat.slug })}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all active:scale-95 whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all active:scale-95 whitespace-nowrap flex items-center gap-1.5 cursor-pointer shrink-0 ${
                   isActive
                     ? "bg-white text-[#0B0B0E] border-transparent shadow-sm"
                     : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/40 hover:text-white"

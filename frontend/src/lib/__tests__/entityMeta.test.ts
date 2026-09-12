@@ -54,12 +54,12 @@ describe("ALL_ENTITY_TYPES", () => {
   it("contains all expected entity types", () => {
     const expected: EntityType[] = [
       "tool", "company", "model", "news", "video", "repository",
-      "collection", "task", "country", "fundraise", "investor", "robot", "device",
+      "task", "country", "fundraise", "investor", "robot", "device",
     ];
     expect(ALL_ENTITY_TYPES).toEqual(expected);
   });
 
-  it("has 13 entity types", () => {
-    expect(ALL_ENTITY_TYPES).toHaveLength(13);
+  it("has 12 entity types", () => {
+    expect(ALL_ENTITY_TYPES).toHaveLength(12);
   });
 });

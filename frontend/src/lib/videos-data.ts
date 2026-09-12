@@ -1,12 +1,18 @@
 import type { Video } from "./video-types";
+import { cachedFetchJson, getFromCache, prefetchUrl, setInCache } from "./api-cache";
 
 export type { Video };
+export { getFromCache, setInCache, prefetchUrl };
 export { BLUR_DATA_URL, formatDuration, formatViews, formatRelativeDate } from "./video-types";
 
 function resolveApiUrl(): string {
   const url = process.env.NEXT_PUBLIC_API_URL;
   if (url && url.startsWith("http") && url !== "undefined") {
-    return url.replace(/\/$/, "");
+    const isLocalUrl = url.includes("localhost") || url.includes("127.0.0.1");
+    const isNonLocalClient = typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+    if (!(isLocalUrl && isNonLocalClient)) {
+      return url.replace(/\/$/, "");
+    }
   }
   if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
     return "http://localhost:8787";
@@ -14,21 +20,116 @@ function resolveApiUrl(): string {
   return "https://ai-orbit.palamrendra-pm.workers.dev";
 }
 
-const API_URL = resolveApiUrl();
+export const API_URL = resolveApiUrl();
 
 async function fetchJson<T>(path: string): Promise<T | null> {
-  try {
-    const res = await fetch(`${API_URL}${path}`);
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch (err) {
-    console.error(`[videos-data] failed to fetch ${path}:`, err);
-    return null;
-  }
+  return cachedFetchJson<T | null>(`${API_URL}${path}`, null, { ttlMs: 15 * 60 * 1000 });
 }
 
 export type VideoSortBy = "name" | "duration" | "posted" | "views";
 export type VideoSortDir = "asc" | "desc";
+
+export function buildVideosPageUrl(
+  limit: number,
+  offset: number,
+  category?: string,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): string {
+  const params = new URLSearchParams({ sort: "latest", limit: String(limit), offset: String(offset) });
+  if (category) params.set("category", category);
+  if (sortBy) params.set("sortBy", sortBy);
+  if (sortDir) params.set("sortDir", sortDir);
+  return `${API_URL}/api/videos?${params.toString()}`;
+}
+
+/**
+ * Same endpoint as buildVideosPageUrl, but with withCount=true - the
+ * backend runs findMany + count in parallel and returns both in one
+ * response ({ videos, total }), instead of the category chip flow
+ * needing two separate HTTP round trips.
+ */
+export function buildVideosPageWithCountUrl(
+  limit: number,
+  offset: number,
+  category?: string,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): string {
+  const params = new URLSearchParams({
+    sort: "latest",
+    limit: String(limit),
+    offset: String(offset),
+    withCount: "true",
+  });
+  if (category) params.set("category", category);
+  if (sortBy) params.set("sortBy", sortBy);
+  if (sortDir) params.set("sortDir", sortDir);
+  return `${API_URL}/api/videos?${params.toString()}`;
+}
+
+export function buildVideosCountUrl(category?: string): string {
+  const params = new URLSearchParams();
+  if (category) params.set("category", category);
+  const qs = params.toString();
+  return `${API_URL}/api/videos/count${qs ? `?${qs}` : ""}`;
+}
+
+export interface VideosPageWithCount {
+  videos: Video[];
+  total: number;
+}
+
+export function getCachedVideosPage(
+  limit: number,
+  offset: number,
+  category?: string,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): Video[] | null {
+  const url = buildVideosPageWithCountUrl(limit, offset, category, sortBy, sortDir);
+  const cached = getFromCache<VideosPageWithCount>(url);
+  return cached?.videos ?? null;
+}
+
+export function getCachedVideosCount(
+  limit: number,
+  offset: number,
+  category?: string,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): number | null {
+  const url = buildVideosPageWithCountUrl(limit, offset, category, sortBy, sortDir);
+  const cached = getFromCache<VideosPageWithCount>(url);
+  return cached?.total ?? null;
+}
+
+export function prefetchVideosCategory(
+  category?: string,
+  limit = 100,
+  offset = 0,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): void {
+  // One request warms both the video list and the total count, since
+  // the backend now runs findMany + count in parallel for a single
+  // withCount=true call - no more doubling up on hover/touch.
+  const url = buildVideosPageWithCountUrl(limit, offset, category, sortBy, sortDir);
+  prefetchUrl(url, 15 * 60 * 1000);
+}
+
+/** Fetches a page of videos and its total count in a single request. */
+export async function getVideosPageWithCount(
+  limit: number,
+  offset: number,
+  category?: string,
+  sortBy?: VideoSortBy,
+  sortDir?: VideoSortDir
+): Promise<VideosPageWithCount> {
+  const url = buildVideosPageWithCountUrl(limit, offset, category, sortBy, sortDir);
+  const result = await cachedFetchJson<VideosPageWithCount | null>(url, null, { ttlMs: 15 * 60 * 1000 });
+  return result ?? { videos: [], total: 0 };
+}
 
 export async function getTrendingVideos(limit = 4): Promise<Video[]> {
   return (await fetchJson<Video[]>(`/api/videos?sort=trending&limit=${limit}`)) ?? [];
@@ -49,9 +150,6 @@ export async function getVideosPage(
   sortBy?: VideoSortBy,
   sortDir?: VideoSortDir
 ): Promise<Video[]> {
-  // NOTE: `sort=latest` here is the existing feed-mode param (separate from
-  // sortBy/sortDir below, which is the per-column table sort — kept as a
-  // distinct param name specifically so it doesn't collide with this one).
   const params = new URLSearchParams({ sort: "latest", limit: String(limit), offset: String(offset) });
   if (category) params.set("category", category);
   if (sortBy) params.set("sortBy", sortBy);

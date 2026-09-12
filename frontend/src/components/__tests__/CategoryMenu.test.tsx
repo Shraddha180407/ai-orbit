@@ -68,19 +68,19 @@ describe("CategoryMenu", () => {
     expect(buildBtn).toHaveAttribute("aria-expanded", "true");
   });
 
-  it("renders Browse all collections link", () => {
+  it("renders Browse all tools link", () => {
     render(<CategoryMenu categoryCounts={categoryCounts} />);
     fireEvent.mouseEnter(screen.getByText("Build"));
-    expect(screen.getAllByText("Browse all collections").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Browse all collections")[0].closest("a")).toHaveAttribute("href", "/collections");
+    expect(screen.getAllByText("Browse all tools").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Browse all tools")[0].closest("a")).toHaveAttribute("href", "/tools");
   });
 
-  it("links category items to collections page", () => {
+  it("links category items to tools page", () => {
     render(<CategoryMenu categoryCounts={categoryCounts} />);
     fireEvent.mouseEnter(screen.getByText("Build"));
     expect(screen.getByText("AI Agents").closest("a")).toHaveAttribute(
       "href",
-      "/collections?category=Agents"
+      "/tools?category=Agents"
     );
   });
 });

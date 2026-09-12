@@ -17,9 +17,10 @@ import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/shadcn-button";
+import { Pagination } from "@/components/Pagination";
 import { cn } from "@/lib/utils";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 100;
 
 const DEFAULT_NEWS_CATEGORIES = [
   { key: "all", label: "All" },
@@ -99,56 +100,34 @@ function matchesCategoryFilter(a: NewsArticle, filterKey: string): boolean {
 }
 
 export function NewsListingClient({ category, initialTopic }: NewsListingClientProps) {
-  const { user } = useUser();
-  const isAdmin = user?.role === 'ADMIN';
-
   const searchParams = useSearchParams();
   const sortParam = searchParams.get("sort") || "newest";
-  const urlFilterParam = searchParams.get("filter") || searchParams.get("category");
+  const urlFilter = searchParams.get("filter");
 
-  const [filter, setFilter] = useState("all");
+  const [articles, setArticles] = useState<NewsArticle[]>([]);
+  const [sources, setSources] = useState<Record<string, NewsSource>>({});
+  const [categories, setCategories] = useState<NewsCategory[]>([]);
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
+  const [initialError, setInitialError] = useState(false);
+
+  const [filter, setFilter] = useState<string>(category || urlFilter || "all");
   const [query, setQuery] = useState("");
   const [selectedTopics, setSelectedTopics] = useState<string[]>(initialTopic ? [initialTopic] : []);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
-
-  // Update filter state when URL parameter changes
-  useEffect(() => {
-    if (urlFilterParam) {
-      setFilter(urlFilterParam);
-    }
-  }, [urlFilterParam]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const urlSource = params.get("source");
-      if (urlSource) setSelectedSources([urlSource]);
-    }
-  }, []);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(100);
 
   // Admin Modal State
+  const { user } = useUser();
+  const isAdmin = user?.role === "ADMIN" || user?.email === "admin@aiorbit.org";
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ title: '', slug: '', articleUrl: '', category: 'general', summary: '' });
   const [isSaving, setIsSaving] = useState(false);
 
-  const [articles, setArticles] = useState<NewsArticle[]>([]);
-  const [sources, setSources] = useState<Record<string, NewsSource>>({});
-  const [, setCategories] = useState<NewsCategory[]>([]);
-
-  const [mode, setMode] = useState<"paginated" | "full">("paginated");
-  const [nextPage, setNextPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [initialError, setInitialError] = useState(false);
-  const [loadMoreError, setLoadMoreError] = useState(false);
-
-  const isDefaultView = !category && filter === "all" && !query.trim() && selectedTopics.length === 0 && selectedSources.length === 0;
-
-  const loadFull = useCallback(async () => {
+  const loadData = useCallback(async () => {
+    setIsLoadingInitial(true);
     setInitialError(false);
-    setLoadMoreError(false);
     try {
       const clientId = getClientId();
       const res = await fetch(`${API_URL}/api/news${clientId ? `?clientId=${encodeURIComponent(clientId)}` : ""}`);
@@ -157,8 +136,6 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       setArticles(json.articles || []);
       setSources(json.sources || {});
       setCategories(json.categories || []);
-      setMode("full");
-      setHasMore(false);
     } catch {
       setInitialError(true);
     } finally {
@@ -166,58 +143,9 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     }
   }, []);
 
-  const loadPage = useCallback(async (page: number, append: boolean) => {
-    if (append) {
-      setIsLoadingMore(true);
-      setLoadMoreError(false);
-    } else {
-      setInitialError(false);
-    }
-    try {
-      const clientId = getClientId();
-      const res = await fetch(`${API_URL}/api/news?page=${page}&perPage=${PAGE_SIZE}${clientId ? `&clientId=${encodeURIComponent(clientId)}` : ""}`);
-      if (!res.ok) throw new Error(String(res.status));
-      const json: NewsListingResponse = await res.json();
-      setArticles((prev) => (append ? [...prev, ...json.articles] : json.articles));
-      setSources(json.sources || {});
-      setCategories(json.categories || []);
-      setHasMore(json.pagination?.hasMore ?? false);
-      setNextPage(page + 1);
-    } catch {
-      if (append) setLoadMoreError(true);
-      else setInitialError(true);
-    } finally {
-      setIsLoadingInitial(false);
-      setIsLoadingMore(false);
-    }
-  }, []);
-
   useEffect(() => {
-    if (category || initialTopic) loadFull();
-    else loadPage(1, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!isDefaultView && mode === "paginated" && !isLoadingInitial) loadFull();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDefaultView, mode, isLoadingInitial]);
-
-  // Enhanced IntersectionObserver with 1200px rootMargin for instantaneous scroll load
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (mode !== "paginated" || !hasMore) return;
-    const el = sentinelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !isLoadingMore) loadPage(nextPage, true);
-      },
-      { rootMargin: "1200px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [mode, hasMore, isLoadingMore, nextPage, loadPage]);
+    loadData();
+  }, [loadData]);
 
   const toggleTopic = (v: string) => setSelectedTopics((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
   const toggleSource = (v: string) => setSelectedSources((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
@@ -232,7 +160,6 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       if (typeof window !== "undefined") window.history.pushState(null, "", "/news");
     } else {
       setFilter(fKey);
-      if (mode === "paginated") loadFull();
       if (typeof window !== "undefined") window.history.pushState(null, "", `/news?filter=${encodeURIComponent(fKey)}`);
     }
   };
@@ -247,8 +174,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       if (!res.ok) throw new Error('Failed to save news');
       toast.success(editingId ? 'News updated successfully' : 'News added successfully');
       setIsModalOpen(false);
-      if (mode === "paginated") loadPage(1, false);
-      else loadFull();
+      loadData();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -261,8 +187,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       const res = await fetch(`${API_URL}/api/admin/news/${id}`, { method: 'DELETE', credentials: 'include' });
       if (!res.ok) throw new Error('Failed to delete news');
       toast.success('News deleted successfully');
-      if (mode === "paginated") loadPage(1, false);
-      else loadFull();
+      loadData();
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -295,6 +220,9 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   // Sort articles based on reactive top-right SortDropdown parameter (sortParam)
   list = sortArticles(list, sortParam, sources);
 
+  const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+  const visibleArticles = list.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   const activeChipsList = DEFAULT_NEWS_CATEGORIES;
 
   if (isLoadingInitial) {
@@ -308,7 +236,7 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   if (initialError) {
     return (
       <main className="w-full px-2 sm:px-4 py-4 flex-1 flex flex-col">
-        <ErrorState onRetry={() => (category || initialTopic ? loadFull() : loadPage(1, false))} />
+        <ErrorState onRetry={() => loadData()} />
       </main>
     );
   }
@@ -376,22 +304,24 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
         {list.length === 0 ? (
           <NewsTableEmpty searchActive={Boolean(query || filter !== "all")} />
         ) : (
-          <NewsTable articles={list} sources={sources} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
+          <NewsTable articles={visibleArticles} sources={sources} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
         )}
 
-        {/* Endless Scroll Sentinel for Paginated View */}
-        {mode === "paginated" && (
-          <div ref={sentinelRef} className="py-4">
-            {isLoadingMore && <NewsTableSkeleton rows={4} />}
-            {loadMoreError && (
-              <div className="text-center py-4">
-                <Button variant="outline" size="sm" onClick={() => loadPage(nextPage, true)} className="border-[#232326] text-xs font-semibold">
-                  Retry Loading More
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Unified Floating Pill Pagination */}
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalCount={list.length}
+          onPageChange={(p) => {
+            setCurrentPage(p);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setCurrentPage(1);
+          }}
+        />
       </main>
 
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? 'Edit News' : 'Add News'} footer={

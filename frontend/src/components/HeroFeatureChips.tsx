@@ -11,11 +11,11 @@ import Gift from 'lucide-react/dist/esm/icons/gift';
 import Trophy from 'lucide-react/dist/esm/icons/trophy';
 
 const FILTERS = [
-  { name: "Trending", icon: Flame, param: "sort", value: "rating", color: "#FF6B4A" },
-  { name: "Popular", icon: Star, param: "sort", value: "rating", color: "#FFC53D" },
+  { name: "Trending", icon: Flame, param: "sort", value: "trending", color: "#FF6B4A" },
+  { name: "Popular", icon: Star, param: "sort", value: "popular", color: "#FFC53D" },
   { name: "New", icon: Sparkles, param: "sort", value: "newest", color: "#A78BFA" },
   { name: "Free", icon: Gift, param: "pricing", value: "FREE", color: "#34D399" },
-  { name: "Top Rated", icon: Trophy, param: "sort", value: "rating", color: "#38BDF8" },
+  { name: "Top Rated", icon: Trophy, param: "sort", value: "top-rated", color: "#38BDF8" },
 ] as const;
 
 const INITIAL_PAGE_SIZE = 50;
@@ -54,7 +54,7 @@ export function HeroFeatureChips() {
       },
       initialPageParam: 1,
       staleTime: 10 * 60 * 1000,
-    }).catch(() => {});
+    }).catch(() => { });
 
     queryClient.prefetchInfiniteQuery({
       queryKey: ["tools", { q, category, pricing: targetPricing, sort: targetSort }],
@@ -73,7 +73,7 @@ export function HeroFeatureChips() {
       },
       initialPageParam: 1,
       staleTime: 10 * 60 * 1000,
-    }).catch(() => {});
+    }).catch(() => { });
   }, [searchParams, queryClient]);
 
   const handlePointerEnter = (f: typeof FILTERS[number]) => {
@@ -93,11 +93,8 @@ export function HeroFeatureChips() {
   };
 
   return (
-    <div className="hero-chip-row w-full max-w-4xl relative z-10 flex items-center justify-center overflow-hidden select-none">
-      <div
-        className="flex flex-nowrap items-center"
-        style={{ gap: "calc(10px * var(--chip-scale))" }}
-      >
+    <div className="w-full max-w-[520px] mx-auto relative z-10 select-none px-1 sm:px-0">
+      <div className="flex flex-nowrap items-center justify-center mx-auto gap-1 sm:gap-2.5 w-full pb-1">
         {FILTERS.map((f) => {
           const currentVal = searchParams.get(f.param);
           const isActive = currentVal === f.value;
@@ -108,6 +105,7 @@ export function HeroFeatureChips() {
           return (
             <button
               key={f.name}
+              type="button"
               onPointerEnter={() => handlePointerEnter(f)}
               onPointerLeave={() => handlePointerLeave(f.name)}
               onFocus={() => handlePointerEnter(f)}
@@ -127,61 +125,35 @@ export function HeroFeatureChips() {
                   toolsEl.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
               }}
-              className="group inline-flex shrink-0 whitespace-nowrap items-center rounded-full border bg-[#0d0d10] font-medium transition-colors duration-150 cursor-pointer"
+              className="group inline-flex shrink-0 whitespace-nowrap items-center rounded-full border font-medium transition-all duration-150 active:scale-95 cursor-pointer h-[22px] sm:h-[25px] px-1 sm:px-2.5 gap-1 sm:gap-1.5 text-[8.5px] sm:text-[11px] shadow-sm"
               style={{
                 borderColor: filled ? f.color : `${f.color}40`,
+                backgroundColor: filled ? `${f.color}15` : "#0d0d10",
                 color: filled ? "#ffffff" : "#a1a1aa",
-                height: "calc(28px * var(--chip-scale))",
-                paddingLeft: "calc(8px * var(--chip-scale))",
-                paddingRight: "calc(12px * var(--chip-scale))",
-                gap: "calc(6px * var(--chip-scale))",
-                fontSize: "calc(12px * var(--chip-scale))",
+                boxShadow: filled ? `0 0 8px ${f.color}18` : undefined,
               }}
             >
               <span
-                className="flex shrink-0 items-center justify-center rounded-full border transition-colors duration-150"
+                className="flex shrink-0 items-center justify-center rounded-full border transition-colors duration-150 h-3 w-3 sm:h-3.5 sm:w-3.5"
                 style={{
                   backgroundColor: filled ? f.color : "transparent",
                   borderColor: f.color,
-                  width: "calc(16px * var(--chip-scale))",
-                  height: "calc(16px * var(--chip-scale))",
                 }}
               >
                 <Icon
                   strokeWidth={2.25}
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 sm:h-2 sm:w-2"
                   style={{
                     color: filled ? "#000000" : f.color,
-                    width: "calc(9px * var(--chip-scale))",
-                    height: "calc(9px * var(--chip-scale))",
                   }}
                 />
               </span>
-              <span>{f.name}</span>
+              <span className="font-semibold">{f.name}</span>
             </button>
           );
         })}
       </div>
-
-      <style jsx>{`
-        .hero-chip-row {
-          /*
-           * A single dynamic scale factor, computed purely in CSS from the
-           * live viewport width — no JS measurement, no font-load race, no
-           * flash of the wrong size on first paint.
-           *
-           * It's a direct linear model of "available width / natural row
-           * width": (100vw - 48px page padding) / 560px assumed natural
-           * width (deliberately padded above the real ~480px measured
-           * width, so we shrink a bit earlier than strictly required
-           * rather than risk any overflow).
-           *
-           * Below ~320px viewports we hold at the 0.5 floor; from ~608px
-           * viewports upward the row already fits, so scale clamps to 1
-           * and desktop is rendered at its exact original size, untouched.
-           */
-          --chip-scale: clamp(0.5, calc((100vw - 48px) / 560px), 1);
-        }
-      `}</style>
     </div>
   );
 }

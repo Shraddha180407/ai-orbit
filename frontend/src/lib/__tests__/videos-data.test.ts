@@ -8,6 +8,7 @@ import {
   getVideoBySlug,
   getRelatedVideos,
 } from "@/lib/videos-data";
+import { invalidateClientCache } from "@/lib/api-cache";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -21,6 +22,7 @@ function jsonResponse(data: any, ok = true) {
 
 beforeEach(() => {
   mockFetch.mockReset();
+  invalidateClientCache();
 });
 
 describe("getTrendingVideos", () => {
@@ -29,7 +31,8 @@ describe("getTrendingVideos", () => {
     const result = await getTrendingVideos();
     expect(result).toEqual([{ id: "1" }]);
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/videos?sort=trending&limit=4")
+      expect.stringContaining("/api/videos?sort=trending&limit=4"),
+      expect.anything()
     );
   });
 
@@ -37,7 +40,8 @@ describe("getTrendingVideos", () => {
     mockFetch.mockResolvedValue(jsonResponse([]));
     await getTrendingVideos(10);
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("limit=10")
+      expect.stringContaining("limit=10"),
+      expect.anything()
     );
   });
 
@@ -58,7 +62,8 @@ describe("getLatestVideos", () => {
     const result = await getLatestVideos();
     expect(result).toEqual([{ id: "1" }]);
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/videos?sort=latest&limit=6")
+      expect.stringContaining("/api/videos?sort=latest&limit=6"),
+      expect.anything()
     );
   });
 
@@ -74,7 +79,8 @@ describe("getAllVideos", () => {
     const result = await getAllVideos();
     expect(result).toEqual([{ id: "1" }]);
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/videos?sort=latest")
+      expect.stringContaining("/api/videos?sort=latest"),
+      expect.anything()
     );
   });
 
@@ -90,7 +96,8 @@ describe("getVideosPage", () => {
     const result = await getVideosPage(10, 20);
     expect(result).toEqual([{ id: "1" }]);
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("limit=10&offset=20")
+      expect.stringContaining("limit=10&offset=20"),
+      expect.anything()
     );
   });
 
@@ -106,7 +113,8 @@ describe("getVideosCount", () => {
     const result = await getVideosCount();
     expect(result).toBe(42);
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/videos/count")
+      expect.stringContaining("/api/videos/count"),
+      expect.anything()
     );
   });
 
@@ -127,7 +135,8 @@ describe("getVideoBySlug", () => {
     const result = await getVideoBySlug("test");
     expect(result?.slug).toBe("test");
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/videos/test")
+      expect.stringContaining("/api/videos/test"),
+      expect.anything()
     );
   });
 
@@ -144,7 +153,8 @@ describe("getRelatedVideos", () => {
     const result = await getRelatedVideos(video);
     expect(result).toEqual([{ id: "2" }]);
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/videos/test-video/related?limit=4")
+      expect.stringContaining("/api/videos/test-video/related?limit=4"),
+      expect.anything()
     );
   });
 
@@ -153,7 +163,8 @@ describe("getRelatedVideos", () => {
     mockFetch.mockResolvedValue(jsonResponse([]));
     await getRelatedVideos(video, 8);
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("limit=8")
+      expect.stringContaining("limit=8"),
+      expect.anything()
     );
   });
 

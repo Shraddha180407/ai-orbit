@@ -50,6 +50,9 @@ const mockTools: ToolCardData[] = [
     _count: { reviews: 10, bookmarks: 20 },
     avgRating: 4.5,
     company: null,
+    createdAt: "2025-01-01T00:00:00.000Z",
+    isOpenSource: false,
+    isTrending: false,
   },
   {
     id: "t2",
@@ -65,6 +68,9 @@ const mockTools: ToolCardData[] = [
     _count: { reviews: 5, bookmarks: 8 },
     avgRating: 3.2,
     company: null,
+    createdAt: "2025-01-02T00:00:00.000Z",
+    isOpenSource: false,
+    isTrending: false,
   },
 ];
 
@@ -97,6 +103,16 @@ describe("ToolListView", () => {
     expect(screen.getByText("TOOL")).toBeInTheDocument();
     expect(screen.getByText("TASK")).toBeInTheDocument();
     expect(screen.getByText("PRICING")).toBeInTheDocument();
+  });
+
+  it("gives the name filter control an accessible name", () => {
+    render(<ToolListView tools={mockTools} />);
+    expect(screen.getByRole("button", { name: "Filter tools by name" })).toBeInTheDocument();
+  });
+
+  it("uses a directory section heading before tool item headings", () => {
+    render(<ToolListView tools={mockTools} />);
+    expect(screen.getByRole("heading", { level: 2, name: "AI directory" })).toBeInTheDocument();
   });
 
   it("renders pricing badges", () => {
