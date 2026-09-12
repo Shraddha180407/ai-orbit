@@ -245,9 +245,14 @@ print(response.choices[0].message.content)`;
             <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight mb-2">
               {model.name}
             </h1>
-            <p className="text-sm sm:text-base text-[#A1A1AA] leading-relaxed max-w-2xl">
+            <p className="text-sm sm:text-base text-[#A1A1AA] leading-relaxed max-w-2xl mb-3">
               {model.fullDescription || model.shortDescription}
             </p>
+            <div className="text-[11px] text-[#71717A] flex items-center gap-2">
+              {model.releaseDate && <span>Released {model.releaseDate}</span>}
+              {model.releaseDate && <span>•</span>}
+              <span>Updated {model.lastUpdated || 'March 2026'}</span>
+            </div>
           </div>
 
           {/* Action Box with Context-Aware Primary Signal */}
@@ -272,6 +277,7 @@ print(response.choices[0].message.content)`;
             </span>
 
             <div className="space-y-2">
+              {/* Primary Action */}
               <a
                 href={model.website}
                 target="_blank"
@@ -282,6 +288,7 @@ print(response.choices[0].message.content)`;
                 <ExternalLink size={13} />
               </a>
 
+              {/* Secondary Action */}
               <button
                 onClick={() => onToggleCompare(model)}
                 className={`w-full py-2 rounded-xl text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
@@ -297,9 +304,20 @@ print(response.choices[0].message.content)`;
           </div>
         </div>
 
-        {/* Key Metrics Quad - Context-Aware and Accurate */}
+        {/* Key Metrics Quad - 4 Distinct Decision Dimensions */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 py-6 border-b border-[#1C1C1F]">
-          {/* Card 1: Input / Output Pricing Split (Eliminates repeated Elo) */}
+          {/* Card 1: Arena Elo - Primary Benchmark Metric (Subtly Accented) */}
+          <div className="p-4 rounded-xl border border-[#6E56CF]/40 bg-[#14121c] shadow-[0_0_15px_rgba(110,86,207,0.1)]">
+            <div className="flex items-center gap-2 text-[#A78BFA] text-xs font-semibold uppercase mb-1">
+              <Trophy size={13} className="text-[#F5A623]" /> Arena Elo
+            </div>
+            <div className="text-xl sm:text-2xl font-bold font-mono text-white tracking-tight truncate">
+              {model.arenaElo ? Number(model.arenaElo).toLocaleString() : (model.categoryMetricValue || 'Top Tier')}
+            </div>
+            <span className="text-[11px] text-[#A1A1AA] truncate block">LMSYS Chatbot Arena</span>
+          </div>
+
+          {/* Card 2: Token Pricing */}
           <div className="p-4 rounded-xl border border-[#232326] bg-[#111115]">
             <div className="flex items-center gap-2 text-[#71717A] text-xs font-semibold uppercase mb-1">
               <DollarSign size={13} className="text-[#F5A623]" /> Token Pricing
@@ -312,6 +330,7 @@ print(response.choices[0].message.content)`;
             <span className="text-[11px] text-[#A1A1AA] truncate block">Per 1M input / output tokens</span>
           </div>
 
+          {/* Card 3: Context Scope */}
           <div className="p-4 rounded-xl border border-[#232326] bg-[#111115]">
             <div className="flex items-center gap-2 text-[#71717A] text-xs font-semibold uppercase mb-1">
               <Cpu size={13} className="text-[#00E5FF]" /> Context Scope
@@ -320,74 +339,65 @@ print(response.choices[0].message.content)`;
             <span className="text-[11px] text-[#A1A1AA]">Native attention span</span>
           </div>
 
+          {/* Card 4: Output Throughput */}
           <div className="p-4 rounded-xl border border-[#232326] bg-[#111115]">
             <div className="flex items-center gap-2 text-[#71717A] text-xs font-semibold uppercase mb-1">
               <Zap size={13} className="text-[#10B981]" /> Output Throughput
             </div>
-            <div className="text-xl font-bold font-mono text-white">{model.outputSpeed || 'API Endpoint'}</div>
+            <div className="text-xl font-bold font-mono text-white">
+              {(model.outputSpeed || model.specs?.speed || 'API Endpoint').replace(/\s*average throughput/i, '')}
+            </div>
             <span className="text-[11px] text-[#A1A1AA]">Average generation speed</span>
-          </div>
-
-          {/* Card 4: Delivery & Architecture */}
-          <div className="p-4 rounded-xl border border-[#232326] bg-[#111115]">
-            <div className="flex items-center gap-2 text-[#71717A] text-xs font-semibold uppercase mb-1">
-              <Layers size={13} className="text-[#A78BFA]" /> Delivery &amp; License
-            </div>
-            <div className="text-lg font-bold font-mono text-white truncate">
-              {model.licenseType || model.license || 'Commercial API'}
-            </div>
-            <span className="text-[11px] text-[#A1A1AA] truncate block">
-              {model.isOpenWeights ? 'Open Weights Available' : 'Managed Cloud Endpoint'}
-            </span>
           </div>
         </div>
 
         {/* Detailed Sections: Benchmarks + Specs (Continuous flow) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-6">
-          {/* Left 7 Cols: Benchmarks & Capabilities */}
+          {/* Left 7 Cols: Benchmarks, Capabilities & Code */}
           <div className="lg:col-span-7 space-y-6">
-            {/* EVALUATED BENCHMARK TELEMETRY — styled to match design reference */}
+            {/* EVALUATED BENCHMARK TELEMETRY — Pure Benchmark Performance (Arena Elo deduplicated) */}
             <div className="p-6 rounded-2xl border border-[#232326] bg-[#111115]">
               <h3 className="text-sm font-bold text-[#A78BFA] uppercase tracking-widest mb-5 flex items-center gap-2">
                 🏆 Evaluated Benchmark Telemetry
               </h3>
               <div className="space-y-3">
-                {(model.benchmarks || []).map((bm, i) => {
-                  const pctMatch = bm.score.match(/(\d+\.?\d*)%/);
-                  const isElo = /^([\d,]+)\s*Elo/i.test(bm.score) || bm.name.toLowerCase().includes('arena');
-                  const barPct = pctMatch ? Math.min(parseFloat(pctMatch[1]), 100) : null;
-
-                  return (
-                    <div key={i} className="p-4 rounded-xl bg-[#16161c] border border-[#232326]">
-                      {/* Top row: name+rank left, score right */}
-                      <div className="flex items-start justify-between gap-4 mb-3">
-                        <div className="min-w-0">
-                          <span className="font-bold text-sm text-white block leading-tight">{bm.name}</span>
-                          <span className="text-xs text-[#7C6FCD] font-semibold mt-0.5 block">{bm.rank}</span>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="text-2xl font-bold font-mono text-white tracking-tight leading-none block">
-                            {bm.score}
-                          </span>
-                          {isElo && (
-                            <span className="text-[11px] text-[#52525B] font-mono block mt-0.5">
-                              #{model.rank} of 133 tracked
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {/* Progress bar — only for percentage scores */}
-                      {barPct !== null && (
-                        <div className="h-[5px] rounded-full bg-[#1E1E24] overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-[#6E56CF] to-[#9B8AF0] transition-all duration-700"
-                            style={{ width: `${barPct}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
+                {(() => {
+                  const filteredBenchmarks = (model.benchmarks || []).filter(
+                    (bm) => !bm.name.toLowerCase().includes('arena') && !bm.score.toLowerCase().includes('elo')
                   );
-                })}
+                  const displayBenchmarks = filteredBenchmarks.length > 0 ? filteredBenchmarks : (model.benchmarks || []);
+
+                  return displayBenchmarks.map((bm, i) => {
+                    const pctMatch = bm.score.match(/(\d+\.?\d*)%/);
+                    const barPct = pctMatch ? Math.min(parseFloat(pctMatch[1]), 100) : null;
+
+                    return (
+                      <div key={i} className="p-4 rounded-xl bg-[#16161c] border border-[#232326]">
+                        {/* Top row: name+rank left, score right */}
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div className="min-w-0">
+                            <span className="font-bold text-sm text-white block leading-tight">{bm.name}</span>
+                            <span className="text-xs text-[#7C6FCD] font-semibold mt-0.5 block">{bm.rank}</span>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="text-2xl font-bold font-mono text-white tracking-tight leading-none block">
+                              {bm.score}
+                            </span>
+                          </div>
+                        </div>
+                        {/* Progress bar — for percentage scores */}
+                        {barPct !== null && (
+                          <div className="h-[5px] rounded-full bg-[#1E1E24] overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-[#6E56CF] to-[#9B8AF0] transition-all duration-700"
+                              style={{ width: `${barPct}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
 
@@ -427,25 +437,14 @@ print(response.choices[0].message.content)`;
             </div>
           </div>
 
-          {/* Right 5 Cols: Technical Specs */}
+          {/* Right 5 Cols: Technical Specs & Comparable Systems */}
           <div className="lg:col-span-5 space-y-6">
+            {/* Technical Specifications - Deeper Reference Details (Non-Duplicate) */}
             <div className="p-6 rounded-2xl border border-[#232326] bg-[#111115] space-y-4">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">
                 Technical Specifications
               </h3>
               <div className="divide-y divide-[#1F1F24] text-xs">
-                <div className="flex justify-between py-2.5">
-                  <span className="text-[#71717A]">Input Token Pricing</span>
-                  <span className="text-white font-mono">{model.specs?.inputPrice || model.price}</span>
-                </div>
-                <div className="flex justify-between py-2.5">
-                  <span className="text-[#71717A]">Output Token Pricing</span>
-                  <span className="text-white font-mono">{model.specs?.outputPrice || 'Standard'}</span>
-                </div>
-                <div className="flex justify-between py-2.5">
-                  <span className="text-[#71717A]">Context Window</span>
-                  <span className="text-[#A78BFA] font-mono font-bold">{model.specs?.contextWindow || model.contextWindow || 'N/A'}</span>
-                </div>
                 <div className="flex justify-between py-2.5">
                   <span className="text-[#71717A]">Max Output Tokens</span>
                   <span className="text-white font-mono">{model.specs?.maxOutput || '4,096 tokens'}</span>
@@ -456,15 +455,25 @@ print(response.choices[0].message.content)`;
                 </div>
                 <div className="flex justify-between py-2.5">
                   <span className="text-[#71717A]">Supported Modalities</span>
-                  <span className="text-white text-right">{model.specs?.modalities || 'Text, Code'}</span>
-                </div>
-                <div className="flex justify-between py-2.5">
-                  <span className="text-[#71717A]">Average Throughput</span>
-                  <span className="text-white font-mono">{(model.specs?.speed || model.outputSpeed || 'N/A').replace(/\s*average throughput/i, '')}</span>
+                  <span className="text-white text-right">
+                    {model.specs?.modalities || (model.entityType === 'tool' ? 'Code, Git, Terminal' : 'Text, Code')}
+                  </span>
                 </div>
                 <div className="flex justify-between py-2.5">
                   <span className="text-[#71717A]">First-Token Latency</span>
                   <span className="text-white font-mono">{model.specs?.ttft || '350ms'}</span>
+                </div>
+                <div className="flex justify-between py-2.5">
+                  <span className="text-[#71717A]">API Endpoint</span>
+                  <span className="text-white">
+                    {model.specs?.apiEndpoint || (model.entityType === 'tool' ? 'Native Desktop & Extension' : 'OpenAI-Compatible REST')}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2.5">
+                  <span className="text-[#71717A]">Deployment &amp; License</span>
+                  <span className="text-white truncate max-w-[200px] text-right">
+                    {model.licenseType || model.license || (model.isOpenWeights ? 'Open Weights Available' : 'Managed Cloud API')}
+                  </span>
                 </div>
               </div>
             </div>
