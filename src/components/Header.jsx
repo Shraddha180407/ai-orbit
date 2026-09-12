@@ -78,15 +78,15 @@ export default function Header({ onOpenSearch, bookmarksCount = 0, onOpenBookmar
                     : 'text-[#A1A1AA] hover:text-white hover:bg-white/5 border border-transparent'
                 }`}
               >
-                <Icon size={14} className={active ? 'text-[#A78BFA]' : 'text-[#71717A]'} />
+                <Icon size={14} className={active ? 'text-white' : 'text-[#71717A]'} />
                 <span>{link.name}</span>
                 {link.badge && (
-                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-[#6E56CF] text-white">
+                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                     {link.badge}
                   </span>
                 )}
                 {active && (
-                  <span className="absolute -bottom-[13px] left-1/2 -translate-x-1/2 w-4 h-0.5 bg-[#6E56CF] rounded-full"></span>
+                  <span className="absolute -bottom-[13px] left-1/2 -translate-x-1/2 w-4 h-0.5 bg-white rounded-full"></span>
                 )}
               </Link>
             );

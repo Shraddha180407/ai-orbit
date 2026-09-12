@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { LEADERBOARD_DATA } from '../data/leaderboardData';
 import { 
   ArrowLeft, 
+  ArrowRight,
   Trophy, 
   ExternalLink, 
   GitCompare, 
@@ -51,7 +52,8 @@ export default function LeaderboardDetailPage({
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const codeSnippet = `import openai
+  const codeSnippet = `# OpenAI-compatible proxy gateway endpoint (also supports native provider SDKs)
+import openai
 
 # Query ${model.name} via AI Orbit routing gateway
 client = openai.OpenAI(
@@ -284,12 +286,12 @@ print(response.choices[0].message.content)`;
                 onClick={() => onToggleCompare(model)}
                 className={`w-full py-2 rounded-xl text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   isCompared
-                    ? 'bg-[#10B981]/20 border-[#10B981]/40 text-[#34D399]'
+                    ? 'bg-emerald-500/10 border-emerald-500/35 text-emerald-400'
                     : 'bg-[#18181c] border-[#27272e] text-[#A1A1AA] hover:text-white hover:border-[#3a3a40]'
                 }`}
               >
                 <GitCompare size={13} />
-                <span>{isCompared ? 'Selected for Comparison' : 'Compare with Other Systems'}</span>
+                <span>{isCompared ? '✓ Selected for Comparison' : 'Compare with Other Systems'}</span>
               </button>
             </div>
           </div>
@@ -297,12 +299,17 @@ print(response.choices[0].message.content)`;
 
         {/* Key Metrics Quad - Context-Aware and Accurate */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 py-6 border-b border-[#1C1C1F]">
+          {/* Card 1: Input / Output Pricing Split (Eliminates repeated Elo) */}
           <div className="p-4 rounded-xl border border-[#232326] bg-[#111115]">
             <div className="flex items-center gap-2 text-[#71717A] text-xs font-semibold uppercase mb-1">
-              <primaryMetric.icon size={13} className="text-[#F5A623]" /> {primaryMetric.cardTitle}
+              <DollarSign size={13} className="text-[#F5A623]" /> Token Pricing
             </div>
-            <div className="text-xl font-bold font-mono text-white truncate">{primaryMetric.value}</div>
-            <span className="text-[11px] text-[#A1A1AA] truncate block">{primaryMetric.sub}</span>
+            <div className="text-lg font-bold font-mono text-white truncate">
+              {model.specs?.inputPrice && model.specs?.outputPrice
+                ? `${model.specs.inputPrice.split('/')[0].trim()} in / ${model.specs.outputPrice.split('/')[0].trim()} out`
+                : model.price ? model.price.split('/')[0].trim() : 'Free Tier'}
+            </div>
+            <span className="text-[11px] text-[#A1A1AA] truncate block">Per 1M input / output tokens</span>
           </div>
 
           <div className="p-4 rounded-xl border border-[#232326] bg-[#111115]">
@@ -321,12 +328,17 @@ print(response.choices[0].message.content)`;
             <span className="text-[11px] text-[#A1A1AA]">Average generation speed</span>
           </div>
 
+          {/* Card 4: Delivery & Architecture */}
           <div className="p-4 rounded-xl border border-[#232326] bg-[#111115]">
             <div className="flex items-center gap-2 text-[#71717A] text-xs font-semibold uppercase mb-1">
-              <DollarSign size={13} className="text-[#A78BFA]" /> Pricing Model
+              <Layers size={13} className="text-[#A78BFA]" /> Delivery &amp; License
             </div>
-            <div className="text-xl font-bold font-mono text-white truncate">{model.price ? model.price.split(' ')[0] : 'Free'}</div>
-            <span className="text-[11px] text-[#A1A1AA] truncate">{model.price}</span>
+            <div className="text-lg font-bold font-mono text-white truncate">
+              {model.licenseType || model.license || 'Commercial API'}
+            </div>
+            <span className="text-[11px] text-[#A1A1AA] truncate block">
+              {model.isOpenWeights ? 'Open Weights Available' : 'Managed Cloud Endpoint'}
+            </span>
           </div>
         </div>
 
@@ -334,7 +346,7 @@ print(response.choices[0].message.content)`;
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-6">
           {/* Left 7 Cols: Benchmarks & Capabilities */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Benchmark Scores with Visual Bars */}
+            {/* Benchmark Scores with Visual Bars (Elo has no arbitrary progress bar) */}
             <div className="p-6 rounded-2xl border border-[#232326] bg-[#111115]">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Trophy size={16} className="text-[#6E56CF]" />
@@ -343,14 +355,8 @@ print(response.choices[0].message.content)`;
               <div className="space-y-3">
                 {(model.benchmarks || []).map((bm, i) => {
                   const pctMatch = bm.score.match(/(\d+\.?\d*)%/);
-                  const eloMatch = bm.score.match(/^([\d,]+)\s*Elo/i);
-                  let barPct = null;
-                  if (pctMatch) {
-                    barPct = Math.min(parseFloat(pctMatch[1]), 100);
-                  } else if (eloMatch) {
-                    const num = parseInt(eloMatch[1].replace(/,/g, ''), 10);
-                    barPct = Math.min(Math.max(((num - 1000) / 500) * 100, 20), 100);
-                  }
+                  const isElo = /^([\d,]+)\s*Elo/i.test(bm.score) || bm.name.toLowerCase().includes('arena');
+                  const barPct = pctMatch ? Math.min(parseFloat(pctMatch[1]), 100) : null;
 
                   return (
                     <div key={i} className="p-3.5 rounded-xl bg-[#16161c] border border-[#232326] space-y-2">
@@ -359,7 +365,12 @@ print(response.choices[0].message.content)`;
                           <span className="font-semibold text-xs text-white block">{bm.name}</span>
                           <span className="text-[11px] text-[#A78BFA] font-medium">{bm.rank}</span>
                         </div>
-                        <span className="text-base font-bold font-mono text-white">{bm.score}</span>
+                        <div className="text-right">
+                          <span className="text-base font-bold font-mono text-white block">{bm.score}</span>
+                          {isElo && (
+                            <span className="text-[10.5px] text-[#71717A] font-mono block">#{model.rank} of 133 tracked</span>
+                          )}
+                        </div>
                       </div>
                       {barPct !== null && (
                         <div className="h-1 rounded-full bg-[#232328] overflow-hidden">
@@ -382,9 +393,8 @@ print(response.choices[0].message.content)`;
               </h3>
               <ul className="space-y-2.5 text-xs text-[#E4E4E7]">
                 {(model.keyFeatures || []).map((feat, i) => (
-                  <li key={i} className="flex items-start gap-2.5">
-                    <CheckCircle2 size={15} className="text-[#6E56CF] shrink-0 mt-0.5" />
-                    <span className="leading-relaxed">{feat}</span>
+                  <li key={i} className="border-l-2 border-[#6E56CF] pl-3 py-0.5 text-xs text-[#E4E4E7] leading-relaxed">
+                    {feat}
                   </li>
                 ))}
               </ul>
@@ -445,7 +455,7 @@ print(response.choices[0].message.content)`;
                 </div>
                 <div className="flex justify-between py-2.5">
                   <span className="text-[#71717A]">Average Throughput</span>
-                  <span className="text-[#10B981] font-mono">{model.specs?.speed || model.outputSpeed || 'N/A'}</span>
+                  <span className="text-white font-mono">{(model.specs?.speed || model.outputSpeed || 'N/A').replace(/\s*average throughput/i, '')}</span>
                 </div>
                 <div className="flex justify-between py-2.5">
                   <span className="text-[#71717A]">First-Token Latency</span>
@@ -475,9 +485,12 @@ print(response.choices[0].message.content)`;
                       </div>
                       <span className="text-[11px] text-[#71717A]">{rel.org} • {rel.category}</span>
                     </div>
-                    <span className="font-mono text-xs font-bold text-white">
-                      {rel.arenaElo ? `${rel.arenaElo} Elo` : (rel.categoryMetricValue || rel.price || 'View Details')}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-mono text-xs font-bold text-white">
+                        {rel.arenaElo ? `${rel.arenaElo} Elo` : (rel.categoryMetricValue || rel.price || 'View Details')}
+                      </span>
+                      <ArrowRight size={13} className="text-[#71717A] group-hover:text-white transition-colors" />
+                    </div>
                   </Link>
                 ))}
               </div>

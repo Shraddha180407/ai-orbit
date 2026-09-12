@@ -92,12 +92,11 @@ export default function MobileLeaderboardCard({
       </div>
 
       {/* Superpower Badge Row */}
-      {model.superpower && (
-        <div className="mb-3">
+      {(model.superpowerShort || model.superpower) && (
+        <div className="mb-2.5">
           <SuperpowerBadge
-            superpower={model.superpower}
+            superpower={model.superpowerShort || model.superpower}
             category={model.category}
-            detail={model.superpowerDetail}
             compact={true}
           />
         </div>
@@ -176,11 +175,11 @@ export default function MobileLeaderboardCard({
             onClick={() => onToggleCompare(model)}
             className={`text-xs px-2.5 py-1 rounded-xl border font-semibold transition-all cursor-pointer ${
               isCompared
-                ? 'bg-[#6E56CF] text-white border-[#6E56CF]'
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/35'
                 : 'bg-[#18181c] text-[#A1A1AA] border-[#27272e] hover:text-white'
             }`}
           >
-            {isCompared ? 'Added' : '+ Compare'}
+            {isCompared ? '✓ Added' : '+ Compare'}
           </button>
 
           <Link

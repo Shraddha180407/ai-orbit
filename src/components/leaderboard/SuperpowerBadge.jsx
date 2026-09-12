@@ -67,13 +67,13 @@ export default function SuperpowerBadge({ superpower, category, detail, compact 
   }
 
   return (
-    <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10.5px] font-medium border ${bg}`}>
-      <Icon size={11} className="shrink-0" />
+    <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium border ${bg}`}>
+      <Icon size={10.5} className="shrink-0" />
       <span className="font-semibold">{superpower}</span>
       {detail && (
         <>
           <span className="opacity-40">•</span>
-          <span className="opacity-80 font-mono text-[10px]">{detail}</span>
+          <span className="opacity-80 font-mono text-[9.5px]">{detail}</span>
         </>
       )}
     </div>

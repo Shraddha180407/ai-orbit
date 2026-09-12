@@ -36,7 +36,8 @@ import {
   Building2,
   Cpu,
   Zap,
-  HelpCircle
+  HelpCircle,
+  Check
 } from 'lucide-react';
 
 export default function LeaderboardPage({ 
@@ -228,41 +229,131 @@ export default function LeaderboardPage({
     };
   }, []);
 
-  // Compute winners across dimensions for the Compare Modal
-  const compareWinners = useMemo(() => {
-    if (selectedForCompare.length < 2) return {};
-    const w = {};
-    // Rank: lowest number = #1 rank
-    w.rank = [...selectedForCompare].sort((a, b) => a.rank - b.rank)[0]?.id;
-    // MMLU: highest score
-    const withMmlu = selectedForCompare.filter((m) => m.mmluPro && m.mmluPro !== 'N/A');
-    if (withMmlu.length >= 2) {
-      w.mmlu = [...withMmlu].sort((a, b) => parseFloat(b.mmluPro) - parseFloat(a.mmluPro))[0]?.id;
-    }
-    // Coding: highest score
-    const withCoding = selectedForCompare.filter((m) => m.codingScore && m.codingScore !== 'N/A');
-    if (withCoding.length >= 2) {
-      w.coding = [...withCoding].sort((a, b) => parseFloat(b.codingScore) - parseFloat(a.codingScore))[0]?.id;
-    }
-    // Speed: highest throughput
-    const withSpeed = selectedForCompare.filter((m) => m.speedNum || parseInt(m.outputSpeed, 10));
-    if (withSpeed.length >= 2) {
-      w.speed = [...withSpeed].sort((a, b) => (b.speedNum || parseInt(b.outputSpeed, 10) || 0) - (a.speedNum || parseInt(a.outputSpeed, 10) || 0))[0]?.id;
+  // Live rotating hero telemetry sequence (single metric at a time)
+  const HERO_METRICS = useMemo(() => [
+    { value: `${LEADERBOARD_DATA.length}`, label: 'TRACKED SYSTEMS', sub: 'LIVE INDEX' },
+    { value: `${ecosystemStats.modelsCount}`, label: 'MODELS', sub: 'FOUNDATION ARCHITECTURES' },
+    { value: `${ecosystemStats.toolsCount}`, label: 'TOOLS', sub: 'DEVELOPER APPLICATIONS' },
+    { value: `${ecosystemStats.companiesCount}`, label: 'AI COMPANIES', sub: 'ENTERPRISE INDEX' },
+    { value: `${ecosystemStats.maxSpeed ? `${ecosystemStats.maxSpeed} tok/s` : '260 tok/s'}`, label: 'PEAK THROUGHPUT', sub: ecosystemStats.fastestName || 'GROQ INFERENCE' },
+    { value: `${ecosystemStats.maxGrowth ? `+${ecosystemStats.maxGrowth}%` : '+180%'}`, label: 'FASTEST GROWTH', sub: ecosystemStats.topGrowthName || 'MOMENTUM INDEX' }
+  ], [ecosystemStats]);
+
+  const [rotatingMetricIndex, setRotatingMetricIndex] = useState(0);
+  const [isMetricTransitioning, setIsMetricTransitioning] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // 1. Smoothly exit to the right
+      setIsMetricTransitioning(true);
+
+      // 2. Switch to next metric and enter from the right
+      const timer = setTimeout(() => {
+        setRotatingMetricIndex((prev) => (prev + 1) % HERO_METRICS.length);
+        setIsMetricTransitioning(false);
+      }, 250);
+
+      return () => clearTimeout(timer);
+    }, 2800);
+
+    return () => clearInterval(interval);
+  }, [HERO_METRICS.length]);
+
+  const currentMetric = HERO_METRICS[rotatingMetricIndex] || HERO_METRICS[0];
+
+  // Compute winners across dimensions for the Compare Modal with strict tie detection
+  const { compareWinners, aggregateVerdict } = useMemo(() => {
+    if (selectedForCompare.length < 2) {
+      return { compareWinners: {}, aggregateVerdict: null };
     }
 
-    // Context Window: highest capacity (e.g. 2M > 1M > 200k)
-    const withContext = selectedForCompare.filter((m) => m.contextWindow);
-    if (withContext.length >= 2) {
-      const parseCtx = (str) => {
-        if (!str) return 0;
-        if (str.includes('M')) return parseFloat(str) * 1000000;
-        if (str.includes('k') || str.includes('K')) return parseFloat(str) * 1000;
-        return parseFloat(str) || 0;
-      };
-      w.context = [...withContext].sort((a, b) => parseCtx(b.contextWindow) - parseCtx(a.contextWindow))[0]?.id;
+    const parsePct = (str) => {
+      if (!str || str === 'N/A') return null;
+      const m = str.match(/(\d+\.?\d*)/);
+      return m ? parseFloat(m[1]) : null;
+    };
+
+    const parseSpeed = (m) => m.speedNum || parseInt(m.outputSpeed, 10) || null;
+
+    const parseCtx = (str) => {
+      if (!str) return null;
+      if (str.includes('M')) return parseFloat(str) * 1000000;
+      if (str.includes('k') || str.includes('K')) return parseFloat(str) * 1000;
+      return parseFloat(str) || null;
+    };
+
+    // Helper: evaluate dimension winners.
+    // If all values are identical, return empty array (zero boxes).
+    // If one max exists, return [winnerId].
+    // If tie for top, return [id1, id2].
+    const findWinners = (extractVal) => {
+      const entries = selectedForCompare
+        .map((m) => ({ id: m.id, val: extractVal(m) }))
+        .filter((e) => e.val !== null && !isNaN(e.val));
+
+      if (entries.length < 2) return [];
+      const values = entries.map((e) => e.val);
+      const maxVal = Math.max(...values);
+      const minVal = Math.min(...values);
+
+      // If all values are equal across models, it's a tie across all -> NO winner box
+      if (maxVal === minVal) return [];
+
+      // Return all IDs matching max
+      return entries.filter((e) => e.val === maxVal).map((e) => e.id);
+    };
+
+    const w = {
+      mmlu: findWinners((m) => parsePct(m.mmluPro)),
+      coding: findWinners((m) => parsePct(m.codingScore)),
+      speed: findWinners((m) => parseSpeed(m)),
+      context: findWinners((m) => parseCtx(m.contextWindow))
+    };
+
+    // Compute aggregate verdict
+    const winCounts = {};
+    selectedForCompare.forEach((m) => {
+      winCounts[m.id] = 0;
+    });
+
+    const evaluatedDimensions = ['mmlu', 'coding', 'speed', 'context'];
+    let totalActiveDimensions = 0;
+
+    evaluatedDimensions.forEach((dim) => {
+      if (w[dim].length > 0) {
+        totalActiveDimensions++;
+        w[dim].forEach((id) => {
+          winCounts[id] = (winCounts[id] || 0) + 1;
+        });
+      }
+    });
+
+    let topModelId = null;
+    let maxWins = 0;
+    let isVerdictTie = false;
+
+    Object.entries(winCounts).forEach(([id, count]) => {
+      if (count > maxWins) {
+        maxWins = count;
+        topModelId = id;
+        isVerdictTie = false;
+      } else if (count === maxWins && count > 0) {
+        isVerdictTie = true;
+      }
+    });
+
+    let verdict = null;
+    if (topModelId && maxWins > 0 && !isVerdictTie) {
+      const topModel = selectedForCompare.find((m) => m.id === topModelId);
+      const shortName = topModel ? (topModel.name.startsWith('OpenAI ') ? topModel.name.replace('OpenAI ', '') : topModel.name.split(' ').slice(0, 2).join(' ')) : 'Model';
+      verdict = `${shortName} leads on ${maxWins} of ${totalActiveDimensions} comparable benchmark metrics`;
+    } else if (isVerdictTie && maxWins > 0) {
+      verdict = `Models are tied across comparable benchmark dimensions`;
+    } else {
+      verdict = `Systems share comparable performance characteristics`;
     }
 
-    return w;
+    return { compareWinners: w, aggregateVerdict: verdict };
   }, [selectedForCompare]);
 
   const SEARCH_PLACEHOLDER = "Search models, tools, superpowers, or providers...";
@@ -287,127 +378,165 @@ export default function LeaderboardPage({
   const renderRankDeltaBadge = (model) => {
     if (model.rankDelta === 'NEW') {
       return (
-        <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+        <span 
+          className="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+          title="New addition to index"
+          aria-label="New addition to index"
+        >
           NEW
         </span>
       );
     }
     if (model.rankDelta && model.rankDelta.startsWith('+')) {
       return (
-        <span className="text-[10px] font-bold text-emerald-400 flex items-center font-mono">
+        <span 
+          className="text-[10px] font-bold text-emerald-400 flex items-center font-mono"
+          title={`Rank up by ${model.rankDelta.replace('+', '')} places`}
+          aria-label={`Rank up by ${model.rankDelta.replace('+', '')} places`}
+        >
           ▲{model.rankDelta.replace('+', '')}
         </span>
       );
     }
     if (model.rankDelta && model.rankDelta.startsWith('-')) {
       return (
-        <span className="text-[10px] font-bold text-red-400 flex items-center font-mono">
+        <span 
+          className="text-[10px] font-bold text-red-400 flex items-center font-mono"
+          title={`Rank down by ${model.rankDelta.replace('-', '')} places`}
+          aria-label={`Rank down by ${model.rankDelta.replace('-', '')} places`}
+        >
           ▼{model.rankDelta.replace('-', '')}
         </span>
       );
     }
-    return <span className="text-[10px] text-[#71717A] font-mono">—</span>;
+    return (
+      <span 
+        className="text-[10px] text-[#71717A] font-mono"
+        title="Rank stable this period"
+        aria-label="Rank stable this period"
+      >
+        —
+      </span>
+    );
+  };
+
+  // Helper for tapered medal and rank indicator stripes (ranks 1-10)
+  const getMedalStripeClass = (rank) => {
+    if (rank === 1) return 'border-l-4 border-l-[#F5A623] bg-[#F5A623]/[0.05]';
+    if (rank === 2) return 'border-l-4 border-l-[#CBD5E1] bg-white/[0.04]';
+    if (rank === 3) return 'border-l-4 border-l-[#EA580C] bg-[#EA580C]/[0.05]';
+    if (rank === 4) return 'border-l-4 border-l-zinc-400/50';
+    if (rank === 5) return 'border-l-4 border-l-zinc-400/40';
+    if (rank === 6) return 'border-l-4 border-l-zinc-400/32';
+    if (rank === 7) return 'border-l-4 border-l-zinc-500/26';
+    if (rank === 8) return 'border-l-4 border-l-zinc-500/20';
+    if (rank === 9) return 'border-l-4 border-l-zinc-600/15';
+    if (rank === 10) return 'border-l-4 border-l-zinc-600/10';
+    return 'border-l-4 border-l-transparent';
   };
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-[#6E56CF]/30 pb-28">
-      {/* Header Banner */}
-      <div className="border-b border-[#1C1C1F] bg-[#000000] pt-10 pb-10 sm:pt-14 sm:pb-12 px-3.5 sm:px-8 relative overflow-hidden">
-        {/* Subtle atmospheric glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[650px] h-[260px] bg-gradient-to-b from-[#6E56CF]/15 via-transparent to-transparent blur-3xl pointer-events-none -z-0"></div>
-
-        <div className="mx-auto max-w-[1440px] relative z-10">
-          {/* Breadcrumb Tag & Methodology Trigger */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-[#6E56CF]/15 text-[#A78BFA] border border-[#6E56CF]/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
-                Live Benchmark Index
-              </span>
-              <span className="text-xs text-[#71717A] hidden sm:inline font-mono">
-                Independent Evaluation Index
-              </span>
-            </div>
-
-            <button
-              onClick={() => setIsMethodologyOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium bg-[#141418] border border-[#27272A] text-[#A1A1AA] hover:text-white hover:border-[#3F3F46] transition-all cursor-pointer shadow-sm hover:shadow-md"
-            >
-              <HelpCircle size={13} className="text-[#A78BFA]" />
-              <span>Methodology &amp; Trust</span>
-            </button>
+      {/* Hero Section */}
+      <div className="border-b border-[#1C1C1F] bg-black pt-8 pb-7 sm:pt-12 sm:pb-9 px-3.5 sm:px-8 relative">
+        <div className="mx-auto max-w-[1440px]">
+          {/* Top Eyebrow */}
+          <div className="flex items-center gap-2 text-[10.5px] sm:text-[11px] font-mono tracking-wider uppercase text-[#71717A] mb-6 sm:mb-8">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] shrink-0" />
+            <span className="text-[#E4E4E7] font-semibold">LIVE BENCHMARK INDEX</span>
+            <span className="text-[#3F3F46]">·</span>
+            <span className="text-[#71717A]">INDEPENDENT EVALUATION INDEX</span>
           </div>
 
-          <div className="max-w-3xl">
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-2.5">
-              AI Ecosystem Leaderboard
-            </h1>
-            <p className="text-sm sm:text-base text-[#A1A1AA] leading-relaxed max-w-2xl font-normal mb-5">
-              Track real-world evaluation benchmarks, Chatbot Arena Elo scores, inference speeds, and enterprise pricing across top AI foundation models and developer tools.
-            </p>
-          </div>
+          {/* Main Headline (Left) & Single Live Rotating Metric (Right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-8 sm:mb-10">
+            {/* Left Column: Headline & Description */}
+            <div className="lg:col-span-8">
+              <h1 className="text-4xl sm:text-6xl lg:text-[64px] font-extrabold tracking-tight text-white leading-[1.05] mb-3">
+                AI Ecosystem<br />
+                Leaderboard
+              </h1>
+              <p className="text-sm sm:text-base text-[#A1A1AA] leading-relaxed max-w-xl font-normal">
+                Compare the models, tools, and companies shaping the AI ecosystem.
+                Track real-world evaluation benchmarks, Chatbot Arena Elo scores, and
+                enterprise pricing at scale.
+              </p>
+            </div>
 
-          {/* Compact Metadata Strip (Quiet Context, Not Competing Cards) */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-2 text-xs text-[#71717A] font-mono border-y border-[#1C1C22] mb-6">
-            <div className="flex items-center gap-1.5">
-              <span>Tracked Systems:</span>
-              <strong className="text-[#E4E4E7] font-semibold">{LEADERBOARD_DATA.length}</strong>
-              <span className="text-[11px] text-[#52525B]">({ecosystemStats.modelsCount} models · {ecosystemStats.toolsCount} tools)</span>
-            </div>
-            <span className="text-[#27272A] hidden sm:inline">•</span>
-            <div className="flex items-center gap-1.5">
-              <span>AI Companies:</span>
-              <strong className="text-[#E4E4E7] font-semibold">{ecosystemStats.companiesCount}</strong>
-            </div>
-            <span className="text-[#27272A] hidden sm:inline">•</span>
-            <div className="flex items-center gap-1.5">
-              <span>Top Throughput:</span>
-              <strong className="text-emerald-400 font-semibold">{ecosystemStats.maxSpeed ? `${ecosystemStats.maxSpeed} tok/s` : 'N/A'}</strong>
-              <span className="text-[11px] text-[#52525B]">({ecosystemStats.fastestName})</span>
-            </div>
-            <span className="text-[#27272A] hidden sm:inline">•</span>
-            <div className="flex items-center gap-1.5">
-              <span>Fastest Growth:</span>
-              <strong className="text-amber-400 font-semibold">{ecosystemStats.maxGrowth ? `+${ecosystemStats.maxGrowth}%` : 'N/A'}</strong>
-              <span className="text-[11px] text-[#52525B]">({ecosystemStats.topGrowthName})</span>
+            {/* Right Column: Live Benchmark Intelligence Metric */}
+            <div className="lg:col-span-4 flex lg:justify-end">
+              <div className="w-full lg:w-auto lg:min-w-[240px] pl-4 sm:pl-6 border-l border-[#232328]">
+                <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-widest uppercase text-[#71717A] mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#6E56CF] shrink-0" />
+                  <span>{currentMetric.label}</span>
+                </div>
+
+                <div className="overflow-hidden py-1">
+                  <div
+                    className={`transition-all duration-300 ease-out transform ${
+                      isMetricTransitioning
+                        ? 'opacity-0 translate-x-4'
+                        : 'opacity-100 translate-x-0'
+                    }`}
+                  >
+                    <div className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-mono text-white tracking-tight leading-none my-1">
+                      {currentMetric.value}
+                    </div>
+                    <div className="text-[10px] font-mono tracking-wider uppercase text-[#A78BFA] mt-1.5 flex items-center gap-1.5">
+                      <span className="inline-block w-1 h-1 rounded-full bg-[#A78BFA]" />
+                      <span>{currentMetric.sub}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Subtle purple line/accent underneath */}
+                <div className="h-[2px] w-14 bg-gradient-to-r from-[#6E56CF] to-transparent mt-3" />
+              </div>
             </div>
           </div>
 
-          {/* Primary Section Switcher: Part A (Models & Tools) vs Part B (AI Companies Top 100) */}
-          <div className="inline-flex p-1 rounded-2xl bg-[#131316] border border-[#232328] shadow-inner">
-            <button
-              onClick={() => setActiveTab('models')}
-              className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                activeTab === 'models'
-                  ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
-                  : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181f]'
-              }`}
-            >
-              <Cpu size={15} />
-              <span>AI Models & Tools</span>
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'models' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
-              }`}>
-                {LEADERBOARD_DATA.length}
-              </span>
-            </button>
+          {/* Bottom Switcher: Models vs Companies + Technical Status */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[#1C1C1F]">
+            <div className="inline-flex p-0.5 rounded-xl bg-[#131316] border border-[#232328] shadow-inner">
+              <button
+                onClick={() => setActiveTab('models')}
+                className={`flex items-center gap-2 px-4 py-1.5 sm:px-5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  activeTab === 'models'
+                    ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
+                    : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181f]'
+                }`}
+              >
+                <Cpu size={14} />
+                <span>AI Models &amp; Tools</span>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'models' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
+                }`}>
+                  {LEADERBOARD_DATA.length}
+                </span>
+              </button>
 
-            <button
-              onClick={() => setActiveTab('companies')}
-              className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                activeTab === 'companies'
-                  ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
-                  : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181f]'
-              }`}
-            >
-              <Building2 size={15} />
-              <span>AI Companies — Top 100</span>
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'companies' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
-              }`}>
-                {ecosystemStats.companiesCount}
-              </span>
-            </button>
+              <button
+                onClick={() => setActiveTab('companies')}
+                className={`flex items-center gap-2 px-4 py-1.5 sm:px-5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  activeTab === 'companies'
+                    ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
+                    : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181f]'
+                }`}
+              >
+                <Building2 size={14} />
+                <span>AI Companies — Top 100</span>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'companies' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
+                }`}>
+                  {ecosystemStats.companiesCount}
+                </span>
+              </button>
+            </div>
+
+            <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-[#71717A] flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+              <span>DATA UPDATED 12H AGO</span>
+            </div>
           </div>
         </div>
       </div>
@@ -432,14 +561,14 @@ export default function LeaderboardPage({
             />
 
         {/* 2. Sub-Filter: Entity Type & Category Pills Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 mb-6 sm:mb-8 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
           {/* Entity Type Toggle (All / AI Models / AI Tools) */}
-          <div className="inline-flex p-1 rounded-xl bg-[#141418] border border-[#232328] shrink-0 self-start sm:self-auto">
+          <div className="inline-flex items-center p-0.5 rounded-full bg-[#141418] border border-[#232328] shrink-0">
             <button
               onClick={() => setEntityType('all')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
                 entityType === 'all'
-                  ? 'bg-[#6E56CF] text-white shadow-sm shadow-[#6E56CF]/25'
+                  ? 'bg-white text-black shadow-sm'
                   : 'text-[#A1A1AA] hover:text-white'
               }`}
             >
@@ -447,29 +576,31 @@ export default function LeaderboardPage({
             </button>
             <button
               onClick={() => setEntityType('models')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
                 entityType === 'models'
-                  ? 'bg-[#6E56CF] text-white shadow-sm shadow-[#6E56CF]/25'
+                  ? 'bg-white text-black shadow-sm'
                   : 'text-[#A1A1AA] hover:text-white'
               }`}
             >
-              AI Models ({ecosystemStats.modelsCount})
+              Models ({ecosystemStats.modelsCount})
             </button>
             <button
               onClick={() => setEntityType('tools')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
                 entityType === 'tools'
-                  ? 'bg-[#6E56CF] text-white shadow-sm shadow-[#6E56CF]/25'
+                  ? 'bg-white text-black shadow-sm'
                   : 'text-[#A1A1AA] hover:text-white'
               }`}
             >
-              AI Tools ({ecosystemStats.toolsCount})
+              Tools ({ecosystemStats.toolsCount})
             </button>
           </div>
 
-          {/* Category Pills Bar */}
-          <div className="relative min-w-0 flex-1 flex items-center justify-start sm:justify-end">
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
+          {/* Thin vertical divider between Entity Type and Category Pills */}
+          <div className="h-4 w-[1px] bg-[#27272e] mx-1 shrink-0" aria-hidden="true" />
+
+          {/* Category Pills */}
+          <div className="flex items-center gap-1.5 shrink-0">
             {PRIMARY_CATEGORIES.map((cat) => {
               const isSelected = selectedCategory === cat.value;
               return (
@@ -479,9 +610,9 @@ export default function LeaderboardPage({
                     setSelectedCategory(cat.value);
                     setIsMoreDropdownOpen(false);
                   }}
-                  className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
+                  className={`rounded-full px-3 py-1 text-[11px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
                     isSelected
-                      ? 'bg-[#6E56CF] text-white border-[#6E56CF] shadow-sm shadow-[#6E56CF]/25'
+                      ? 'bg-white text-black border-white shadow-sm'
                       : 'text-[#A1A1AA] hover:text-white bg-[#131316]/60 border-[#232326] hover:border-white/20'
                   }`}
                 >
@@ -493,7 +624,7 @@ export default function LeaderboardPage({
             {!isSelectedInPrimary && (
               <button
                 onClick={() => setIsMoreDropdownOpen(false)}
-                className="rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 bg-[#6E56CF] text-white border-[#6E56CF] shadow-sm shadow-[#6E56CF]/25"
+                className="rounded-full px-3 py-1 text-[11px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 bg-white text-black border-white shadow-sm"
               >
                 {selectedCategory}
               </button>
@@ -503,9 +634,9 @@ export default function LeaderboardPage({
             <div className="relative shrink-0">
               <button
                 onClick={() => setIsMoreDropdownOpen((prev) => !prev)}
-                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                className={`rounded-full px-3 py-1 text-[11px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer flex items-center gap-1.5 shrink-0 ${
                   isMoreDropdownOpen || !isSelectedInPrimary
-                    ? 'text-white border-[#6E56CF] bg-[#6E56CF]/15'
+                    ? 'text-white border-white/40 bg-white/10'
                     : 'text-[#A1A1AA] hover:text-white bg-[#131316]/60 border-[#232326] hover:border-white/20'
                 }`}
               >
@@ -532,7 +663,7 @@ export default function LeaderboardPage({
                         }}
                         className={`w-full text-left px-3.5 py-2 text-[12px] transition-colors cursor-pointer ${
                           selectedCategory === cat
-                            ? 'text-white bg-[#6E56CF]/20 font-semibold'
+                            ? 'text-white bg-white/10 font-semibold'
                             : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181C]'
                         }`}
                       >
@@ -545,18 +676,17 @@ export default function LeaderboardPage({
             </div>
           </div>
         </div>
-      </div>
 
-        {/* 3. Controls Row: Search + Sort + Compare Trigger */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6 sm:mb-8">
-          <div className="relative flex-1 max-w-md">
+        {/* 3. Controls Row: Unified Search + Sort container */}
+        <div className="p-1.5 sm:p-2 rounded-2xl border border-[#232326] bg-[#111115] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mb-6 sm:mb-8">
+          <div className="relative flex-1">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={SEARCH_PLACEHOLDER}
-              className="w-full rounded-xl border border-[#232326] bg-[#131316] pl-9 pr-8 text-[13px] text-white placeholder:text-[#71717A] hover:border-[#3a3a40] focus:border-[#6E56CF] focus:ring-2 focus:ring-[#6E56CF]/30 focus:outline-none transition-all h-9"
+              className="w-full rounded-xl border border-[#3a3a40] bg-[#16161b] pl-9 pr-8 text-[13px] text-white placeholder:text-[#71717A] hover:border-[#4a4a52] focus:border-white/40 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all h-9"
             />
             {searchQuery && (
               <button
@@ -568,15 +698,15 @@ export default function LeaderboardPage({
             )}
           </div>
 
-          <div className="flex items-center gap-2 justify-end">
+          <div className="flex items-center gap-2 justify-end shrink-0">
             <div className="relative inline-flex items-center">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none rounded-xl border border-[#232326] bg-[#131316] pl-3 pr-8 text-[12px] font-medium text-white hover:border-[#3a3a40] focus:outline-none focus:border-[#6E56CF] transition-all cursor-pointer h-9"
+                className="appearance-none rounded-xl border border-[#3a3a40] bg-[#16161b] pl-3 pr-8 text-[12px] font-medium text-white hover:border-[#4a4a52] focus:outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20 transition-all cursor-pointer h-9"
               >
                 {SORT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value} className="bg-[#131316] text-white">
+                  <option key={opt.value} value={opt.value} className="bg-[#16161b] text-white">
                     {opt.label}
                   </option>
                 ))}
@@ -587,9 +717,9 @@ export default function LeaderboardPage({
             {selectedForCompare.length > 0 && (
               <button
                 onClick={() => setIsCompareModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1 text-xs font-semibold text-white bg-[#6E56CF] hover:bg-[#7C66DC] rounded-xl transition-all shadow-md shadow-[#6E56CF]/20 h-9 cursor-pointer active:scale-95 shrink-0"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1 text-xs font-semibold text-white bg-[#22222a] hover:bg-[#2b2b35] border border-[#383844] rounded-xl transition-all shadow-sm h-9 cursor-pointer active:scale-95 shrink-0"
               >
-                <GitCompare size={13} />
+                <GitCompare size={13} className="text-white" />
                 <span>Compare ({selectedForCompare.length})</span>
               </button>
             )}
@@ -599,12 +729,12 @@ export default function LeaderboardPage({
               disabled={!hasActiveFilters}
               className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-xl border h-9 transition-all shrink-0 ${
                 hasActiveFilters
-                  ? 'text-[#A78BFA] hover:text-white bg-[#6E56CF]/15 border-[#6E56CF]/40 cursor-pointer shadow-sm shadow-[#6E56CF]/20'
+                  ? 'text-white bg-[#1f1f26] border-[#383842] hover:bg-[#272732] cursor-pointer shadow-sm'
                   : 'text-[#52525B] bg-[#141418] border-[#232328] cursor-not-allowed opacity-50'
               }`}
               title={hasActiveFilters ? "Reset all search & filter criteria" : "No active filters to reset"}
             >
-              <RotateCcw size={12} className={hasActiveFilters ? "text-[#A78BFA]" : "text-[#52525B]"} />
+              <RotateCcw size={12} className={hasActiveFilters ? "text-white" : "text-[#52525B]"} />
               <span className="hidden sm:inline">Clear</span>
             </button>
           </div>
@@ -657,11 +787,13 @@ export default function LeaderboardPage({
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <AdaptiveTableHeaders category={selectedCategory} />
+                    <AdaptiveTableHeaders category={selectedCategory} entityType={entityType} />
                   </thead>
                   <tbody className="divide-y divide-[#1F1F24] text-[#E4E4E7]">
                     {paginatedModels.map((model) => {
                       const isCompared = selectedForCompare.some((m) => m.id === model.id);
+                      const isTool = model.entityType === 'tool';
+
                       return (
                         <tr
                           key={model.id}
@@ -676,17 +808,9 @@ export default function LeaderboardPage({
                           }`}
                           onClick={() => navigate(`/leaderboard/${model.slug}`)}
                         >
-                          {/* Rank badge with Delta */}
+                          {/* Rank badge with Delta & Tapered Stripe */}
                           <td 
-                            className={`p-3.5 text-center transition-colors relative ${
-                              model.rank === 1
-                                ? 'border-l-4 border-l-[#F5A623] bg-[#F5A623]/[0.05]'
-                                : model.rank === 2
-                                ? 'border-l-4 border-l-[#CBD5E1] bg-white/[0.04]'
-                                : model.rank === 3
-                                ? 'border-l-4 border-l-[#EA580C] bg-[#EA580C]/[0.05]'
-                                : 'border-l-4 border-l-transparent'
-                            }`} 
+                            className={`py-2.5 px-3.5 text-center transition-colors relative ${getMedalStripeClass(model.rank)}`} 
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex flex-col items-center">
@@ -703,13 +827,13 @@ export default function LeaderboardPage({
                               >
                                 #{model.rank}
                               </span>
-                              <div className="mt-1">{renderRankDeltaBadge(model)}</div>
+                              <div className="mt-0.5">{renderRankDeltaBadge(model)}</div>
                             </div>
                           </td>
 
-                          {/* Model & Superpower */}
-                          <td className="p-3.5">
-                            <div className="flex flex-col gap-1">
+                          {/* Model / Tool Info */}
+                          <td className="py-2.5 px-3.5">
+                            <div className="flex flex-col gap-0.5">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-sm text-white group-hover:text-[#A78BFA] transition-colors">
                                   {model.name}
@@ -724,69 +848,113 @@ export default function LeaderboardPage({
                                 <span className="text-[11px] text-[#71717A] font-mono">
                                   {model.org}
                                 </span>
-                                {model.superpower && (
+                                {(model.superpowerShort || model.superpower) && (
                                   <SuperpowerBadge
-                                    superpower={model.superpower}
+                                    superpower={model.superpowerShort || model.superpower}
                                     category={model.category}
-                                    detail={model.superpowerDetail}
                                   />
+                                )}
+                                {isTool && entityType !== 'tools' && model.categoryMetricValue && (
+                                  <span className="text-[10px] text-[#A1A1AA] font-mono bg-[#181820] px-1.5 py-0.5 rounded border border-[#272730]">
+                                    {model.categoryMetricLabel ? `${model.categoryMetricLabel}: ` : ''}{model.categoryMetricValue}
+                                  </span>
                                 )}
                               </div>
                             </div>
                           </td>
 
-                          {/* Metric 1 (Arena Elo or Visual Elo or Voice MOS) */}
-                          <td className="p-3.5 font-mono font-bold text-white text-[13px]">
-                            <div className="flex items-center gap-1.5">
-                              <span>{model.categoryMetricValue || model.arenaElo}</span>
-                              {model.eloChange && (
-                                <span className="text-[10px] text-[#10B981] font-normal">
-                                  {model.eloChange}
-                                </span>
-                              )}
-                            </div>
+                          {/* Metric 1 (Arena Elo / Tool Rating) */}
+                          <td className="py-2.5 px-3.5 font-mono font-bold text-white text-[13px]">
+                            {entityType === 'tools' ? (
+                              <div>
+                                <span>{model.categoryMetricValue || '—'}</span>
+                                {model.categoryMetricLabel && (
+                                  <span className="text-[10px] text-[#71717A] block font-sans font-normal">{model.categoryMetricLabel}</span>
+                                )}
+                              </div>
+                            ) : isTool ? (
+                              <span className="text-[#71717A] font-mono text-xs font-normal" title="Arena Elo is not applicable to developer tools">
+                                —
+                              </span>
+                            ) : (
+                              <div className="flex items-center gap-1.5">
+                                <span>{model.categoryMetricValue || model.arenaElo || '—'}</span>
+                                {model.eloChange && (
+                                  <span className="text-[10px] text-emerald-400 font-normal">
+                                    {model.eloChange}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </td>
 
-                          {/* Metric 2 (SWE-bench / MMLU / Render Time) */}
-                          <td className="p-3.5 font-mono text-[#10B981] font-semibold">
-                            {model.categorySubMetricValue || model.codingScore || model.mmluPro || 'N/A'}
+                          {/* Metric 2 (Coding Score / Key Benchmark) */}
+                          <td className="py-2.5 px-3.5 font-mono text-[#E4E4E7] font-semibold">
+                            {entityType === 'tools' ? (
+                              <div>
+                                <span>{model.categorySubMetricValue || model.codingScore || '—'}</span>
+                                {model.categorySubMetricLabel && (
+                                  <span className="text-[10px] text-[#71717A] block font-sans font-normal">{model.categorySubMetricLabel}</span>
+                                )}
+                              </div>
+                            ) : isTool ? (
+                              model.codingScore ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span>{model.codingScore}</span>
+                                  <span className="text-[9.5px] text-[#71717A] font-sans font-normal">SWE</span>
+                                </div>
+                              ) : (
+                                <span className="text-[#71717A] font-mono text-xs font-normal" title="Not applicable">—</span>
+                              )
+                            ) : (
+                              model.categorySubMetricValue || model.codingScore || model.mmluPro || '—'
+                            )}
                           </td>
 
-                          {/* Metric 3 (Output Speed or Resolution or Languages) */}
-                          <td className="p-3.5 font-mono text-[#A1A1AA]">
-                            {model.categoryDimension3 || model.outputSpeed}
+                          {/* Metric 3 (Speed tok/s / Active Scale) */}
+                          <td className="py-2.5 px-3.5 font-mono text-[#A1A1AA]">
+                            {entityType === 'tools' ? (
+                              <span>{model.categoryDimension3 || model.outputSpeed || model.monthlyVisits || '—'}</span>
+                            ) : isTool ? (
+                              <span className="text-[#71717A] font-mono text-xs" title="Token throughput (tok/s) is not applicable to developer tools">
+                                —
+                              </span>
+                            ) : (
+                              model.categoryDimension3 || (model.outputSpeed ? `${model.outputSpeed} tok/s` : '—')
+                            )}
                           </td>
 
                           {/* Pricing */}
-                          <td className="p-3.5 font-mono text-xs text-[#E4E4E7]">
+                          <td className="py-2.5 px-3.5 font-mono text-xs text-[#E4E4E7]">
                             {model.price}
                           </td>
 
                           {/* Category */}
-                          <td className="p-3.5">
+                          <td className="py-2.5 px-3.5">
                             <span className="px-2.5 py-1 rounded-full text-[10.5px] font-medium bg-[#1a1a20] border border-[#272730] text-[#A1A1AA]">
                               {model.category}
                             </span>
                           </td>
 
                           {/* Actions */}
-                          <td className="p-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                          <td className="py-2.5 px-3.5 text-right" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => onToggleCompare(model)}
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                                className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
                                   isCompared
-                                    ? 'bg-[#6E56CF] text-white border-[#6E56CF]'
-                                    : 'bg-[#18181c] text-[#A1A1AA] border-[#27272e] hover:text-white'
+                                    ? 'bg-emerald-500/10 border-emerald-500/35 text-emerald-400'
+                                    : 'bg-[#18181c] text-[#A1A1AA] border-[#27272e] hover:text-white hover:border-[#3f3f46]'
                                 }`}
-                                title="Compare"
+                                title={isCompared ? "Remove from comparison" : "Add to comparison"}
+                                aria-label={isCompared ? `Remove ${model.name} from comparison` : `Compare ${model.name}`}
                               >
                                 {isCompared ? 'Added' : 'Compare'}
                               </button>
 
                               <Link
                                 to={`/leaderboard/${model.slug}`}
-                                className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white text-black hover:bg-[#E4E4E7] transition-all inline-block"
+                                className="px-3.5 py-1 rounded-lg text-xs font-semibold bg-white text-black hover:bg-[#E4E4E7] transition-all flex items-center justify-center cursor-pointer shadow-sm"
                               >
                                 Details
                               </Link>
@@ -888,8 +1056,8 @@ export default function LeaderboardPage({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-4 border-b border-[#232326]">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-[#6E56CF]/20 text-[#A78BFA] flex items-center justify-center">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white/10 text-white flex items-center justify-center">
                   <GitCompare size={18} />
                 </div>
                 <div>
@@ -900,22 +1068,36 @@ export default function LeaderboardPage({
               <button
                 onClick={() => setIsCompareModalOpen(false)}
                 className="w-8 h-8 rounded-lg border border-[#232326] bg-[#16161a] flex items-center justify-center text-[#A1A1AA] hover:text-white cursor-pointer transition-colors"
+                title="Close modal"
+                aria-label="Close modal"
               >
                 <X size={16} />
               </button>
             </div>
+
+            {/* Aggregate Verdict Banner */}
+            {aggregateVerdict && (
+              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#141418] border border-[#27272e] text-xs text-[#E4E4E7] shadow-sm">
+                <Trophy size={13} className="text-emerald-400 shrink-0" />
+                <span className="font-medium">{aggregateVerdict}</span>
+              </div>
+            )}
 
             {/* Comparison Matrix Table */}
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-[#232326] bg-[#141418]">
-                    <th className="p-3 text-[11px] uppercase tracking-wider text-[#71717A] font-semibold w-1/4">Metric</th>
+                    <th className="p-3 text-[11px] uppercase tracking-wider text-[#71717A] font-semibold w-40 min-w-[140px]">Metric</th>
                     {selectedForCompare.map((m) => (
-                      <th key={m.id} className="p-3 w-1/3">
+                      <th key={m.id} className="p-3 min-w-[200px]">
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-bold text-sm text-white">{m.name}</span>
-                          <button onClick={() => onToggleCompare(m)} className="text-[#71717A] hover:text-red-400 cursor-pointer">
+                          <button 
+                            onClick={() => onToggleCompare(m)} 
+                            className="text-[#71717A] hover:text-white cursor-pointer"
+                            title={`Remove ${m.name}`}
+                          >
                             <X size={12} />
                           </button>
                         </div>
@@ -929,8 +1111,8 @@ export default function LeaderboardPage({
                   <tr className="bg-[#131316]/50">
                     <td className="p-3 text-[#71717A] font-medium">Arena Ranking</td>
                     {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 font-mono">
-                        <span className={compareWinners.rank === m.id ? 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold' : 'text-white font-bold'}>
+                      <td key={m.id} className="p-3 font-mono min-w-[200px]">
+                        <span className={m.rank === 1 ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded font-bold' : 'text-white font-bold'}>
                           #{m.rank}
                         </span>
                       </td>
@@ -939,70 +1121,88 @@ export default function LeaderboardPage({
                   <tr>
                     <td className="p-3 text-[#71717A] font-medium">Superpower</td>
                     {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 font-medium text-[#A78BFA]">
-                        {m.superpower || 'N/A'}
+                      <td key={m.id} className="p-3 font-medium text-white min-w-[200px]">
+                        <SuperpowerBadge superpower={m.superpowerShort || m.superpower} category={m.category} />
                       </td>
                     ))}
                   </tr>
                   <tr className="bg-[#131316]/50">
                     <td className="p-3 text-[#71717A] font-medium">MMLU Pro Score</td>
-                    {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 font-mono">
-                        <span className={compareWinners.mmlu === m.id ? 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold' : 'text-[#10B981] font-semibold'}>
-                          {m.mmluPro || 'N/A'}
-                        </span>
-                      </td>
-                    ))}
+                    {selectedForCompare.map((m) => {
+                      const isWinner = (compareWinners.mmlu || []).includes(m.id);
+                      return (
+                        <td key={m.id} className="p-3 font-mono min-w-[200px]">
+                          <span className={isWinner ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded font-bold' : 'text-[#E4E4E7] font-semibold'}>
+                            {m.mmluPro || 'N/A'}
+                          </span>
+                        </td>
+                      );
+                    })}
                   </tr>
                   <tr>
                     <td className="p-3 text-[#71717A] font-medium">Coding Score</td>
-                    {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 font-mono">
-                        <span className={compareWinners.coding === m.id ? 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold' : 'text-[#A78BFA] font-bold'}>
-                          {m.codingScore || 'N/A'}
-                        </span>
-                      </td>
-                    ))}
+                    {selectedForCompare.map((m) => {
+                      const isWinner = (compareWinners.coding || []).includes(m.id);
+                      return (
+                        <td key={m.id} className="p-3 font-mono min-w-[200px]">
+                          <span className={isWinner ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded font-bold' : 'text-[#E4E4E7] font-semibold'}>
+                            {m.codingScore || 'N/A'}
+                          </span>
+                        </td>
+                      );
+                    })}
                   </tr>
                   <tr className="bg-[#131316]/50">
                     <td className="p-3 text-[#71717A] font-medium">Output Throughput</td>
-                    {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 font-mono">
-                        <span className={compareWinners.speed === m.id ? 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold' : 'text-[#E4E4E7]'}>
-                          {m.outputSpeed || 'N/A'}
-                        </span>
-                      </td>
-                    ))}
+                    {selectedForCompare.map((m) => {
+                      const isWinner = (compareWinners.speed || []).includes(m.id);
+                      return (
+                        <td key={m.id} className="p-3 font-mono min-w-[200px]">
+                          <span className={isWinner ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded font-bold' : 'text-[#E4E4E7]'}>
+                            {m.outputSpeed || 'N/A'}
+                          </span>
+                        </td>
+                      );
+                    })}
                   </tr>
                   <tr>
                     <td className="p-3 text-[#71717A] font-medium">Context Window</td>
-                    {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 font-mono">
-                        <span className={compareWinners.context === m.id ? 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold' : 'text-[#E4E4E7]'}>
-                          {m.contextWindow || 'N/A'}
-                        </span>
-                      </td>
-                    ))}
+                    {selectedForCompare.map((m) => {
+                      const isWinner = (compareWinners.context || []).includes(m.id);
+                      return (
+                        <td key={m.id} className="p-3 font-mono min-w-[200px]">
+                          <span className={isWinner ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded font-bold' : 'text-[#E4E4E7]'}>
+                            {m.contextWindow || 'N/A'}
+                          </span>
+                        </td>
+                      );
+                    })}
                   </tr>
                   <tr className="bg-[#131316]/50">
                     <td className="p-3 text-[#71717A] font-medium">Pricing Model</td>
                     {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 font-mono text-xs text-[#E4E4E7]">{m.price}</td>
+                      <td key={m.id} className="p-3 font-mono text-xs text-[#E4E4E7] min-w-[200px]">{m.price}</td>
                     ))}
                   </tr>
                   <tr>
                     <td className="p-3 text-[#71717A] font-medium">License / Delivery</td>
-                    {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3 text-white">{m.licenseType || m.license || 'API'}</td>
-                    ))}
+                    {selectedForCompare.length >= 2 && selectedForCompare.every((m) => (m.licenseType || m.license || 'API') === (selectedForCompare[0].licenseType || selectedForCompare[0].license || 'API')) ? (
+                      <td colSpan={selectedForCompare.length} className="p-3 text-center text-[#A1A1AA] italic font-mono text-xs bg-[#131316]/30">
+                        {selectedForCompare[0].licenseType || selectedForCompare[0].license || 'Commercial API'} (all models match)
+                      </td>
+                    ) : (
+                      selectedForCompare.map((m) => (
+                        <td key={m.id} className="p-3 text-white min-w-[200px]">{m.licenseType || m.license || 'API'}</td>
+                      ))
+                    )}
                   </tr>
                   <tr className="bg-[#131316]/50">
                     <td className="p-3 text-[#71717A] font-medium">Key Highlights</td>
                     {selectedForCompare.map((m) => (
-                      <td key={m.id} className="p-3">
-                        <ul className="list-disc list-inside space-y-1 text-[11px] text-[#A1A1AA]">
+                      <td key={m.id} className="p-3 min-w-[200px] align-top">
+                        <ul className="list-disc list-inside space-y-1 text-[11px] text-[#A1A1AA] min-h-[44px]">
                           {(m.keyFeatures || []).slice(0, 2).map((f, i) => (
-                            <li key={i}>{f}</li>
+                            <li key={i} className="line-clamp-2">{f}</li>
                           ))}
                         </ul>
                       </td>
@@ -1012,18 +1212,18 @@ export default function LeaderboardPage({
               </table>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-[#232326] flex items-center justify-between">
-              <button 
-                onClick={onClearCompare} 
-                className="text-xs border border-red-900/40 text-red-400 hover:bg-red-950/30 hover:border-red-800/80 px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer"
+            <div className="mt-4 pt-3 border-t border-[#232326] flex items-center justify-between">
+              <button
+                onClick={onClearCompare}
+                className="text-xs text-[#71717A] hover:text-red-400 hover:bg-red-950/20 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
               >
-                Clear all models
+                Clear comparison
               </button>
               <button
                 onClick={() => setIsCompareModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#232326] text-white hover:bg-[#2e2e33] cursor-pointer transition-colors"
+                className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-white text-black hover:bg-[#E4E4E7] transition-all cursor-pointer shadow-sm active:scale-95"
               >
-                Close Comparison
+                Done
               </button>
             </div>
           </div>
