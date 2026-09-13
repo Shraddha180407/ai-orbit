@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { PrismaClient } from "@prisma/client";
 import type { Video } from "@prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
+import { getPrisma } from "../../lib/prisma.js";
 import {
   fetchVideos,
   fetchVideosWithCount,
@@ -17,10 +17,7 @@ import {
   RelatedQuerySchema,
 } from "./videos.schemas.js";
 
-function getPrisma(c: Context) {
-  const adapter = new PrismaNeon({ connectionString: c.env.DATABASE_URL });
-  return new PrismaClient({ adapter });
-}
+
 
 // Prisma stores authorName/authorAvatar as flat columns, but the frontend
 // (ported as-is from Video_section) expects a nested `author: {name, avatar}`
@@ -56,7 +53,7 @@ export async function listVideos(c: Context) {
     return c.json(cached);
   }
 
-  const prisma = getPrisma(c);
+  const prisma = getPrisma(c.env);
   try {
     const result = ListQuerySchema.safeParse(c.req.query());
     if (!result.success) {
@@ -104,7 +101,7 @@ export async function getVideosCount(c: Context) {
     return c.json(cached);
   }
 
-  const prisma = getPrisma(c);
+  const prisma = getPrisma(c.env);
   try {
     const result = CountQuerySchema.safeParse(c.req.query());
     if (!result.success) {
@@ -135,7 +132,7 @@ export async function getVideoBySlug(c: Context) {
     return c.json(cached);
   }
 
-  const prisma = getPrisma(c);
+  const prisma = getPrisma(c.env);
   try {
     const parsed = SlugParamSchema.safeParse({ slug });
     if (!parsed.success) {
@@ -160,7 +157,7 @@ export async function getVideoBySlug(c: Context) {
 
 // GET /api/videos/:slug/related?limit=N
 export async function getRelatedVideos(c: Context) {
-  const prisma = getPrisma(c);
+  const prisma = getPrisma(c.env);
   try {
     const slugParsed = SlugParamSchema.safeParse({ slug: c.req.param("slug") });
     if (!slugParsed.success) {

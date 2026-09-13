@@ -18,17 +18,19 @@ let _cachedDbUrl: string | null = null;
 
 export function getPrisma(env: unknown) {
   const dbUrl = resolveDbUrl(env);
+  const isLocal = dbUrl.includes("localhost") || dbUrl.includes("127.0.0.1");
 
-  if (_cachedWorkerPrisma && _cachedDbUrl === dbUrl) {
+  if (!isLocal && _cachedWorkerPrisma && _cachedDbUrl === dbUrl) {
     return _cachedWorkerPrisma;
   }
 
   let client: PrismaClient;
 
-  if (dbUrl.includes("localhost") || dbUrl.includes("127.0.0.1")) {
+  if (isLocal) {
     const pool = new Pool({ connectionString: dbUrl });
     const adapter = new PrismaPg(pool);
     client = new PrismaClient({ adapter });
+    return client;
   } else {
     const adapter = new PrismaNeonHttp(dbUrl, {});
     client = new PrismaClient({ adapter });
@@ -46,6 +48,13 @@ let _cachedTxPrisma: PrismaClient | null = null;
 
 export function getPrismaTx(env: unknown) {
   const dbUrl = resolveDbUrl(env);
+  const isLocal = dbUrl.includes("localhost") || dbUrl.includes("127.0.0.1");
+  
+  if (isLocal) {
+    const pool = new Pool({ connectionString: dbUrl });
+    const adapter = new PrismaPg(pool);
+    return new PrismaClient({ adapter });
+  }
   
   if (!_cachedTxPrisma) {
     const pool = new Pool({ connectionString: dbUrl });

@@ -127,8 +127,8 @@ authRoutes.get('/google/callback', async (c) => {
     const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', jwtToken, {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'None' : 'Lax',
+      secure: true,
+      sameSite: 'None',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
       domain: isProd ? 'aiorbit.club' : undefined
@@ -137,7 +137,7 @@ authRoutes.get('/google/callback', async (c) => {
     if (user.role === 'ADMIN') {
       return c.redirect(`${frontendUrl}/admin`);
     }
-    return c.redirect(`${frontendUrl}/`);
+    return c.redirect(`${frontendUrl}/dashboard`);
   } catch (err) {
     return c.redirect(`${frontendUrl}/auth/signin?error=OAuthFailed&details=${encodeURIComponent(err instanceof Error ? err.message : String(err))}`);
   }
@@ -237,8 +237,8 @@ authRoutes.get('/github/callback', async (c) => {
     const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', jwtToken, {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'None' : 'Lax',
+      secure: true,
+      sameSite: 'None',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
       domain: isProd ? 'aiorbit.club' : undefined
@@ -247,7 +247,7 @@ authRoutes.get('/github/callback', async (c) => {
     if (user.role === 'ADMIN') {
       return c.redirect(`${frontendUrl}/admin`);
     }
-    return c.redirect(`${frontendUrl}/`);
+    return c.redirect(`${frontendUrl}/dashboard`);
   } catch (err) {
     return c.redirect(`${frontendUrl}/auth/signin?error=OAuthFailed&details=${encodeURIComponent(err instanceof Error ? err.message : String(err))}`);
   }

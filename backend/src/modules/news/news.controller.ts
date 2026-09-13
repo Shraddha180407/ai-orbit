@@ -1,6 +1,6 @@
 import { Context } from "hono";
 import { PrismaClient } from "@prisma/client";
-import { PrismaNeonHttp } from "@prisma/adapter-neon";
+import { getPrisma } from "../../lib/prisma.js";
 import { NewsService } from "./news.services.js";
 import { logger } from "../../lib/logger.js";
 import type {
@@ -30,11 +30,7 @@ import type {
  * atomic statement with no transaction, before this driver was swapped
  * back in. See news.services.ts for the per-method detail.
  */
-function getService(c: Context) {
-  const adapter = new PrismaNeonHttp(c.env.DATABASE_URL, {});
-  const prisma = new PrismaClient({ adapter });
-  return new NewsService(prisma);
-}
+
 
 export class NewsController {
   /**
@@ -48,7 +44,8 @@ export class NewsController {
   static async getListing(c: Context) {
     try {
       const query = c.req.valid("query" as never) as unknown as NewsListingQueryInput;
-      const service = getService(c);
+      const prisma = getPrisma(c.env);
+      const service = new NewsService(prisma);
       const paging = query.page && query.perPage ? { page: query.page, perPage: query.perPage } : undefined;
 
       const [{ articles, total }, sources, categories, filterChips] = await Promise.all([
@@ -74,7 +71,8 @@ export class NewsController {
     try {
       const { slug } = c.req.valid("param" as never) as unknown as NewsSlugParamInput;
       const { clientId } = c.req.valid("query" as never) as unknown as NewsDetailQueryInput;
-      const service = getService(c);
+      const prisma = getPrisma(c.env);
+      const service = new NewsService(prisma);
 
       const article = await service.getArticleBySlug(slug, clientId);
       if (!article) {
@@ -101,7 +99,8 @@ export class NewsController {
     try {
       const { slug } = c.req.valid("param" as never) as unknown as NewsSlugParamInput;
       const { clientId, value } = c.req.valid("json" as never) as unknown as NewsVoteBodyInput;
-      const service = getService(c);
+      const prisma = getPrisma(c.env);
+      const service = new NewsService(prisma);
 
       const articleId = await service.getArticleIdBySlug(slug);
       if (!articleId) {
@@ -121,7 +120,8 @@ export class NewsController {
     try {
       const { slug } = c.req.valid("param" as never) as unknown as NewsSlugParamInput;
       const { clientId } = c.req.valid("json" as never) as unknown as NewsBookmarkBodyInput;
-      const service = getService(c);
+      const prisma = getPrisma(c.env);
+      const service = new NewsService(prisma);
 
       const articleId = await service.getArticleIdBySlug(slug);
       if (!articleId) {
@@ -141,7 +141,8 @@ export class NewsController {
     try {
       const { slug } = c.req.valid("param" as never) as unknown as NewsSlugParamInput;
       const { clientId } = c.req.valid("query" as never) as unknown as NewsBookmarkQueryInput;
-      const service = getService(c);
+      const prisma = getPrisma(c.env);
+      const service = new NewsService(prisma);
 
       const articleId = await service.getArticleIdBySlug(slug);
       if (!articleId) {
@@ -161,7 +162,8 @@ export class NewsController {
     try {
       const { slug } = c.req.valid("param" as never) as unknown as NewsSlugParamInput;
       const { clientId, authorName, body } = c.req.valid("json" as never) as unknown as NewsCommentBodyInput;
-      const service = getService(c);
+      const prisma = getPrisma(c.env);
+      const service = new NewsService(prisma);
 
       const articleId = await service.getArticleIdBySlug(slug);
       if (!articleId) {

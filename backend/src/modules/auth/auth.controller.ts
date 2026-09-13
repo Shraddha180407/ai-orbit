@@ -62,8 +62,8 @@ export class AuthController {
     const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', token, {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'None' : 'Lax',
+      secure: true,
+      sameSite: 'None',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
       domain: isProd ? 'aiorbit.club' : undefined
@@ -76,8 +76,8 @@ export class AuthController {
     const isProd = c.req.url.startsWith('https://');
     deleteCookie(c, 'auth_token', { 
       path: '/',
-      secure: isProd,
-      sameSite: isProd ? 'None' : 'Lax',
+      secure: true,
+      sameSite: 'None',
       domain: isProd ? 'aiorbit.club' : undefined
     });
     return c.json({ success: true, message: 'Logged out successfully.' });
@@ -108,8 +108,8 @@ export class AuthController {
     const isProd = c.req.url.startsWith('https://');
     setCookie(c, 'auth_token', token, {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'None' : 'Lax',
+      secure: true,
+      sameSite: 'None',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
       domain: isProd ? 'aiorbit.club' : undefined
@@ -179,8 +179,8 @@ export class AuthController {
     const isProd = c.req.url.startsWith('https://');
     deleteCookie(c, 'auth_token', { 
       path: '/',
-      secure: isProd,
-      sameSite: isProd ? 'None' : 'Lax',
+      secure: true,
+      sameSite: 'None',
       domain: isProd ? 'aiorbit.club' : undefined
     });
 
