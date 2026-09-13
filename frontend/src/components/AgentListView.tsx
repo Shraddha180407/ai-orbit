@@ -352,7 +352,7 @@ function AgentListViewInner({
   const filtered = React.useMemo(() => {
     const q = nameSearch.trim().toLowerCase();
 
-    let result = q
+    const result = q
       ? agents.filter((agent) =>
           (agent.name || "").toLowerCase().includes(q)
         )

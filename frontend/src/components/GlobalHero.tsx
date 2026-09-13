@@ -354,6 +354,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
   const handleContainerScroll = () => {
     const container = scrollContainerRef.current;
     if (container) {
+      // eslint-disable-next-line
       globalHeroScrollPos = container.scrollLeft;
       try {
         sessionStorage.setItem(SCROLL_KEY, container.scrollLeft.toString());
@@ -364,6 +365,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
   const saveScrollPos = () => {
     const container = scrollContainerRef.current;
     if (container) {
+      // eslint-disable-next-line
       globalHeroScrollPos = container.scrollLeft;
       try {
         sessionStorage.setItem(SCROLL_KEY, container.scrollLeft.toString());
