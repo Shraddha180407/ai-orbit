@@ -23,7 +23,7 @@ export class TasksController {
       }
       try {
         const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
-        const decoded = await verify(token, jwtSecret!) as { id: string };
+        const decoded = await verify(token, jwtSecret!, 'HS256') as { id: string };
         userId = decoded.id;
       } catch {
         return c.json({ error: 'Invalid or expired token', code: 'AUTH_INVALID' }, 401);
@@ -68,7 +68,7 @@ export class TasksController {
       if (token) {
         try {
           const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET;
-          const decoded = await verify(token, jwtSecret!) as { id: string };
+          const decoded = await verify(token, jwtSecret!, 'HS256') as { id: string };
           userId = decoded.id;
         } catch {
           // invalid/expired token — treat as anonymous, don't error
