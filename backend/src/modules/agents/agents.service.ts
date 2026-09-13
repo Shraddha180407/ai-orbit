@@ -70,14 +70,6 @@ export class AgentsService {
         orderBy,
         skip,
         take: limit,
-        include: {
-          _count: {
-            select: {
-              AgentReview: true,
-              AgentBookmark: true,
-            },
-          },
-        },
       }),
       this.prisma.agent.count({ where }),
       this.listCategories(),
@@ -124,14 +116,6 @@ export class AgentsService {
   async getAgentBySlug(slug: string) {
     const agent = await this.prisma.agent.findUnique({
       where: { slug },
-      include: {
-        _count: {
-          select: {
-            AgentReview: true,
-            AgentBookmark: true,
-          },
-        },
-      },
     });
 
     if (!agent) return null;
