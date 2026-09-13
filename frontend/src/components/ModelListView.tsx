@@ -7,8 +7,8 @@ import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import GitCompare from 'lucide-react/dist/esm/icons/git-compare';
 import Check from 'lucide-react/dist/esm/icons/check';
 import X from 'lucide-react/dist/esm/icons/x';
+import Search from 'lucide-react/dist/esm/icons/search';
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down';
-import ChevronUp from 'lucide-react/dist/esm/icons/chevron-up';
 import type { AIModel } from "@/lib/types";
 import { formatModelType, MODEL_TYPE_OPTIONS } from "@/lib/types";
 import { API_URL, prefetchUrl } from "@/lib/api";
@@ -108,6 +108,17 @@ function TypeAccentChip({ label }: { label: string }) {
   return (
     <span
       className={`inline-flex max-w-full items-center truncate rounded-full border px-2.5 py-0.5 text-[10px] font-mono font-semibold transition-colors ${accent}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function PrimaryTaskChip({ label }: { label: string }) {
+  return (
+    <span
+      title={label}
+      className="inline-flex max-w-full items-center truncate rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-[10px] font-mono font-semibold text-violet-300"
     >
       {label}
     </span>
@@ -222,6 +233,7 @@ function ProviderHeaderFilter({
   onChange: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -243,6 +255,10 @@ function ProviderHeaderFilter({
   }, [open]);
 
   const activeLabel = value ? options.find((p) => p.slug === value)?.name : null;
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredOptions = normalizedQuery
+    ? options.filter((provider) => provider.name.toLowerCase().includes(normalizedQuery))
+    : options;
 
   return (
     <div ref={containerRef} className="relative inline-block">
@@ -265,8 +281,23 @@ function ProviderHeaderFilter({
       {open && (
         <div
           role="listbox"
-          className="absolute left-0 top-full z-30 mt-1.5 w-44 max-h-60 overflow-y-auto scrollbar-none rounded-lg border border-[#232326]/80 bg-[#131316] py-1 shadow-xl shadow-black/50"
+          className="absolute left-0 top-full z-30 mt-1.5 w-52 overflow-hidden rounded-lg border border-[#232326]/80 bg-[#131316] shadow-xl shadow-black/50"
         >
+          <div className="border-b border-[#232326]/80 p-2">
+            <div className="flex items-center gap-2 rounded-md border border-[#2d2d31] bg-[#0d0d0f] px-2 py-1.5">
+              <Search size={12} className="shrink-0 text-[#71717A]" aria-hidden="true" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => event.stopPropagation()}
+                placeholder="Search company..."
+                aria-label="Search companies"
+                autoFocus
+                className="min-w-0 flex-1 bg-transparent text-[11px] font-medium normal-case tracking-normal text-white outline-none placeholder:text-[#71717A]"
+              />
+            </div>
+          </div>
+          <div className="max-h-56 overflow-y-auto py-1 scrollbar-none">
           <button
             type="button"
             role="option"
@@ -274,6 +305,7 @@ function ProviderHeaderFilter({
             onClick={() => {
               onChange("");
               setOpen(false);
+              setQuery("");
             }}
             className={`block w-full px-3 py-1.5 text-left text-[12px] font-medium normal-case tracking-normal transition-colors ${
               !value ? "bg-[#18181C] text-white" : "text-[#A1A1AA] hover:bg-[#18181C] hover:text-white"
@@ -281,7 +313,7 @@ function ProviderHeaderFilter({
           >
             All companies
           </button>
-          {options.map((p) => (
+          {filteredOptions.map((p) => (
             <button
               key={p.slug}
               type="button"
@@ -290,6 +322,7 @@ function ProviderHeaderFilter({
               onClick={() => {
                 onChange(p.slug);
                 setOpen(false);
+                setQuery("");
               }}
               className={`block w-full px-3 py-1.5 text-left text-[12px] font-medium normal-case tracking-normal transition-colors ${
                 value === p.slug ? "bg-[#18181C] text-white" : "text-[#A1A1AA] hover:bg-[#18181C] hover:text-white"
@@ -298,6 +331,12 @@ function ProviderHeaderFilter({
               {p.name}
             </button>
           ))}
+          {filteredOptions.length === 0 && (
+            <p className="px-3 py-3 text-center text-[11px] font-medium normal-case tracking-normal text-[#71717A]">
+              No companies found
+            </p>
+          )}
+          </div>
         </div>
       )}
 
@@ -310,31 +349,67 @@ function ProviderHeaderFilter({
   );
 }
 
-function HeaderToggleButton({
-  label,
-  active,
-  onClick,
-  icon,
-  ariaLabel,
+function ReleaseSortHeader({
+  value,
+  onChange,
 }: {
-  label: string;
-  active?: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  ariaLabel: string;
+  value: "asc" | "desc";
+  onChange: (value: "asc" | "desc") => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) setOpen(false);
+    }
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [open]);
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={ariaLabel}
-      className={`inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold tracking-wider transition-colors ${
-        active ? "text-white" : "text-[#71717A] hover:text-white"
-      }`}
-    >
-      {label}
-      {icon}
-    </button>
+    <div ref={containerRef} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold tracking-wider text-white transition-colors"
+      >
+        RELEASED
+        <ChevronDown size={10} className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div role="listbox" className="absolute left-0 top-full z-30 mt-1.5 w-40 overflow-hidden rounded-lg border border-[#232326]/80 bg-[#131316] py-1 shadow-xl shadow-black/50">
+          {([
+            { value: "desc" as const, label: "Newest first" },
+            { value: "asc" as const, label: "Oldest first" },
+          ]).map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="option"
+              aria-selected={value === option.value}
+              onClick={() => {
+                onChange(option.value);
+                setOpen(false);
+              }}
+              className={`block w-full px-3 py-2 text-left text-[12px] font-medium normal-case tracking-normal transition-colors ${value === option.value ? "bg-[#18181C] text-white" : "text-[#A1A1AA] hover:bg-[#18181C] hover:text-white"}`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -345,34 +420,70 @@ function OpenSourceHeaderFilter({
   value: "" | "true" | "false";
   onChange: (value: "" | "true" | "false") => void;
 }) {
-  // Cycle through all three states: ALL -> YES -> NO -> ALL.
-  const nextValue: "" | "true" | "false" =
-    value === "" ? "true" : value === "true" ? "false" : "";
-  const label = value === "true" ? "YES" : value === "false" ? "NO" : "ALL";
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) setOpen(false);
+    }
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [open]);
 
   return (
-    <button
-      type="button"
-      onClick={() => onChange(nextValue)}
-      aria-label={`Open source filter is ${label}. Click to switch to ${nextValue === "" ? "all" : nextValue === "true" ? "yes" : "no"}.`}
-      className={`inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold tracking-wider transition-colors ${
-        value ? "text-white" : "text-[#71717A] hover:text-white"
-      }`}
-    >
-      <span>OPEN SOURCE</span>
-      <span className="inline-flex items-center gap-0.5 text-[8px] font-bold">
-        {label}
-      </span>
-    </button>
+    <div ref={containerRef} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold tracking-wider transition-colors ${value ? "text-white" : "text-[#71717A] hover:text-white"}`}
+      >
+        OPEN SOURCE
+        <ChevronDown size={10} className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div role="listbox" className="absolute right-0 top-full z-30 mt-1.5 w-32 overflow-hidden rounded-lg border border-[#232326]/80 bg-[#131316] py-1 shadow-xl shadow-black/50">
+          {([
+            { value: "" as const, label: "All" },
+            { value: "true" as const, label: "Yes" },
+            { value: "false" as const, label: "No" },
+          ]).map((option) => (
+            <button
+              key={option.label}
+              type="button"
+              role="option"
+              aria-selected={value === option.value}
+              onClick={() => {
+                onChange(option.value);
+                setOpen(false);
+              }}
+              className={`block w-full px-3 py-2 text-left text-[12px] font-medium normal-case tracking-normal transition-colors ${value === option.value ? "bg-[#18181C] text-white" : "text-[#A1A1AA] hover:bg-[#18181C] hover:text-white"}`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
 // Name | Company | Type | Primary Task | Released | Open Source | Compare
-// The company logo is intentionally rendered inside the NAME cell.
+// Keep the provider logo with the model in NAME, and company text in COMPANY.
 const COL_TEMPLATE =
-  "grid-cols-[minmax(220px,2.2fr)_minmax(110px,1fr)_minmax(90px,0.85fr)_minmax(110px,1fr)_minmax(100px,0.9fr)_minmax(90px,0.8fr)_minmax(100px,0.85fr)]";
+  "grid-cols-[150px_minmax(260px,1.65fr)_minmax(150px,1.05fr)_minmax(105px,0.8fr)_minmax(130px,0.95fr)_minmax(110px,0.85fr)_minmax(105px,0.8fr)_minmax(95px,0.75fr)] md:grid-cols-[minmax(280px,1.8fr)_minmax(150px,1.05fr)_minmax(105px,0.8fr)_minmax(130px,0.95fr)_minmax(110px,0.85fr)_minmax(105px,0.8fr)_minmax(95px,0.75fr)]";
 
-const COL_MIN_WIDTH = "min-w-[960px]";
+const COL_MIN_WIDTH = "min-w-[1180px] md:min-w-[1040px]";
 
 function ModelRow({
   model,
@@ -388,7 +499,15 @@ function ModelRow({
   const companyName = model.provider?.name || model.creator || "—";
   const companyLogo = resolveProviderLogo(model.provider?.logoUrl, companyName);
   const [logoFailed, setLogoFailed] = useState(false);
-  const typeLabel = formatModelType(model.modelType) || model.modality || null;
+  const typeLabels = (
+    formatModelType(model.modelType) ||
+    model.modality ||
+    ""
+  )
+    .split(",")
+    .map((type) => type.trim())
+    .filter(Boolean)
+    .slice(0, 2);
 
   useEffect(() => {
     setLogoFailed(false);
@@ -409,53 +528,97 @@ function ModelRow({
       onFocus={() => {
         prefetchUrl(`${API_URL}/api/v1/models/${encodeURIComponent(model.id)}`);
       }}
-      className={`group relative grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none`}
+      className={`group relative grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-2.5 bg-transparent px-4 py-2.5 transition-colors hover:bg-[#18181C]/40 focus-visible:bg-[#18181C]/40 focus-visible:outline-none`}
     >
       <span className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-signal,#6E56CF)] transition-all duration-200 group-hover:h-[70%]" />
 
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
+      {/* Mobile: keep the first column (logo + model name) fixed while the rest scrolls. */}
+      <div className="sticky left-0 z-20 flex h-full min-w-0 items-center gap-2 bg-[#000000] pr-2 shadow-[10px_0_10px_-10px_rgba(0,0,0,0.6)] transition-colors group-hover:bg-[#18181C] md:hidden">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
           {companyLogo && !logoFailed ? (
             <img
               src={companyLogo}
               alt={`${companyName} logo`}
-              width={36}
-              height={36}
+              width={28}
+              height={28}
               loading="lazy"
               decoding="async"
-              className="h-8 w-8 object-contain"
+              className="h-7 w-7 object-contain"
               onError={() => setLogoFailed(true)}
             />
           ) : (
             <span
               aria-label={`${companyName} logo`}
-              className="flex h-8 w-8 items-center justify-center rounded-md bg-neutral-100 text-base font-bold text-neutral-900"
+              className="flex h-7 w-7 items-center justify-center rounded-md bg-neutral-100 text-sm font-bold text-neutral-900"
             >
               {companyName.charAt(0).toUpperCase()}
             </span>
           )}
         </div>
+        <h3 className="line-clamp-2 break-words text-[12px] font-semibold leading-tight text-white">
+          {model.name}
+        </h3>
+      </div>
 
+      {/* Mobile: description is a separate, scrollable column. */}
+      <div className="min-w-0 pr-2 md:hidden">
+        <p
+          className="block max-w-full truncate text-[11px] leading-snug text-[#A1A1AA]"
+          title={model.description || undefined}
+        >
+          {model.description || "No description available"}
+        </p>
+      </div>
+
+      {/* Desktop: the provider logo belongs to the first column beside the model. */}
+      <div className="hidden min-w-0 items-center gap-2 pr-2 md:flex">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#232326]/60 bg-white">
+          {companyLogo && !logoFailed ? (
+            <img
+              src={companyLogo}
+              alt={`${companyName} logo`}
+              width={28}
+              height={28}
+              loading="lazy"
+              decoding="async"
+              className="h-7 w-7 object-contain"
+              onError={() => setLogoFailed(true)}
+            />
+          ) : (
+            <span
+              aria-label={`${companyName} logo`}
+              className="flex h-7 w-7 items-center justify-center rounded-md bg-neutral-100 text-sm font-bold text-neutral-900"
+            >
+              {companyName.charAt(0).toUpperCase()}
+            </span>
+          )}
+        </div>
         <div className="min-w-0">
           <h3 className="truncate text-[13px] font-semibold text-white">{model.name}</h3>
-          <p className="mt-0.5 line-clamp-1 text-[11px] text-[#A1A1AA] leading-snug">
-            {model.description}
+          <p
+            className="mt-0.5 block max-w-full truncate text-[11px] leading-snug text-[#A1A1AA]"
+            title={model.description || undefined}
+          >
+            {model.description || "No description available"}
           </p>
         </div>
       </div>
 
+      {/* Company column contains text only; its logo is shown in the first column. */}
       <div className="min-w-0 truncate text-[12px] text-white">{companyName}</div>
 
-      <div className="min-w-0 overflow-hidden">
-        {typeLabel ? (
-          <TypeAccentChip label={typeLabel} />
+      <div className="flex min-w-0 flex-wrap gap-1.5 overflow-hidden">
+        {typeLabels.length > 0 ? (
+          typeLabels.map((type, index) => (
+            <TypeAccentChip key={`${type}-${index}`} label={type} />
+          ))
         ) : (
           <span className="text-[11px] text-[#71717A]">—</span>
         )}
       </div>
 
-      <div className="min-w-0 truncate text-[11px] text-[#A1A1AA]">
-        {primaryTask || <span className="text-[#71717A]">—</span>}
+      <div className="min-w-0 overflow-hidden">
+        {primaryTask ? <PrimaryTaskChip label={primaryTask} /> : <span className="text-[11px] text-[#71717A]">—</span>}
       </div>
 
       <div className="text-[11px] font-mono text-[#A1A1AA]">
@@ -535,16 +698,18 @@ export function ModelListView({
           {Array.from({ length: skeletonRows }).map((_, i) => (
             <div
               key={i}
-              className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2.5`}
+              className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-2.5 px-4 py-2.5`}
             >
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="h-10 w-10 shrink-0 animate-pulse rounded-lg bg-[#18181C]" />
-                <div className="space-y-1.5">
+              <div className="sticky left-0 z-20 h-4 w-28 animate-pulse rounded bg-[#18181C] md:hidden" />
+              <div className="h-3 w-full max-w-56 animate-pulse rounded bg-[#18181C] md:hidden" />
+              <div className="hidden min-w-0 space-y-1.5 pr-2 md:block">
                 <div className="h-3 w-40 animate-pulse rounded bg-[#18181C]" />
-                  <div className="h-2 w-64 animate-pulse rounded bg-[#18181C]" />
-                </div>
+                <div className="h-2 w-full max-w-64 animate-pulse rounded bg-[#18181C]" />
               </div>
-              <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 shrink-0 animate-pulse rounded-lg bg-[#18181C]" />
+                <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
+              </div>
               <div className="h-4 w-16 animate-pulse rounded bg-[#18181C]" />
               <div className="h-3 w-24 animate-pulse rounded bg-[#18181C]" />
               <div className="h-3 w-20 animate-pulse rounded bg-[#18181C]" />
@@ -580,8 +745,10 @@ export function ModelListView({
       >
         <div className="overflow-x-auto touch-scroll-x">
           <div className="border-b border-[#232326]/60 bg-[#131316]/40">
-            <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2`}>
-              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">NAME</span>
+            <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-2.5 px-4 py-2`}>
+              <span className="sticky left-0 z-40 bg-[#131316] text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] shadow-[10px_0_10px_-10px_rgba(0,0,0,0.6)] md:hidden">NAME</span>
+              <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] md:hidden">DESCRIPTION</span>
+              <span className="hidden text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A] md:inline">NAME</span>
               {onProviderChange ? (
                 <ProviderHeaderFilter
                   value={selectedProvider}
@@ -600,13 +767,7 @@ export function ModelListView({
 
               <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">PRIMARY TASK</span>
               {onReleaseSortChange ? (
-                <HeaderToggleButton
-                  label="RELEASED"
-                  active
-                  onClick={() => onReleaseSortChange(selectedReleaseSort === "asc" ? "desc" : "asc")}
-                  ariaLabel={`Sort released ${selectedReleaseSort === "asc" ? "descending" : "ascending"}`}
-                  icon={selectedReleaseSort === "asc" ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-                />
+                <ReleaseSortHeader value={selectedReleaseSort} onChange={onReleaseSortChange} />
               ) : (
                 <span className="text-[9.5px] font-mono font-semibold tracking-wider text-[#71717A]">RELEASED</span>
               )}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Plus from 'lucide-react/dist/esm/icons/plus';
 import Pencil from 'lucide-react/dist/esm/icons/pencil';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
@@ -48,7 +48,6 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   const queryClient = useQueryClient();
   const isAdmin = user?.role === "ADMIN";
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   const selectedSubCategorySlug = defaultSubCategory || searchParams.get("subCategory") || null;
 
@@ -115,7 +114,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
     }
 
     const query = params.toString();
-    router.push(query ? `?${query}` : "?");
+    window.history.pushState(null, "", query ? `/models?${query}` : "/models");
   };
 
   const handleSelectSubCategory = (slug: string | null) => {
@@ -128,7 +127,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
     }
     params.delete("page");
     const query = params.toString();
-    router.push(query ? `/models?${query}` : "/models");
+    window.history.pushState(null, "", query ? `/models?${query}` : "/models");
   };
 
   const { data: apiSubCategories = [] } = useQuery<ModelSubCategory[]>({
@@ -149,11 +148,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
     staleTime: 30 * 60 * 1000,
   });
 
-  const {
-    data,
-    isLoading,
-    isPlaceholderData,
-  } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: [
       "models",
       {
@@ -262,7 +257,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
     <div className="flex-1 w-full flex flex-col bg-[#000000] text-white selection:bg-neutral-800 selection:text-white">
       {/* Table — same container as homepage tools section */}
       <div className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-2 flex-1">
-        <div className={`mx-auto w-full max-w-[1600px] space-y-3 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
+        <div className="mx-auto w-full max-w-[1600px] space-y-3">
           {isAdmin && (
             <Button
               className="h-7 bg-white text-black hover:bg-neutral-200 text-xs"
