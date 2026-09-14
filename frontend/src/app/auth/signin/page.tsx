@@ -45,7 +45,7 @@ function SignInForm() {
         setError(data.error || 'Invalid email or password.');
       } else {
         const data = await res.json();
-        window.location.href = data.user?.role === 'ADMIN' ? '/admin' : '/';
+        window.location.href = data.user?.role === 'ADMIN' ? '/admin' : '/dashboard';
       }
     } catch {
       setError('An error occurred. Please try again.');

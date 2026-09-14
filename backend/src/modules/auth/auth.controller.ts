@@ -66,7 +66,7 @@ export class AuthController {
       sameSite: 'None',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
-      domain: isProd ? 'aiorbit.club' : undefined
+      // removed domain to fix cross-origin cookie rejection
     });
 
     return c.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
@@ -78,7 +78,7 @@ export class AuthController {
       path: '/',
       secure: true,
       sameSite: 'None',
-      domain: isProd ? 'aiorbit.club' : undefined
+      // removed domain to fix cross-origin cookie rejection
     });
     return c.json({ success: true, message: 'Logged out successfully.' });
   }
@@ -112,7 +112,7 @@ export class AuthController {
       sameSite: 'None',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
-      domain: isProd ? 'aiorbit.club' : undefined
+      // removed domain to fix cross-origin cookie rejection
     });
 
     return c.json({ success: true, message: 'Email verified successfully.' });
@@ -181,7 +181,7 @@ export class AuthController {
       path: '/',
       secure: true,
       sameSite: 'None',
-      domain: isProd ? 'aiorbit.club' : undefined
+      // removed domain to fix cross-origin cookie rejection
     });
 
     return c.json({ success: true, message: 'Account deleted successfully' });

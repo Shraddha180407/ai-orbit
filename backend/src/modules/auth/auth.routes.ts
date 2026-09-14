@@ -131,7 +131,7 @@ authRoutes.get('/google/callback', async (c) => {
       sameSite: 'None',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
-      domain: isProd ? 'aiorbit.club' : undefined
+      // removed domain to fix cross-origin cookie rejection
     });
 
     if (user.role === 'ADMIN') {
@@ -241,7 +241,7 @@ authRoutes.get('/github/callback', async (c) => {
       sameSite: 'None',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
-      domain: isProd ? 'aiorbit.club' : undefined
+      // removed domain to fix cross-origin cookie rejection
     });
 
     if (user.role === 'ADMIN') {
