@@ -134,7 +134,7 @@ authRoutes.get('/google/callback', async (c) => {
       // removed domain to fix cross-origin cookie rejection
     });
 
-    if (user.role === 'ADMIN') {
+    if (user.role && user.role.toUpperCase() === 'ADMIN') {
       return c.redirect(`${frontendUrl}/admin`);
     }
     return c.redirect(`${frontendUrl}/dashboard`);
@@ -244,7 +244,7 @@ authRoutes.get('/github/callback', async (c) => {
       // removed domain to fix cross-origin cookie rejection
     });
 
-    if (user.role === 'ADMIN') {
+    if (user.role && user.role.toUpperCase() === 'ADMIN') {
       return c.redirect(`${frontendUrl}/admin`);
     }
     return c.redirect(`${frontendUrl}/dashboard`);

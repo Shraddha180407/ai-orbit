@@ -503,10 +503,10 @@ export function AuthRightPanel() {
             Array.from({ length: 26 }).map((_, col) => {
               const x = 540 - col * 18 - 8;
               const y = row * 18 + 8;
-              const wave = Math.sin((col * 0.35) + (row * 0.4)) * 12 + Math.cos(col * 0.2) * 6;
+              const wave = Number((Math.sin((col * 0.35) + (row * 0.4)) * 12 + Math.cos(col * 0.2) * 6).toFixed(3));
               const distFromOrigin = Math.sqrt(Math.pow(col / 26, 2) + Math.pow(row / 14, 2));
-              const opacity = Math.max(0.04, 0.75 - distFromOrigin * 0.7);
-              const r = 1.1 + (Math.sin(col + row) * 0.4);
+              const opacity = Number((Math.max(0.04, 0.75 - distFromOrigin * 0.7)).toFixed(3));
+              const r = Number((1.1 + (Math.sin(col + row) * 0.4)).toFixed(3));
               return (
                 <circle
                   key={`dot-${row}-${col}`}
