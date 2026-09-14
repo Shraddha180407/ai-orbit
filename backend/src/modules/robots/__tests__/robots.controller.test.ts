@@ -19,7 +19,7 @@ vi.mock('../robots.service.js', () => ({
 
 vi.mock('../../../lib/robot.transformer.js', () => ({
   RobotTransformer: {
-    toListResponse: vi.fn((robots) => robots),
+    toListResponse: vi.fn((robots: any) => robots),
   },
 }));
 

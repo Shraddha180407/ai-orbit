@@ -31,15 +31,9 @@ export function CategoryNav() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLElement | null)[]>([]);
 
-  let pathname = "";
-  let searchParams: ReturnType<typeof useSearchParams> | null = null;
-  let router: ReturnType<typeof useRouter> | null = null;
-
-  try {
-    pathname = usePathname() || "";
-    searchParams = useSearchParams();
-    router = useRouter();
-  } catch {}
+  const pathname = usePathname() || "";
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
     if (!pathname) return;

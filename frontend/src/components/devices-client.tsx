@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 'use client';
 
 import React, { useEffect, useState, useRef, useMemo } from "react";

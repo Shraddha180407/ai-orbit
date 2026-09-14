@@ -1,12 +1,9 @@
 import { Context } from 'hono';
 import { PrismaClient } from '@prisma/client';
-import { PrismaNeon } from '@prisma/adapter-neon';
+import { getPrisma } from '../../lib/prisma.js';
 import { LeaderboardService } from './leaderboard.service.js';
 
-function getPrisma(env: { DATABASE_URL: string }) {
-  const adapter = new PrismaNeon({ connectionString: env.DATABASE_URL });
-  return new PrismaClient({ adapter });
-}
+
 
 export class LeaderboardController {
   async getTools(c: Context) {

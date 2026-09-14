@@ -1,6 +1,6 @@
 import { Context } from "hono";
 import { PrismaClient } from "@prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
+import { getPrisma } from "../../lib/prisma.js";
 import { FEED_SOURCES } from "./sources.js";
 import { logger } from "../../lib/logger.js";
 import type { IngestionContext } from "./pipeline.js";
@@ -17,8 +17,7 @@ export class IngestionController {
   static async run(c: Context) {
     try {
       const query = c.req.valid("query" as never) as unknown as IngestionRunQueryInput;
-      const adapter = new PrismaNeon({ connectionString: c.env.DATABASE_URL });
-      const prisma = new PrismaClient({ adapter });
+      const prisma = getPrisma(c.env);
       const ctx: IngestionContext = {
         prisma,
         llmKeys: { geminiKey: c.env.GEMINI_API_KEY, groqKey: c.env.GROQ_API_KEY },

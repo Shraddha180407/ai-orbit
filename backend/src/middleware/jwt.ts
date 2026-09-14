@@ -5,11 +5,11 @@ interface JwtUserPayload {
   [key: string]: unknown;
 }
 import { getCookie } from 'hono/cookie'
-import { verify } from 'jsonwebtoken'
+import { verify } from 'hono/jwt'
 import { getPrisma } from '../lib/prisma.js'
 
 export const jwtMiddleware = async (c: Context, next: Next) => {
-  const token = getCookie(c, 'auth_token')
+  const token = getCookie(c, 'auth_token'); console.log('Received cookies:', c.req.header('cookie'));
   
   if (!token) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -17,10 +17,10 @@ export const jwtMiddleware = async (c: Context, next: Next) => {
 
   try {
     const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET || 'aiorbit-jwt-secret-key-2026';
-    const decoded = verify(token, jwtSecret);
+    const decoded = await verify(token, jwtSecret, 'HS256');
     c.set('user', decoded);
     await next()
-  } catch (_error) {
+  } catch (_error) { console.error('JWT Verification Failed:', _error);
     return c.json({ error: 'Invalid or expired token' }, 401)
   }
 }
@@ -34,7 +34,7 @@ export const adminMiddleware = async (c: Context, next: Next) => {
 
   try {
     const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET || 'aiorbit-jwt-secret-key-2026';
-    const decodedUser = verify(token, jwtSecret) as JwtUserPayload;
+    const decodedUser = await verify(token, jwtSecret, 'HS256') as JwtUserPayload;
     c.set('user', decodedUser);
 
     if (!decodedUser || !decodedUser.id) {
@@ -72,7 +72,7 @@ export const optionalJwtMiddleware = async (c: Context, next: Next) => {
   if (token) {
     try {
       const jwtSecret = (c.env as Record<string, string | undefined>)?.JWT_SECRET || process.env.JWT_SECRET || 'aiorbit-jwt-secret-key-2026';
-      const decoded = verify(token, jwtSecret);
+      const decoded = await verify(token, jwtSecret, 'HS256');
       c.set('user', decoded);
     } catch (_error) {
       // Ignore invalid token
