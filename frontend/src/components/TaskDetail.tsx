@@ -48,6 +48,7 @@ export function TaskDetail({
   const description = task.description ?? "";
 
   const relevantTools = task.toolItems ?? [];
+  const toolCount = relevantTools.length;
   const popularTool = task.popularTools?.[0];
 
   const subcategories = useMemo(
@@ -157,14 +158,14 @@ export function TaskDetail({
           )}
 
           <p className="text-sm text-[#A1A1AA] mt-1">
-            There are {formatCount(task.tools)} AI tools for {title}.
+            There are {formatCount(toolCount)} AI tools for {title}.
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-wrap gap-4 sm:gap-x-10 sm:gap-y-4 mt-6">
 
             <StatColumn
               label="Number of tools"
-              value={formatCount(task.tools)}
+              value={formatCount(toolCount)}
             />
 
             <StatColumn
