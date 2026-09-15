@@ -14,15 +14,15 @@ type SerializedTaskListRow = {
   category: { id: string; slug: string; name: string };
   creator: { id: string; name: string | null; image: string | null } | null;
   createdAt: Date;
-  toolCount: number;
-  modelCount: number;
-  robotCount: number;
-  deviceCount: number;
   saveCount: number;
   likeCount: number;
   subscriberCount: number;
   _count: {
     resources: number;
+    tools: number;
+    models: number;
+    robots: number;
+    devices: number;
   };
 };
 
@@ -54,11 +54,16 @@ const taskDetailSelect = {
     },
   },
 
-  toolCount: true,
-  modelCount: true,
-  robotCount: true,
-  deviceCount: true,
   saveCount: true,
+
+  _count: {
+    select: {
+      tools: true,
+      models: true,
+      robots: true,
+      devices: true,
+    },
+  },
   likeCount: true,
   subscriberCount: true,
 
@@ -276,28 +281,28 @@ export class TasksService {
         orderBy = { likeCount: 'desc' };
         break;
       case 'tools-asc':
-        orderBy = { toolCount: 'asc' };
+        orderBy = { tools: { _count: 'asc' } };
         break;
       case 'tools-desc':
-        orderBy = { toolCount: 'desc' };
+        orderBy = { tools: { _count: 'desc' } };
         break;
       case 'models-asc':
-        orderBy = { modelCount: 'asc' };
+        orderBy = { models: { _count: 'asc' } };
         break;
       case 'models-desc':
-        orderBy = { modelCount: 'desc' };
+        orderBy = { models: { _count: 'desc' } };
         break;
       case 'robots-asc':
-        orderBy = { robotCount: 'asc' };
+        orderBy = { robots: { _count: 'asc' } };
         break;
       case 'robots-desc':
-        orderBy = { robotCount: 'desc' };
+        orderBy = { robots: { _count: 'desc' } };
         break;
       case 'devices-asc':
-        orderBy = { deviceCount: 'asc' };
+        orderBy = { devices: { _count: 'asc' } };
         break;
       case 'devices-desc':
-        orderBy = { deviceCount: 'desc' };
+        orderBy = { devices: { _count: 'desc' } };
         break;
       case 'newest':
       default:
@@ -316,14 +321,18 @@ export class TasksService {
       category: { select: { id: true, slug: true, name: true } },
       creator: { select: { id: true, name: true, image: true } },
       createdAt: true,
-      toolCount: true,
-      modelCount: true,
-      robotCount: true,
-      deviceCount: true,
       saveCount: true,
       likeCount: true,
       subscriberCount: true,
-      _count: { select: { resources: true } },
+      _count: {
+        select: {
+          resources: true,
+          tools: true,
+          models: true,
+          robots: true,
+          devices: true,
+        },
+      },
     };
 
     const [tasks, total, categories] = await Promise.all([
@@ -661,10 +670,10 @@ export class TasksService {
       saves: t.saveCount,
       resources: t._count.resources,
 
-      tools: t.toolCount,
-      models: t.modelCount,
-      robots: t.robotCount,
-      devices: t.deviceCount,
+      tools: t._count.tools,
+      models: t._count.models,
+      robots: t._count.robots,
+      devices: t._count.devices,
     };
   }
 
@@ -696,10 +705,10 @@ export class TasksService {
       pricingModel: t.pricingModel,
       isFeatured: t.isFeatured,
 
-      tools: t.toolCount,
-      models: t.modelCount,
-      robots: t.robotCount,
-      devices: t.deviceCount,
+      tools: t._count.tools,
+      models: t._count.models,
+      robots: t._count.robots,
+      devices: t._count.devices,
 
       saves: t.saveCount,
       likes: t.likeCount,
