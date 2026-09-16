@@ -22,9 +22,13 @@ export function HomeClient() {
   });
 
   const showParam = searchParams.get("show");
-  const show = showParam !== null ? showParam : "tools,devices,robots,news,models";
+  // Only include entity types whose detail pages are currently available.
+  // News remains accessible from its dedicated News section.
+  const show = showParam !== null ? showParam : "tools,devices,robots,models";
+  const sort = searchParams.get("sort") || undefined;
+  const pricing = searchParams.get("pricing") || undefined;
 
-  // Reset to page 1 whenever show filter changes
+  // Reset to page 1 whenever key filters change
   const prevShowRef = React.useRef(show);
   React.useEffect(() => {
     if (prevShowRef.current !== show) {
@@ -32,7 +36,7 @@ export function HomeClient() {
       setCurrentPage(1);
     }
   }, [show]);
-  const queryKey = ["unified-feed", { show, page: currentPage, pageSize }];
+  const queryKey = ["unified-feed", { show, sort, pricing, page: currentPage, pageSize }];
 
   const {
     data,
@@ -40,7 +44,7 @@ export function HomeClient() {
     isPlaceholderData,
   } = useQuery({
     queryKey,
-    queryFn: () => fetchHomeFeed({ show, page: currentPage, pageSize }),
+    queryFn: () => fetchHomeFeed({ show, sort, pricing, page: currentPage, pageSize }),
     placeholderData: keepPreviousData,
     staleTime: 5 * 60 * 1000,
   });

@@ -13,9 +13,11 @@ export const getFeed = async (c: Context) => {
     const page = parseInt(c.req.query('page') || '1');
     const pageSize = parseInt(c.req.query('pageSize') || '50');
     const show = c.req.query('show') || 'tools,devices,robots,news,models';
+    const sort = c.req.query('sort') || 'newest';
+    const pricing = c.req.query('pricing') || undefined;
     const filters = show.split(',');
 
-    const result = await feedService.getUnifiedFeed(filters, page, pageSize);
+    const result = await feedService.getUnifiedFeed(filters, page, pageSize, sort, pricing);
     return c.json(result);
   } catch (error: any) {
     console.error('Feed Error:', error);

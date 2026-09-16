@@ -118,78 +118,6 @@ className={`shrink-0 transition-transform ${sortDir === "asc" ? "rotate-180" : "
 );
 }
 
-function MobileTable({
-  videos,
-  onThumbFailed,
-  onVideoSelect,
-}: {
-  videos: Video[];
-  onThumbFailed: (id: string) => void;
-  onVideoSelect?: (video: Video) => void;
-}) {
-return (
-<table className="w-full table-fixed border-collapse sm:hidden">
-<colgroup>
-<col />
-<col className="w-[92px]" />
-</colgroup>
-<thead>
-<tr className="border-b border-white/[0.05]">
-<th className="select-none py-2 pl-0 pr-2 text-left font-mono text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted">
-Name
-</th>
-<th className="select-none py-2 pl-2 pr-0 text-right font-mono text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted">
-Posted
-</th>
-</tr>
-</thead>
-<tbody>
-{videos.map((v) => (
-<tr
-  key={v.id}
-  className="border-b border-white/[0.05] active:bg-bg-hover cursor-pointer"
-  style={{ ["--row-accent" as string]: v.accent }}
-  onClick={() => onVideoSelect?.(v)}
->
-<td className="py-2.5 pr-2">
-<Link
-  href={`/videos/${v.slug}`}
-  onClick={(e) => {
-    if (!e.ctrlKey && !e.metaKey && !e.shiftKey && onVideoSelect) {
-      e.preventDefault();
-      onVideoSelect(v);
-    }
-  }}
-  className="flex min-w-0 items-center gap-2.5"
->
-<span className="relative block h-[46px] w-[80px] shrink-0 overflow-hidden rounded-md bg-bg-elevated">
-<ThumbImage
-src={v.thumbnail}
-alt=""
-toolName={v.toolName}
-accent={v.accent}
-sizes="80px"
-onError={() => onThumbFailed(v.id)}
-/>
-<span className="absolute bottom-0.5 right-0.5 z-10 rounded bg-black/75 px-1 py-[1px] text-[10px] font-medium text-white">
-{formatDuration(v.durationSeconds)}
-</span>
-</span>
-<span className="block min-w-0 truncate text-[13px] font-medium leading-snug text-primary">
-{v.title}
-</span>
-</Link>
-</td>
-<td className="whitespace-nowrap py-2.5 pl-2 text-right font-mono text-[12px] text-secondary">
-{formatPosted(v.publishedAt)}
-</td>
-</tr>
-))}
-</tbody>
-</table>
-);
-}
-
 export function VideoTable({
 videos,
 sortBy,
@@ -272,15 +200,10 @@ const columns: { key: VideoSortBy; label: string; align?: "right" }[] = [
 
 return (
 <div>
-{/* Mobile: 2-column table (Name, Posted only), sm and up: full table below */}
 <MobileSortBar sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
 
-<div className="sm:hidden">
-<MobileTable videos={sorted} onThumbFailed={markThumbFailed} onVideoSelect={onVideoSelect} />
-</div>
-
-<div className="hidden overflow-x-auto sm:block">
-<table className="w-full min-w-[760px] table-fixed border-collapse">
+<div className="w-full max-w-full overflow-x-auto overflow-y-hidden sm:overflow-x-visible">
+<table className="w-[1100px] min-w-[1100px] table-fixed border-collapse sm:w-full sm:min-w-[760px]">
 <colgroup>
 <col className="w-[34%]" />
 <col className="w-[100px]" />
@@ -413,13 +336,13 @@ LEVEL_STYLES[levelFor(v.id)]
 </td>
 <td className="px-4 py-[9.6px]">
 <a
-href={getChannelUrl(v.channelId, v.author?.name || v.authorName || v.channel)}
+href={getChannelUrl(v.channelId, v.author?.name)}
 target="_blank"
 rel="noopener noreferrer"
 className="group/channel inline-flex items-start gap-1.5"
 >
 <span className="line-clamp-2 whitespace-normal break-words text-[13.5px] font-medium leading-snug text-secondary transition-colors group-hover/channel:text-primary">
-{v.author?.name || v.authorName || v.channel || "Channel"}
+{v.author?.name || "Channel"}
 </span>
 <svg
 width="12"

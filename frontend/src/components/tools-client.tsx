@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from "react";
-import {useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { ToolListView } from "@/components/ToolListView";
 import { API_URL } from "@/lib/api";
 import type { SortOption } from "@/lib/types";
-import { scrollChipIntoView } from "@/lib/utils";
+import { BUSINESS_CATEGORIES } from "@/lib/business-categories";
 
 
-type DirectoryMode = "tools" | "personal" | "creativity";
+type DirectoryMode = "tools" | "personal" | "creativity" | "business";
 
 // Maps UI category slugs → task slugs and tag slugs present in API data
 const CATEGORY_FILTER_MAP: Record<string, { taskSlugs?: string[]; tagSlugs?: string[]; nameParts?: string[]; descriptionParts?: string[] }> = {
@@ -30,6 +30,22 @@ const CATEGORY_FILTER_MAP: Record<string, { taskSlugs?: string[]; tagSlugs?: str
   "3d-generation":       { descriptionParts: ["3d", "three-dimensional", "3d model", "3d generat"] },
   "no-code":             { nameParts: ["chatme"], descriptionParts: ["no-code", "nocode", "visual editor", "drag and drop", "without code", "web application"] },
   "workflow-automation": { taskSlugs: ["automate-workflows"], descriptionParts: ["workflow automat", "automation platform", "automate", "zapier", "integrate"] },
+
+  // ── Business ───────────────────────────────────────────────────────────────
+  "sales":              { descriptionParts: ["sales", "crm", "lead", "prospect", "outreach", "pipeline", "revenue", "deal"] },
+  "customer-support":   { tagSlugs: ["customer-support"], descriptionParts: ["customer support", "customer service", "help desk", "helpdesk", "support ticket", "live chat", "sentiment"] },
+  "human-resources":    { descriptionParts: ["human resources", " hr ", "employee", "workforce", "payroll", "performance review", "people operations"] },
+  "recruiting":         { descriptionParts: ["recruit", "hiring", "candidate", "resume", "cv screening", "interview", "talent acquisition"] },
+  "finance-accounting": { descriptionParts: ["accounting", "bookkeeping", "invoice", "expense", "financial", "finance", "tax", "payroll", "receipt"] },
+  "legal-compliance":   { descriptionParts: ["legal", "law", "contract", "compliance", "regulation", "policy", "document review"] },
+  "operations":         { descriptionParts: ["operations", "supply chain", "logistics", "inventory", "forecast", "resource planning", "back office"] },
+  "project-management": { descriptionParts: ["project management", "task management", "project planning", "roadmap", "team collaboration", "resource allocation"] },
+  "email":              { descriptionParts: ["email", "inbox", "newsletter", "email campaign", "email assistant", "email marketing"] },
+  "scheduling":         { descriptionParts: ["scheduling", "calendar", "appointment", "meeting", "booking"] },
+  "ecommerce":          { descriptionParts: ["ecommerce", "e-commerce", "online store", "shopping", "retail", "product listing", "product recommendation"] },
+  "writing-editing":    { taskSlugs: ["write-blog-posts", "summarize-documents"], descriptionParts: ["writing", "editing", "grammar", "copywriting", "paraphras", "summariz", "business content"] },
+  "technology-it":      { taskSlugs: ["generate-code"], descriptionParts: ["information technology", "software development", "code assistant", "cybersecurity", "website builder", "database", "technical support", "no-code", "low-code"] },
+  "data-analytics":     { descriptionParts: ["data analysis", "analytics", "business intelligence", "spreadsheet", "dashboard", "reporting", "sql", "forecasting"] },
 
   // ── Personal ───────────────────────────────────────────────────────────────
   "relationships":       { nameParts: ["loverr", "flave", "wowow", "wifeapp", "lovecore", "outpeach", "virtugf", "fallfor", "honeychat", "mygirl", "xmate", "aipornchat", "nsfw", "naughty", "tickles", "texthub", "bloomstories", "dreamrp", "ehentai", "realmplay", "janitor", "polybuzz", "ai-girlfriend", "alphazria", "nsfwchat", "soulfun", "joiai", "couple"], descriptionParts: ["girlfriend", "companion", "romantic", "relationship", "partner", "dating", "virtual partner", "ai girlfriend", "nsfw", "sexting", "roleplay", "intimate"] },
@@ -131,6 +147,9 @@ const CATEGORY_MAP = {
     { name: "Sales Automation", slug: "sales-automation" },
     { name: "Workflow Automation", slug: "workflow-automation" },
     { name: "Autonomous Agents", slug: "autonomous-agents" }
+  ],
+  business: [
+    ...BUSINESS_CATEGORIES
   ]
 } as const;
 
@@ -150,8 +169,20 @@ function matchesCategory(tool: any, categorySlug: string): boolean {
   const nameAndSlug = (tool.name + " " + tool.slug).toLowerCase();
   if (filter.nameParts?.some((p: string) => nameAndSlug.includes(p.toLowerCase()))) return true;
 
-  const firstSentence = (tool.description ?? "").split(/\.\s+/)[0].toLowerCase();
-  if (filter.descriptionParts?.some((p: string) => firstSentence.includes(p.toLowerCase()))) return true;
+  const searchableText = [
+    tool.name,
+    tool.slug,
+    tool.description,
+    tool.company?.name,
+    ...(tool.useCases ?? []),
+    ...(tool.categories?.flatMap((item: any) => [item.category?.name, item.category?.slug]) ?? []),
+    ...(tool.tags?.flatMap((item: any) => [item.tag?.name, item.tag?.slug]) ?? []),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (filter.descriptionParts?.some((part: string) => searchableText.includes(part.toLowerCase()))) return true;
 
   return false;
 }
@@ -165,12 +196,12 @@ export function ToolsClient({
 }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const router = useRouter();
   // FIXED: Mode is now dynamically derived every render. It will instantly swap back to "tools" 
   // when navigating away from the "agents" page, completely bypassing the Next.js cache trap.
   const mode: DirectoryMode = defaultMode || (
     pathname?.includes("personal") ? "personal" :
       pathname?.includes("creativity") ? "creativity" :
+        pathname?.includes("business") ? "business" :
           "tools"
   );
 
@@ -204,6 +235,8 @@ export function ToolsClient({
     ? "/personal"
     : mode === "creativity"
       ? "/creativity"
+      : mode === "business"
+        ? "/business"
       : "/tools";
     const url = slug ? `${base}/${slug}` : base;
     window.history.pushState(null, "", url);
@@ -224,14 +257,16 @@ export function ToolsClient({
       if (q) query.set("q", q);
       if (pricing) query.set("pricing", pricing);
       if (sort) query.set("sort", sort);
-      query.set("page", String(currentPage));
-      query.set("limit", "200");
+      query.set("page", mode === "business" ? "1" : String(currentPage));
+      query.set("pageSize", mode === "business" ? "500" : "200");
 
 
       const endpoint = mode === "personal"
         ? `${API_URL}/api/v1/tools/category/personal`
         : mode === "creativity"
           ? `${API_URL}/api/v1/tools/category/creativity`
+          : mode === "business"
+            ? `${API_URL}/api/v1/tools/category/business`
           : `${API_URL}/api/v1/tools`;
 
     
@@ -244,10 +279,19 @@ export function ToolsClient({
   });
 
   const rawTools = data?.tools || [];
-  const tools = activeCategory
+  const filteredTools = activeCategory
     ? rawTools.filter((t: any) => matchesCategory(t, activeCategory))
     : rawTools;
-  const totalPages = data?.totalPages || 1;
+  const businessPageSize = 24;
+  const totalPages = mode === "business"
+    ? Math.max(1, Math.ceil(filteredTools.length / businessPageSize))
+    : data?.totalPages || 1;
+  const tools = mode === "business"
+    ? filteredTools.slice(
+        (currentPage - 1) * businessPageSize,
+        currentPage * businessPageSize,
+      )
+    : filteredTools;
 
   const categories = React.useMemo(
   () => CATEGORY_MAP[mode] || CATEGORY_MAP.tools,

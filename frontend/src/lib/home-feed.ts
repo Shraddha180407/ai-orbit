@@ -18,14 +18,18 @@ interface HomeFeedParams {
   show: string;
   page: number;
   pageSize: number;
+  sort?: string;
+  pricing?: string;
 }
 
-export function fetchHomeFeed({ show, page, pageSize }: HomeFeedParams) {
+export function fetchHomeFeed({ show, page, pageSize, sort, pricing }: HomeFeedParams) {
   const query = new URLSearchParams({
     show,
     page: String(page),
     pageSize: String(pageSize),
   });
+  if (sort) query.set("sort", sort);
+  if (pricing) query.set("pricing", pricing);
 
   return cachedFetchJson<HomeFeedData>(
     `${API_URL}/api/v1/feed?${query.toString()}`,

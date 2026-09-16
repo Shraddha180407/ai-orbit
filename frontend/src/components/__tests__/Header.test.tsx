@@ -22,13 +22,12 @@ describe("Header", () => {
 
   it("renders logo and brand name", () => {
     render(<Header />);
-    expect(screen.getByText("AI Orbit")).toBeInTheDocument();
-    expect(screen.getByText("S")).toBeInTheDocument();
+    expect(screen.getByAltText("AI Orbit Logo")).toBeInTheDocument();
   });
 
   it("renders navigation links", () => {
     render(<Header />);
-    expect(screen.getByText("Business AI")).toHaveAttribute("href", "/tools?category=business");
+    expect(screen.getByText("Business AI")).toHaveAttribute("href", "/business");
     expect(screen.getByText("Leaderboard")).toHaveAttribute("href", "/leaderboard");
     expect(screen.getByText("Resources")).toHaveAttribute("href", "/tools");
     expect(screen.getByText("Newsletter")).toHaveAttribute("href", "/#newsletter");
@@ -36,7 +35,7 @@ describe("Header", () => {
 
   it("renders Submit Tool button", () => {
     render(<Header />);
-    expect(screen.getByText("Submit Tool")).toHaveAttribute("href", "/tools");
+    expect(screen.getByText("Submit Tool")).toHaveAttribute("href", "/submit");
   });
 
   it("shows Log In link when user is not authenticated", () => {

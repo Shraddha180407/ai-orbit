@@ -23,6 +23,7 @@ import Palette from 'lucide-react/dist/esm/icons/palette';
 import TrendingUp from 'lucide-react/dist/esm/icons/trending-up';
 import Trophy from 'lucide-react/dist/esm/icons/trophy';
 import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
+import BriefcaseBusiness from 'lucide-react/dist/esm/icons/briefcase-business';
 
 import { HeroFeatureChips } from "@/components/HeroFeatureChips";
 import { SortDropdown } from "@/components/SortDropdown";
@@ -93,6 +94,7 @@ function groupSuggestionsByType(
 const DIRECTORY_CARDS = [
   { name: "New", href: "/", description: "Discover the newest AI additions.", icon: Sparkles, color: "#6E56CF" },
   { name: "Tools", href: "/tools", description: "Browse the full AI tools directory, filter by category and pricing.", icon: Wrench, color: "#FFC53D" },
+  { name: "Business", href: "/business", description: "Find AI tools for growth, sales, support, finance, and operations.", icon: BriefcaseBusiness, color: "#A78BFA" },
   { name: "Agents", href: "/agents", description: "Discover autonomous AI agents for business, automation, and research.", icon: Bot, color: "#A855F7" },
   { name: "Tasks", href: "/tasks", description: "Find the right AI tool for a specific job to be done.", icon: ListChecks, color: "#FB923C" },
   { name: "Companies", href: "/companies", description: "Explore the labs and startups building the AI ecosystem.", icon: Building2, color: "#38BDF8" },
@@ -354,7 +356,9 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
   const handleContainerScroll = () => {
     const container = scrollContainerRef.current;
     if (container) {
-      // eslint-disable-next-line
+      // This module-level value intentionally preserves the nav position
+      // between route transitions; sessionStorage is the reload fallback.
+      // eslint-disable-next-line react-hooks/globals
       globalHeroScrollPos = container.scrollLeft;
       try {
         sessionStorage.setItem(SCROLL_KEY, container.scrollLeft.toString());
@@ -365,7 +369,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
   const saveScrollPos = () => {
     const container = scrollContainerRef.current;
     if (container) {
-      // eslint-disable-next-line
+      // eslint-disable-next-line react-hooks/globals
       globalHeroScrollPos = container.scrollLeft;
       try {
         sessionStorage.setItem(SCROLL_KEY, container.scrollLeft.toString());

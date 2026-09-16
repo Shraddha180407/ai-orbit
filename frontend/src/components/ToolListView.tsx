@@ -3,7 +3,7 @@
 import React, { useState, useTransition, Suspense, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import Check from 'lucide-react/dist/esm/icons/check';
 import X from 'lucide-react/dist/esm/icons/x';
@@ -56,6 +56,27 @@ type ToolListViewProps = {
   loading?: boolean;
   skeletonRows?: number;
 };
+
+/** Every entity shown in the unified feed must have a destination detail page.
+ * Unknown entity types are deliberately omitted instead of linking to a 404. */
+function getDetailUrl(tool: ListTool): string | null {
+  const slug = tool.slug;
+  if (!slug && tool.entityType !== "MODEL") return null;
+
+  switch (tool.entityType ?? "TOOL") {
+    case "TOOL": return `/p/tools/${slug}`;
+    case "COMPANY": return `/companies/${slug}`;
+    case "MODEL": return tool.id ? `/models/${tool.id}` : null;
+    // The current News detail endpoint is unavailable for the local schema.
+    // Do not show these rows in the unified New feed until it can resolve.
+    case "NEWS": return null;
+    case "VIDEO": return `/p/videos/${slug}`;
+    case "ROBOT": return `/p/robots/${slug}`;
+    case "DEVICE": return `/p/devices/${slug}`;
+    case "REPOSITORY": return `/p/repositories/${slug}`;
+    default: return null;
+  }
+}
 
 // FIXED: Removed the Compatibility column from the MIXED feed grid templates
 const COL_TEMPLATE_MIXED = "grid-cols-[48px_200px_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_44px_44px_60px] md:grid-cols-[60px_minmax(280px,3.5fr)_minmax(150px,1.6fr)_minmax(110px,1.1fr)_minmax(60px,0.6fr)_minmax(90px,0.9fr)_minmax(80px,0.7fr)_44px_44px_60px]";
@@ -164,20 +185,9 @@ function ShareButton({ tool }: { tool: ListTool }) {
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    let targetPath = '/tools';
-    let identifier = tool.slug;
-    if (tool.entityType === 'COMPANY') targetPath = '/companies';
-    if (tool.entityType === 'VIDEO') targetPath = '/videos';
-    if (tool.entityType === 'NEWS') targetPath = '/news';
-    if (tool.entityType === 'ROBOT') targetPath = '/robots';
-    if (tool.entityType === 'DEVICE') targetPath = '/devices';
-    if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
-
-    if (tool.entityType === 'MODEL') {
-      targetPath = '/models';
-      identifier = tool.id;
-    }
-    const url = `${window.location.origin}${targetPath}/${identifier}`;
+    const targetUrl = getDetailUrl(tool);
+    if (!targetUrl) return;
+    const url = `${window.location.origin}${targetUrl}`;
     const shareData = {
       title: tool.name,
       text: tool.description ?? "",
@@ -260,7 +270,6 @@ function ToolRow({
   isSelected,
   isCompareFull,
   onToggleCompare,
-  basePath = "/tools",
   isMixedFeed = false,
 }: {
   tool: ListTool;
@@ -268,7 +277,6 @@ function ToolRow({
   isSelected: boolean;
   isCompareFull: boolean;
   onToggleCompare: (t: ListTool) => void;
-  basePath?: string;
   isMixedFeed?: boolean;
 }) {
   const router = useRouter();
@@ -279,21 +287,10 @@ function ToolRow({
   const activeTemplate = isMixedFeed ? COL_TEMPLATE_MIXED : COL_TEMPLATE_SPLIT;
   const activeMinWidth = isMixedFeed ? COL_MIN_WIDTH_MIXED : COL_MIN_WIDTH_SPLIT;
 
-  let targetPath = basePath;
-  let identifier = tool.slug;
-  if (tool.entityType === 'COMPANY') targetPath = '/companies';
-  else if (tool.entityType === 'VIDEO') targetPath = '/videos';
-  else if (tool.entityType === 'NEWS') targetPath = '/news';
-  else if (tool.entityType === 'ROBOT') targetPath = '/robots';
-  else if (tool.entityType === 'DEVICE') targetPath = '/devices';
-  else if (tool.entityType === 'REPOSITORY') targetPath = '/repositories';
-  else if (tool.entityType === 'MODEL') {
-    targetPath = '/models';
-    identifier = tool.id;
-  } else if (tool.entityType === 'TOOL') {
-    targetPath = '/tools';
-  }
-  const targetUrl = `${targetPath}/${identifier}`;
+  const targetUrl = getDetailUrl(tool);
+
+  // Parent filtering ensures this cannot occur for a normal rendered row.
+  if (!targetUrl) return null;
 
   const prefetchRow = () => {
     try { router.prefetch(targetUrl); } catch { }
@@ -522,8 +519,6 @@ const MemoizedToolRow = React.memo(ToolRow);
 
 function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolListViewProps) {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [compareSet, setCompareSet] = useState<ListTool[]>([]);
@@ -551,9 +546,6 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  let basePath = "/tools";
-  if (pathname === "/personal" || pathname === "/creativity" || pathname === "/agents") basePath = pathname;
-
   const toggleCompare = (tool: ListTool) => {
     setCompareSet((prev) => {
       const exists = prev.some((t) => t.id === tool.id);
@@ -575,7 +567,9 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
   );
 
   const filtered = React.useMemo(() => {
-    let list = [...tools];
+    // The unified feed may gain new entity types before a detail page exists.
+    // Never render a row that cannot navigate to a real detail page.
+    let list = tools.filter((tool) => getDetailUrl(tool) !== null);
     if (nameSearch.trim()) {
       const q = nameSearch.toLowerCase();
       list = list.filter((t) =>
@@ -800,7 +794,6 @@ function ToolListViewInner({ tools, loading = false, skeletonRows = 6 }: ToolLis
                 isSelected={compareSet.some((t) => t.id === tool.id)}
                 isCompareFull={compareSet.length >= MAX_COMPARE}
                 onToggleCompare={toggleCompare}
-                basePath={basePath}
                 isMixedFeed={isMixedFeed}
               />
             ))}
