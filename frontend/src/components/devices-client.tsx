@@ -68,9 +68,77 @@ function getFaviconUrl(manufacturer: string, slug: string): string {
   return `https://www.google.com/s2/favicons?sz=64&domain=${guess}.com`;
 }
 
+/** Normalise the broad categories currently stored in the Device table to the
+ * labels used by the Devices navigation. The data exists, but most imported
+ * rows are labelled "AI Device / Hardware", so exact matching made tabs empty. */
+function getDeviceCategory(device: Pick<DeviceData, "category" | "name" | "description" | "formFactor" | "mainTask">): string {
+  const raw = (device.category || "").toLowerCase();
+  const text = `${device.name} ${device.description} ${device.formFactor || ""} ${device.mainTask || ""}`.toLowerCase();
+  const has = (pattern: RegExp) => pattern.test(text);
+
+  if (raw.includes("edge ai")) return "Edge AI";
+  if (raw.includes("smart glasses") || raw.includes("spatial") || raw.includes("ar / vr")) return "AR/VR";
+  if (raw.includes("pocket assistant") || raw.includes("wearable") || raw.includes("smartwatch")) return "Wearables";
+  if (raw.includes("voice recorder") || raw.includes("microphone")) return "Microphones";
+  if (raw.includes("tablet")) return "Smartphones";
+  if (raw.includes("development board")) return "Development Boards";
+  if (raw.includes("robotics")) return "Robotics Hardware";
+  if (raw.includes("medical")) return "Medical";
+
+  if (has(/iphone|samsung galaxy|pixel\b|smartphone|oneplus|xiaomi|oppo|vivo|huawei|nexus|windows phone/)) return "Smartphones";
+  if (has(/laptop|notebook|macbook|thinkpad|chromebook|copilot\+ pc|desktop|workstation/)) return "AI PCs";
+  if (has(/smart home|smart speaker|smart display|homepod|amazon echo|google nest|nest thermostat|doorbell|smart lock/)) return "Smart Home";
+  if (has(/smartwatch|smart ring|fitness tracker|wearable|watch\b/)) return "Wearables";
+  if (has(/camera|webcam|security cam/)) return "AI Cameras";
+  if (has(/headphone|earbud|speaker|audio/)) return "Audio";
+  if (has(/virtual reality|augmented reality|mixed reality|smart glasses|vision pro|quest|hololens/)) return "AR/VR";
+  if (has(/jetson|edge ai|edge computing|\bnpu\b/)) return "Edge AI";
+  if (has(/robot|drone/)) return "Robotics Hardware";
+  if (has(/medical|healthcare|clinical|glucose|ecg/)) return "Medical";
+  if (has(/raspberry pi|arduino|development board|dev kit|microcontroller/)) return "Development Boards";
+  if (has(/sensor|lidar|radar/)) return "Smart Sensors";
+  if (has(/automotive|vehicle|\bcar\b|dash cam/)) return "Automotive AI Devices";
+  if (has(/microphone|\bmic\b|voice recorder/)) return "Microphones";
+  if (has(/farm|agri|agriculture/)) return "Farming";
+
+  return "Development Boards";
+}
+
+const EXTRA_FALLBACK_DEVICES: DeviceData[] = [
+  {
+    id: "fallback-copilot-plus-pc", slug: "microsoft-copilot-plus-pc", name: "Microsoft Copilot+ PC", manufacturer: "Microsoft", manufacturerSlug: "microsoft", category: "AI PCs", availability: "Available", price: "$999.00", year: "2024", month: "Jun, 2024", description: "NPU-powered Windows laptop built for on-device AI features.", imageUrl: "", manufacturerLogoUrl: "", mainTask: "Productivity", mainTaskColor: "#6E56CF", formFactor: "Laptop", country: "US", ram: null, aiFeatures: [], primaryUseCases: [], additionalInfo: null, buyUrl: null,
+  },
+  {
+    id: "fallback-macbook-pro-m4", slug: "apple-macbook-pro-m4", name: "Apple MacBook Pro M4", manufacturer: "Apple", manufacturerSlug: "apple", category: "AI PCs", availability: "Available", price: "$1,999.00", year: "2024", month: "Nov, 2024", description: "M4-powered MacBook with Apple Intelligence and on-device AI.", imageUrl: "", manufacturerLogoUrl: "", mainTask: "Productivity", mainTaskColor: "#6E56CF", formFactor: "Laptop", country: "US", ram: null, aiFeatures: [], primaryUseCases: [], additionalInfo: null, buyUrl: null,
+  },
+  {
+    id: "fallback-asus-vivobook-s15-ai", slug: "asus-vivobook-s15-ai", name: "ASUS Vivobook S15 AI", manufacturer: "ASUS", manufacturerSlug: "asus", category: "AI PCs", availability: "Available", price: "$1,299.00", year: "2024", month: "May, 2024", description: "Snapdragon X Elite laptop with a dedicated AI NPU.", imageUrl: "", manufacturerLogoUrl: "", mainTask: "Productivity", mainTaskColor: "#6E56CF", formFactor: "Laptop", country: "TW", ram: null, aiFeatures: [], primaryUseCases: [], additionalInfo: null, buyUrl: null,
+  },
+  {
+    id: "fallback-apple-homepod-2", slug: "apple-homepod-2nd-gen", name: "Apple HomePod (2nd Gen)", manufacturer: "Apple", manufacturerSlug: "apple", category: "Smart Home", availability: "Available", price: "$299.00", year: "2023", month: "Jan, 2023", description: "Smart speaker with Siri, spatial audio, and HomeKit support.", imageUrl: "", manufacturerLogoUrl: "", mainTask: "Smart Home", mainTaskColor: "#6E56CF", formFactor: "Smart Speaker", country: "US", ram: null, aiFeatures: [], primaryUseCases: [], additionalInfo: null, buyUrl: null,
+  },
+];
+
+function addFallbacksForEmptyCategories(devices: DeviceData[]): DeviceData[] {
+  const result = [...devices];
+  const availableCategories = new Set(result.map(getDeviceCategory));
+  const fallbackRows = [...DEVICES_DATA, ...EXTRA_FALLBACK_DEVICES];
+
+  for (const category of DEVICE_SUBCATEGORIES) {
+    if (availableCategories.has(category)) continue;
+    const rows = fallbackRows.filter((device) => getDeviceCategory(device) === category).slice(0, 3);
+    result.push(...rows);
+  }
+  return result;
+}
+
 function mergeWithDummy(apiDevices: Device[]): DeviceData[] {
-  if (!apiDevices || apiDevices.length === 0) return DEVICES_DATA;
-  return apiDevices.map((api) => {
+  if (!apiDevices || apiDevices.length === 0) {
+    return addFallbacksForEmptyCategories(
+      DEVICES_DATA.map((device) => ({ ...device, category: getDeviceCategory(device) }))
+    );
+  }
+  const mappedDevices = apiDevices.map((api) => {
     const dummy = DEVICES_DATA.find((d) => d.id === api.id || d.slug === api.slug);
     const mainTask = api.mainTask || dummy?.mainTask || "Device";
     const slug = dummy?.slug || api.slug || api.id;
@@ -81,7 +149,13 @@ function mergeWithDummy(apiDevices: Device[]): DeviceData[] {
       name: api.name,
       manufacturer,
       manufacturerSlug: dummy?.manufacturerSlug || "",
-      category: api.category || dummy?.category || "Other",
+      category: getDeviceCategory({
+        category: api.category || dummy?.category || "",
+        name: api.name,
+        description: api.description || dummy?.description || "",
+        formFactor: api.formFactor || dummy?.formFactor || null,
+        mainTask,
+      }),
       availability: api.availability || dummy?.availability || "Announced",
       price: api.price || dummy?.price || null,
       year: api.year || dummy?.year || "—",
@@ -100,6 +174,7 @@ function mergeWithDummy(apiDevices: Device[]): DeviceData[] {
       buyUrl: api.buyUrl || dummy?.buyUrl || null,
     } as DeviceData;
   });
+  return addFallbacksForEmptyCategories(mappedDevices);
 }
 
 type SortKey = "release" | "name" | "availability" | "price";
@@ -180,11 +255,20 @@ const DEVICE_TO_SLUG: Record<string, string> = {
   "Farming": "farming",
 };
 
+function resolveDeviceCategory(value?: string | null): string {
+  if (!value) return ALL_CATEGORIES;
+  const normalized = value.toLowerCase().trim();
+  return DEVICE_SLUGS[normalized]
+    || DEVICE_SUBCATEGORIES.find((category) => category.toLowerCase() === normalized)
+    || ALL_CATEGORIES;
+}
+
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 export function DevicesClient({ defaultCategory }: { defaultCategory?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const requestedCategory = searchParams.get("category") ?? defaultCategory;
 
   const { data: fetchedDevices, isLoading, isPlaceholderData } = useQuery<DeviceData[]>({
     queryKey: ["devices"],
@@ -209,12 +293,7 @@ export function DevicesClient({ defaultCategory }: { defaultCategory?: string })
 
   const [nameSearch, setNameSearch] = useState("");
   const [nameInput, setNameInput] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(() => {
-    if (defaultCategory && DEVICE_SLUGS[defaultCategory]) {
-      return DEVICE_SLUGS[defaultCategory];
-    }
-    return ALL_CATEGORIES;
-  });
+  const [selectedCategory, setSelectedCategory] = useState(() => resolveDeviceCategory(requestedCategory));
 
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -222,17 +301,8 @@ export function DevicesClient({ defaultCategory }: { defaultCategory?: string })
 
 
 useEffect(() => {
-  if (defaultCategory) {
-    const normalized = defaultCategory.toLowerCase().trim();
-    // Resolve slug to display name (e.g., "microphones" -> "Microphones")
-    const matchedCategory = 
-      DEVICE_SLUGS[normalized] || 
-      DEVICE_SUBCATEGORIES.find((c) => c.toLowerCase() === normalized) || 
-      defaultCategory;
-
-    setSelectedCategory(matchedCategory);
-  }
-}, [defaultCategory]);
+  setSelectedCategory(resolveDeviceCategory(requestedCategory));
+}, [requestedCategory]);
   const [selectedAvailability, setSelectedAvailability] = useState("All");
   const rawSort = searchParams.get("sort") ?? "";
   const [sortKey, setSortKey] = useState<SortKey | null>(() => {
