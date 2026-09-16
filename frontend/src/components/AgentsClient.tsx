@@ -17,6 +17,19 @@ type AgentsResponse = {
   totalPages: number;
 };
 
+const FRONTEND_CATEGORIES: AgentCategory[] = [
+  { name: "Frontier LLM", slug: "frontier-llm" },
+  { name: "Vision LLM", slug: "vision-llm" },
+  { name: "Coding", slug: "coding" },
+  { name: "Embedding", slug: "embedding" },
+  { name: "Video Generation", slug: "video-generation" },
+  { name: "OCR / Document", slug: "ocr-document" },
+  { name: "Image Generation", slug: "image-generation" },
+  { name: "Speech", slug: "speech" },
+  { name: "Speech / Translation", slug: "speech-translation" },
+  { name: "Audio / Music", slug: "audio-music" },
+];
+
 export function AgentsClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -93,15 +106,16 @@ export function AgentsClient() {
   const totalPages = data?.totalPages || 1;
 
   const categories = useMemo(
-    () => [
-      {
-        name: "All",
-        slug: "",
-      },
-      ...(Array.isArray(categoriesData) ? categoriesData : []),
-    ],
-    [categoriesData]
-  );
+  () => [
+    {
+      name: "All",
+      slug: "",
+    },
+    ...(Array.isArray(categoriesData) ? categoriesData : []),
+    ...FRONTEND_CATEGORIES,
+  ],
+  [categoriesData]
+);
 
   const handleCategoryChange = (slug: string) => {
     const params = new URLSearchParams(searchParams.toString());
