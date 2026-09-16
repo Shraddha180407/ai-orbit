@@ -23,6 +23,7 @@ const PAGE_SIZE = 100;
 
 function AvailabilityBadge({ status }: { status: string }) {
   const s = status.toLowerCase();
+  const label = status.replace(/_/g, " ");
   let colorClass = "border-[#232326] bg-[#18181C] text-[#A1A1AA]";
   if (s.includes("available") || s.includes("commercial")) {
     colorClass = "border-emerald-500/40 bg-emerald-500/10 text-emerald-400";
@@ -35,7 +36,7 @@ function AvailabilityBadge({ status }: { status: string }) {
   }
   return (
     <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[9.5px] font-semibold tracking-wide ${colorClass}`}>
-      {status}
+      {label}
     </span>
   );
 }
