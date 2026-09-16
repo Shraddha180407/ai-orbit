@@ -22,9 +22,10 @@ import PlayCircle from "lucide-react/dist/esm/icons/play-circle";
 import GitBranch from "lucide-react/dist/esm/icons/git-branch";
 import Plug from "lucide-react/dist/esm/icons/plug";
 import Mail from "lucide-react/dist/esm/icons/mail";
+import BriefcaseBusiness from "lucide-react/dist/esm/icons/briefcase-business";
 
 const MOBILE_NAV_LINKS = [
-  { label: "Business AI", href: "/tools?category=business" },
+  { label: "Business AI", href: "/business" },
   { label: "Leaderboard", href: "/leaderboard", highlight: true },
   { label: "Resources", href: "/tools" },
   { label: "Newsletter", href: "/#newsletter" },
@@ -32,6 +33,12 @@ const MOBILE_NAV_LINKS = [
 
 const DIRECTORY_LINKS = [
   { name: "AI Tools", href: "/tools", icon: Wrench, color: "#FFC53D" },
+  {
+    name: "Business AI",
+    href: "/business",
+    icon: BriefcaseBusiness,
+    color: "#A78BFA",
+  },
   { name: "AI Agents", href: "/agents", icon: Bot, color: "#A855F7" },
   { name: "AI Models", href: "/models", icon: Cpu, color: "#A78BFA" },
   {
@@ -86,7 +93,7 @@ export function Header() {
       {/* Center: Nav links, centered against the full page width on lg+ */}
       <nav className="hidden lg:flex items-center gap-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-auto">
         <Link
-          href="/tools?category=business"
+          href="/business"
           className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center cursor-pointer relative z-50"
         >
           Business AI

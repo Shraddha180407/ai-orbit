@@ -1,6 +1,25 @@
-import { render, screen, waitFor, act } from "@testing-library/react";
+import type { ReactElement } from "react";
+import {
+  render as testingLibraryRender,
+  screen,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import { vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToolsClient } from "@/components/tools-client";
+
+function render(ui: ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+    },
+  });
+
+  return testingLibraryRender(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+  );
+}
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...props }: any) => (
@@ -73,6 +92,55 @@ describe("ToolsClient", () => {
     });
     await waitFor(() => {
       expect(screen.getByText("Test Tool")).toBeInTheDocument();
+    });
+  });
+
+  it("uses the business endpoint and renders business categories", async () => {
+    await act(async () => {
+      render(<ToolsClient defaultMode="business" />);
+    });
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/tools/category/business"),
+      );
+      expect(screen.getByText("Marketing & Growth")).toBeInTheDocument();
+      expect(screen.getByText("Finance & Accounting")).toBeInTheDocument();
+    });
+  });
+
+  it("filters business tools by the selected frontend category", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          ...mockToolsResponse,
+          tools: [
+            {
+              ...mockToolsResponse.tools[0],
+              id: "sales-tool",
+              slug: "sales-tool",
+              name: "Sales Assistant",
+              description: "An AI CRM that helps sales teams manage leads.",
+            },
+            {
+              ...mockToolsResponse.tools[0],
+              id: "legal-tool",
+              slug: "legal-tool",
+              name: "Contract Reviewer",
+              description: "Reviews legal contracts for compliance risks.",
+            },
+          ],
+        }),
+    } as Response);
+
+    await act(async () => {
+      render(<ToolsClient defaultMode="business" defaultCategory="sales" />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Sales Assistant")).toBeInTheDocument();
+      expect(screen.queryByText("Contract Reviewer")).not.toBeInTheDocument();
     });
   });
 

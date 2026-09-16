@@ -83,4 +83,18 @@ describe("CategoryMenu", () => {
       "/tools?category=Agents"
     );
   });
+
+  it("links business items to dedicated business routes", () => {
+    render(<CategoryMenu categoryCounts={categoryCounts} />);
+    fireEvent.mouseEnter(screen.getByText("Business"));
+
+    expect(screen.getByText("Marketing").closest("a")).toHaveAttribute(
+      "href",
+      "/business/marketing",
+    );
+    expect(screen.getByText("Browse business tools")).toHaveAttribute(
+      "href",
+      "/business",
+    );
+  });
 });
