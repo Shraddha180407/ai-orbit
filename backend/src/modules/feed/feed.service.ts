@@ -3,7 +3,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 export class FeedService {
   constructor(private prisma: PrismaClient) {}
 
-  async getUnifiedFeed(filters: string[], page: number, pageSize: number = 50) {
+  async getUnifiedFeed(filters: string[], page: number, pageSize: number = 50, sort: string = 'newest', pricing?: string) {
     if (!filters || filters.length === 0 || filters.includes('none')) {
       return { items: [], page, pageSize, total: 0, totalPages: 0, hasNextPage: false, timeframe: 'all' };
     }
@@ -17,100 +17,137 @@ export class FeedService {
     // All dates are normalized to DateTime so PostgreSQL can sort them perfectly.
     
     if (filters.includes('tools')) {
+      // Include sort-signal columns so the ORDER BY can use them for trending/popular/top-rated.
+      // Non-tool entity sub-queries use 0 for these columns so the UNION stays valid.
+      const pricingCondition = pricing === 'FREE'
+        ? Prisma.sql`AND ("pricingModel" = 'FREE' OR "pricingModel" = 'free' OR "pricingModel" = 'Free')`
+        : Prisma.sql`AND 1=1`;
+
       queries.push(Prisma.sql`
-        SELECT id, 
-          COALESCE("releaseDate", "createdAt") as sort_date, 
+        SELECT id,
+          COALESCE("releaseDate", "createdAt") as sort_date,
           'TOOL' as "entityType",
-          (CASE WHEN "releaseDate" IS NOT NULL THEN 2 ELSE 1 END)::int as has_real_date
-        FROM "Tool" 
+          (CASE WHEN "releaseDate" IS NOT NULL THEN 2 ELSE 1 END)::int as has_real_date,
+          COALESCE("upvoteCount", 0)::int   as sort_score_popular,
+          COALESCE("avgRating",   0)::float as sort_score_rating,
+          (CASE WHEN "isTrending" = true THEN 1 ELSE 0 END)::int as sort_score_trending,
+          COALESCE("createdAt", NOW()) as sort_created_at
+        FROM "Tool"
         WHERE "logoUrl" IS NOT NULL AND "logoUrl" != ''
+        ${pricingCondition}
       `);
     }
     if (filters.includes('robots')) {
       queries.push(Prisma.sql`
-        SELECT id, 
-          (CASE 
+        SELECT id,
+          (CASE
             WHEN "releaseDate" IS NULL OR "releaseDate" = '' OR "releaseDate" = 'Unknown' THEN "createdAt"
             WHEN "releaseDate" ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN "releaseDate"::timestamp
             WHEN "releaseDate" ~ '^[0-9]{4}-[0-9]{2}' THEN ("releaseDate" || '-01')::timestamp
             WHEN "releaseDate" ~ '^[0-9]{4}$' THEN ("releaseDate" || '-01-01')::timestamp
-            WHEN "releaseDate" ~* '^[a-zA-Z]+ [0-9]{4}' THEN to_date("releaseDate", 'Month YYYY')::timestamp
+            WHEN "releaseDate" ~* '^[a-zA-Z]{3,}\s+[0-9]{4}' THEN to_date("releaseDate", 'TMMon YYYY')::timestamp
+            WHEN "releaseDate" ~* '^[0-9]{1,2}\s+[a-zA-Z]{3,}\s+[0-9]{4}$' THEN to_date("releaseDate", 'DD TMMonth YYYY')::timestamp
             ELSE "createdAt"
-          END) as sort_date, 
+          END) as sort_date,
           'ROBOT' as "entityType",
-          (CASE WHEN "releaseDate" IS NOT NULL AND "releaseDate" != '' AND "releaseDate" != 'Unknown' THEN 2 ELSE 1 END)::int as has_real_date
-        FROM "Robot" 
+          (CASE WHEN "releaseDate" ~ '^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$'
+              OR "releaseDate" ~* '^[a-zA-Z]{3,}\s+[0-9]{4}$'
+              OR "releaseDate" ~* '^[0-9]{1,2}\s+[a-zA-Z]{3,}\s+[0-9]{4}$'
+            THEN 2 ELSE 1 END)::int as has_real_date,
+          0::int as sort_score_popular, 0::float as sort_score_rating, 0::int as sort_score_trending,
+          COALESCE("createdAt", NOW()) as sort_created_at
+        FROM "Robot"
         WHERE ("logoUrl" IS NOT NULL AND "logoUrl" != '') OR ("thumbnailUrl" IS NOT NULL AND "thumbnailUrl" != '')
       `);
     }
     if (filters.includes('news')) {
       queries.push(Prisma.sql`
-        SELECT id, 
-          "publishedAt" as sort_date, 
+        SELECT id,
+          "publishedAt" as sort_date,
           'NEWS' as "entityType",
-          2::int as has_real_date
+          2::int as has_real_date,
+          0::int as sort_score_popular, 0::float as sort_score_rating, 0::int as sort_score_trending,
+          COALESCE("publishedAt", NOW()) as sort_created_at
         FROM "News"
       `);
     }
     if (filters.includes('models')) {
       queries.push(Prisma.sql`
-        SELECT id, 
-          (CASE 
+        SELECT id,
+          (CASE
             WHEN "releaseDate" IS NULL OR "releaseDate" = '' OR "releaseDate" = 'Unknown' THEN "createdAt"
             WHEN "releaseDate" ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN "releaseDate"::timestamp
             WHEN "releaseDate" ~ '^[0-9]{4}-[0-9]{2}' THEN ("releaseDate" || '-01')::timestamp
             WHEN "releaseDate" ~ '^[0-9]{4}$' THEN ("releaseDate" || '-01-01')::timestamp
-            WHEN "releaseDate" ~* '^[a-zA-Z]+ [0-9]{4}' THEN to_date("releaseDate", 'Month YYYY')::timestamp
+            WHEN "releaseDate" ~* '^[a-zA-Z]{3,}\s+[0-9]{4}' THEN to_date("releaseDate", 'TMMon YYYY')::timestamp
+            WHEN "releaseDate" ~* '^[0-9]{1,2}\s+[a-zA-Z]{3,}\s+[0-9]{4}$' THEN to_date("releaseDate", 'DD TMMonth YYYY')::timestamp
             ELSE "createdAt"
-          END) as sort_date, 
+          END) as sort_date,
           'MODEL' as "entityType",
-          (CASE WHEN "releaseDate" IS NOT NULL AND "releaseDate" != '' AND "releaseDate" != 'Unknown' THEN 2 ELSE 1 END)::int as has_real_date
+          (CASE WHEN "releaseDate" ~ '^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$'
+              OR "releaseDate" ~* '^[a-zA-Z]{3,}\s+[0-9]{4}$'
+              OR "releaseDate" ~* '^[0-9]{1,2}\s+[a-zA-Z]{3,}\s+[0-9]{4}$'
+            THEN 2 ELSE 1 END)::int as has_real_date,
+          0::int as sort_score_popular, 0::float as sort_score_rating, 0::int as sort_score_trending,
+          COALESCE("createdAt", NOW()) as sort_created_at
         FROM "AIModel"
       `);
     }
     if (filters.includes('videos')) {
       queries.push(Prisma.sql`
-        SELECT id, 
-          (CASE 
+        SELECT id,
+          (CASE
             WHEN "publishedAt" IS NULL OR "publishedAt" = '' THEN "createdAt"
             WHEN "publishedAt" ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN "publishedAt"::timestamp
             WHEN "publishedAt" ~ '^[0-9]{4}-[0-9]{2}' THEN ("publishedAt" || '-01')::timestamp
             WHEN "publishedAt" ~ '^[0-9]{4}$' THEN ("publishedAt" || '-01-01')::timestamp
-            WHEN "publishedAt" ~* '^[a-zA-Z]+ [0-9]{4}' THEN to_date("publishedAt", 'Month YYYY')::timestamp
+            WHEN "publishedAt" ~* '^[a-zA-Z]{3,}\s+[0-9]{4}' THEN to_date("publishedAt", 'TMMon YYYY')::timestamp
+            WHEN "publishedAt" ~* '^[0-9]{1,2}\s+[a-zA-Z]{3,}\s+[0-9]{4}$' THEN to_date("publishedAt", 'DD TMMonth YYYY')::timestamp
             ELSE "createdAt"
-          END) as sort_date, 
+          END) as sort_date,
           'VIDEO' as "entityType",
-          (CASE WHEN "publishedAt" IS NOT NULL AND "publishedAt" != '' THEN 2 ELSE 1 END)::int as has_real_date
-        FROM "Video" 
+          (CASE WHEN "publishedAt" ~ '^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$'
+              OR "publishedAt" ~* '^[a-zA-Z]{3,}\s+[0-9]{4}$'
+              OR "publishedAt" ~* '^[0-9]{1,2}\s+[a-zA-Z]{3,}\s+[0-9]{4}$'
+            THEN 2 ELSE 1 END)::int as has_real_date,
+          0::int as sort_score_popular, 0::float as sort_score_rating, 0::int as sort_score_trending,
+          COALESCE("createdAt", NOW()) as sort_created_at
+        FROM "Video"
         WHERE "thumbnail" IS NOT NULL AND "thumbnail" != ''
       `);
     }
     if (filters.includes('repositories')) {
       queries.push(Prisma.sql`
-        SELECT id, 
-          COALESCE("githubCreatedAt", "syncedAt", "createdAt") as sort_date, 
+        SELECT id,
+          COALESCE("githubCreatedAt", "syncedAt", "createdAt") as sort_date,
           'REPOSITORY' as "entityType",
-          (CASE WHEN "githubCreatedAt" IS NOT NULL THEN 2 ELSE 1 END)::int as has_real_date
+          (CASE WHEN "githubCreatedAt" IS NOT NULL THEN 2 ELSE 1 END)::int as has_real_date,
+          0::int as sort_score_popular, 0::float as sort_score_rating, 0::int as sort_score_trending,
+          COALESCE("createdAt", NOW()) as sort_created_at
         FROM "Repository"
       `);
     }
     if (filters.includes('companies')) {
       queries.push(Prisma.sql`
-        SELECT id, 
-          (CASE WHEN "foundedYear" IS NOT NULL THEN (("foundedYear"::text || '-01-01')::timestamp) ELSE "createdAt" END) as sort_date, 
+        SELECT id,
+          (CASE WHEN "foundedYear" IS NOT NULL THEN (("foundedYear"::text || '-01-01')::timestamp) ELSE "createdAt" END) as sort_date,
           'COMPANY' as "entityType",
-          (CASE WHEN "foundedYear" IS NOT NULL THEN 2 ELSE 1 END)::int as has_real_date
-        FROM "Company" 
+          (CASE WHEN "foundedYear" IS NOT NULL THEN 2 ELSE 1 END)::int as has_real_date,
+          0::int as sort_score_popular, 0::float as sort_score_rating, 0::int as sort_score_trending,
+          COALESCE("createdAt", NOW()) as sort_created_at
+        FROM "Company"
         WHERE "logoUrl" IS NOT NULL AND "logoUrl" != ''
       `);
     }
     if (filters.includes('devices')) {
       queries.push(Prisma.sql`
-        SELECT id, 
-          (CASE WHEN year IS NOT NULL AND year ~ '^[0-9]{4}' THEN (year || '-01-01')::timestamp ELSE "createdAt" END) as sort_date, 
+        SELECT id,
+          (CASE WHEN year IS NOT NULL AND year ~ '^[0-9]{4}' THEN (year || '-01-01')::timestamp ELSE "createdAt" END) as sort_date,
           'DEVICE' as "entityType",
-          (CASE WHEN year IS NOT NULL AND year != '' THEN 2 ELSE 1 END)::int as has_real_date
-        FROM "Device" 
+          (CASE WHEN year IS NOT NULL AND year != '' THEN 2 ELSE 1 END)::int as has_real_date,
+          0::int as sort_score_popular, 0::float as sort_score_rating, 0::int as sort_score_trending,
+          COALESCE("createdAt", NOW()) as sort_created_at
+        FROM "Device"
         WHERE "imageUrl" IS NOT NULL AND "imageUrl" != ''
       `);
     }
@@ -118,7 +155,20 @@ export class FeedService {
     if (queries.length === 0) return { items: [], page, pageSize, total: 0, totalPages: 0, hasNextPage: false, timeframe: 'all' };
 
     const unionQuery = Prisma.join(queries, ' UNION ALL ');
-    
+
+    // Build ORDER BY based on the sort param.
+    // trending/popular/top-rated only really apply to tools (other entities use 0 for those columns),
+    // so mixed feeds naturally sort non-tools after tools on those signals.
+    const orderBy =
+      sort === 'trending'  ? Prisma.sql`sort_score_trending DESC, sort_date DESC` :
+      sort === 'popular'   ? Prisma.sql`sort_score_popular  DESC, sort_date DESC` :
+      sort === 'top-rated' ? Prisma.sql`sort_score_rating   DESC, sort_date DESC` :
+      sort === 'oldest'    ? Prisma.sql`sort_created_at ASC`  :
+      // In the "New" feed, prioritize entries that have a real release or
+      // publish date. They are then ordered newest first; undated tools stay
+      // below them and retain a stable added-date ordering.
+      /* newest / default */  Prisma.sql`has_real_date DESC, sort_date DESC, sort_created_at DESC`;
+
     const countQuery = Prisma.sql`
       WITH UnifiedFeed AS (${unionQuery})
       SELECT COUNT(*) as total FROM UnifiedFeed WHERE sort_date <= NOW()
@@ -129,7 +179,7 @@ export class FeedService {
       SELECT id, "entityType", sort_date as "createdAt"
       FROM UnifiedFeed
       WHERE sort_date <= NOW()
-      ORDER BY has_real_date DESC, sort_date DESC
+      ORDER BY ${orderBy}
       LIMIT ${pageSize} OFFSET ${offset}
     `;
 
@@ -164,7 +214,16 @@ export class FeedService {
         
         deviceIds.length > 0 ? this.prisma.device.findMany({ where: { id: { in: deviceIds } } }) : Promise.resolve([]),
         robotIds.length > 0 ? this.prisma.robot.findMany({ where: { id: { in: robotIds } } }) : Promise.resolve([]),
-        newsIds.length > 0 ? (this.prisma as any).news.findMany({ where: { id: { in: newsIds } }, include: { publisher: true } }) : Promise.resolve([]),
+        // Some local databases predate the News company relation. Use only
+        // columns common to both schemas so dated news can still appear.
+        newsIds.length > 0
+          ? (this.prisma as any).news.findMany({ where: { id: { in: newsIds } }, include: { publisher: true } })
+              .catch(() => this.prisma.$queryRaw<any[]>(Prisma.sql`
+                SELECT id, slug, title, dek, "aiSummary", category, "publishedAt", "createdAt"
+                FROM "News"
+                WHERE id IN (${Prisma.join(newsIds)})
+              `))
+          : Promise.resolve([]),
         modelIds.length > 0 ? (this.prisma as any).aIModel.findMany({ where: { id: { in: modelIds } }, include: { provider: true } }) : Promise.resolve([]),
         companyIds.length > 0 ? this.prisma.company.findMany({ where: { id: { in: companyIds } } }) : Promise.resolve([]),
         videoIds.length > 0 ? (this.prisma as any).video.findMany({ where: { id: { in: videoIds } } }) : Promise.resolve([]),
