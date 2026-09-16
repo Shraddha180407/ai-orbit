@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type MenuItem = { label: string; category: string; icon: typeof Bot };
+type MenuItem = { label: string; category: string; icon: typeof Bot; href?: string };
 type Menu = { key: string; emoji: string; label: string; accent: string; items: MenuItem[] };
 
 const MENUS: Menu[] = [
@@ -33,16 +33,16 @@ const MENUS: Menu[] = [
     key: "business", emoji: "💼", label: "Business",
     accent: "linear-gradient(90deg, var(--collections-gold), #FB923C)",
     items: [
-      { label: "Marketing", category: "Marketing", icon: Megaphone },
-      { label: "Sales", category: "Sales", icon: TrendingUp },
-      { label: "HR", category: "HR", icon: Users },
-      { label: "Finance", category: "Finance", icon: Wallet },
-      { label: "Legal", category: "Legal", icon: Scale },
-      { label: "Customer Service", category: "Customer Service", icon: Headset },
-      { label: "Recruiting", category: "Recruiting", icon: UserPlus },
-      { label: "Email", category: "Email", icon: Mail },
-      { label: "Scheduling", category: "Scheduling", icon: CalendarClock },
-      { label: "E-commerce", category: "E-commerce", icon: ShoppingCart },
+      { label: "Marketing", category: "Marketing", icon: Megaphone, href: "/business/marketing" },
+      { label: "Sales", category: "Sales", icon: TrendingUp, href: "/business/sales" },
+      { label: "HR", category: "HR", icon: Users, href: "/business/human-resources" },
+      { label: "Finance", category: "Finance", icon: Wallet, href: "/business/finance-accounting" },
+      { label: "Legal", category: "Legal", icon: Scale, href: "/business/legal-compliance" },
+      { label: "Customer Service", category: "Customer Service", icon: Headset, href: "/business/customer-support" },
+      { label: "Recruiting", category: "Recruiting", icon: UserPlus, href: "/business/recruiting" },
+      { label: "Email", category: "Email", icon: Mail, href: "/business/email" },
+      { label: "Scheduling", category: "Scheduling", icon: CalendarClock, href: "/business/scheduling" },
+      { label: "E-commerce", category: "E-commerce", icon: ShoppingCart, href: "/business/ecommerce" },
     ],
   },
   {
@@ -133,7 +133,7 @@ export function CategoryMenu({ categoryCounts }: { categoryCounts: Record<string
                     return (
                       <Link
                         key={item.label}
-                        href={`/tools?category=${encodeURIComponent(item.category)}`}
+                        href={item.href ?? `/tools?category=${encodeURIComponent(item.category)}`}
                         onClick={() => setOpenKey(null)}
                         className="group/item flex items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-surface-raised"
                       >
@@ -154,11 +154,11 @@ export function CategoryMenu({ categoryCounts }: { categoryCounts: Record<string
                 </div>
 
                 <Link
-                  href="/tools"
+                  href={menu.key === "business" ? "/business" : "/tools"}
                   onClick={() => setOpenKey(null)}
                   className="flex items-center justify-between border-t border-border px-4 py-3 text-xs font-medium text-foreground-muted transition-colors hover:text-accent"
                 >
-                  Browse all tools
+                  {menu.key === "business" ? "Browse business tools" : "Browse all tools"}
                   <ArrowRight size={12} />
                 </Link>
               </div>
