@@ -109,85 +109,7 @@ export default function LearnPage() {
       <div className="fixed top-1/3 -right-20 w-[550px] h-[550px] bg-[#00E5FF]/8 blur-[160px] pointer-events-none -z-10 animate-mesh" style={{ animationDelay: '-6s' }}></div>
       <div className="fixed bottom-10 -left-20 w-[600px] h-[600px] bg-[#6E56CF]/8 blur-[170px] pointer-events-none -z-10 animate-mesh" style={{ animationDelay: '-11s' }}></div>
 
-      {/* 1. TOP MINIMALIST EDITORIAL SUB-HEADER */}
-      <div className="bg-[#020204]/90 backdrop-blur-xl border-b border-[#161622]/80 px-6 py-3.5 transition-colors">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Monogram & Topology Telemetry */}
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white via-zinc-400 to-zinc-900 p-[1px] flex items-center justify-center">
-                <div className="w-full h-full bg-[#020204] rounded-full flex items-center justify-center relative">
-                  <span className="w-2 h-2 rounded-full bg-[#6E56CF] shadow-[0_0_12px_#6E56CF]"></span>
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="font-display text-sm font-black tracking-widest text-white uppercase">AI Orbit</span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#6E56CF]/20 border border-[#6E56CF]/40 text-[#C4B5FD] font-mono">TOPOLOGY v2</span>
-                </div>
-                <span className="text-[9px] font-mono tracking-widest text-[#8E8EA0] uppercase">Frontier Systems Graph</span>
-              </div>
-            </div>
-
-            <div className="hidden lg:flex items-center gap-5 text-xs font-mono text-[#A1A1B5] pl-6 border-l border-[#161622]">
-              <span className="flex items-center gap-1.5 text-emerald-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                Live Cluster: 99.98%
-              </span>
-              <span className="text-zinc-700">/</span>
-              <span className="text-[#8E8EA0]">4 Tracks</span>
-              <span className="text-zinc-700">/</span>
-              <span className="text-[#8E8EA0]">164 Frontier Units</span>
-            </div>
-          </div>
-
-          {/* Right Profile Telemetry Pill & Matrix */}
-          <div className="flex items-center gap-3">
-            {/* 5-Day Streak Pill */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-xs font-mono text-amber-400 hover:bg-amber-500/20 transition-all cursor-default select-none shadow-[0_0_12px_rgba(245,166,35,0.15)]">
-              <span className="animate-bounce text-sm">🔥</span>
-              <span className="font-semibold tracking-wide">5-day streak</span>
-            </div>
-
-            {/* Concept Matrix Button */}
-            <button 
-              onClick={() => setIsGlossaryModalOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#101017] hover:bg-[#13131C] border border-[#161622] hover:border-[#00E5FF]/50 text-xs text-[#A1A1B5] hover:text-white font-mono transition-all hover:shadow-[0_0_14px_rgba(0,229,255,0.18)] active:scale-95 cursor-pointer"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF]"></span>
-              <span>Matrix</span>
-            </button>
-
-            {/* Profile Progress Radial */}
-            <a 
-              href="#continue-learning"
-              onClick={(e) => {
-                e.preventDefault();
-                scrollToSection('continue-learning');
-              }}
-              className="flex items-center gap-2 pl-2 pr-3.5 py-1 rounded-full bg-[#101017] hover:bg-zinc-900 border border-[#161622] hover:border-[#6E56CF]/60 text-xs font-mono transition-all group cursor-pointer"
-            >
-              <svg className="w-6 h-6 circle-progress" viewBox="0 0 36 36">
-                <path className="text-zinc-800" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-                <path 
-                  className="text-[#6E56CF]" 
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeDasharray={isCurrentLessonComplete ? "100, 100" : "72, 100"} 
-                  strokeLinecap="round" 
-                  strokeWidth="3" 
-                />
-              </svg>
-              <span className="text-zinc-200 group-hover:text-white font-medium">
-                {isCurrentLessonComplete ? '100%' : '72%'} <span className="hidden md:inline text-[#8E8EA0] font-normal">Mastery</span>
-              </span>
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. STICKY FLOATING SUB-NAVIGATION PILL BAR */}
+      {/* STICKY FLOATING SUB-NAVIGATION PILL BAR */}
       <div className="sticky top-[58px] z-40 py-2.5 px-4 pointer-events-none flex justify-center">
         <nav className="pointer-events-auto bg-[#09090D]/90 backdrop-blur-xl border border-[#202030] rounded-full px-2 py-1 flex items-center gap-1 shadow-2xl text-[11px] font-mono text-[#8E8EA0]">
           {[
@@ -215,15 +137,59 @@ export default function LearnPage() {
         </nav>
       </div>
 
-      {/* 3. HERO SECTION: HEADLINE & INTERACTIVE TOPOLOGY GRAPH */}
-      <section className="max-w-7xl mx-auto px-6 pt-10 pb-16 relative" id="overview">
+      {/* HERO SECTION: HEADLINE & INTERACTIVE TOPOLOGY GRAPH */}
+      <section className="max-w-7xl mx-auto px-6 pt-6 pb-16 relative" id="overview">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           {/* Left Column */}
           <div className="lg:col-span-7 space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#6E56CF]/15 border border-[#6E56CF]/30 text-xs font-mono text-[#C4B5FD]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] animate-pulse"></span>
-              <span>Knowledge Topology Architecture 2026</span>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#6E56CF]/15 border border-[#6E56CF]/30 text-xs font-mono text-[#C4B5FD]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] animate-pulse"></span>
+                <span>Knowledge Topology Architecture 2026</span>
+              </div>
+
+              {/* 5-Day Streak Pill */}
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-xs font-mono text-amber-400 select-none shadow-[0_0_12px_rgba(245,166,35,0.15)]">
+                <span className="text-sm">🔥</span>
+                <span className="font-semibold tracking-wide">5-day streak</span>
+              </div>
+
+              {/* Concept Matrix Button */}
+              <button 
+                onClick={() => setIsGlossaryModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#101017] hover:bg-[#13131C] border border-[#161622] hover:border-[#00E5FF]/50 text-xs text-[#A1A1B5] hover:text-white font-mono transition-all hover:shadow-[0_0_14px_rgba(0,229,255,0.18)] active:scale-95 cursor-pointer"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF]"></span>
+                <span>Matrix</span>
+              </button>
+
+              {/* Profile Progress Radial */}
+              <a 
+                href="#continue-learning"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection('continue-learning');
+                }}
+                className="flex items-center gap-2 pl-2 pr-3 py-0.5 rounded-full bg-[#101017] hover:bg-zinc-900 border border-[#161622] hover:border-[#6E56CF]/60 text-xs font-mono transition-all group cursor-pointer"
+              >
+                <svg className="w-5 h-5 circle-progress" viewBox="0 0 36 36">
+                  <path className="text-zinc-800" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                  <path 
+                    className="text-[#6E56CF]" 
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeDasharray={isCurrentLessonComplete ? "100, 100" : "72, 100"} 
+                    strokeLinecap="round" 
+                    strokeWidth="3" 
+                  />
+                </svg>
+                <span className="text-zinc-200 group-hover:text-white font-medium text-[11px]">
+                  {isCurrentLessonComplete ? '100%' : '72%'} <span className="text-[#8E8EA0] font-normal">Mastery</span>
+                </span>
+              </a>
             </div>
+
 
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-display font-black tracking-tight text-white leading-[1.03]">
               Learn AI by building <br />
