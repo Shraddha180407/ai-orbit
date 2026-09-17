@@ -108,109 +108,82 @@ export default function LearnPage() {
       <div className="fixed top-1/3 -right-20 w-[550px] h-[550px] bg-[#00E5FF]/8 blur-[160px] pointer-events-none -z-10 animate-mesh" style={{ animationDelay: '-6s' }}></div>
       <div className="fixed bottom-10 -left-20 w-[600px] h-[600px] bg-[#6E56CF]/8 blur-[170px] pointer-events-none -z-10 animate-mesh" style={{ animationDelay: '-11s' }}></div>
 
-      {/* 1. TOP MINIMALIST EDITORIAL NAV */}
-      <header className="sticky top-0 z-50 bg-[#020204]/90 backdrop-blur-xl border-b border-[#161622]/80 px-6 py-3.5 transition-colors">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Monogram & Brand */}
-          <div className="flex items-center gap-8">
-            <a className="flex items-center gap-2.5 group" href="#">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white via-zinc-400 to-zinc-900 p-[1px] flex items-center justify-center transition-transform group-hover:scale-105">
-                <div className="w-full h-full bg-[#020204] rounded-full flex items-center justify-center relative">
-                  <span className="w-2 h-2 rounded-full bg-[#6E56CF] group-hover:scale-125 group-hover:shadow-[0_0_12px_#6E56CF] transition-all"></span>
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="font-display text-sm font-black tracking-widest text-white uppercase">AI Orbit</span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#6E56CF]/20 border border-[#6E56CF]/40 text-[#C4B5FD] font-mono">TOPOLOGY v2</span>
-                </div>
-                <span className="text-[9px] font-mono tracking-widest text-[#8E8EA0] uppercase">Frontier Systems Graph</span>
-              </div>
-            </a>
-            <div className="hidden lg:flex items-center gap-5 text-xs font-mono text-[#A1A1B5] pl-6 border-l border-[#161622]">
-              <span className="flex items-center gap-1.5 text-emerald-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                Live Cluster: 99.98%
-              </span>
-              <span className="text-zinc-700">/</span>
-              <span className="text-[#8E8EA0]">4 Tracks</span>
-              <span className="text-zinc-700">/</span>
-              <span className="text-[#8E8EA0]">164 Frontier Units</span>
-            </div>
-          </div>
+      {/* STICKY SECOND HEADER: SUBNAV PILL TABS + TELEMETRY (STAYS AT TOP ON SCROLL) */}
+      <div className="sticky top-[48px] sm:top-[53px] z-40 bg-[#020204]/95 backdrop-blur-xl border-b border-[#161622] px-4 sm:px-6 py-2.5 transition-all">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          {/* Left: Streamlined Subnav Pill Tabs */}
+          <nav className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5">
+            {[
+              { id: 'overview', label: 'Overview' },
+              { id: 'continue-learning', label: 'My Learning' },
+              { id: 'learning-paths', label: 'Learning Paths' },
+              { id: 'recommended', label: 'Recommended' },
+              { id: 'featured-labs', label: 'Featured Labs' },
+            ].map((item) => {
+              const isActive = activeNav === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => scrollToSection(item.id)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-mono transition-all cursor-pointer whitespace-nowrap ${
+                    isActive 
+                      ? 'text-white bg-[#161622] border border-[#6E56CF]/60 shadow-[0_0_12px_rgba(110,86,207,0.3)] font-semibold' 
+                      : 'text-[#8E8EA0] hover:text-white hover:bg-white/5 border border-transparent'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
 
-          {/* Right Profile Telemetry Pill & Matrix */}
-          <div className="flex items-center gap-3">
-            {/* 5-Day Streak Pill */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-xs font-mono text-amber-400 hover:bg-amber-500/20 transition-all cursor-default select-none shadow-[0_0_12px_rgba(245,166,35,0.15)]">
-              <span className="animate-bounce text-sm">🔥</span>
-              <span className="font-semibold tracking-wide">5-day streak</span>
+          {/* Right: Only the Necessary Telemetry Controls */}
+          <div className="flex items-center gap-2.5 font-mono text-xs shrink-0 ml-auto">
+            {/* 🔥 5-day streak */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 select-none text-xs shadow-[0_0_10px_rgba(245,166,35,0.15)]">
+              <span>🔥</span>
+              <span className="font-bold">5-day streak</span>
             </div>
 
-            {/* Concept Matrix Button */}
+            {/* • Matrix drawer button */}
             <button 
               onClick={() => setIsGlossaryModalOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#101017] hover:bg-[#13131C] border border-[#161622] hover:border-[#00E5FF]/50 text-xs text-[#A1A1B5] hover:text-white font-mono transition-all hover:shadow-[0_0_14px_rgba(0,229,255,0.18)] active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#101017] hover:bg-[#14141E] border border-[#161622] hover:border-[#00E5FF]/50 text-xs text-zinc-300 hover:text-white transition-all cursor-pointer hover:shadow-[0_0_14px_rgba(0,229,255,0.18)] active:scale-95"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF]"></span>
               <span>Matrix</span>
             </button>
 
-            {/* Profile Progress Radial */}
+            {/* 72% Progress */}
             <a 
               href="#continue-learning"
               onClick={(e) => {
                 e.preventDefault();
                 scrollToSection('continue-learning');
               }}
-              className="flex items-center gap-2 pl-2 pr-3.5 py-1 rounded-full bg-[#101017] hover:bg-zinc-900 border border-[#161622] hover:border-[#6E56CF]/60 text-xs font-mono transition-all group cursor-pointer"
+              className="flex items-center gap-2 pl-2 pr-3.5 py-1.5 rounded-full bg-[#101017] border border-[#161622] hover:border-[#6E56CF] transition-all group cursor-pointer text-xs"
             >
-              <svg className="w-6 h-6 circle-progress" viewBox="0 0 36 36">
-                <path className="text-zinc-800" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-                <path 
-                  className="text-[#6E56CF]" 
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeDasharray={isCurrentLessonComplete ? "100, 100" : "72, 100"} 
-                  strokeLinecap="round" 
-                  strokeWidth="3" 
-                />
-              </svg>
+              <div className="relative w-4 h-4 flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" fill="none" r="14" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+                  <circle 
+                    cx="18" 
+                    cy="18" 
+                    fill="none" 
+                    r="14" 
+                    stroke="#6E56CF" 
+                    strokeDasharray="88" 
+                    strokeDashoffset={isCurrentLessonComplete ? "0" : "25"} 
+                    strokeWidth="3" 
+                  />
+                </svg>
+              </div>
               <span className="text-zinc-200 group-hover:text-white font-medium">
-                {isCurrentLessonComplete ? '100%' : '72%'} <span className="hidden md:inline text-[#8E8EA0] font-normal">Mastery</span>
+                {isCurrentLessonComplete ? '100%' : '72%'} <span className="text-[#8E8EA0] font-normal">Progress</span>
               </span>
             </a>
           </div>
         </div>
-      </header>
-
-      {/* 2. STICKY FLOATING SUB-NAVIGATION PILL BAR (INTERACTIVE SECTION INDICATOR) */}
-      <div className="sticky top-[61px] z-40 py-2.5 px-4 pointer-events-none flex justify-center">
-        <nav className="pointer-events-auto bg-[#09090D]/90 backdrop-blur-xl border border-[#202030] rounded-full px-2 py-1 flex items-center gap-1 shadow-2xl text-[11px] font-mono text-[#8E8EA0]">
-          {[
-            { id: 'overview', label: 'Overview' },
-            { id: 'continue-learning', label: 'Active Track' },
-            { id: 'learning-paths', label: 'Curriculum Graph' },
-            { id: 'recommended', label: 'Recommended' },
-            { id: 'featured-labs', label: 'Featured Labs' },
-          ].map((item) => {
-            const isActive = activeNav === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => scrollToSection(item.id)}
-                className={`subnav-link px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
-                  isActive 
-                    ? 'text-white bg-[#13131C] border border-[#161622]' 
-                    : 'hover:text-white hover:bg-[#101017]'
-                }`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
       </div>
 
       {/* 3. HERO SECTION: MASSIVE HEADLINE & INTERACTIVE KNOWLEDGE TOPOLOGY SVG */}
