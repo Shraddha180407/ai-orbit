@@ -109,10 +109,20 @@ const DIRECTORY_CARDS = [
   { name: "Creativity", href: "/creativity", description: "AI tools for art, design, writing, and creative work.", icon: Palette, color: "#E879F9" },
 ] as const;
 
+export function filterDirectoryNavCards<T extends { name: string }>(cards: readonly T[]) {
+  return cards.filter((card) => card.name !== "Business");
+}
+
 const DIRECTORY_CARD_BY_NAME: Record<string, (typeof DIRECTORY_CARDS)[number]> = Object.fromEntries(
   DIRECTORY_CARDS.map((c) => [c.name, c])
 );
-export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string } = {}) {
+export function GlobalHero({
+  searchAction = "/tools",
+  showSearch = true,
+}: {
+  searchAction?: string;
+  showSearch?: boolean;
+} = {}) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -514,13 +524,14 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
             The Home of Everything AI
           </h1>
 
-          <form
-            action={searchAction}
-            method="GET"
-            onSubmit={handleSubmit}
-            ref={searchContainerRef}
-            className="relative z-40 w-[92%] sm:w-full max-w-[520px] mx-auto mb-4 sm:mb-5 group"
-          >
+          {showSearch && (
+            <form
+              action={searchAction}
+              method="GET"
+              onSubmit={handleSubmit}
+              ref={searchContainerRef}
+              className="relative z-40 w-[92%] sm:w-full max-w-[520px] mx-auto mb-4 sm:mb-5 group"
+            >
             <div
               className="relative w-full rounded-xl border border-[#232326]/70 bg-[#111113] h-[38px] sm:h-[42px] flex items-center px-3.5 sm:px-4 pr-[4.5rem] transition-colors duration-150"
               style={{ borderColor: undefined }}
@@ -697,7 +708,8 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
                 )}
               </div>
             )}
-          </form>
+            </form>
+          )}
 
           <div className="mb-3">
             <HeroFeatureChips />
@@ -715,7 +727,7 @@ export function GlobalHero({ searchAction = "/tools" }: { searchAction?: string 
             onScroll={handleContainerScroll}
             className="flex flex-nowrap items-stretch gap-1.5 sm:gap-2 touch-scroll-x scrollbar-none w-full max-w-full overflow-x-auto py-1 scroll-px-0 overscroll-x-contain"
           >
-            {DIRECTORY_CARDS.map((card, index) => {
+            {filterDirectoryNavCards(DIRECTORY_CARDS).map((card, index) => {
               const cardEl = renderCard(card, index);
               if (card.name === "New") {
                 return (

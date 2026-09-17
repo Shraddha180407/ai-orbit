@@ -104,8 +104,28 @@ describe("ToolsClient", () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining("/api/v1/tools/category/business"),
       );
-      expect(screen.getByText("Marketing & Growth")).toBeInTheDocument();
-      expect(screen.getByText("Finance & Accounting")).toBeInTheDocument();
+      expect(screen.getByText("Writing & Editing")).toBeInTheDocument();
+      expect(screen.getByText("Design & Creative")).toBeInTheDocument();
+      expect(screen.getByText("Back Office")).toBeInTheDocument();
+      expect(screen.getByText("Growth & Marketing")).toBeInTheDocument();
+      const businessCategories = [
+        "All",
+        "Writing & Editing",
+        "Design & Creative",
+        "Customer Service & Support",
+        "Growth & Marketing",
+        "Technology & IT",
+        "Workflow Automation",
+        "Back Office",
+        "Operations",
+        "Sales",
+      ];
+      businessCategories.forEach((label) => {
+        const button = screen.getByRole("button", { name: label });
+        expect(button.querySelector("svg")).toBeInTheDocument();
+        expect(button).toHaveClass("flex-col", "items-center");
+      });
+      expect(document.querySelector(".grid")).toHaveClass("lg:grid-cols-4");
     });
   });
 

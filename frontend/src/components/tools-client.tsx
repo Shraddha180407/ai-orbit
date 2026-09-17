@@ -5,9 +5,22 @@ import { useSearchParams, usePathname } from "next/navigation";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { ToolListView } from "@/components/ToolListView";
+import { BusinessToolGrid } from "@/components/BusinessToolGrid";
 import { API_URL } from "@/lib/api";
 import type { SortOption } from "@/lib/types";
 import { BUSINESS_CATEGORIES } from "@/lib/business-categories";
+import {
+  BriefcaseBusinessIcon,
+  CogIcon,
+  CpuIcon,
+  FigmaIcon,
+  HandCoinsIcon,
+  LayoutGridIcon,
+  MessageCircleIcon,
+  SquarePenIcon,
+  TrendingUpIcon,
+  WorkflowIcon,
+} from "lucide-animated";
 
 
 type DirectoryMode = "tools" | "personal" | "creativity" | "business";
@@ -32,8 +45,10 @@ const CATEGORY_FILTER_MAP: Record<string, { taskSlugs?: string[]; tagSlugs?: str
   "workflow-automation": { taskSlugs: ["automate-workflows"], descriptionParts: ["workflow automat", "automation platform", "automate", "zapier", "integrate"] },
 
   // ── Business ───────────────────────────────────────────────────────────────
+  "design-creative":    { descriptionParts: ["design", "creative", "graphic design", "video editing", "content creation", "visual", "image editing", "art"] },
   "sales":              { descriptionParts: ["sales", "crm", "lead", "prospect", "outreach", "pipeline", "revenue", "deal"] },
   "customer-support":   { tagSlugs: ["customer-support"], descriptionParts: ["customer support", "customer service", "help desk", "helpdesk", "support ticket", "live chat", "sentiment"] },
+  "back-office":        { descriptionParts: ["back office", "human resources", " hr ", "accounting", "finance", "document management", "payroll", "expense", "legal"] },
   "human-resources":    { descriptionParts: ["human resources", " hr ", "employee", "workforce", "payroll", "performance review", "people operations"] },
   "recruiting":         { descriptionParts: ["recruit", "hiring", "candidate", "resume", "cv screening", "interview", "talent acquisition"] },
   "finance-accounting": { descriptionParts: ["accounting", "bookkeeping", "invoice", "expense", "financial", "finance", "tax", "payroll", "receipt"] },
@@ -152,6 +167,19 @@ const CATEGORY_MAP = {
     ...BUSINESS_CATEGORIES
   ]
 } as const;
+
+const BUSINESS_CATEGORY_ICONS: Record<string, React.ElementType> = {
+  "": LayoutGridIcon,
+  "writing-editing": SquarePenIcon,
+  "design-creative": FigmaIcon,
+  "customer-support": MessageCircleIcon,
+  marketing: TrendingUpIcon,
+  "technology-it": CpuIcon,
+  "workflow-automation": WorkflowIcon,
+  "back-office": BriefcaseBusinessIcon,
+  operations: CogIcon,
+  sales: HandCoinsIcon,
+};
 
 function matchesCategory(tool: any, categorySlug: string): boolean {
   const filter = CATEGORY_FILTER_MAP[categorySlug];
@@ -365,10 +393,13 @@ export function ToolsClient({
             subCatContainerRef.current = el;
             categoryRowRef.current = el;
           }}
-          className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+          className="mb-3 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-2 touch-scroll-x pb-3 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
         >
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
+            const CategoryIcon = mode === "business"
+              ? BUSINESS_CATEGORY_ICONS[topic.slug]
+              : undefined;
             return (
               <button
                 key={topic.name}
@@ -377,19 +408,35 @@ export function ToolsClient({
                   handleCategoryChange(topic.slug);
                 }}
                 data-active={isSelected ? "true" : undefined}
-                className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${isSelected
-                    ? "bg-white text-black border-white shadow-lg shadow-white/5"
-                    : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+                className={`group inline-flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2.5 text-[11px] font-semibold leading-tight tracking-[-0.01em] whitespace-nowrap transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out border active:scale-[0.98] cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b] ${isSelected
+                    ? "bg-white text-black border-white shadow-[0_10px_24px_rgba(255,255,255,0.14)]"
+                    : "text-neutral-400 bg-white/[0.035] border-white/[0.08] hover:text-white hover:bg-white/[0.07] hover:border-white/[0.18]"
                   }`}
               >
-                {topic.name}
+                {CategoryIcon ? (
+                  <span className={`inline-flex h-7 w-7 items-center justify-center rounded-xl transition-colors duration-200 ${isSelected
+                      ? "bg-black/[0.08] text-black"
+                      : "bg-white/[0.07] text-neutral-300 group-hover:bg-white/[0.12] group-hover:text-white"
+                    }`}>
+                    <CategoryIcon
+                      size={15}
+                      aria-hidden="true"
+                      className="shrink-0"
+                    />
+                  </span>
+                ) : null}
+                <span>{topic.name}</span>
               </button>
             );
           })}
         </div>
 
     {/* List Grid */}
-    <ToolListView tools={tools} loading={isLoading || isPlaceholderData} />
+    {mode === "business" ? (
+      <BusinessToolGrid tools={tools} loading={isLoading || isPlaceholderData} />
+    ) : (
+      <ToolListView tools={tools} loading={isLoading || isPlaceholderData} />
+    )}
 
     {/* Pagination Bar */}
     {totalPages > 1 && (
