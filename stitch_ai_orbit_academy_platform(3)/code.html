@@ -219,145 +219,7 @@
 </nav>
 </div>
 <!-- 3. HERO SECTION: MASSIVE HEADLINE & INTERACTIVE KNOWLEDGE TOPOLOGY SVG -->
-<section class="max-w-7xl mx-auto px-6 pt-10 pb-16 relative" id="overview">
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-<!-- Left Column: Discovery, Search, Headlines -->
-<div class="lg:col-span-7 space-y-6 text-left">
-<div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-orbit/15 border border-orbit/30 text-xs font-mono text-[#C4B5FD]">
-<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-<span class="">Knowledge Topology Architecture 2026</span>
-</div>
-<h1 class="text-4xl sm:text-6xl md:text-7xl font-display font-black tracking-tight text-white leading-[1.03]">
-          Learn AI by building <br>
-<span class="text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-500">real systems.</span>
-</h1>
-<p class="text-base sm:text-lg text-muted font-normal leading-relaxed max-w-xl">
-          Navigate connected skill topologies across autonomous agents, inference engines, vision-language-action policies, and production kernels.
-        </p>
-<!-- Search Bar with Shortcut ⌘K -->
-<div class="relative max-w-xl glow-input group rounded-2xl">
-<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-zinc-400 group-focus-within:text-cyan-400 transition-colors">
-<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-</svg>
-</div>
-<input class="w-full bg-surface border border-border-subtle hover:border-zinc-700 focus:border-orbit rounded-2xl pl-12 pr-28 py-3.5 text-sm text-white placeholder-zinc-500 font-sans focus:outline-none transition-all shadow-xl" id="globalSearchInput" placeholder="Explore skill trees, modules, or CUDA kernels..." type="text">
-<div class="absolute inset-y-0 right-3.5 flex items-center gap-2">
-<span class="px-2 py-0.5 rounded bg-zinc-900 border border-border text-[10px] text-zinc-400 font-mono">Press ⌘K</span>
-</div>
-</div>
-<!-- Topic Tags -->
-<div class="flex flex-wrap items-center gap-2 text-xs font-mono text-muted pt-1">
-<span class="text-secondary font-medium mr-1">Signal Filters:</span>
-<button class="hover:text-white hover:border-orbit/60 hover:bg-surface-elevated px-2.5 py-1 rounded-lg border border-border bg-surface transition-all" onclick="setSearchFilter('LangGraph Agents')">Agents</button>
-<span class="text-zinc-700">·</span>
-<button class="hover:text-white hover:border-orbit/60 hover:bg-surface-elevated px-2.5 py-1 rounded-lg border border-border bg-surface transition-all" onclick="setSearchFilter('PagedAttention')">Inference</button>
-<span class="text-zinc-700">·</span>
-<button class="hover:text-white hover:border-orbit/60 hover:bg-surface-elevated px-2.5 py-1 rounded-lg border border-border bg-surface transition-all" onclick="setSearchFilter('OpenVLA')">Robotics</button>
-<span class="text-zinc-700">·</span>
-<button class="hover:text-white hover:border-orbit/60 hover:bg-surface-elevated px-2.5 py-1 rounded-lg border border-border bg-surface transition-all" onclick="setSearchFilter('RAG Rerank')">RAG &amp; Embeddings</button>
-</div>
-</div>
-<!-- Right Column: Interactive Illustrated SVG Knowledge Topology Map -->
-<div class="lg:col-span-5">
-<div class="relative bg-surface/90 border border-border rounded-3xl p-5 shadow-2xl overflow-hidden group">
-<div class="flex items-center justify-between pb-3 border-b border-border/80 text-xs font-mono">
-<div class="flex items-center gap-2 text-white font-medium">
-<span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-<span class="">Interactive Knowledge Topology</span>
-</div>
-<span class="text-secondary text-[11px]">Hover nodes to inspect</span>
-</div>
-<!-- SVG Topology Graph -->
-<div class="relative h-[340px] w-full flex items-center justify-center">
-<svg class="w-full h-full" id="topologySvg" viewBox="0 0 460 340">
-<defs>
-<linearGradient id="gradVioletCyan" x1="0%" x2="100%" y1="0%" y2="100%">
-<stop offset="0%" stop-color="#6E56CF"></stop>
-<stop offset="100%" stop-color="#00E5FF"></stop>
-</linearGradient>
-<linearGradient id="gradAmber" x1="0%" x2="100%" y1="0%" y2="100%">
-<stop offset="0%" stop-color="#F5A623"></stop>
-<stop offset="100%" stop-color="#FF5722"></stop>
-</linearGradient>
-<radialGradient cx="50%" cy="50%" id="nodeGlow" r="50%">
-<stop offset="0%" stop-color="#6E56CF" stop-opacity="0.8"></stop>
-<stop offset="100%" stop-color="#6E56CF" stop-opacity="0"></stop>
-</radialGradient>
-</defs>
-<!-- Connection Lines (Underlay) -->
-<g stroke="#1D1D2B" stroke-width="2">
-<line x1="230" x2="100" y1="170" y2="80"></line>
-<line x1="230" x2="360" y1="170" y2="70"></line>
-<line x1="230" x2="110" y1="170" y2="260"></line>
-<line x1="230" x2="350" y1="170" y2="250"></line>
-<line x1="100" x2="40" y1="80" y2="150"></line>
-<line x1="360" x2="410" y1="70" y2="140"></line>
-</g>
-<!-- Pulsing Signal Beams Along Edges -->
-<g fill="none">
-<line class="signal-beam" stroke="url(#gradVioletCyan)" stroke-width="2" x1="230" x2="100" y1="170" y2="80"></line>
-<line class="signal-beam-fast" stroke="#00E5FF" stroke-width="2" x1="230" x2="360" y1="170" y2="70"></line>
-<line class="signal-beam" stroke="#10B981" stroke-width="2" x1="230" x2="110" y1="170" y2="260"></line>
-<line class="signal-beam-fast" stroke="#F5A623" stroke-width="2" x1="230" x2="350" y1="170" y2="250"></line>
-</g>
-<!-- Peripheral Leaf Nodes -->
-<circle cx="40" cy="150" fill="#09090D" r="9" stroke="#6E56CF" stroke-width="1.5"></circle>
-<text fill="#A1A1B5" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="40" y="174">MCP</text>
-<circle cx="410" cy="140" fill="#09090D" r="9" stroke="#F5A623" stroke-width="1.5"></circle>
-<text fill="#A1A1B5" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="410" y="164">CUDA</text>
-<!-- Main Skill Cluster Nodes with Interaction -->
-<!-- Center: Core AI Orbit Engine -->
-<g class="topo-node" onclick="inspectTopologyNode('Core Orbit Engine', 'Foundation Graph connecting dynamic multi-agent loops and model runtimes.', 'Universal Hub')">
-<circle cx="230" cy="170" fill="url(#nodeGlow)" opacity="0.4" r="38"></circle>
-<circle cx="230" cy="170" fill="#09090D" r="24" stroke="#6E56CF" stroke-width="2"></circle>
-<circle cx="230" cy="170" fill="#6E56CF" r="8"></circle>
-<text fill="#FFFFFF" font-family="JetBrains Mono" font-size="10" font-weight="bold" text-anchor="middle" x="230" y="206">ORBIT HUB</text>
-</g>
-<!-- Node 1: Autonomous Agents (Top Left) -->
-<g class="topo-node" onclick="inspectTopologyNode('Autonomous Agents', 'LangGraph memory, ReAct tool execution loops, and MCP server interop.', 'Active Path · 72%')">
-<circle cx="100" cy="80" fill="#09090D" r="22" stroke="#6E56CF" stroke-width="2"></circle>
-<circle cx="100" cy="80" fill="#6E56CF" r="7"></circle>
-<circle cx="100" cy="80" fill="none" opacity="0.6" r="28" stroke="#6E56CF" stroke-dasharray="3 3"></circle>
-<text fill="#C4B5FD" font-family="JetBrains Mono" font-size="10" font-weight="600" text-anchor="middle" x="100" y="116">Agents</text>
-</g>
-<!-- Node 2: LLM Inference & Systems (Top Right) -->
-<g class="topo-node" onclick="inspectTopologyNode('LLM Inference', 'vLLM continuous batching, PagedAttention KV-caching, and FlashAttention 3.', 'Estimated 26h')">
-<circle cx="360" cy="70" fill="#09090D" r="22" stroke="#F5A623" stroke-width="2"></circle>
-<circle cx="360" cy="70" fill="#F5A623" r="7"></circle>
-<text fill="#FBBF24" font-family="JetBrains Mono" font-size="10" font-weight="600" text-anchor="middle" x="360" y="106">Inference</text>
-</g>
-<!-- Node 3: Multimodal & Vision (Bottom Left) -->
-<g class="topo-node" onclick="inspectTopologyNode('Multimodal &amp; CV', 'Contrastive Vision-Language pretraining, ViT patch projection, and RRF retrieval.', '6 Modules')">
-<circle cx="110" cy="260" fill="#09090D" r="20" stroke="#10B981" stroke-width="2"></circle>
-<circle cx="110" cy="260" fill="#10B981" r="6"></circle>
-<text fill="#34D399" font-family="JetBrains Mono" font-size="10" font-weight="600" text-anchor="middle" x="110" y="294">Multimodal</text>
-</g>
-<!-- Node 4: Embodied Robotics (Bottom Right) -->
-<g class="topo-node" onclick="inspectTopologyNode('Robotics &amp; VLA', 'Mujoco physics simulation, ROS 2 joint trajectories, and OpenVLA policy tokens.', 'Advanced · 9 Modules')">
-<circle cx="350" cy="250" fill="#09090D" r="20" stroke="#00E5FF" stroke-width="2"></circle>
-<circle cx="350" cy="250" fill="#00E5FF" r="6"></circle>
-<text fill="#67E8F9" font-family="JetBrains Mono" font-size="10" font-weight="600" text-anchor="middle" x="350" y="284">Robotics</text>
-</g>
-</svg>
-</div>
-<!-- Topology Inspector Box (Updated live on node click/hover) -->
-<div class="mt-2 p-3 bg-well-nested border border-border rounded-xl flex items-center justify-between" id="topologyInfoBox">
-<div class="space-y-0.5">
-<div class="flex items-center gap-2">
-<span class="text-xs font-mono font-bold text-white" id="topoTitle">Autonomous Agents</span>
-<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orbit/20 text-[#C4B5FD]" id="topoBadge">Active Path · 72%</span>
-</div>
-<p class="text-[11px] text-secondary line-clamp-1 font-sans" id="topoDesc">LangGraph memory, ReAct tool execution loops, and MCP server interop.</p>
-</div>
-<button class="px-3 py-1.5 rounded-lg bg-orbit/20 hover:bg-orbit text-white text-[11px] font-mono shrink-0 transition-colors" onclick="openLessonModal('agent-first-lesson')">
-              Launch Node →
-            </button>
-</div><div class="mt-3 p-4 bg-well-nested/90 border border-border/80 rounded-xl space-y-3 font-mono"><div class="flex items-center justify-between text-xs pb-2 border-b border-border/70"><div class="flex items-center gap-2"><span class="text-[11px] font-bold tracking-wider text-white uppercase">DOSSIER INDEX MATRIX</span></div><div class="flex items-center gap-1.5 text-[10px] text-emerald-400 font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span><span class="">LIVE TELEMETRY</span></div></div><div class="space-y-1.5 text-[11px]"><div class="flex items-center justify-between"><span class="text-secondary">ACTIVE DISCIPLINE:</span><span class="font-bold text-white">Agentic AI <span class="text-orbit text-[10px] font-normal">(Level 03)</span></span></div><div class="flex items-center justify-between"><span class="text-secondary">UNLOCKED KERNELS:</span><span class="font-bold text-cyan-400">18 / 24 Modules</span></div><div class="flex items-center justify-between"><span class="text-secondary">PRODUCTION BENCHMARK:</span><span class="font-bold text-amber-400">P99 84ms Latency</span></div></div><div class="pt-2 border-t border-border/60 flex items-center justify-between text-[10px]"><div class="flex items-center gap-1.5 text-zinc-400"><span class="text-orbit font-semibold">Prompt</span><span class="text-zinc-600">→</span><span class="px-2 py-0.5 rounded bg-surface border border-border text-white font-medium">ReAct Checkpoint</span><span class="text-zinc-600">→</span><span class="text-emerald-400 font-semibold">Tool Execution</span></div></div></div>
-</div>
-</div>
-</div>
-</section>
+<section class="max-w-7xl mx-auto px-6 pt-10 pb-16 relative" id="overview"><div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-end"><div class="lg:col-span-7 space-y-5 text-left"><div class="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-[#0e0e16] border border-[#232336] text-[10px] font-mono tracking-wider text-zinc-300 uppercase"><span class="w-1.5 h-1.5 rounded-full bg-[#7C65C1]"></span><span class="">SPECIALIZED CURRICULUM DOSSIER</span><span class="text-zinc-600">/</span><span class="text-zinc-400 font-semibold">FOR FRONTIER AI SYSTEMS</span></div><h1 class="text-4xl sm:text-6xl md:text-7xl tracking-tight text-white leading-[1.05]" style="font-family: 'Playfair Display', Georgia, serif;">Learn AI by building<br><span class="italic font-serif font-black tracking-tight text-white" style="font-style: italic;">production <span class="text-zinc-400 font-serif italic">systems.</span></span></h1><p class="text-sm sm:text-base text-zinc-400 font-normal leading-relaxed max-w-xl">A rigorous dossier of autonomous swarms, PagedAttention memory layouts, sub-millisecond VLA robotics, and self-correcting reasoning loops. Zero fluff. Pure engineering.</p><div class="relative max-w-xl rounded-xl"><div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></div><input class="w-full bg-[#08080D] border border-zinc-800 hover:border-zinc-700 focus:border-orbit rounded-xl pl-10 pr-14 py-3 text-xs text-white placeholder-zinc-500 font-mono focus:outline-none transition-colors" id="globalSearchInput" placeholder="Search concepts, CUDA kernels, tool schemas, or papers (e.g. GR" type="text"><div class="absolute inset-y-0 right-3 flex items-center"><span class="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 font-mono">⌘K</span></div></div><div class="flex flex-wrap items-center gap-2 text-[11px] font-mono text-zinc-500 pt-1"><span class="mr-1 text-zinc-500">Direct triggers:</span><button class="px-2 py-0.5 rounded border border-zinc-800 bg-[#09090E] hover:border-zinc-700 text-zinc-300 hover:text-white transition-colors" onclick="setSearchFilter('ReAct Loops')">ReAct Loops</button><button class="px-2 py-0.5 rounded border border-zinc-800 bg-[#09090E] hover:border-zinc-700 text-zinc-300 hover:text-white transition-colors" onclick="setSearchFilter('KV-Cache Paging')">KV-Cache Paging</button><button class="px-2 py-0.5 rounded border border-zinc-800 bg-[#09090E] hover:border-zinc-700 text-zinc-300 hover:text-white transition-colors" onclick="setSearchFilter('OpenVLA 7-DoF')">OpenVLA 7-DoF</button><button class="px-2 py-0.5 rounded border border-zinc-800 bg-[#09090E] hover:border-zinc-700 text-zinc-300 hover:text-white transition-colors" onclick="setSearchFilter('DeepSeek GRPD')">DeepSeek GRPD</button></div></div><div class="lg:col-span-5 flex justify-end"><div class="w-full max-w-md bg-[#08080C] border border-zinc-800/90 rounded-2xl p-5 font-mono shadow-2xl space-y-4"><div class="flex items-center justify-between text-xs pb-3 border-b border-zinc-800/80"><span class="text-[11px] tracking-wider text-zinc-400 font-bold uppercase">DOSSIER INDEX MATRIX</span><div class="flex items-center gap-1.5 text-[11px] text-emerald-400 font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span class="">LIVE TELEMETRY</span></div></div><div class="space-y-2.5 text-xs"><div class="flex items-center justify-between"><span class="text-zinc-500 tracking-wider text-[11px]">ACTIVE DISCIPLINE:</span><span class="font-bold text-white text-xs">Agentic AI (Level 03)</span></div><div class="flex items-center justify-between"><span class="text-zinc-500 tracking-wider text-[11px]">UNLOCKED KERNELS:</span><span class="font-bold text-cyan-400 text-xs">18 / 24 Modules</span></div><div class="flex items-center justify-between"><span class="text-zinc-500 tracking-wider text-[11px]">PRODUCTION BENCHMARK:</span><span class="font-bold text-amber-400 text-xs">P99 84ms Latency</span></div></div><div class="pt-3 border-t border-zinc-800/80"><div class="p-2 rounded-xl bg-[#040407] border border-zinc-800/60 flex items-center justify-around text-xs"><span class="text-[#9B87F5] font-medium">Prompt</span><span class="text-zinc-600 font-mono">→</span><span class="px-2.5 py-1 rounded-md bg-[#13131C] border border-zinc-700 text-white font-semibold text-[11px]">ReAct Checkpoint</span><span class="text-zinc-600 font-mono">→</span><span class="text-emerald-400 font-semibold">Tool Execution</span></div></div></div></div></div></section>
 <!-- Hairline divider -->
 <div class="max-w-7xl mx-auto px-6 mb-16"><div class="hairline-glow"></div></div>
 <!-- 4. "CONTINUE LEARNING" EXPANSIVE ANCHOR CARD WITH TELEMETRY & PROGRESS SHIMMER -->
@@ -1246,6 +1108,8 @@ app = workflow.compile()</code></pre>
       }
     });
   </script>
+
+
 
 
 </body></html>
