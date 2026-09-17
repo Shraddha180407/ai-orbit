@@ -1,149 +1,339 @@
-import React, { useState } from 'react';
-import { BookOpen, Video, FileText, CheckCircle2, Clock, Star, ArrowUpRight, Search, Award } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import InteractiveTopologyMap from '../components/learn/InteractiveTopologyMap';
+import ActiveTrackCard from '../components/learn/ActiveTrackCard';
+import ProgressionRail from '../components/learn/ProgressionRail';
+import CurriculumGraph from '../components/learn/CurriculumGraph';
+import RecommendedActions from '../components/learn/RecommendedActions';
+import ConceptDiagramLab from '../components/learn/ConceptDiagramLab';
+import LessonReaderModal from '../components/learn/LessonReaderModal';
+import ConceptMatrixModal from '../components/learn/ConceptMatrixModal';
 
 export default function LearnPage() {
-  const [activeTab, setActiveTab] = useState('All');
-  const [search, setSearch] = useState('');
+  const [activeNav, setActiveNav] = useState('overview');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeLessonId, setActiveLessonId] = useState(null);
+  const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
+  const [isGlossaryModalOpen, setIsGlossaryModalOpen] = useState(false);
+  const searchInputRef = useRef(null);
 
-  const guides = [
-    {
-      id: 1,
-      title: 'The Ultimate Guide to Physical AI & Embodied Robotics',
-      type: 'Executive Guide',
-      source: 'The Rundown AI Ref',
-      level: 'Intermediate',
-      readTime: '18 min read',
-      rating: 4.96,
-      students: '14,200 reads',
-      description: 'Understanding Vision-Language-Action (VLA) foundation models, Sim-to-Real Isaac Gym workflows, and actuator kinematics in 2026.',
-      image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600&auto=format&fit=crop&q=80',
-      badge: 'Bestseller'
-    },
-    {
-      id: 2,
-      title: 'Skill Leap: Autonomous Agent Architecture Masterclass',
-      type: 'Video Course',
-      source: 'Futurepedia Courses Ref',
-      level: 'Advanced',
-      readTime: '3.5 hours • 12 Lessons',
-      rating: 4.92,
-      students: '8,400 students',
-      description: 'Build multi-agent decision loops with LangGraph, MCP server routing, and self-correcting code execution sandboxes.',
-      image: 'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?w=600&auto=format&fit=crop&q=80',
-      badge: 'Certified'
-    },
-    {
-      id: 3,
-      title: 'The Contrarian AI Strategy & Prompt Systems E-Book',
-      type: 'E-Book / PDF',
-      source: "There's An AI For That Ref",
-      level: 'All Levels',
-      readTime: '124 pages • PDF/ePub',
-      rating: 4.88,
-      students: '21,000 downloads',
-      description: 'Challenging mainstream AI hype with structured contrarian reasoning frameworks, evaluation rubrics, and high-leverage prompts.',
-      image: 'https://images.unsplash.com/photo-1546776310-eef45dd6d63c?w=600&auto=format&fit=crop&q=80',
-      badge: 'Free Download'
-    },
-    {
-      id: 4,
-      title: 'ROS 2 Humble & Iron Robotics Pipeline for LLM Agents',
-      type: 'Interactive Tutorial',
-      source: 'AI Orbit Academy',
-      level: 'Developer',
-      readTime: '25 min code lab',
-      rating: 4.95,
-      students: '6,100 developers',
-      description: 'Bridge Python LLM function calling to real-time micro-ROS hardware controllers, joint torque publishers, and LiDAR subscriber nodes.',
-      image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&auto=format&fit=crop&q=80',
-      badge: 'New Lab'
+  // Local storage persisted completed lessons
+  const [completedLessons, setCompletedLessons] = useState(() => {
+    try {
+      const saved = localStorage.getItem('orbit_completed_lessons');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
     }
-  ];
-
-  const filtered = guides.filter((g) => {
-    if (activeTab !== 'All' && g.type !== activeTab) return false;
-    if (search.trim() !== '') {
-      const q = search.toLowerCase();
-      return g.title.toLowerCase().includes(q) || g.description.toLowerCase().includes(q);
-    }
-    return true;
   });
 
-  return (
-    <div className="min-h-screen bg-black text-white selection:bg-[#6E56CF]/30 pb-16">
-      {/* Header */}
-      <div className="border-b border-[#1C1C1F] bg-[#09090b] py-10 sm:py-14 px-4 sm:px-8">
-        <div className="mx-auto max-w-[1440px]">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#10B981] bg-[#10B981]/15 px-3 py-1 rounded-full border border-[#10B981]/30 inline-block mb-3">
-            AI Academy • Futurepedia &amp; The Rundown Guides
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-3">
-            Learn AI, Agents &amp; Physical Robotics
-          </h1>
-          <p className="text-sm sm:text-base text-[#A1A1AA] max-w-2xl leading-relaxed">
-            Curated expert courses, comprehensive industry guides, and battle-tested developer e-books to master modern artificial intelligence.
-          </p>
+  const handleToggleCompleteLesson = (id) => {
+    setCompletedLessons((prev) => {
+      const next = prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id];
+      try {
+        localStorage.setItem('orbit_completed_lessons', JSON.stringify(next));
+      } catch (e) {
+        console.error(e);
+      }
+      return next;
+    });
+  };
 
-          <div className="mt-6 max-w-md relative">
-            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#71717A]" />
-            <input
-              type="text"
-              placeholder="Search guides, courses, or e-books..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#131316] border border-[#232326] text-xs text-white placeholder:text-[#71717A] focus:outline-none focus:border-[#6E56CF]"
-            />
+  const handleOpenLesson = (lessonId) => {
+    setActiveLessonId(lessonId);
+    setIsLessonModalOpen(true);
+  };
+
+  const handleCloseLesson = () => {
+    setIsLessonModalOpen(false);
+  };
+
+  const handleSignalFilter = (query) => {
+    setSearchQuery(query);
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+      searchInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  // Keyboard shortcut Cmd/Ctrl + K for local search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        // If event default wasn't already handled by global search
+        if (searchInputRef.current && document.activeElement !== searchInputRef.current) {
+          e.preventDefault();
+          searchInputRef.current.focus();
+          searchInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // ScrollSpy for subnav
+  useEffect(() => {
+    const sections = ['overview', 'continue-learning', 'learning-paths', 'recommended', 'featured-labs'];
+    const handleScroll = () => {
+      const scrollPos = window.scrollY + 200;
+      for (const section of sections) {
+        const el = document.getElementById(section);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPos >= top && scrollPos < top + height) {
+            setActiveNav(section);
+            break;
+          }
+        }
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (id) => {
+    setActiveNav(id);
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const isCurrentLessonComplete = completedLessons.includes('agent-first-lesson');
+
+  return (
+    <div className="bg-[#020204] text-[#F4F4F7] font-sans antialiased min-h-screen selection:bg-[#6E56CF] selection:text-white pb-28 relative overflow-x-hidden">
+      {/* Atmospheric Gradient Meshes */}
+      <div className="fixed top-0 left-1/4 w-[650px] h-[500px] bg-gradient-to-tr from-[#6E56CF]/12 via-purple-600/5 to-transparent blur-[140px] pointer-events-none -z-10 animate-mesh"></div>
+      <div className="fixed top-1/3 -right-20 w-[550px] h-[550px] bg-[#00E5FF]/8 blur-[160px] pointer-events-none -z-10 animate-mesh" style={{ animationDelay: '-6s' }}></div>
+      <div className="fixed bottom-10 -left-20 w-[600px] h-[600px] bg-[#6E56CF]/8 blur-[170px] pointer-events-none -z-10 animate-mesh" style={{ animationDelay: '-11s' }}></div>
+
+      {/* 1. TOP MINIMALIST EDITORIAL SUB-HEADER */}
+      <div className="bg-[#020204]/90 backdrop-blur-xl border-b border-[#161622]/80 px-6 py-3.5 transition-colors">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          {/* Monogram & Topology Telemetry */}
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white via-zinc-400 to-zinc-900 p-[1px] flex items-center justify-center">
+                <div className="w-full h-full bg-[#020204] rounded-full flex items-center justify-center relative">
+                  <span className="w-2 h-2 rounded-full bg-[#6E56CF] shadow-[0_0_12px_#6E56CF]"></span>
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-sm font-black tracking-widest text-white uppercase">AI Orbit</span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#6E56CF]/20 border border-[#6E56CF]/40 text-[#C4B5FD] font-mono">TOPOLOGY v2</span>
+                </div>
+                <span className="text-[9px] font-mono tracking-widest text-[#8E8EA0] uppercase">Frontier Systems Graph</span>
+              </div>
+            </div>
+
+            <div className="hidden lg:flex items-center gap-5 text-xs font-mono text-[#A1A1B5] pl-6 border-l border-[#161622]">
+              <span className="flex items-center gap-1.5 text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                Live Cluster: 99.98%
+              </span>
+              <span className="text-zinc-700">/</span>
+              <span className="text-[#8E8EA0]">4 Tracks</span>
+              <span className="text-zinc-700">/</span>
+              <span className="text-[#8E8EA0]">164 Frontier Units</span>
+            </div>
+          </div>
+
+          {/* Right Profile Telemetry Pill & Matrix */}
+          <div className="flex items-center gap-3">
+            {/* 5-Day Streak Pill */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-xs font-mono text-amber-400 hover:bg-amber-500/20 transition-all cursor-default select-none shadow-[0_0_12px_rgba(245,166,35,0.15)]">
+              <span className="animate-bounce text-sm">🔥</span>
+              <span className="font-semibold tracking-wide">5-day streak</span>
+            </div>
+
+            {/* Concept Matrix Button */}
+            <button 
+              onClick={() => setIsGlossaryModalOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#101017] hover:bg-[#13131C] border border-[#161622] hover:border-[#00E5FF]/50 text-xs text-[#A1A1B5] hover:text-white font-mono transition-all hover:shadow-[0_0_14px_rgba(0,229,255,0.18)] active:scale-95 cursor-pointer"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF]"></span>
+              <span>Matrix</span>
+            </button>
+
+            {/* Profile Progress Radial */}
+            <a 
+              href="#continue-learning"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToSection('continue-learning');
+              }}
+              className="flex items-center gap-2 pl-2 pr-3.5 py-1 rounded-full bg-[#101017] hover:bg-zinc-900 border border-[#161622] hover:border-[#6E56CF]/60 text-xs font-mono transition-all group cursor-pointer"
+            >
+              <svg className="w-6 h-6 circle-progress" viewBox="0 0 36 36">
+                <path className="text-zinc-800" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                <path 
+                  className="text-[#6E56CF]" 
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeDasharray={isCurrentLessonComplete ? "100, 100" : "72, 100"} 
+                  strokeLinecap="round" 
+                  strokeWidth="3" 
+                />
+              </svg>
+              <span className="text-zinc-200 group-hover:text-white font-medium">
+                {isCurrentLessonComplete ? '100%' : '72%'} <span className="hidden md:inline text-[#8E8EA0] font-normal">Mastery</span>
+              </span>
+            </a>
           </div>
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filtered.map((item) => (
-            <div key={item.id} className="p-5 sm:p-6 rounded-2xl border border-[#232326] bg-[#111115] hover:border-[#3b3b44] transition-all flex flex-col justify-between group">
-              <div>
-                <div className="relative aspect-[16/9] rounded-xl overflow-hidden mb-4 bg-[#0a0a0d] border border-[#232326]">
-                  <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-[#6E56CF] text-white">
-                    {item.badge}
-                  </span>
-                  <span className="absolute top-3 right-3 px-2 py-0.5 rounded-md text-[10.5px] font-medium bg-black/70 backdrop-blur-md text-[#E4E4E7] border border-white/10">
-                    {item.source}
-                  </span>
-                </div>
+      {/* 2. STICKY FLOATING SUB-NAVIGATION PILL BAR */}
+      <div className="sticky top-[58px] z-40 py-2.5 px-4 pointer-events-none flex justify-center">
+        <nav className="pointer-events-auto bg-[#09090D]/90 backdrop-blur-xl border border-[#202030] rounded-full px-2 py-1 flex items-center gap-1 shadow-2xl text-[11px] font-mono text-[#8E8EA0]">
+          {[
+            { id: 'overview', label: 'Overview' },
+            { id: 'continue-learning', label: 'Active Track' },
+            { id: 'learning-paths', label: 'Curriculum Graph' },
+            { id: 'recommended', label: 'Recommended' },
+            { id: 'featured-labs', label: 'Featured Labs' },
+          ].map((item) => {
+            const isActive = activeNav === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => scrollToSection(item.id)}
+                className={`subnav-link px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
+                  isActive 
+                    ? 'text-white bg-[#13131C] border border-[#161622]' 
+                    : 'hover:text-white hover:bg-[#101017]'
+                }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
 
-                <div className="flex items-center gap-2 text-xs text-[#71717A] mb-2 font-mono">
-                  <span>{item.type}</span>
-                  <span>•</span>
-                  <span>{item.level}</span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1 text-[#F5A623]">
-                    ★ {item.rating}
-                  </span>
-                </div>
+      {/* 3. HERO SECTION: HEADLINE & INTERACTIVE TOPOLOGY GRAPH */}
+      <section className="max-w-7xl mx-auto px-6 pt-10 pb-16 relative" id="overview">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          {/* Left Column */}
+          <div className="lg:col-span-7 space-y-6 text-left">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#6E56CF]/15 border border-[#6E56CF]/30 text-xs font-mono text-[#C4B5FD]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] animate-pulse"></span>
+              <span>Knowledge Topology Architecture 2026</span>
+            </div>
 
-                <h3 className="text-lg font-bold text-white group-hover:text-[#A78BFA] transition-colors mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-xs text-[#A1A1AA] leading-relaxed mb-4">
-                  {item.description}
-                </p>
+            <h1 className="text-4xl sm:text-6xl md:text-7xl font-display font-black tracking-tight text-white leading-[1.03]">
+              Learn AI by building <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-500">
+                real systems.
+              </span>
+            </h1>
+
+            <p className="text-base sm:text-lg text-[#A1A1B5] font-normal leading-relaxed max-w-xl">
+              Navigate connected skill topologies across autonomous agents, inference engines, vision-language-action policies, and production kernels.
+            </p>
+
+            {/* Search Bar with ⌘K */}
+            <div className="relative max-w-xl glow-input group rounded-2xl">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-zinc-400 group-focus-within:text-[#00E5FF] transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                </svg>
               </div>
-
-              <div className="pt-4 border-t border-[#1F1F24] flex items-center justify-between text-xs">
-                <span className="text-[#71717A] flex items-center gap-1">
-                  <Clock size={12} /> {item.readTime}
+              <input 
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Explore skill trees, modules, or CUDA kernels..."
+                className="w-full bg-[#09090D] border border-[#202030] hover:border-zinc-700 focus:border-[#6E56CF] rounded-2xl pl-12 pr-28 py-3.5 text-sm text-white placeholder-zinc-500 font-sans focus:outline-none transition-all shadow-xl"
+              />
+              <div className="absolute inset-y-0 right-3.5 flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-zinc-900 border border-[#161622] text-[10px] text-zinc-400 font-mono">
+                  Press ⌘K
                 </span>
-                <button className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white text-black font-semibold hover:bg-[#E4E4E7] transition-colors cursor-pointer">
-                  <span>Open Resource</span>
-                  <ArrowUpRight size={13} />
-                </button>
               </div>
             </div>
-          ))}
+
+            {/* Topic Filter Tags */}
+            <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-[#A1A1B5] pt-1">
+              <span className="text-[#8E8EA0] font-medium mr-1">Signal Filters:</span>
+              <button 
+                onClick={() => handleSignalFilter('LangGraph Agents')}
+                className="hover:text-white hover:border-[#6E56CF]/60 hover:bg-[#101017] px-2.5 py-1 rounded-lg border border-[#161622] bg-[#09090D] transition-all cursor-pointer"
+              >
+                Agents
+              </button>
+              <span className="text-zinc-700">·</span>
+              <button 
+                onClick={() => handleSignalFilter('PagedAttention')}
+                className="hover:text-white hover:border-[#6E56CF]/60 hover:bg-[#101017] px-2.5 py-1 rounded-lg border border-[#161622] bg-[#09090D] transition-all cursor-pointer"
+              >
+                Inference
+              </button>
+              <span className="text-zinc-700">·</span>
+              <button 
+                onClick={() => handleSignalFilter('OpenVLA')}
+                className="hover:text-white hover:border-[#6E56CF]/60 hover:bg-[#101017] px-2.5 py-1 rounded-lg border border-[#161622] bg-[#09090D] transition-all cursor-pointer"
+              >
+                Robotics
+              </button>
+              <span className="text-zinc-700">·</span>
+              <button 
+                onClick={() => handleSignalFilter('RAG Rerank')}
+                className="hover:text-white hover:border-[#6E56CF]/60 hover:bg-[#101017] px-2.5 py-1 rounded-lg border border-[#161622] bg-[#09090D] transition-all cursor-pointer"
+              >
+                RAG &amp; Embeddings
+              </button>
+            </div>
+          </div>
+
+          {/* Right Column: Interactive Illustrated SVG Topology Map */}
+          <div className="lg:col-span-5">
+            <InteractiveTopologyMap onOpenLesson={handleOpenLesson} />
+          </div>
         </div>
+      </section>
+
+      {/* Hairline Divider */}
+      <div className="max-w-7xl mx-auto px-6 mb-16">
+        <div className="hairline-glow"></div>
       </div>
+
+      {/* 4. ACTIVE TRACK IN-PROGRESS CARD */}
+      <ActiveTrackCard 
+        onResumeLesson={handleOpenLesson}
+        isCompleted={isCurrentLessonComplete}
+      />
+
+      {/* 5. ANIMATED PROGRESSION RAIL */}
+      <ProgressionRail />
+
+      {/* 6. FULL CURRICULUM GRAPH */}
+      <CurriculumGraph onOpenLesson={handleOpenLesson} />
+
+      {/* 7. RECOMMENDED NEXT ACTIONS */}
+      <RecommendedActions onOpenLesson={handleOpenLesson} />
+
+      {/* 8. FEATURED LABS & SVG ARCHITECTURE DIAGRAM */}
+      <ConceptDiagramLab onOpenLesson={handleOpenLesson} />
+
+      {/* MODALS */}
+      <LessonReaderModal 
+        isOpen={isLessonModalOpen}
+        onClose={handleCloseLesson}
+        lessonId={activeLessonId}
+        completedLessons={completedLessons}
+        onToggleComplete={handleToggleCompleteLesson}
+      />
+
+      <ConceptMatrixModal 
+        isOpen={isGlossaryModalOpen}
+        onClose={() => setIsGlossaryModalOpen(false)}
+      />
     </div>
   );
 }
