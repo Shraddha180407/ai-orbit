@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
@@ -38,6 +38,51 @@ export function AgentsClient() {
   const currentPage = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
 
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const categoryRowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = categoryRowRef.current;
+    const activeBtn = subCatRefs.current[activeCategory];
+
+    if (!container || !activeBtn) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeBtn.getBoundingClientRect();
+
+    const buttonLeft =
+      buttonRect.left - containerRect.left + container.scrollLeft;
+    const buttonRight = buttonLeft + buttonRect.width;
+    const visibleLeft = container.scrollLeft;
+    const visibleRight = container.scrollLeft + container.clientWidth;
+
+    if (buttonRight > visibleRight) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.35,
+        container.scrollWidth - buttonRight
+      );
+
+      container.scrollTo({
+        left: Math.max(
+          0,
+          Math.min(
+            container.scrollWidth - container.clientWidth,
+            buttonRight - container.clientWidth + extraSpace
+          )
+        ),
+        behavior: "smooth",
+      });
+    } else if (buttonLeft < visibleLeft) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.25,
+        buttonLeft
+      );
+
+      container.scrollTo({
+        left: Math.max(0, buttonLeft - extraSpace),
+        behavior: "smooth",
+      });
+    }
+  }, [activeCategory]);
 
   const { data: categoriesData } = useQuery<AgentCategory[]>({
     queryKey: ["agent-categories"],
@@ -158,7 +203,7 @@ export function AgentsClient() {
     >
       <div className="mx-auto w-full max-w-[1600px] space-y-4">
 
-        <div className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto">
+        <div ref={categoryRowRef} className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto">
           {categories.map((category) => {
             const selected = activeCategory === category.slug;
 

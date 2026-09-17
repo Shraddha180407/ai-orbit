@@ -101,6 +101,8 @@ function matchesCategoryFilter(a: NewsArticle, filterKey: string): boolean {
 
 export function NewsListingClient({ category, initialTopic }: NewsListingClientProps) {
   const searchParams = useSearchParams();
+  const categoryRowRef = useRef<HTMLDivElement>(null);
+  const categoryChipRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const sortParam = searchParams.get("sort") || "newest";
   const urlFilter = searchParams.get("filter");
 
@@ -146,6 +148,50 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    const container = categoryRowRef.current;
+    const activeBtn = categoryChipRefs.current[filter];
+
+    if (!container || !activeBtn) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeBtn.getBoundingClientRect();
+
+    const buttonLeft =
+      buttonRect.left - containerRect.left + container.scrollLeft;
+    const buttonRight = buttonLeft + buttonRect.width;
+    const visibleLeft = container.scrollLeft;
+    const visibleRight = container.scrollLeft + container.clientWidth;
+
+    if (buttonRight > visibleRight) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.35,
+        container.scrollWidth - buttonRight
+      );
+
+      container.scrollTo({
+        left: Math.max(
+          0,
+          Math.min(
+            container.scrollWidth - container.clientWidth,
+            buttonRight - container.clientWidth + extraSpace
+          )
+        ),
+        behavior: "smooth",
+      });
+    } else if (buttonLeft < visibleLeft) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.25,
+        buttonLeft
+      );
+
+      container.scrollTo({
+        left: Math.max(0, buttonLeft - extraSpace),
+        behavior: "smooth",
+      });
+    }
+  }, [filter]);
 
   const toggleTopic = (v: string) => setSelectedTopics((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
   const toggleSource = (v: string) => setSelectedSources((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
@@ -246,12 +292,18 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
       <main className="w-full px-2 sm:px-4 py-3 flex-1 flex flex-col">
         {/* Clean Subcategory Filter Chips Row */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1 w-full">
+          <div
+            ref={categoryRowRef}
+            className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0 flex-1 w-full"
+          >
             {activeChipsList.map((chip) => {
               const isSelected = filter === chip.key;
               return (
                 <button
                   key={chip.key}
+                  ref={(el) => {
+                    categoryChipRefs.current[chip.key] = el;
+                  }}
                   type="button"
                   onClick={() => handleSelectFilter(chip.key)}
                   className={cn(

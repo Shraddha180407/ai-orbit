@@ -298,7 +298,49 @@ export function DevicesClient({ defaultCategory }: { defaultCategory?: string })
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    const activeBtn = subCatRefs.current[selectedCategory];
 
+    if (!container || !activeBtn) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeBtn.getBoundingClientRect();
+
+    const buttonLeft =
+      buttonRect.left - containerRect.left + container.scrollLeft;
+    const buttonRight = buttonLeft + buttonRect.width;
+    const visibleLeft = container.scrollLeft;
+    const visibleRight = container.scrollLeft + container.clientWidth;
+
+    if (buttonRight > visibleRight) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.35,
+        container.scrollWidth - buttonRight
+      );
+
+      container.scrollTo({
+        left: Math.max(
+          0,
+          Math.min(
+            container.scrollWidth - container.clientWidth,
+            buttonRight - container.clientWidth + extraSpace
+          )
+        ),
+        behavior: "smooth",
+      });
+    } else if (buttonLeft < visibleLeft) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.25,
+        buttonLeft
+      );
+
+      container.scrollTo({
+        left: Math.max(0, buttonLeft - extraSpace),
+        behavior: "smooth",
+      });
+    }
+  }, [selectedCategory]);
 
 useEffect(() => {
   setSelectedCategory(resolveDeviceCategory(requestedCategory));

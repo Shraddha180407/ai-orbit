@@ -258,22 +258,49 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
     setCurrentPage(1);
   }, [query, activeCategory]);
 
-  // Scroll active category pill into view on mobile
+  // Scroll active category pill into view on both desktop and mobile whenever activeCategory changes
   const categoryRowRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
     const container = categoryRowRef.current;
-    if (!container) return;
-    const activeBtn = container.querySelector<HTMLElement>('[data-active="true"]');
-    if (!activeBtn) return;
-    const cRect = container.getBoundingClientRect();
-    const bRect = activeBtn.getBoundingClientRect();
-    const bLeft = bRect.left - cRect.left + container.scrollLeft;
-    const bRight = bLeft + bRect.width;
-    if (bLeft < container.scrollLeft) {
-      container.scrollTo({ left: bLeft - 16, behavior: 'smooth' });
-    } else if (bRight > container.scrollLeft + container.clientWidth) {
-      container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: 'smooth' });
+    const activeBtn = subCatRefs.current[activeCategory];
+
+    if (!container || !activeBtn) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeBtn.getBoundingClientRect();
+
+    const buttonLeft =
+      buttonRect.left - containerRect.left + container.scrollLeft;
+    const buttonRight = buttonLeft + buttonRect.width;
+    const visibleLeft = container.scrollLeft;
+    const visibleRight = container.scrollLeft + container.clientWidth;
+
+    if (buttonRight > visibleRight) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.35,
+        container.scrollWidth - buttonRight
+      );
+
+      container.scrollTo({
+        left: Math.max(
+          0,
+          Math.min(
+            container.scrollWidth - container.clientWidth,
+            buttonRight - container.clientWidth + extraSpace
+          )
+        ),
+        behavior: "smooth",
+      });
+    } else if (buttonLeft < visibleLeft) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.25,
+        buttonLeft
+      );
+
+      container.scrollTo({
+        left: Math.max(0, buttonLeft - extraSpace),
+        behavior: "smooth",
+      });
     }
   }, [activeCategory]);
 
