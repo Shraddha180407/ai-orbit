@@ -45,8 +45,8 @@ export default function Header({ onOpenSearch, bookmarksCount = 0, onOpenBookmar
   const isMoreActive = moreNavLinks.some((item) => isActive(item.path));
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#1C1C1F] bg-black/80 backdrop-blur-md py-2 sm:py-3 transition-colors">
-      <div className="mx-auto max-w-[1440px] px-3.5 sm:px-8 flex items-center justify-between relative gap-2">
+    <header className="sticky top-0 z-50 w-full border-b border-[#1C1C1F] bg-black/90 backdrop-blur-md h-[56px] flex items-center transition-colors">
+      <div className="mx-auto max-w-[1440px] w-full px-3.5 sm:px-8 flex items-center justify-between relative gap-2">
         {/* Left: Mobile menu toggle + Logo */}
         <div className="flex items-center gap-3">
           <button 

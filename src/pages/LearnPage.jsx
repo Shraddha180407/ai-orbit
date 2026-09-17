@@ -102,14 +102,14 @@ export default function LearnPage() {
   const isCurrentLessonComplete = completedLessons.includes('agent-first-lesson');
 
   return (
-    <div className="bg-[#020204] text-[#F4F4F7] font-sans antialiased min-h-screen selection:bg-[#6E56CF] selection:text-white pb-28 relative overflow-x-hidden">
+    <div className="bg-[#020204] text-[#F4F4F7] font-sans antialiased min-h-screen selection:bg-[#6E56CF] selection:text-white pb-28 relative">
       {/* Atmospheric Gradient Meshes */}
       <div className="fixed top-0 left-1/4 w-[650px] h-[500px] bg-gradient-to-tr from-[#6E56CF]/12 via-purple-600/5 to-transparent blur-[140px] pointer-events-none -z-10 animate-mesh"></div>
       <div className="fixed top-1/3 -right-20 w-[550px] h-[550px] bg-[#00E5FF]/8 blur-[160px] pointer-events-none -z-10 animate-mesh" style={{ animationDelay: '-6s' }}></div>
       <div className="fixed bottom-10 -left-20 w-[600px] h-[600px] bg-[#6E56CF]/8 blur-[170px] pointer-events-none -z-10 animate-mesh" style={{ animationDelay: '-11s' }}></div>
 
-      {/* STICKY SECOND HEADER: SUBNAV PILL TABS + TELEMETRY (STAYS AT TOP ON SCROLL) */}
-      <div className="sticky top-[48px] sm:top-[53px] z-40 bg-[#020204]/95 backdrop-blur-xl border-b border-[#161622] px-4 sm:px-6 py-2.5 transition-all">
+      {/* STICKY SECOND HEADER: SUBNAV PILL TABS + TELEMETRY (FLUSH WITH MAIN HEADER AT TOP: 56PX) */}
+      <div className="sticky top-[56px] z-40 bg-[#08080C]/95 backdrop-blur-xl border-b border-[#1C1C1F] px-4 sm:px-8 py-2.5 transition-all shadow-md shadow-black/60">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           {/* Left: Streamlined Subnav Pill Tabs */}
           <nav className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5">
