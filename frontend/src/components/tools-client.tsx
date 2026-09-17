@@ -216,6 +216,51 @@ export function ToolsClient({
 
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const categoryRowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = categoryRowRef.current;
+    const activeBtn = subCatRefs.current[activeCategory];
+
+    if (!container || !activeBtn) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeBtn.getBoundingClientRect();
+
+    const buttonLeft =
+      buttonRect.left - containerRect.left + container.scrollLeft;
+    const buttonRight = buttonLeft + buttonRect.width;
+    const visibleLeft = container.scrollLeft;
+    const visibleRight = container.scrollLeft + container.clientWidth;
+
+    if (buttonRight > visibleRight) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.35,
+        container.scrollWidth - buttonRight
+      );
+
+      container.scrollTo({
+        left: Math.max(
+          0,
+          Math.min(
+            container.scrollWidth - container.clientWidth,
+            buttonRight - container.clientWidth + extraSpace
+          )
+        ),
+        behavior: "smooth",
+      });
+    } else if (buttonLeft < visibleLeft) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.25,
+        buttonLeft
+      );
+
+      container.scrollTo({
+        left: Math.max(0, buttonLeft - extraSpace),
+        behavior: "smooth",
+      });
+    }
+  }, [activeCategory]);
 
   // FIXED: If the mode changes (e.g. going from Agents to Tools), force the category and page to reset 
   // so the new page doesn't try to query the old page's categories.
@@ -316,7 +361,10 @@ export function ToolsClient({
 
         {/* Category Row */}
         <div
-          ref={subCatContainerRef}
+          ref={(el) => {
+            subCatContainerRef.current = el;
+            categoryRowRef.current = el;
+          }}
           className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
         >
           {categories.map((topic) => {

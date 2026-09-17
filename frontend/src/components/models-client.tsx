@@ -56,7 +56,50 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    const activeKey = selectedSubCategorySlug || "all";
+    const activeBtn = subCatRefs.current[activeKey];
 
+    if (!container || !activeBtn) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeBtn.getBoundingClientRect();
+
+    const buttonLeft =
+      buttonRect.left - containerRect.left + container.scrollLeft;
+    const buttonRight = buttonLeft + buttonRect.width;
+    const visibleLeft = container.scrollLeft;
+    const visibleRight = container.scrollLeft + container.clientWidth;
+
+    if (buttonRight > visibleRight) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.35,
+        container.scrollWidth - buttonRight
+      );
+
+      container.scrollTo({
+        left: Math.max(
+          0,
+          Math.min(
+            container.scrollWidth - container.clientWidth,
+            buttonRight - container.clientWidth + extraSpace
+          )
+        ),
+        behavior: "smooth",
+      });
+    } else if (buttonLeft < visibleLeft) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.25,
+        buttonLeft
+      );
+
+      container.scrollTo({
+        left: Math.max(0, buttonLeft - extraSpace),
+        behavior: "smooth",
+      });
+    }
+  }, [selectedSubCategorySlug]);
 
   const rawSort = searchParams.get("sort") || "newest";
   const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
@@ -286,6 +329,7 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
               {subCategories.map((sub) => (
                 <button
                   key={sub.id}
+                  ref={(el) => { subCatRefs.current[sub.slug] = el; }}
                   onClick={() => {
                     handleSelectSubCategory(sub.slug);
                   }}

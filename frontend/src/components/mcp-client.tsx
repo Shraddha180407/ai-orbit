@@ -80,6 +80,51 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    const container = subCatContainerRef.current;
+    const activeKey = activeSubCategory || "all";
+    const activeBtn = subCatRefs.current[activeKey];
+
+    if (!container || !activeBtn) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeBtn.getBoundingClientRect();
+
+    const buttonLeft =
+      buttonRect.left - containerRect.left + container.scrollLeft;
+    const buttonRight = buttonLeft + buttonRect.width;
+    const visibleLeft = container.scrollLeft;
+    const visibleRight = container.scrollLeft + container.clientWidth;
+
+    if (buttonRight > visibleRight) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.35,
+        container.scrollWidth - buttonRight
+      );
+
+      container.scrollTo({
+        left: Math.max(
+          0,
+          Math.min(
+            container.scrollWidth - container.clientWidth,
+            buttonRight - container.clientWidth + extraSpace
+          )
+        ),
+        behavior: "smooth",
+      });
+    } else if (buttonLeft < visibleLeft) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.25,
+        buttonLeft
+      );
+
+      container.scrollTo({
+        left: Math.max(0, buttonLeft - extraSpace),
+        behavior: "smooth",
+      });
+    }
+  }, [activeSubCategory]);
+
   const handleSelectSubCategory = (slug: string | null) => {
     const newSlug = slug === activeSubCategory ? "" : (slug || "");
 
@@ -204,25 +249,9 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
             return (
               <button
                 key={sub.id}
-                onClick={(e) => {
+                ref={(el) => { subCatRefs.current[sub.slug] = el; }}
+                onClick={() => {
                   handleSelectSubCategory(sub.slug);
-
-                  const btn = e.currentTarget;
-                  const container = btn.parentElement;
-                  if (container && window.innerWidth < 768) {
-                    requestAnimationFrame(() => {
-                      const cRect = container.getBoundingClientRect();
-                      const bRect = btn.getBoundingClientRect();
-                      const bLeft = bRect.left - cRect.left + container.scrollLeft;
-                      const bRight = bLeft + bRect.width;
-
-                      if (bLeft < container.scrollLeft) {
-                        container.scrollTo({ left: bLeft - 16, behavior: "smooth" });
-                      } else if (bRight > container.scrollLeft + container.clientWidth) {
-                        container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: "smooth" });
-                      }
-                    });
-                  }
                 }}
                 className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"

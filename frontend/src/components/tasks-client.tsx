@@ -113,22 +113,46 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
 
   const requestIdRef = useRef(0);
 
-  // Scroll active category pill into view on mobile whenever activeCategory changes
+  // Scroll active category pill into view on both desktop and mobile whenever activeCategory changes
   const categoryRowRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
     const container = categoryRowRef.current;
-    if (!container) return;
-    const activeBtn = container.querySelector<HTMLElement>('[data-active="true"]');
-    if (!activeBtn) return;
+    const activeBtn = subCatRefs.current[activeCategory];
+    if (!container || !activeBtn) return;
+
     const cRect = container.getBoundingClientRect();
     const bRect = activeBtn.getBoundingClientRect();
     const bLeft = bRect.left - cRect.left + container.scrollLeft;
     const bRight = bLeft + bRect.width;
-    if (bLeft < container.scrollLeft) {
-      container.scrollTo({ left: bLeft - 16, behavior: 'smooth' });
-    } else if (bRight > container.scrollLeft + container.clientWidth) {
-      container.scrollTo({ left: bRight - container.clientWidth + 16, behavior: 'smooth' });
+    const visibleLeft = container.scrollLeft;
+    const visibleRight = container.scrollLeft + container.clientWidth;
+
+    if (bRight > visibleRight) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.35,
+        container.scrollWidth - bRight
+      );
+
+      container.scrollTo({
+        left: Math.max(
+          0,
+          Math.min(
+            container.scrollWidth - container.clientWidth,
+            bRight - container.clientWidth + extraSpace
+          )
+        ),
+        behavior: "smooth",
+      });
+    } else if (bLeft < visibleLeft) {
+      const extraSpace = Math.min(
+        container.clientWidth * 0.25,
+        bLeft
+      );
+
+      container.scrollTo({
+        left: Math.max(0, bLeft - extraSpace),
+        behavior: "smooth",
+      });
     }
   }, [activeCategory]);
 
