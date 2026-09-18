@@ -149,55 +149,76 @@ export function NewsListingClient({ category, initialTopic }: NewsListingClientP
     loadData();
   }, [loadData]);
 
-  useEffect(() => {
-    const container = categoryRowRef.current;
-    const activeBtn = categoryChipRefs.current[filter];
 
-    if (!container || !activeBtn) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const buttonRect = activeBtn.getBoundingClientRect();
-
-    const buttonLeft =
-      buttonRect.left - containerRect.left + container.scrollLeft;
-    const buttonRight = buttonLeft + buttonRect.width;
-    const visibleLeft = container.scrollLeft;
-    const visibleRight = container.scrollLeft + container.clientWidth;
-
-    if (buttonRight > visibleRight) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.35,
-        container.scrollWidth - buttonRight
-      );
-
-      container.scrollTo({
-        left: Math.max(
-          0,
-          Math.min(
-            container.scrollWidth - container.clientWidth,
-            buttonRight - container.clientWidth + extraSpace
-          )
-        ),
-        behavior: "smooth",
-      });
-    } else if (buttonLeft < visibleLeft) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.25,
-        buttonLeft
-      );
-
-      container.scrollTo({
-        left: Math.max(0, buttonLeft - extraSpace),
-        behavior: "smooth",
-      });
-    }
-  }, [filter]);
 
   const toggleTopic = (v: string) => setSelectedTopics((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
   const toggleSource = (v: string) => setSelectedSources((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
 
   // In-page subcategory filter selection with full dataset loading
   const handleSelectFilter = (fKey: string) => {
+    const container = categoryRowRef.current;
+    const clickedButton = categoryChipRefs.current[fKey];
+
+    if (container && clickedButton) {
+      const buttons = Array.from(
+        container.querySelectorAll("button")
+      ) as HTMLButtonElement[];
+
+      const containerRect = container.getBoundingClientRect();
+
+      // Include partially visible/cut-off chips as visible.
+      const visibleButtons = buttons.filter((button) => {
+        const rect = button.getBoundingClientRect();
+
+        return (
+          rect.right > containerRect.left &&
+          rect.left < containerRect.right
+        );
+      });
+
+      const clickedVisibleIndex = visibleButtons.indexOf(clickedButton);
+
+      const hasHiddenLeft = container.scrollLeft > 1;
+
+      const maxScrollLeft =
+        container.scrollWidth - container.clientWidth;
+
+      const hasHiddenRight =
+        container.scrollLeft < maxScrollLeft - 1;
+
+      // Scroll left when clicking one of the last 3 visible chips.
+      if (
+        hasHiddenRight &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex >= visibleButtons.length - 3
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          maxScrollLeft - container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: scrollAmount,
+          behavior: "smooth",
+        });
+      // Scroll right when clicking one of the first 3 visible chips.
+      } else if (
+        hasHiddenLeft &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex <= 2
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: -scrollAmount,
+          behavior: "smooth",
+        });
+      }
+    }
+
     if (fKey === "all") {
       setFilter("all");
       setSelectedTopics([]);

@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Device, DeviceSubCategory } from "@/lib/types";
 import { fetchAllDevices } from "@/lib/api";
-import { scrollChipIntoView } from "@/lib/utils";
 import { DEVICES_DATA, DeviceData, getMainTaskColor } from "@/data/devices";
 import Flame    from 'lucide-react/dist/esm/icons/flame';
 import Wrench      from 'lucide-react/dist/esm/icons/wrench';
@@ -298,49 +297,76 @@ export function DevicesClient({ defaultCategory }: { defaultCategory?: string })
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  useEffect(() => {
+
+
+  const handleSelectCategory = (category: string) => {
     const container = subCatContainerRef.current;
-    const activeBtn = subCatRefs.current[selectedCategory];
+    const clickedButton = subCatRefs.current[category];
 
-    if (!container || !activeBtn) return;
+    if (container && clickedButton) {
+      const buttons = Array.from(
+        container.querySelectorAll("button")
+      ) as HTMLButtonElement[];
 
-    const containerRect = container.getBoundingClientRect();
-    const buttonRect = activeBtn.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
 
-    const buttonLeft =
-      buttonRect.left - containerRect.left + container.scrollLeft;
-    const buttonRight = buttonLeft + buttonRect.width;
-    const visibleLeft = container.scrollLeft;
-    const visibleRight = container.scrollLeft + container.clientWidth;
-
-    if (buttonRight > visibleRight) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.35,
-        container.scrollWidth - buttonRight
-      );
-
-      container.scrollTo({
-        left: Math.max(
-          0,
-          Math.min(
-            container.scrollWidth - container.clientWidth,
-            buttonRight - container.clientWidth + extraSpace
-          )
-        ),
-        behavior: "smooth",
+      // Include partially visible/cut-off chips as visible.
+      const visibleButtons = buttons.filter((button) => {
+        const rect = button.getBoundingClientRect();
+        return (
+          rect.right > containerRect.left &&
+          rect.left < containerRect.right
+        );
       });
-    } else if (buttonLeft < visibleLeft) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.25,
-        buttonLeft
-      );
 
-      container.scrollTo({
-        left: Math.max(0, buttonLeft - extraSpace),
-        behavior: "smooth",
-      });
+      const clickedVisibleIndex = visibleButtons.indexOf(clickedButton);
+      const hasHiddenLeft = container.scrollLeft > 1;
+      const maxScrollLeft =
+        container.scrollWidth - container.clientWidth;
+      const hasHiddenRight =
+        container.scrollLeft < maxScrollLeft - 1;
+
+      if (
+        hasHiddenRight &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex >= visibleButtons.length - 3
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          maxScrollLeft - container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: scrollAmount,
+          behavior: "smooth",
+        });
+      } else if (
+        hasHiddenLeft &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex <= 2
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: -scrollAmount,
+          behavior: "smooth",
+        });
+      }
     }
-  }, [selectedCategory]);
+
+    setSelectedCategory(category);
+    setCurrentPage(1);
+
+    if (category === ALL_CATEGORIES) {
+      router.push("/devices", { scroll: false });
+    } else {
+      const slug = DEVICE_TO_SLUG[category] || "";
+      router.push(`/devices?category=${slug}`, { scroll: false });
+    }
+  };
 
 useEffect(() => {
   setSelectedCategory(resolveDeviceCategory(requestedCategory));
@@ -569,11 +595,7 @@ if (selectedCategory !== ALL_CATEGORIES) {
         >
           <button
             ref={(el) => { subCatRefs.current[ALL_CATEGORIES] = el; }}
-            onClick={() => {
-  setSelectedCategory(ALL_CATEGORIES);
-  setCurrentPage(1);
-  router.push('/devices');
-}}
+            onClick={() => handleSelectCategory(ALL_CATEGORIES)}
             className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
               selectedCategory === ALL_CATEGORIES
                 ? "bg-white text-black border-white shadow-lg shadow-white/5"
@@ -586,11 +608,7 @@ if (selectedCategory !== ALL_CATEGORIES) {
   <button
     key={sub}
     ref={(el) => { subCatRefs.current[sub] = el; }}
-    onClick={() => {
-      setSelectedCategory(sub);
-      setCurrentPage(1);
-      router.push(`/devices?category=${DEVICE_TO_SLUG[sub] || ''}`, { scroll: false });
-    }}
+    onClick={() => handleSelectCategory(sub)}
     className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${
       selectedCategory === sub
         ? "bg-white text-black border-white shadow-lg shadow-white/5"

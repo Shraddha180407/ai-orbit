@@ -20,7 +20,7 @@ import {
   SquarePenIcon,
   TrendingUpIcon,
   WorkflowIcon,
-} from "lucide-animated";
+} from "lucide-react";
 
 
 type DirectoryMode = "tools" | "personal" | "creativity" | "business";
@@ -244,51 +244,70 @@ export function ToolsClient({
 
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const categoryRowRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const container = categoryRowRef.current;
-    const activeBtn = subCatRefs.current[activeCategory];
+  const handleCategoryClick = (slug: string) => {
+    const container = subCatContainerRef.current;
+    const clickedButton = subCatRefs.current[slug];
 
-    if (!container || !activeBtn) return;
+    if (container && clickedButton) {
+      const buttons = Array.from(
+        container.querySelectorAll("button")
+      ) as HTMLButtonElement[];
 
-    const containerRect = container.getBoundingClientRect();
-    const buttonRect = activeBtn.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
 
-    const buttonLeft =
-      buttonRect.left - containerRect.left + container.scrollLeft;
-    const buttonRight = buttonLeft + buttonRect.width;
-    const visibleLeft = container.scrollLeft;
-    const visibleRight = container.scrollLeft + container.clientWidth;
+      // Count partially visible/cut-off chips as visible.
+      const visibleButtons = buttons.filter((button) => {
+        const rect = button.getBoundingClientRect();
 
-    if (buttonRight > visibleRight) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.35,
-        container.scrollWidth - buttonRight
-      );
-
-      container.scrollTo({
-        left: Math.max(
-          0,
-          Math.min(
-            container.scrollWidth - container.clientWidth,
-            buttonRight - container.clientWidth + extraSpace
-          )
-        ),
-        behavior: "smooth",
+        return (
+          rect.right > containerRect.left &&
+          rect.left < containerRect.right
+        );
       });
-    } else if (buttonLeft < visibleLeft) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.25,
-        buttonLeft
-      );
 
-      container.scrollTo({
-        left: Math.max(0, buttonLeft - extraSpace),
-        behavior: "smooth",
-      });
+      const clickedVisibleIndex = visibleButtons.indexOf(clickedButton);
+      const hasHiddenLeft = container.scrollLeft > 1;
+      const maxScrollLeft =
+        container.scrollWidth - container.clientWidth;
+      const hasHiddenRight =
+        container.scrollLeft < maxScrollLeft - 1;
+
+      // Last 3 visible chips scroll the row left.
+      if (
+        hasHiddenRight &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex >= visibleButtons.length - 3
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          maxScrollLeft - container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: scrollAmount,
+          behavior: "smooth",
+        });
+      // First 3 visible chips scroll the row right.
+      } else if (
+        hasHiddenLeft &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex <= 2
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: -scrollAmount,
+          behavior: "smooth",
+        });
+      }
     }
-  }, [activeCategory]);
+
+    handleCategoryChange(slug);
+  };
 
   // FIXED: If the mode changes (e.g. going from Agents to Tools), force the category and page to reset 
   // so the new page doesn't try to query the old page's categories.
@@ -389,10 +408,7 @@ export function ToolsClient({
 
         {/* Category Row */}
         <div
-          ref={(el) => {
-            subCatContainerRef.current = el;
-            categoryRowRef.current = el;
-          }}
+          ref={subCatContainerRef}
           className="mb-3 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-2 touch-scroll-x pb-3 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
         >
           {categories.map((topic) => {
@@ -404,11 +420,9 @@ export function ToolsClient({
               <button
                 key={topic.name}
                 ref={(el) => { subCatRefs.current[topic.slug] = el; }}
-                onClick={() => {
-                  handleCategoryChange(topic.slug);
-                }}
+                onClick={() => handleCategoryClick(topic.slug)}
                 data-active={isSelected ? "true" : undefined}
-                className={`group inline-flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2.5 text-[11px] font-semibold leading-tight tracking-[-0.01em] whitespace-nowrap transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out border active:scale-[0.98] cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b] ${isSelected
+                className={`group inline-flex h-[24px] min-h-0 flex-col items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2.5 text-[11.5px] font-semibold leading-tight tracking-[-0.01em] whitespace-nowrap transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out border active:scale-[0.98] cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b] ${isSelected
                     ? "bg-white text-black border-white shadow-[0_10px_24px_rgba(255,255,255,0.14)]"
                     : "text-neutral-400 bg-white/[0.035] border-white/[0.08] hover:text-white hover:bg-white/[0.07] hover:border-white/[0.18]"
                   }`}
