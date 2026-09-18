@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useRef, useCallback, useTransition } from "react";
+import React, { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Company } from "@/lib/types";
@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/shadcn-button";
 import { Pagination } from "@/components/Pagination";
-import { cn, scrollChipIntoView } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 
 const PAGE_SIZE = 100;
@@ -111,6 +111,7 @@ function LogoCell({ name, logoUrl }: { name: string; logoUrl: string | null }) {
   if (!logoUrl || failed) {
     return <span className="text-sm font-bold text-neutral-900">{name.charAt(0)}</span>;
   }
+
   return (
     <img
       src={logoUrl}
@@ -168,6 +169,7 @@ function matchesSubcategory(c: Company, slug: string): boolean {
   const slugLower = slug.toLowerCase().replace(/[-_]/g, " ");
 
   const types = Array.isArray(c.type) ? c.type : [];
+
   for (const t of types) {
     if (t && t.toLowerCase().replace(/[-_]/g, " ").includes(slugLower)) return true;
   }
@@ -229,7 +231,10 @@ function CompanyRow({
         const el = e.currentTarget;
         el.style.boxShadow = `inset 3px 0 0 ${accentColor}`;
         const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
-        if (logoEl) { logoEl.style.borderColor = accentColor; logoEl.style.boxShadow = `0 0 8px ${accentColor}55`; }
+        if (logoEl) {
+          logoEl.style.borderColor = accentColor;
+          logoEl.style.boxShadow = `0 0 8px ${accentColor}55`;
+        }
         const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
         if (nameEl) nameEl.style.color = accentColor;
       }}
@@ -237,7 +242,10 @@ function CompanyRow({
         const el = e.currentTarget;
         el.style.boxShadow = "";
         const logoEl = el.querySelector<HTMLElement>('[data-logo="true"]');
-        if (logoEl) { logoEl.style.borderColor = ""; logoEl.style.boxShadow = ""; }
+        if (logoEl) {
+          logoEl.style.borderColor = "";
+          logoEl.style.boxShadow = "";
+        }
         const nameEl = el.querySelector<HTMLElement>('[data-name="true"]');
         if (nameEl) nameEl.style.color = "";
       }}
@@ -259,9 +267,11 @@ function CompanyRow({
           >
             {cleanName}
           </h3>
+
           {company.verified && (
             <BadgeCheck size={14} className="shrink-0 text-blue-400" aria-label="Verified" />
           )}
+
           {company.website && (
             <a
               href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
@@ -274,10 +284,14 @@ function CompanyRow({
             </a>
           )}
         </div>
+
         {authenticModels.length > 0 ? (
           <div className="flex items-center gap-1 mt-0.5 flex-wrap">
             {authenticModels.slice(0, 2).map((m) => (
-              <span key={m.id} className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[9px] font-mono text-[#A1A1AA] truncate max-w-[100px]">
+              <span
+                key={m.id}
+                className="inline-flex items-center rounded-md border border-[#232326]/60 bg-[#18181C] px-2 py-0.5 text-[9px] font-mono text-[#A1A1AA] truncate max-w-[100px]"
+              >
                 {m.name}
               </span>
             ))}
@@ -331,7 +345,11 @@ function CompanyRow({
       <div onClick={(e) => e.preventDefault()}>
         <button
           type="button"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onShare(company); }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onShare(company);
+          }}
           className="inline-flex items-center justify-center rounded-md border border-[#232326]/60 bg-[#18181C] p-1.5 text-[#A1A1AA] hover:border-[#3a3a3d] hover:text-white transition-colors cursor-pointer"
         >
           <Share2 size={14} />
@@ -363,52 +381,6 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
 
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    const activeBtn = subCatRefs.current[activeCategorySlug];
-
-    if (!container || !activeBtn) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const buttonRect = activeBtn.getBoundingClientRect();
-
-    const buttonLeft =
-      buttonRect.left - containerRect.left + container.scrollLeft;
-    const buttonRight = buttonLeft + buttonRect.width;
-    const visibleLeft = container.scrollLeft;
-    const visibleRight = container.scrollLeft + container.clientWidth;
-
-    if (buttonRight > visibleRight) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.35,
-        container.scrollWidth - buttonRight
-      );
-
-      container.scrollTo({
-        left: Math.max(
-          0,
-          Math.min(
-            container.scrollWidth - container.clientWidth,
-            buttonRight - container.clientWidth + extraSpace
-          )
-        ),
-        behavior: "smooth",
-      });
-    } else if (buttonLeft < visibleLeft) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.25,
-        buttonLeft
-      );
-
-      container.scrollTo({
-        left: Math.max(0, buttonLeft - extraSpace),
-        behavior: "smooth",
-      });
-    }
-  }, [activeCategorySlug]);
-
-
 
   const [selectedCountry, setSelectedCountry] = useState<string>("all");
   const [isCountryPopoverOpen, setIsCountryPopoverOpen] = useState<boolean>(false);
@@ -539,6 +511,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
           const companies: Company[] = Array.isArray(response)
             ? (response as Company[])
             : ((response?.companies || []) as Company[]);
+
           candidates = candidates.concat(companies);
         }
       }
@@ -587,11 +560,22 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
 
   useEffect(() => {
     if (urlSortParam) {
-      if (urlSortParam === "name-asc") { setSortField("name"); setSortDir("asc"); }
-      else if (urlSortParam === "name-desc") { setSortField("name"); setSortDir("desc"); }
-      else if (urlSortParam === "oldest") { setSortField("valuation"); setSortDir("asc"); }
-      else if (urlSortParam === "rating" || urlSortParam === "top-rated") { setSortField("modelsCount"); setSortDir("desc"); }
-      else { setSortField("valuation"); setSortDir("desc"); }
+      if (urlSortParam === "name-asc") {
+        setSortField("name");
+        setSortDir("asc");
+      } else if (urlSortParam === "name-desc") {
+        setSortField("name");
+        setSortDir("desc");
+      } else if (urlSortParam === "oldest") {
+        setSortField("valuation");
+        setSortDir("asc");
+      } else if (urlSortParam === "rating" || urlSortParam === "top-rated") {
+        setSortField("modelsCount");
+        setSortDir("desc");
+      } else {
+        setSortField("valuation");
+        setSortDir("desc");
+      }
     }
   }, [urlSortParam]);
 
@@ -616,10 +600,12 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
       if (countryPopoverRef.current && !countryPopoverRef.current.contains(e.target as Node)) {
         setIsCountryPopoverOpen(false);
       }
+
       if (companyNamePopoverRef.current && !companyNamePopoverRef.current.contains(e.target as Node)) {
         setIsCompanyNamePopoverOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -693,20 +679,25 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     if (allCompanyCountries.length > 0) return allCompanyCountries;
 
     const set = new Set<string>();
+
     allCompanies.forEach((company) => {
       if (company.country && company.country.trim()) {
         set.add(company.country.trim());
       }
     });
+
     return Array.from(set).sort();
   }, [allCompanyCountries, allCompanies]);
 
   const filteredCountriesList = useMemo(() => {
     if (!countrySearch.trim()) return availableCountries;
-    const q = countrySearch.toLowerCase();
-    return availableCountries.filter((c) => c.toLowerCase().includes(q));
-  }, [availableCountries, countrySearch]);
 
+    const q = countrySearch.toLowerCase();
+
+    return availableCountries.filter((c) =>
+      c.toLowerCase().includes(q)
+    );
+  }, [availableCountries, countrySearch]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -728,7 +719,74 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   };
 
   const handleSubcategoryClick = (slug: string) => {
+    const container = subCatContainerRef.current;
+    const clickedButton = subCatRefs.current[slug];
+
+    if (container && clickedButton) {
+      const buttons = Array.from(
+        container.querySelectorAll("button")
+      ) as HTMLButtonElement[];
+
+      const visibleButtons = buttons.filter((button) => {
+        const rect = button.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        return (
+          rect.left >= containerRect.left &&
+          rect.right <= containerRect.right
+        );
+      });
+
+      const clickedVisibleIndex = visibleButtons.indexOf(clickedButton);
+
+      const hasHiddenLeft = container.scrollLeft > 0;
+
+      const hasHiddenRight =
+        container.scrollLeft + container.clientWidth <
+        container.scrollWidth - 1;
+
+      /*
+       * RIGHT SIDE:
+       *
+       * If there are still chips hidden to the RIGHT and the
+       * clicked chip is one of the last 3 currently visible chips,
+       * move the category row LEFT.
+       *
+       * Example:
+       * 1  2  3  4  5  6  7 | 8  9  10...
+       *             ↑  ↑  ↑
+       *             5  6  7 → move LEFT
+       */
+      if (
+        hasHiddenRight &&
+        clickedVisibleIndex >= visibleButtons.length - 3
+      ) {
+        container.scrollBy({
+          left: container.clientWidth * 0.55,
+          behavior: "smooth",
+        });
+      }
+
+      /*
+       * LEFT SIDE:
+       *
+       * Once the row has moved and there are chips hidden to the
+       * LEFT, clicking one of the first 3 visible chips moves RIGHT.
+       */
+      else if (
+        hasHiddenLeft &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex <= 2
+      ) {
+        container.scrollBy({
+          left: -(container.clientWidth * 0.55),
+          behavior: "smooth",
+        });
+      }
+    }
+
     setActiveCategorySlug(slug);
+
     if (typeof window !== "undefined") {
       const url = slug === "all" ? "/companies" : `/companies/${slug}`;
       window.history.pushState(null, "", url);
@@ -736,30 +794,66 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   };
 
   const handleShare = (company: Company) => {
-    const url = typeof window !== "undefined" ? `${window.location.origin}/companies/${cleanCompanySlug(company.slug)}` : "";
+    const url =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/companies/${cleanCompanySlug(company.slug)}`
+        : "";
+
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url);
-      toast.success(`Copied ${formatCompanyName(company.name)} link to clipboard!`);
+      toast.success(
+        `Copied ${formatCompanyName(company.name)} link to clipboard!`
+      );
     }
   };
 
   const handleSave = async () => {
     setIsSaving(true);
+
     try {
-      const url = editingId ? `${API_URL}/api/admin/companies/${editingId}` : `${API_URL}/api/admin/companies`;
+      const url = editingId
+        ? `${API_URL}/api/admin/companies/${editingId}`
+        : `${API_URL}/api/admin/companies`;
+
       const method = editingId ? 'PATCH' : 'POST';
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData), credentials: 'include' });
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+        credentials: 'include',
+      });
+
       if (!res.ok) throw new Error('Failed to save company');
-      toast.success(editingId ? 'Company updated successfully' : 'Company added successfully');
+
+      toast.success(
+        editingId
+          ? 'Company updated successfully'
+          : 'Company added successfully'
+      );
+
       setIsModalOpen(false);
       getAllCompanies();
-    } catch (error: any) { toast.error(error.message); }
-    finally { setIsSaving(false); }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const openAdd = () => { setEditingId(null); setFormData({ name: '', slug: '', logoUrl: '' }); setIsModalOpen(true); };
+  const openAdd = () => {
+    setEditingId(null);
+    setFormData({ name: '', slug: '', logoUrl: '' });
+    setIsModalOpen(true);
+  };
 
-  const SortHeader = ({ label, field }: { label: string; field: SortField }) => (
+  const SortHeader = ({
+    label,
+    field,
+  }: {
+    label: string;
+    field: SortField;
+  }) => (
     <button
       type="button"
       onClick={() => toggleSort(field)}
@@ -768,8 +862,11 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
       }`}
     >
       <span>{label}</span>
+
       {sortField === field ? (
-        <span className="text-[10px] text-white">{sortDir === 'desc' ? '↓' : '↑'}</span>
+        <span className="text-[10px] text-white">
+          {sortDir === 'desc' ? '↓' : '↑'}
+        </span>
       ) : (
         <span className="text-[10px] opacity-40">↕</span>
       )}
@@ -780,6 +877,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
     <>
       <main className="w-full px-3 sm:px-6 lg:px-8 py-3 flex-1 flex flex-col selection:bg-neutral-800 selection:text-white">
         <div className="w-full space-y-4">
+
           {/* Subcategories Horizontal Scrollbar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
             <div
@@ -788,10 +886,16 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
             >
               {COMPANY_TYPES.map((ct) => {
                 const isSelected = activeCategorySlug === ct.slug;
+
                 return (
-                  <div key={ct.slug} className="flex items-center gap-1 shrink-0">
+                  <div
+                    key={ct.slug}
+                    className="flex items-center gap-1 shrink-0"
+                  >
                     <button
-                      ref={(el) => { subCatRefs.current[ct.slug] = el; }}
+                      ref={(el) => {
+                        subCatRefs.current[ct.slug] = el;
+                      }}
                       type="button"
                       onClick={() => handleSubcategoryClick(ct.slug)}
                       className={cn(
@@ -806,7 +910,9 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
 
                     {isSelected && ct.slug !== "all" && (
                       <ClearFilterChip
-                        onClick={() => handleSubcategoryClick("all")}
+                        onClick={() =>
+                          handleSubcategoryClick("all")
+                        }
                       />
                     )}
                   </div>
@@ -816,8 +922,12 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
 
             {isAdmin && (
               <div className="flex items-center gap-2 shrink-0">
-                <Button className="bg-white text-black hover:bg-neutral-200 h-8 text-xs font-bold px-3 rounded-lg shrink-0" onClick={openAdd}>
-                  <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Company
+                <Button
+                  className="bg-white text-black hover:bg-neutral-200 h-8 text-xs font-bold px-3 rounded-lg shrink-0"
+                  onClick={openAdd}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" />
+                  Add Company
                 </Button>
               </div>
             )}
@@ -827,7 +937,10 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
           {isLoading || isFetching && allCompanies.length === 0 ? (
             <div className="w-full space-y-2">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-16 animate-pulse bg-[#131316]/50 rounded-xl border border-[#232326]/60" />
+                <div
+                  key={i}
+                  className="h-16 animate-pulse bg-[#131316]/50 rounded-xl border border-[#232326]/60"
+                />
               ))}
             </div>
           ) : allCompanies.length === 0 ? (
@@ -843,11 +956,18 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
           ) : (
             <div className="w-full rounded-xl border border-[#232326] bg-[#0A0A0C] overflow-hidden shadow-xl">
               <div className="overflow-x-auto touch-scroll-x relative">
+
                 {/* Header Row */}
-                <div className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2.5 bg-[#131316] border-b border-[#232326]/60 text-[10px] font-bold font-mono tracking-wider uppercase text-[#A1A1AA]`}>
+                <div
+                  className={`grid ${COL_TEMPLATE} ${COL_MIN_WIDTH} items-center gap-3 px-4 py-2.5 bg-[#131316] border-b border-[#232326]/60 text-[10px] font-bold font-mono tracking-wider uppercase text-[#A1A1AA]`}
+                >
                   <div></div>
+
                   <div>
-                    <div className="relative" ref={companyNamePopoverRef}>
+                    <div
+                      className="relative"
+                      ref={companyNamePopoverRef}
+                    >
                       <div className="flex items-center gap-1">
                         {/* Existing company-name sort */}
                         <SortHeader label="COMPANY" field="name" />
@@ -868,7 +988,9 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                           onClick={(e) => {
                             e.stopPropagation();
                             setCompanyNameInput(companyNameFilter);
-                            setIsCompanyNamePopoverOpen((open) => !open);
+                            setIsCompanyNamePopoverOpen(
+                              (open) => !open
+                            );
                           }}
                           className={`flex items-center justify-center transition-colors cursor-pointer ${
                             companyNameFilter
@@ -891,10 +1013,14 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                             autoFocus
                             type="text"
                             value={companyNameInput}
-                            onChange={(e) => setCompanyNameInput(e.target.value)}
+                            onChange={(e) =>
+                              setCompanyNameInput(e.target.value)
+                            }
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
-                                setCompanyNameFilter(companyNameInput.trim());
+                                setCompanyNameFilter(
+                                  companyNameInput.trim()
+                                );
                                 setIsCompanyNamePopoverOpen(false);
                               }
                             }}
@@ -905,7 +1031,9 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                           <button
                             type="button"
                             onClick={() => {
-                              setCompanyNameFilter(companyNameInput.trim());
+                              setCompanyNameFilter(
+                                companyNameInput.trim()
+                              );
                               setIsCompanyNamePopoverOpen(false);
                             }}
                             className="w-full h-7 shrink-0 rounded-md bg-[#6E56CF] text-white text-xs font-semibold hover:bg-[#7C66DF] transition-colors"
@@ -916,17 +1044,28 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                       )}
                     </div>
                   </div>
+
                   <div>
-                    <div className="relative" ref={countryPopoverRef}>
+                    <div
+                      className="relative"
+                      ref={countryPopoverRef}
+                    >
                       <button
                         type="button"
-                        onClick={() => setIsCountryPopoverOpen(!isCountryPopoverOpen)}
+                        onClick={() =>
+                          setIsCountryPopoverOpen(
+                            !isCountryPopoverOpen
+                          )
+                        }
                         className={`flex items-center gap-1 font-mono hover:text-white transition-colors cursor-pointer select-none ${
-                          selectedCountry !== 'all' ? 'text-[#6E56CF]' : 'text-[#A1A1AA]'
+                          selectedCountry !== 'all'
+                            ? 'text-[#6E56CF]'
+                            : 'text-[#A1A1AA]'
                         }`}
                       >
                         <span>COUNTRY</span>
                         <Filter size={12} className="ml-0.5" />
+
                         {selectedCountry !== "all" && (
                           <ClearFilterChip
                             onClick={() => {
@@ -946,7 +1085,9 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                           <input
                             type="text"
                             value={countrySearch}
-                            onChange={(e) => setCountrySearch(e.target.value)}
+                            onChange={(e) =>
+                              setCountrySearch(e.target.value)
+                            }
                             placeholder="Search countries..."
                             className="w-full h-9 rounded-lg border border-[#232326] bg-[#0A0A0C] px-3 text-xs leading-9 text-white placeholder:text-[#71717A] focus:border-[#6E56CF] focus:outline-none mb-2"
                           />
@@ -968,24 +1109,29 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                                 </button>
                               )}
 
-                              {filteredCountriesList.map((countryName) => (
-                                <button
-                                  key={countryName}
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedCountry(countryName);
-                                    setCurrentPage(1);
-                                    setIsCountryPopoverOpen(false);
-                                  }}
-                                  className={`w-full h-7 shrink-0 flex items-center rounded-md px-2 text-left text-[11px] leading-none font-semibold truncate ${
-                                    selectedCountry.toLowerCase() === countryName.toLowerCase()
-                                      ? "bg-white text-black font-bold"
-                                      : "text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white"
-                                  }`}
-                                >
-                                  <span className="truncate">{countryName}</span>
-                                </button>
-                              ))}
+                              {filteredCountriesList.map(
+                                (countryName) => (
+                                  <button
+                                    key={countryName}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedCountry(countryName);
+                                      setCurrentPage(1);
+                                      setIsCountryPopoverOpen(false);
+                                    }}
+                                    className={`w-full h-7 shrink-0 flex items-center rounded-md px-2 text-left text-[11px] leading-none font-semibold truncate ${
+                                      selectedCountry.toLowerCase() ===
+                                      countryName.toLowerCase()
+                                        ? "bg-white text-black font-bold"
+                                        : "text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white"
+                                    }`}
+                                  >
+                                    <span className="truncate">
+                                      {countryName}
+                                    </span>
+                                  </button>
+                                )
+                              )}
 
                               {filteredCountriesList.length === 0 && (
                                 <div className="px-2 py-3 text-[11px] text-[#71717A]">
@@ -998,19 +1144,36 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                       )}
                     </div>
                   </div>
-                  <div><SortHeader label="VALUATION" field="valuation" /></div>
-                  <div><SortHeader label="VAL/EMP" field="valEmp" /></div>
+
+                  <div>
+                    <SortHeader label="VALUATION" field="valuation" />
+                  </div>
+
+                  <div>
+                    <SortHeader label="VAL/EMP" field="valEmp" />
+                  </div>
+
                   <div className="font-mono">AI NATIVE</div>
                   <div className="font-mono">PROFITABLE</div>
                   <div className="font-mono">SECTOR</div>
-                  <div><SortHeader label="MODELS" field="modelsCount" /></div>
-                  <div><SortHeader label="TOOLS" field="toolsCount" /></div>
+
+                  <div>
+                    <SortHeader label="MODELS" field="modelsCount" />
+                  </div>
+
+                  <div>
+                    <SortHeader label="TOOLS" field="toolsCount" />
+                  </div>
+
                   <div>SHARE</div>
                   <div>BOOKMARK</div>
                 </div>
 
                 {/* Data Rows */}
-                <div role="list" className="divide-y divide-[#232326]/60">
+                <div
+                  role="list"
+                  className="divide-y divide-[#232326]/60"
+                >
                   {paginatedCompanies.map((company, idx) => (
                     <CompanyRow
                       key={company.id}
@@ -1030,8 +1193,14 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                 totalCount={totalCount}
                 onPageChange={(p) => {
                   handlePageChange(p);
-                  const target = document.getElementById("companies-container");
-                  if (target) target.scrollIntoView({ behavior: "smooth" });
+                  const target = document.getElementById(
+                    "companies-container"
+                  );
+                  if (target) {
+                    target.scrollIntoView({
+                      behavior: "smooth",
+                    });
+                  }
                 }}
                 onPageSizeChange={(s) => {
                   setPageSize(s);
@@ -1043,16 +1212,79 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
         </div>
       </main>
 
-      <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? 'Edit Company' : 'Add Company'} footer={
-        <>
-          <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save'}</Button>
-        </>
-      }>
+      <Modal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingId ? 'Edit Company' : 'Add Company'}
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Cancel
+            </Button>
+
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save'}
+            </Button>
+          </>
+        }
+      >
         <div className="space-y-3">
-          <div><label className="text-xs text-[#8A8F98]">Name *</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. OpenAI" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} /></div>
-          <div><label className="text-xs text-[#8A8F98]">Slug * (unique, lowercase, no spaces)</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="e.g. openai" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} /></div>
-          <div><label className="text-xs text-[#8A8F98]">Logo URL (optional)</label><Input className="bg-[#111113] border-[#1C1C1F] text-white" placeholder="https://..." value={formData.logoUrl} onChange={e => setFormData({...formData, logoUrl: e.target.value})} /></div>
+          <div>
+            <label className="text-xs text-[#8A8F98]">
+              Name *
+            </label>
+
+            <Input
+              className="bg-[#111113] border-[#1C1C1F] text-white"
+              placeholder="e.g. OpenAI"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  name: e.target.value,
+                })
+              }
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-[#8A8F98]">
+              Slug * (unique, lowercase, no spaces)
+            </label>
+
+            <Input
+              className="bg-[#111113] border-[#1C1C1F] text-white"
+              placeholder="e.g. openai"
+              value={formData.slug}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  slug: e.target.value,
+                })
+              }
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-[#8A8F98]">
+              Logo URL (optional)
+            </label>
+
+            <Input
+              className="bg-[#111113] border-[#1C1C1F] text-white"
+              placeholder="https://..."
+              value={formData.logoUrl}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  logoUrl: e.target.value,
+                })
+              }
+            />
+          </div>
         </div>
       </Modal>
     </>

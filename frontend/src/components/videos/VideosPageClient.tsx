@@ -16,7 +16,6 @@ import {
 import { VideoTable, VideoTableSkeleton } from "./VideoTable";
 import { VideoDetailsModal } from "./VideoDetailsModal";
 import { Pagination } from "./Pagination";
-import { scrollChipIntoView } from "@/lib/utils";
 
 // Builds the /videos URL for a given category + page without touching
 // Next's router - see the pushState usage below for why.
@@ -186,20 +185,6 @@ export function VideosPageClient({
   // from it here would silently stop working. Back/forward is instead
   // handled by the popstate listener below, which reads
   // window.location.search directly.
-
-  // Scroll active chip into view on mount or category change
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    const activeBtn = subCatRefs.current[activeCategory];
-
-    if (container && activeBtn) {
-      scrollChipIntoView(
-        container,
-        activeBtn,
-        true
-      );
-    }
-  }, [activeCategory]);
 
   // Handle browser back/forward navigation. Covers two things that can
   // change via popstate: the video modal (pushed as /videos/:slug) and
@@ -497,16 +482,64 @@ export function VideosPageClient({
       newUrl
     );
 
-    // Smooth scroll chip into view on mobile/tablet.
-    if (
-      targetButton &&
-      subCatContainerRef.current
-    ) {
-      scrollChipIntoView(
-        subCatContainerRef.current,
-        targetButton,
-        true
-      );
+    // Scroll based on the chips that are actually visible.
+    // Partially visible/cut-off chips count as visible.
+    const container = subCatContainerRef.current;
+
+    if (container && targetButton) {
+      const buttons = Array.from(
+        container.querySelectorAll("button")
+      ) as HTMLButtonElement[];
+
+      const containerRect = container.getBoundingClientRect();
+
+      const visibleButtons = buttons.filter((button) => {
+        const rect = button.getBoundingClientRect();
+
+        return (
+          rect.right > containerRect.left &&
+          rect.left < containerRect.right
+        );
+      });
+
+      const clickedVisibleIndex = visibleButtons.indexOf(targetButton);
+      const hasHiddenLeft = container.scrollLeft > 1;
+      const maxScrollLeft =
+        container.scrollWidth - container.clientWidth;
+      const hasHiddenRight =
+        container.scrollLeft < maxScrollLeft - 1;
+
+      // Last 3 visible chips scroll left.
+      if (
+        hasHiddenRight &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex >= visibleButtons.length - 3
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          maxScrollLeft - container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: scrollAmount,
+          behavior: "smooth",
+        });
+      // First 3 visible chips scroll right.
+      } else if (
+        hasHiddenLeft &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex <= 2
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: -scrollAmount,
+          behavior: "smooth",
+        });
+      }
     }
   }
 

@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { RobotListItem } from "@/lib/types";
@@ -11,7 +11,6 @@ import { fetchAllRobots } from "@/lib/api";
 import { FALLBACK_ROBOTS } from "@/data/robots";
 import { CategoryChip } from "@/components/CategoryChip";
 import { Pagination } from "@/components/Pagination";
-import { scrollChipIntoView } from "@/lib/utils";
 
 // Fixed-width template to preserve all 8 columns across mobile and desktop
 const COL_TEMPLATE = "grid-cols-[44px_minmax(200px,2fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(90px,0.8fr)_minmax(140px,1fr)_minmax(80px,0.6fr)_minmax(80px,0.6fr)]";
@@ -170,7 +169,6 @@ const ROBOT_TO_SLUG: Record<string, string> = {
 
 export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState(() => {
     if (defaultCategory && ROBOT_SLUGS[defaultCategory]) {
@@ -258,51 +256,74 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
     setCurrentPage(1);
   }, [query, activeCategory]);
 
-  // Scroll active category pill into view on both desktop and mobile whenever activeCategory changes
-  const categoryRowRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const container = categoryRowRef.current;
-    const activeBtn = subCatRefs.current[activeCategory];
+  const handleSelectCategory = (cat: string) => {
+    const container = subCatContainerRef.current;
+    const clickedButton = subCatRefs.current[cat];
 
-    if (!container || !activeBtn) return;
+    if (container && clickedButton) {
+      const buttons = Array.from(
+        container.querySelectorAll("button")
+      ) as HTMLButtonElement[];
 
-    const containerRect = container.getBoundingClientRect();
-    const buttonRect = activeBtn.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
 
-    const buttonLeft =
-      buttonRect.left - containerRect.left + container.scrollLeft;
-    const buttonRight = buttonLeft + buttonRect.width;
-    const visibleLeft = container.scrollLeft;
-    const visibleRight = container.scrollLeft + container.clientWidth;
+      // Include partially visible/cut-off chips as visible.
+      const visibleButtons = buttons.filter((button) => {
+        const rect = button.getBoundingClientRect();
 
-    if (buttonRight > visibleRight) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.35,
-        container.scrollWidth - buttonRight
-      );
-
-      container.scrollTo({
-        left: Math.max(
-          0,
-          Math.min(
-            container.scrollWidth - container.clientWidth,
-            buttonRight - container.clientWidth + extraSpace
-          )
-        ),
-        behavior: "smooth",
+        return (
+          rect.right > containerRect.left &&
+          rect.left < containerRect.right
+        );
       });
-    } else if (buttonLeft < visibleLeft) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.25,
-        buttonLeft
-      );
 
-      container.scrollTo({
-        left: Math.max(0, buttonLeft - extraSpace),
-        behavior: "smooth",
-      });
+      const clickedVisibleIndex = visibleButtons.indexOf(clickedButton);
+      const hasHiddenLeft = container.scrollLeft > 1;
+      const maxScrollLeft =
+        container.scrollWidth - container.clientWidth;
+      const hasHiddenRight =
+        container.scrollLeft < maxScrollLeft - 1;
+
+      if (
+        hasHiddenRight &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex >= visibleButtons.length - 3
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          maxScrollLeft - container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: scrollAmount,
+          behavior: "smooth",
+        });
+      } else if (
+        hasHiddenLeft &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex <= 2
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: -scrollAmount,
+          behavior: "smooth",
+        });
+      }
     }
-  }, [activeCategory]);
+
+    setActiveCategory(cat);
+
+    // Update the URL without remounting the page, preserving chip scroll.
+    if (typeof window !== "undefined") {
+      const path =
+        cat === "All" ? "/robots" : `/robots/${ROBOT_TO_SLUG[cat]}`;
+      window.history.pushState(null, "", path);
+    }
+  };
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const visibleRobots = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -311,24 +332,16 @@ export function RobotsClient({ defaultCategory }: { defaultCategory?: string }) 
     <main className="w-full px-3 sm:px-6 lg:px-8 pt-2 pb-6 flex-1">
       <div className="mx-auto w-full max-w-[1440px] space-y-3">
         {/* Category Row */}
-        <div ref={categoryRowRef} className="mb-2 -mx-3 sm:mx-0 px-3 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2 scrollbar-none w-auto sm:w-full">
+        <div ref={subCatContainerRef} className="mb-2 -mx-3 sm:mx-0 px-3 sm:px-0 flex flex-nowrap items-center justify-start gap-1.5 touch-scroll-x pb-2 scrollbar-none w-auto sm:w-full">
           {ROBOT_CATEGORIES.map((cat) => {
             const isSelected = activeCategory === cat;
-            const slug = ROBOT_TO_SLUG[cat];
             return (
               <button
                 key={cat}
                 ref={(el) => { subCatRefs.current[cat] = el; }}
                 type="button"
                 data-active={isSelected ? "true" : undefined}
-                onClick={() => {
-                  setActiveCategory(cat);
-                  if (cat === "All") {
-                    router.push(`/robots`);
-                  } else {
-                    router.push(`/robots/${slug}`);
-                  }
-                }}
+                onClick={() => handleSelectCategory(cat)}
                 className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${isSelected
                     ? "bg-white text-black border-white shadow-lg shadow-white/5"
                     : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"

@@ -16,7 +16,6 @@ import { toast } from "sonner";
 
 import { Pagination } from "@/components/Pagination";
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
-import { scrollChipIntoView } from "@/lib/utils";
 
 /**
  * Static fallback used only when GET /api/v1/models/subcategories comes
@@ -51,55 +50,8 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
 
   const selectedSubCategorySlug = defaultSubCategory || searchParams.get("subCategory") || null;
 
-  // Auto-scrolls the active subcategory chip into view (centered) within
-  // its horizontally-scrolling row when the selection changes.
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-
-  useEffect(() => {
-    const container = subCatContainerRef.current;
-    const activeKey = selectedSubCategorySlug || "all";
-    const activeBtn = subCatRefs.current[activeKey];
-
-    if (!container || !activeBtn) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const buttonRect = activeBtn.getBoundingClientRect();
-
-    const buttonLeft =
-      buttonRect.left - containerRect.left + container.scrollLeft;
-    const buttonRight = buttonLeft + buttonRect.width;
-    const visibleLeft = container.scrollLeft;
-    const visibleRight = container.scrollLeft + container.clientWidth;
-
-    if (buttonRight > visibleRight) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.35,
-        container.scrollWidth - buttonRight
-      );
-
-      container.scrollTo({
-        left: Math.max(
-          0,
-          Math.min(
-            container.scrollWidth - container.clientWidth,
-            buttonRight - container.clientWidth + extraSpace
-          )
-        ),
-        behavior: "smooth",
-      });
-    } else if (buttonLeft < visibleLeft) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.25,
-        buttonLeft
-      );
-
-      container.scrollTo({
-        left: Math.max(0, buttonLeft - extraSpace),
-        behavior: "smooth",
-      });
-    }
-  }, [selectedSubCategorySlug]);
 
   const rawSort = searchParams.get("sort") || "newest";
   const selectedSort = rawSort === "name-asc" || rawSort === "name-desc"
@@ -161,16 +113,86 @@ export function ModelsClient({ defaultSubCategory }: { defaultSubCategory?: stri
   };
 
   const handleSelectSubCategory = (slug: string | null) => {
+    const container = subCatContainerRef.current;
+    const clickedButton = subCatRefs.current[slug || "all"];
+
+    if (container && clickedButton) {
+      const buttons = Array.from(
+        container.querySelectorAll("button")
+      ) as HTMLButtonElement[];
+
+      const containerRect = container.getBoundingClientRect();
+
+      const visibleButtons = buttons.filter((button) => {
+          const rect = button.getBoundingClientRect();
+
+          return (
+            rect.right > containerRect.left &&
+            rect.left < containerRect.right
+          );
+        });
+
+        const clickedVisibleIndex =
+        visibleButtons.indexOf(clickedButton);
+
+      const hasHiddenLeft = container.scrollLeft > 1;
+
+      const maxScrollLeft =
+        container.scrollWidth - container.clientWidth;
+
+      const hasHiddenRight =
+        container.scrollLeft < maxScrollLeft - 1;
+
+      if (
+        hasHiddenRight &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex >= visibleButtons.length - 3
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          maxScrollLeft - container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: scrollAmount,
+          behavior: "smooth",
+        });
+      } else if (
+        hasHiddenLeft &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex <= 2
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: -scrollAmount,
+          behavior: "smooth",
+        });
+      }
+    }
+
     setCurrentPage(1);
+
     const params = new URLSearchParams(searchParams.toString());
+
     if (slug) {
       params.set("subCategory", slug);
     } else {
       params.delete("subCategory");
     }
+
     params.delete("page");
+
     const query = params.toString();
-    window.history.pushState(null, "", query ? `/models?${query}` : "/models");
+
+    window.history.pushState(
+      null,
+      "",
+      query ? `/models?${query}` : "/models"
+    );
   };
 
   const { data: apiSubCategories = [] } = useQuery<ModelSubCategory[]>({

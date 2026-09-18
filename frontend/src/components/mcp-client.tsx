@@ -18,7 +18,6 @@ import { CategoryChip } from "@/components/CategoryChip";
 import { PricingBadge } from "@/components/PricingBadge";
 import { Pagination } from "@/components/Pagination";
 import type { MCPCategory, MCPSubCategory } from "@/lib/types";
-import { scrollChipIntoView } from "@/lib/utils";
 
 // FIXED: Adjusted desktop Grid 'fr' ratios. Shrank Name/Desc to 2.2fr and expanded Company to 1.2fr to perfectly balance the visual gaps.
 const COL_TEMPLATE = "grid-cols-[48px_70px_190px_minmax(130px,1.4fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)] md:grid-cols-[40px_minmax(220px,2.2fr)_minmax(130px,1.2fr)_minmax(90px,0.9fr)_minmax(130px,1.4fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)_minmax(110px,1.1fr)]";
@@ -128,6 +127,60 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
   const handleSelectSubCategory = (slug: string | null) => {
     const newSlug = slug === activeSubCategory ? "" : (slug || "");
 
+    const container = subCatContainerRef.current;
+    const clickedButton = subCatRefs.current[newSlug || "all"];
+
+    if (container && clickedButton) {
+      const buttons = Array.from(
+        container.querySelectorAll("button")
+      ) as HTMLButtonElement[];
+
+      const containerRect = container.getBoundingClientRect();
+
+      const visibleButtons = buttons.filter((button) => {
+        const rect = button.getBoundingClientRect();
+        return (
+          rect.left >= containerRect.left &&
+          rect.right <= containerRect.right
+        );
+      });
+
+      const clickedVisibleIndex = visibleButtons.indexOf(clickedButton);
+      const hasHiddenLeft = container.scrollLeft > 1;
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+      const hasHiddenRight = container.scrollLeft < maxScrollLeft - 1;
+
+      if (
+        hasHiddenRight &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex >= visibleButtons.length - 3
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          maxScrollLeft - container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: scrollAmount,
+          behavior: "smooth",
+        });
+      } else if (
+        hasHiddenLeft &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex <= 2
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: -scrollAmount,
+          behavior: "smooth",
+        });
+      }
+    }
+
     setActiveSubCategory(newSlug);
     setCurrentPage(1);
 
@@ -147,6 +200,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
       window.history.constructor.prototype.replaceState.call(window.history, null, "", newUrl);
     }
   };
+
 
   const {
     data,
@@ -341,7 +395,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
 
                 {/* Rows */}
                 <div role="list" className="flex flex-col divide-y divide-[#232326]/60">
-                  {items.map((item) => {
+                  {items.map((item: any) => {
                     const primaryCategory = item.categories?.[0]?.name;
                     const targetUrl = `/p/mcp/${item.slug}`;
                     const prefetchRow = () => {

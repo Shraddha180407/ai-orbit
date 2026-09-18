@@ -20,7 +20,6 @@ import { TaskSkeleton } from "./TaskSkeleton";
 import { EmptyTasks } from "./EmptyTasks";
 import { TaskErrorState } from "./TaskErrorState";
 import { TaskAuthRequired } from "./TaskAuthRequired";
-import { scrollChipIntoView } from "@/lib/utils";
 
 type TasksClientProps = {
   initialData?: TaskListResponse;
@@ -113,48 +112,67 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
 
   const requestIdRef = useRef(0);
 
-  // Scroll active category pill into view on both desktop and mobile whenever activeCategory changes
-  const categoryRowRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const container = categoryRowRef.current;
-    const activeBtn = subCatRefs.current[activeCategory];
-    if (!container || !activeBtn) return;
+  const handleSelectCategory = (category: string) => {
+    const container = subCatContainerRef.current;
+    const clickedButton = subCatRefs.current[category];
 
-    const cRect = container.getBoundingClientRect();
-    const bRect = activeBtn.getBoundingClientRect();
-    const bLeft = bRect.left - cRect.left + container.scrollLeft;
-    const bRight = bLeft + bRect.width;
-    const visibleLeft = container.scrollLeft;
-    const visibleRight = container.scrollLeft + container.clientWidth;
+    if (container && clickedButton) {
+      const buttons = Array.from(
+        container.querySelectorAll("button")
+      ) as HTMLButtonElement[];
 
-    if (bRight > visibleRight) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.35,
-        container.scrollWidth - bRight
-      );
+      const containerRect = container.getBoundingClientRect();
 
-      container.scrollTo({
-        left: Math.max(
-          0,
-          Math.min(
-            container.scrollWidth - container.clientWidth,
-            bRight - container.clientWidth + extraSpace
-          )
-        ),
-        behavior: "smooth",
+      // Include partially visible/cut-off chips as visible.
+      const visibleButtons = buttons.filter((button) => {
+        const rect = button.getBoundingClientRect();
+
+        return (
+          rect.right > containerRect.left &&
+          rect.left < containerRect.right
+        );
       });
-    } else if (bLeft < visibleLeft) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.25,
-        bLeft
-      );
 
-      container.scrollTo({
-        left: Math.max(0, bLeft - extraSpace),
-        behavior: "smooth",
-      });
+      const clickedVisibleIndex = visibleButtons.indexOf(clickedButton);
+      const hasHiddenLeft = container.scrollLeft > 1;
+      const maxScrollLeft =
+        container.scrollWidth - container.clientWidth;
+      const hasHiddenRight =
+        container.scrollLeft < maxScrollLeft - 1;
+
+      if (
+        hasHiddenRight &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex >= visibleButtons.length - 3
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          maxScrollLeft - container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: scrollAmount,
+          behavior: "smooth",
+        });
+      } else if (
+        hasHiddenLeft &&
+        clickedVisibleIndex >= 0 &&
+        clickedVisibleIndex <= 2
+      ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          container.scrollLeft
+        );
+
+        container.scrollBy({
+          left: -scrollAmount,
+          behavior: "smooth",
+        });
+      }
     }
-  }, [activeCategory]);
+
+    navigate({ category, page: 1 });
+  };
 
   const queryParams = useMemo(
     () => ({
@@ -248,7 +266,7 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
 
   return (
     <main id="tasks-container" className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 py-6">
-      <div ref={categoryRowRef} className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
+      <div ref={subCatContainerRef} className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full">
         {TASK_CATEGORIES.map((topic) => {
           const isSelected = activeCategory === topic.slug;
           return (
@@ -258,9 +276,7 @@ export function TasksClient({ initialData, defaultCategory = "" }: TasksClientPr
               type="button"
               aria-current={isSelected ? "true" : undefined}
               data-active={isSelected ? "true" : undefined}
-              onClick={() => {
-                navigate({ category: topic.slug, page: 1 });
-              }}
+              onClick={() => handleSelectCategory(topic.slug)}
               className={`rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${isSelected
                   ? "bg-white text-black border-white shadow-lg shadow-white/5"
                   : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"

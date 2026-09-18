@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
@@ -33,56 +33,15 @@ const FRONTEND_CATEGORIES: AgentCategory[] = [
 export function AgentsClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
+
   const activeCategory = searchParams.get("category") || "";
+
   const pageParam = Number(searchParams.get("page"));
-  const currentPage = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
+  const currentPage =
+    Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
 
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const categoryRowRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const container = categoryRowRef.current;
-    const activeBtn = subCatRefs.current[activeCategory];
-
-    if (!container || !activeBtn) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const buttonRect = activeBtn.getBoundingClientRect();
-
-    const buttonLeft =
-      buttonRect.left - containerRect.left + container.scrollLeft;
-    const buttonRight = buttonLeft + buttonRect.width;
-    const visibleLeft = container.scrollLeft;
-    const visibleRight = container.scrollLeft + container.clientWidth;
-
-    if (buttonRight > visibleRight) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.35,
-        container.scrollWidth - buttonRight
-      );
-
-      container.scrollTo({
-        left: Math.max(
-          0,
-          Math.min(
-            container.scrollWidth - container.clientWidth,
-            buttonRight - container.clientWidth + extraSpace
-          )
-        ),
-        behavior: "smooth",
-      });
-    } else if (buttonLeft < visibleLeft) {
-      const extraSpace = Math.min(
-        container.clientWidth * 0.25,
-        buttonLeft
-      );
-
-      container.scrollTo({
-        left: Math.max(0, buttonLeft - extraSpace),
-        behavior: "smooth",
-      });
-    }
-  }, [activeCategory]);
 
   const { data: categoriesData } = useQuery<AgentCategory[]>({
     queryKey: ["agent-categories"],
@@ -100,7 +59,10 @@ export function AgentsClient() {
   const pricing = searchParams.get("pricing") || undefined;
   const sort = searchParams.get("sort") || undefined;
 
-  const { data, isError, isLoading, isPlaceholderData } = useQuery<AgentsResponse, Error>({
+  const { data, isError, isLoading, isPlaceholderData } = useQuery<
+    AgentsResponse,
+    Error
+  >({
     queryKey: [
       "agents",
       activeCategory,
@@ -151,18 +113,68 @@ export function AgentsClient() {
   const totalPages = data?.totalPages || 1;
 
   const categories = useMemo(
-  () => [
-    {
-      name: "All",
-      slug: "",
-    },
-    ...(Array.isArray(categoriesData) ? categoriesData : []),
-    ...FRONTEND_CATEGORIES,
-  ],
-  [categoriesData]
-);
+    () => [
+      {
+        name: "All",
+        slug: "",
+      },
+      ...(Array.isArray(categoriesData) ? categoriesData : []),
+      ...FRONTEND_CATEGORIES,
+    ],
+    [categoriesData]
+  );
 
   const handleCategoryChange = (slug: string) => {
+    const container = categoryRowRef.current;
+    const clickedButton = subCatRefs.current[slug];
+
+    if (container && clickedButton) {
+      const containerRect = container.getBoundingClientRect();
+      const buttonRect = clickedButton.getBoundingClientRect();
+
+      const distanceFromLeft =
+        buttonRect.left - containerRect.left;
+
+      const distanceFromRight =
+        containerRect.right - buttonRect.right;
+
+      const hasHiddenLeft = container.scrollLeft > 0;
+
+      const hasHiddenRight =
+        container.scrollLeft + container.clientWidth <
+        container.scrollWidth - 1;
+
+      /*
+       * If the clicked chip is toward the RIGHT side
+       * and there are still categories hidden to the right,
+       * move the row LEFT.
+       */
+      if (
+        hasHiddenRight &&
+        distanceFromRight < container.clientWidth * 0.45
+      ) {
+        container.scrollBy({
+          left: container.clientWidth * 0.55,
+          behavior: "smooth",
+        });
+      }
+
+      /*
+       * If the clicked chip is toward the LEFT side
+       * and there are categories hidden to the left,
+       * move the row RIGHT.
+       */
+      else if (
+        hasHiddenLeft &&
+        distanceFromLeft < container.clientWidth * 0.45
+      ) {
+        container.scrollBy({
+          left: -(container.clientWidth * 0.55),
+          behavior: "smooth",
+        });
+      }
+    }
+
     const params = new URLSearchParams(searchParams.toString());
 
     if (slug) {
@@ -182,6 +194,7 @@ export function AgentsClient() {
     if (page < 1 || page > totalPages) return;
 
     const params = new URLSearchParams(searchParams.toString());
+
     if (page === 1) {
       params.delete("page");
     } else {
@@ -189,6 +202,7 @@ export function AgentsClient() {
     }
 
     const query = params.toString();
+
     router.push(query ? `/agents?${query}` : "/agents");
 
     document
@@ -202,8 +216,10 @@ export function AgentsClient() {
       className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-6"
     >
       <div className="mx-auto w-full max-w-[1600px] space-y-4">
-
-        <div ref={categoryRowRef} className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto">
+        <div
+          ref={categoryRowRef}
+          className="mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-1.5 touch-scroll-x pb-2.5 scrollbar-none w-auto sm:w-full overflow-x-auto"
+        >
           {categories.map((category) => {
             const selected = activeCategory === category.slug;
 
@@ -252,7 +268,8 @@ export function AgentsClient() {
 
             <div className="flex items-center gap-1 px-2">
               <span className="text-xs text-neutral-400">
-                Page <strong className="text-white">{currentPage}</strong> of{" "}
+                Page <strong className="text-white">{currentPage}</strong>{" "}
+                of{" "}
                 <strong className="text-white">{totalPages}</strong>
               </span>
             </div>
