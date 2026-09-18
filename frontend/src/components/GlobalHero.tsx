@@ -130,26 +130,6 @@ export function GlobalHero({
   const q = searchParams.get("q") || "";
   const hoverTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
 
-  // Scroll active nav tab to center on mobile when pathname changes
-  const navStripRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
-    // Double rAF: wait for React to paint the new active tab before measuring
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const container = navStripRef.current;
-        if (!container) return;
-        const activeBtn = container.querySelector<HTMLElement>('[data-active="true"]');
-        if (!activeBtn) return;
-        const cRect = container.getBoundingClientRect();
-        const bRect = activeBtn.getBoundingClientRect();
-        const bLeft = bRect.left - cRect.left + container.scrollLeft;
-        const scrollTarget = bLeft - (container.clientWidth / 2) + (bRect.width / 2);
-        container.scrollTo({ left: Math.max(0, scrollTarget), behavior: 'smooth' });
-      });
-    });
-  }, [pathname]);
-
   const prefetchCategory = (cardName: string, href: string) => {
     // ... [Prefetch logic remains identical]
     switch (cardName) {
@@ -429,6 +409,68 @@ export function GlobalHero({
     }
   }, [pathname]);
 
+  const handleNavCardClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const clickedButton = e.currentTarget;
+    const buttons = Array.from(
+      container.querySelectorAll<HTMLAnchorElement>("a")
+    );
+
+    const containerRect = container.getBoundingClientRect();
+
+    // Partially visible cards count as visible.
+    const visibleButtons = buttons.filter((button) => {
+      const rect = button.getBoundingClientRect();
+      return (
+        rect.right > containerRect.left &&
+        rect.left < containerRect.right
+      );
+    });
+
+    const clickedVisibleIndex = visibleButtons.indexOf(clickedButton);
+    const maxScrollLeft = container.scrollWidth - container.clientWidth;
+    const hasHiddenLeft = container.scrollLeft > 0;
+    const hasHiddenRight = container.scrollLeft < maxScrollLeft - 1;
+
+    let scrollDelta = 0;
+
+    // Last 3 currently visible cards -> move left by 25%.
+    if (
+      hasHiddenRight &&
+      clickedVisibleIndex >= 0 &&
+      clickedVisibleIndex >= visibleButtons.length - 3
+    ) {
+      scrollDelta = Math.min(
+        container.clientWidth * 0.25,
+        maxScrollLeft - container.scrollLeft
+      );
+    // First 3 currently visible cards -> move right by 25%.
+    } else if (
+      hasHiddenLeft &&
+      clickedVisibleIndex >= 0 &&
+      clickedVisibleIndex <= 2
+    ) {
+      scrollDelta = -Math.min(
+        container.clientWidth * 0.25,
+        container.scrollLeft
+      );
+    }
+
+    if (scrollDelta !== 0) {
+      const targetScrollLeft = container.scrollLeft + scrollDelta;
+
+      // Preserve the intended position across the Link route transition.
+      globalHeroScrollPos = targetScrollLeft;
+      try {
+        sessionStorage.setItem(SCROLL_KEY, targetScrollLeft.toString());
+      } catch { }
+
+      container.scrollBy({ left: scrollDelta, behavior: "smooth" });
+    }
+  };
+
   // Helper to render the actual pill card UI
   const renderCard = (card: typeof DIRECTORY_CARDS[number], index: number) => {
     const Icon = card.icon;
@@ -452,11 +494,8 @@ export function GlobalHero({
         }}
         onClick={(e) => {
           saveScrollPos();
+          handleNavCardClick(e);
           e.currentTarget.blur();
-          const container = scrollContainerRef.current;
-          if (container && globalHeroScrollPos > 0) {
-            container.scrollLeft = globalHeroScrollPos;
-          }
         }}
         className={`group flex flex-1 min-w-[76px] sm:min-w-[92px] shrink-0 flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-center transition-all duration-200 relative overflow-hidden ${isNew && isSelected ? "border-transparent" : "border-[#232326]/60 bg-[#0d0d10]"
           }`}
