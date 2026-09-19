@@ -22,9 +22,9 @@ export default function PerspectiveTabs({
 
   return (
     <div className="relative mb-6 sm:mb-8">
-      <div className="flex items-center overflow-x-auto scrollbar-none pb-1 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
-        {/* Ranking Perspective Pills */}
-        <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center overflow-x-auto scrollbar-none pb-1.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+        {/* Primary Ranking Perspectives */}
+        <div className="flex items-center gap-2 shrink-0">
           {rankingPerspectives.map((tab) => {
             const Icon = ICON_MAP[tab.icon] || Trophy;
             const isActive = activePerspective === tab.id;
@@ -34,26 +34,27 @@ export default function PerspectiveTabs({
               <button
                 key={tab.id}
                 onClick={() => onSelectPerspective(tab.id)}
-                className={`group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
+                className={`group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 active:scale-95 ${
                   isActive
-                    ? 'bg-white text-black border-white shadow-sm'
-                    : 'bg-[#121215] text-[#A1A1AA] hover:text-white border-[#222226] hover:border-white/20 hover:bg-[#18181c]'
+                    ? 'bg-white text-black border-white shadow-md shadow-white/10 ring-2 ring-white/20 font-bold'
+                    : 'bg-[#141418] text-[#D4D4D8] hover:text-white border-[#2A2A32] hover:border-white/30 hover:bg-[#1A1A20]'
                 }`}
                 title={tab.description}
+                aria-pressed={isActive}
               >
                 <Icon
-                  size={12}
-                  className={`transition-colors ${
-                    isActive ? 'text-black' : 'text-[#71717A] group-hover:text-white'
+                  size={14}
+                  className={`transition-colors shrink-0 ${
+                    isActive ? 'text-black' : 'text-[#A1A1AA] group-hover:text-white'
                   }`}
                 />
                 <span>{tab.label}</span>
                 {typeof count === 'number' && (
                   <span
-                    className={`text-[9.5px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                    className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold transition-colors ${
                       isActive
                         ? 'bg-black/15 text-black'
-                        : 'bg-[#1e1e24] text-[#71717A] border border-[#27272e]'
+                        : 'bg-[#22222A] text-[#A1A1AA] border border-[#2E2E38] group-hover:text-white'
                     }`}
                   >
                     {count}
@@ -64,13 +65,13 @@ export default function PerspectiveTabs({
           })}
         </div>
 
-        {/* Distinct Divider & Spacing Gap separating ranking perspectives from architecture filter */}
+        {/* Distinct Divider separating rankings from Open Weights architectural filter */}
         {filterPerspectives.length > 0 && (
           <>
-            <div className="h-4 sm:h-5 w-[1px] bg-[#3F3F46] mx-2.5 shrink-0" aria-hidden="true" />
-            
+            <div className="h-5 w-[1px] bg-[#3F3F46] mx-3 shrink-0" aria-hidden="true" />
+
             {/* Filter Pills (Open Weights) */}
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               {filterPerspectives.map((tab) => {
                 const Icon = ICON_MAP[tab.icon] || Unlock;
                 const isActive = activePerspective === tab.id;
@@ -80,26 +81,27 @@ export default function PerspectiveTabs({
                   <button
                     key={tab.id}
                     onClick={() => onSelectPerspective(tab.id)}
-                    className={`group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
+                    className={`group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 active:scale-95 ${
                       isActive
-                        ? 'bg-white text-black border-white shadow-sm'
-                        : 'bg-[#121215] text-[#A1A1AA] hover:text-white border-[#222226] hover:border-white/20 hover:bg-[#18181c]'
+                        ? 'bg-white text-black border-white shadow-md shadow-white/10 ring-2 ring-white/20 font-bold'
+                        : 'bg-[#141418] text-[#D4D4D8] hover:text-white border-[#2A2A32] hover:border-white/30 hover:bg-[#1A1A20]'
                     }`}
                     title={tab.description}
+                    aria-pressed={isActive}
                   >
                     <Icon
-                      size={12}
-                      className={`transition-colors ${
-                        isActive ? 'text-black' : 'text-[#71717A] group-hover:text-white'
+                      size={14}
+                      className={`transition-colors shrink-0 ${
+                        isActive ? 'text-black' : 'text-[#A1A1AA] group-hover:text-white'
                       }`}
                     />
                     <span>{tab.label}</span>
                     {typeof count === 'number' && (
                       <span
-                        className={`text-[9.5px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                        className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold transition-colors ${
                           isActive
                             ? 'bg-black/15 text-black'
-                            : 'bg-[#1e1e24] text-[#71717A] border border-[#27272e]'
+                            : 'bg-[#22222A] text-[#A1A1AA] border border-[#2E2E38] group-hover:text-white'
                         }`}
                       >
                         {count}
@@ -114,7 +116,7 @@ export default function PerspectiveTabs({
       </div>
 
       {/* Active tab description & ranking explanation trigger */}
-      <div className="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-[#71717A] pl-0.5">
+      <div className="mt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-[#8E8EA0] pl-0.5">
         {activeTab?.description ? (
           <p>
             <span className="text-white font-semibold">{activeTab.label}:</span>{' '}
@@ -127,7 +129,7 @@ export default function PerspectiveTabs({
             onClick={onOpenMethodology}
             className="inline-flex items-center gap-1 text-[#A1A1AA] hover:text-white transition-colors cursor-pointer self-start sm:self-auto shrink-0"
           >
-            <span>Methodology &amp; Trust</span>
+            <span>Methodology &amp; Provenance</span>
             <span>→</span>
           </button>
         )}

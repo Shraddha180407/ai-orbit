@@ -66,26 +66,94 @@ export default function LeaderboardPage({
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
+  // Backend Dynamic Data & Provenance Metadata
+  const [backendModels, setBackendModels] = useState([]);
+  const [perspectiveCounts, setPerspectiveCounts] = useState({
+    overall: 100,
+    risers: 100,
+    adopted: 100,
+    speed: 100,
+    open_weights: 100
+  });
+  const [lastUpdatedText, setLastUpdatedText] = useState('DATA UPDATED JUST NOW');
+
   // Compare Modal state
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
 
   // Methodology Drawer state
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
 
-  // Simulate realistic network data load on mount
+  // Fetch dynamic leaderboard dataset whenever perspective changes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 450);
-    return () => clearTimeout(timer);
-  }, []);
+    let isCancelled = false;
+    setIsLoading(true);
+    setIsError(false);
+
+    async function loadData() {
+      try {
+        const res = await fetch(`/api/leaderboard?perspective=${activePerspective}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!isCancelled) {
+          if (data.models && Array.isArray(data.models)) {
+            setBackendModels(data.models);
+          }
+          if (data.counts) {
+            setPerspectiveCounts(data.counts);
+          }
+          if (data.lastUpdatedText) {
+            setLastUpdatedText(data.lastUpdatedText);
+          }
+          setIsLoading(false);
+        }
+      } catch (apiErr) {
+        console.warn('[Leaderboard] API fetch failed, trying static snapshot fallback:', apiErr.message);
+        try {
+          const snapRes = await fetch('/leaderboard_data.json');
+          if (!snapRes.ok) throw new Error('Snapshot not found');
+          const snapData = await snapRes.json();
+          if (!isCancelled) {
+            const list = snapData.modelsByPerspective?.[activePerspective]?.models || snapData.models || [];
+            setBackendModels(list);
+            if (snapData.metadata?.counts) {
+              setPerspectiveCounts(snapData.metadata.counts);
+            }
+            if (snapData.metadata?.lastUpdated) {
+              const diffHours = Math.floor((Date.now() - new Date(snapData.metadata.lastUpdated).getTime()) / (1000 * 60 * 60));
+              setLastUpdatedText(diffHours >= 1 ? `DATA UPDATED ${diffHours}H AGO` : 'DATA UPDATED JUST NOW');
+            }
+            setIsLoading(false);
+          }
+        } catch (snapErr) {
+          if (!isCancelled) {
+            setIsError(true);
+            setIsLoading(false);
+          }
+        }
+      }
+    }
+
+    loadData();
+    return () => {
+      isCancelled = true;
+    };
+  }, [activePerspective]);
 
   const handleRetry = () => {
     setIsError(false);
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 400);
+    fetch(`/api/leaderboard?perspective=${activePerspective}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.models && Array.isArray(data.models)) setBackendModels(data.models);
+        if (data.counts) setPerspectiveCounts(data.counts);
+        if (data.lastUpdatedText) setLastUpdatedText(data.lastUpdatedText);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsError(true);
+        setIsLoading(false);
+      });
   };
 
   // Reset page when perspective, category, search, or entityType changes
@@ -110,39 +178,25 @@ export default function LeaderboardPage({
     (cat) => !PRIMARY_CATEGORIES.some((pc) => pc.value === cat)
   );
 
-  // Compute perspective item counts based on entityType
-  const perspectiveCounts = useMemo(() => {
-    const base = LEADERBOARD_DATA.filter((m) => {
-      if (entityType === 'models') return m.entityType === 'model';
-      if (entityType === 'tools') return m.entityType === 'tool';
-      return true;
-    });
-
-    return {
-      overall: base.length,
-      risers: base.filter((m) => parseFloat(m.growth) > 25).length,
-      adopted: base.filter((m) => parseFloat(m.monthlyVisits) >= 50).length,
-      speed: base.filter((m) => (m.speedNum || 0) >= 100).length,
-      open_weights: base.filter((m) => m.isOpenWeights).length
-    };
-  }, [entityType]);
-
-  // Multi-Perspective Filtering & Sorting Engine
+  // Multi-Perspective Filtering & Sorting Engine (Driven by backend data)
   const filteredModels = useMemo(() => {
-    // 0. Entity Type Filter (All / Models / Tools)
-    let list = LEADERBOARD_DATA.filter((item) => {
-      if (entityType === 'models') return item.entityType === 'model';
-      if (entityType === 'tools') return item.entityType === 'tool';
-      return true;
-    });
+    // 0. Base dataset: Use backend verified models (or tools if selected)
+    let list = [];
+    if (entityType === 'tools') {
+      list = AI_TOOLS_DATA;
+    } else if (backendModels.length > 0) {
+      list = [...backendModels];
+    } else {
+      list = LEADERBOARD_DATA.filter((item) => {
+        if (entityType === 'models') return item.entityType === 'model';
+        return true;
+      });
+    }
 
     // 1. Perspective Filter
-    list = list.filter((model) => {
-      if (activePerspective === 'open_weights') {
-        return model.isOpenWeights === true;
-      }
-      return true;
-    });
+    if (activePerspective === 'open_weights') {
+      list = list.filter((m) => m.isOpenWeights === true);
+    }
 
     // 2. Category Filter
     if (selectedCategory !== 'All') {
@@ -153,54 +207,33 @@ export default function LeaderboardPage({
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
       list = list.filter((model) => {
-        const matchesName = model.name.toLowerCase().includes(q);
-        const matchesOrg = model.org.toLowerCase().includes(q);
-        const matchesDesc = model.shortDescription.toLowerCase().includes(q);
-        const matchesCat = model.category.toLowerCase().includes(q);
+        const matchesName = (model.name || '').toLowerCase().includes(q);
+        const matchesOrg = (model.org || '').toLowerCase().includes(q);
+        const matchesDesc = (model.shortDescription || '').toLowerCase().includes(q);
+        const matchesCat = (model.category || '').toLowerCase().includes(q);
         const matchesSuperpower = (model.superpower || '').toLowerCase().includes(q);
         return matchesName || matchesOrg || matchesDesc || matchesCat || matchesSuperpower;
       });
     }
 
-    // 4. Perspective-Specific Sorting
-    return [...list].sort((a, b) => {
-      // Perspective overrides sort by default unless user explicitly chose a specific sort
-      if (activePerspective === 'risers' && sortBy === 'rank') {
-        const gA = parseFloat(a.growth.replace(/[^0-9.-]/g, '')) || 0;
-        const gB = parseFloat(b.growth.replace(/[^0-9.-]/g, '')) || 0;
-        return gB - gA;
-      }
-      if (activePerspective === 'adopted' && sortBy === 'rank') {
-        const vA = parseFloat(a.monthlyVisits) || 0;
-        const vB = parseFloat(b.monthlyVisits) || 0;
-        return vB - vA;
-      }
-      if (activePerspective === 'speed' && sortBy === 'rank') {
-        const sA = a.speedNum || parseInt(a.outputSpeed, 10) || 0;
-        const sB = b.speedNum || parseInt(b.outputSpeed, 10) || 0;
-        return sB - sA;
-      }
+    // 4. Secondary Sorting if user explicitly chose non-rank sort
+    if (sortBy === 'visits') {
+      return [...list].sort((a, b) => (parseFloat(b.monthlyVisits) || b.votes || 0) - (parseFloat(a.monthlyVisits) || a.votes || 0));
+    }
+    if (sortBy === 'growth') {
+      return [...list].sort((a, b) => {
+        const deltaA = parseInt((a.rankDelta || '0').replace('+', ''), 10) || 0;
+        const deltaB = parseInt((b.rankDelta || '0').replace('+', ''), 10) || 0;
+        return deltaB - deltaA;
+      });
+    }
+    if (sortBy === 'newest') {
+      return [...list].sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+    }
 
-      // Explicit Sort Dropdown
-      switch (sortBy) {
-        case 'visits': {
-          const vA = parseFloat(a.monthlyVisits) || 0;
-          const vB = parseFloat(b.monthlyVisits) || 0;
-          return vB - vA;
-        }
-        case 'growth': {
-          const gA = parseFloat(a.growth.replace(/[^0-9.-]/g, '')) || 0;
-          const gB = parseFloat(b.growth.replace(/[^0-9.-]/g, '')) || 0;
-          return gB - gA;
-        }
-        case 'newest':
-          return b.id.localeCompare(a.id);
-        case 'rank':
-        default:
-          return a.rank - b.rank;
-      }
-    });
-  }, [activePerspective, selectedCategory, searchQuery, sortBy, entityType]);
+    // Default: Honor verified backend perspective ranking 1..N
+    return [...list].sort((a, b) => (a.rank || 0) - (b.rank || 0));
+  }, [backendModels, activePerspective, selectedCategory, searchQuery, sortBy, entityType]);
 
   // Real dynamic ecosystem stats computed from actual datasets (no fabricated numbers)
   const ecosystemStats = useMemo(() => {
@@ -450,13 +483,13 @@ export default function LeaderboardPage({
 
           {/* Main Headline (Left) & Single Live Rotating Metric (Right) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-8 sm:mb-10">
-            {/* Left Column: Headline & Description */}
+            {/* Left Column: Headline & Description - Spacing reduced by ~50% */}
             <div className="lg:col-span-8">
-              <h1 className="text-4xl sm:text-6xl lg:text-[64px] font-extrabold tracking-tight text-white leading-[1.05] mb-3">
+              <h1 className="text-4xl sm:text-6xl lg:text-[64px] font-extrabold tracking-tight text-white leading-[1.05] mb-1.5">
                 AI Ecosystem<br />
                 Leaderboard
               </h1>
-              <p className="text-sm sm:text-base text-[#A1A1AA] leading-relaxed max-w-xl font-normal">
+              <p className="text-sm sm:text-base text-[#A1A1AA] leading-snug max-w-xl font-normal">
                 Compare the models, tools, and companies shaping the AI ecosystem.
                 Track real-world evaluation benchmarks, Chatbot Arena Elo scores, and
                 enterprise pricing at scale.
@@ -479,10 +512,10 @@ export default function LeaderboardPage({
                         : 'opacity-100 translate-x-0'
                     }`}
                   >
-                    <div className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-mono text-white tracking-tight leading-none my-1">
+                    <div className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-mono text-white tracking-tight leading-none my-0.5">
                       {currentMetric.value}
                     </div>
-                    <div className="text-[10px] font-mono tracking-wider uppercase text-[#A78BFA] mt-1.5 flex items-center gap-1.5">
+                    <div className="text-[10px] font-mono tracking-wider uppercase text-[#A78BFA] mt-0.5 flex items-center gap-1.5">
                       <span className="inline-block w-1 h-1 rounded-full bg-[#A78BFA]" />
                       <span>{currentMetric.sub}</span>
                     </div>
@@ -490,7 +523,7 @@ export default function LeaderboardPage({
                 </div>
 
                 {/* Subtle purple line/accent underneath */}
-                <div className="h-[2px] w-14 bg-gradient-to-r from-[#6E56CF] to-transparent mt-3" />
+                <div className="h-[2px] w-14 bg-gradient-to-r from-[#6E56CF] to-transparent mt-2.5" />
               </div>
             </div>
           </div>
@@ -511,7 +544,7 @@ export default function LeaderboardPage({
                 <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
                   activeTab === 'models' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
                 }`}>
-                  {LEADERBOARD_DATA.length}
+                  {backendModels.length || LEADERBOARD_DATA.length}
                 </span>
               </button>
 
@@ -535,7 +568,7 @@ export default function LeaderboardPage({
 
             <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-[#71717A] flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-              <span>DATA UPDATED 12H AGO</span>
+              <span>{lastUpdatedText || 'DATA UPDATED JUST NOW'}</span>
             </div>
           </div>
         </div>

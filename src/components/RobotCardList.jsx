@@ -70,7 +70,7 @@ export default function RobotCardList({
         </div>
 
         <div className="flex flex-col min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
             <span className="text-[11px] font-semibold text-[#A1A1AA] uppercase tracking-wider">
               {robot.manufacturer}
             </span>
@@ -87,11 +87,11 @@ export default function RobotCardList({
               {robot.name}
             </h3>
           </Link>
-          <p className="text-[12px] text-[#A1A1AA] line-clamp-1 mt-0.5">
+          <p className="text-[12px] text-[#A1A1AA] line-clamp-1 mt-0">
             {robot.tagLine}
           </p>
 
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             {robot.capabilities.slice(0, 3).map((cap, i) => (
               <span key={i} className="text-[10px] font-medium text-[#71717A] bg-[#1a1a20] px-2 py-0.5 rounded border border-[#27272e]">
                 {cap}

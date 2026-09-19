@@ -1,9 +1,27 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { handleLeaderboardRequest } from './api/leaderboard.js';
+import { start24HourScheduler } from './server/scheduler.js';
+
+function leaderboardApiPlugin() {
+  return {
+    name: 'leaderboard-api',
+    configureServer(server) {
+      start24HourScheduler();
+      server.middlewares.use(async (req, res, next) => {
+        if (req.url && req.url.startsWith('/api/leaderboard')) {
+          await handleLeaderboardRequest(req, res);
+          return;
+        }
+        next();
+      });
+    }
+  };
+}
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), leaderboardApiPlugin()],
   build: {
     rollupOptions: {
       output: {
