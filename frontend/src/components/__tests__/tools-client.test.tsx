@@ -138,6 +138,17 @@ describe("ToolsClient", () => {
     });
   });
 
+  it("uses compact category chips for the tools directory", () => {
+    render(<ToolsClient />);
+
+    const allButton = screen.getByRole("button", { name: "All" });
+    const categoryRow = allButton.parentElement;
+
+    expect(allButton).toHaveClass("rounded-full", "py-1");
+    expect(allButton).not.toHaveClass("min-h-[72px]", "flex-col");
+    expect(categoryRow).toHaveClass("justify-start", "gap-1.5", "pb-2.5");
+  });
+
   it("uses the business endpoint and renders business categories", async () => {
     await act(async () => {
       render(<ToolsClient defaultMode="business" />);

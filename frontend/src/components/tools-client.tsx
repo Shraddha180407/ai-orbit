@@ -415,7 +415,10 @@ export function ToolsClient({
         {/* Category Row */}
         <div
           ref={subCatContainerRef}
-          className="mb-3 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-between gap-2 touch-scroll-x pb-3 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+          className={`-mx-4 sm:mx-0 px-4 sm:px-0 flex items-center touch-scroll-x scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth ${mode === "tools"
+              ? "mb-2 justify-start gap-1.5 pb-2.5"
+              : "mb-3 justify-between gap-2 pb-3"
+            }`}
         >
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
@@ -432,11 +435,16 @@ export function ToolsClient({
                 onFocus={() => businessCategoryIconRefs.current[topic.slug]?.startAnimation()}
                 onBlur={() => businessCategoryIconRefs.current[topic.slug]?.stopAnimation()}
                 data-active={isSelected ? "true" : undefined}
-                className={`group inline-flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2.5 text-[11.5px] font-semibold leading-tight tracking-[-0.01em] whitespace-nowrap transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out border active:scale-[0.98] cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b] ${isSelected
-                    ? "bg-white text-black border-white shadow-[0_10px_24px_rgba(255,255,255,0.14)]"
-                    : "text-neutral-400 bg-white/[0.035] border-white/[0.08] hover:text-white hover:bg-white/[0.07] hover:border-white/[0.18]"
-                  }`}
-              >
+                className={mode === "tools"
+                  ? `rounded-full px-3.5 py-1 text-[12px] font-semibold whitespace-nowrap transition-all duration-200 border active:scale-95 cursor-pointer shrink-0 ${isSelected
+                      ? "bg-white text-black border-white shadow-lg shadow-white/5"
+                      : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
+                    }`
+                  : `group inline-flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2.5 text-[11.5px] font-semibold leading-tight tracking-[-0.01em] whitespace-nowrap transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out border active:scale-[0.98] cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b] ${isSelected
+                      ? "bg-white text-black border-white shadow-[0_10px_24px_rgba(255,255,255,0.14)]"
+                      : "text-neutral-400 bg-white/[0.035] border-white/[0.08] hover:text-white hover:bg-white/[0.07] hover:border-white/[0.18]"
+                    }`}
+                >
                 {CategoryIcon ? (
                   <span className={`inline-flex h-7 w-7 items-center justify-center rounded-xl transition-colors duration-200 ${isSelected
                       ? "bg-black/[0.08] text-black"
