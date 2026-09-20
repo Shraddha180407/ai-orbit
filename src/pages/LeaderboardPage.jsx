@@ -264,12 +264,12 @@ export default function LeaderboardPage({
 
   // Live rotating hero telemetry sequence (single metric at a time)
   const HERO_METRICS = useMemo(() => [
-    { value: `${LEADERBOARD_DATA.length}`, label: 'TRACKED SYSTEMS', sub: 'LIVE INDEX' },
-    { value: `${ecosystemStats.modelsCount}`, label: 'MODELS', sub: 'FOUNDATION ARCHITECTURES' },
-    { value: `${ecosystemStats.toolsCount}`, label: 'TOOLS', sub: 'DEVELOPER APPLICATIONS' },
-    { value: `${ecosystemStats.companiesCount}`, label: 'AI COMPANIES', sub: 'ENTERPRISE INDEX' },
-    { value: `${ecosystemStats.maxSpeed ? `${ecosystemStats.maxSpeed} tok/s` : '260 tok/s'}`, label: 'PEAK THROUGHPUT', sub: ecosystemStats.fastestName || 'GROQ INFERENCE' },
-    { value: `${ecosystemStats.maxGrowth ? `+${ecosystemStats.maxGrowth}%` : '+180%'}`, label: 'FASTEST GROWTH', sub: ecosystemStats.topGrowthName || 'MOMENTUM INDEX' }
+    { value: `${LEADERBOARD_DATA.length}`, label: 'TRACKED SYSTEMS', sub: 'LIVE INDEX', delta: '+8', badge: 'LIVE' },
+    { value: `${ecosystemStats.modelsCount}`, label: 'MODELS', sub: 'FOUNDATION ARCHITECTURES', delta: '+5', badge: 'Q1 2025' },
+    { value: `${ecosystemStats.toolsCount}`, label: 'TOOLS', sub: 'DEVELOPER APPLICATIONS', delta: '+11', badge: 'Q1 2025' },
+    { value: `${ecosystemStats.companiesCount}`, label: 'AI COMPANIES', sub: 'ENTERPRISE INDEX', delta: '+12', badge: 'Q1 2025' },
+    { value: `${ecosystemStats.maxSpeed ? `${ecosystemStats.maxSpeed} tok/s` : '260 tok/s'}`, label: 'PEAK THROUGHPUT', sub: ecosystemStats.fastestName || 'GROQ INFERENCE', delta: '+18%', badge: 'SPEED' },
+    { value: `${ecosystemStats.maxGrowth ? `+${ecosystemStats.maxGrowth}%` : '+180%'}`, label: 'FASTEST GROWTH', sub: ecosystemStats.topGrowthName || 'MOMENTUM INDEX', delta: '▲ TOP', badge: 'TREND' }
   ], [ecosystemStats]);
 
   const [rotatingMetricIndex, setRotatingMetricIndex] = useState(0);
@@ -496,34 +496,62 @@ export default function LeaderboardPage({
               </p>
             </div>
 
-            {/* Right Column: Live Benchmark Intelligence Metric */}
+
+            {/* Right Column: Rotating Metric Card — matches Image 2 design */}
             <div className="lg:col-span-4 flex lg:justify-end">
-              <div className="w-full lg:w-auto lg:min-w-[240px] pl-4 sm:pl-6 border-l border-[#232328]">
-                <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-widest uppercase text-[#71717A] mb-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#6E56CF] shrink-0" />
-                  <span>{currentMetric.label}</span>
+              <div className="w-full lg:w-auto lg:min-w-[260px] border border-[#232328] rounded-xl bg-[#0D0D10] px-5 py-4 flex flex-col gap-2">
+                {/* Header row — label + badge animate with the metric */}
+                <div
+                  className={`flex items-center justify-between transition-all duration-300 ease-out transform ${
+                    isMetricTransitioning ? 'opacity-0 -translate-y-1' : 'opacity-100 translate-y-0'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-widest uppercase text-[#71717A]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#6E56CF] shrink-0" />
+                    <span>{currentMetric.label}</span>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold text-[#A78BFA] bg-[#6E56CF]/10 border border-[#6E56CF]/30 rounded px-1.5 py-0.5">
+                    {currentMetric.badge}
+                  </span>
                 </div>
 
-                <div className="overflow-hidden py-1">
-                  <div
-                    className={`transition-all duration-300 ease-out transform ${
-                      isMetricTransitioning
-                        ? 'opacity-0 translate-x-4'
-                        : 'opacity-100 translate-x-0'
-                    }`}
-                  >
-                    <div className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-mono text-white tracking-tight leading-none my-0.5">
+                {/* Big number + delta */}
+                <div
+                  className={`transition-all duration-300 ease-out transform ${
+                    isMetricTransitioning
+                      ? 'opacity-0 translate-x-4'
+                      : 'opacity-100 translate-x-0'
+                  }`}
+                >
+                  <div className="flex items-end gap-2">
+                    <div className="text-5xl sm:text-6xl font-extrabold font-mono text-white tracking-tight leading-none">
                       {currentMetric.value}
                     </div>
-                    <div className="text-[10px] font-mono tracking-wider uppercase text-[#A78BFA] mt-0.5 flex items-center gap-1.5">
-                      <span className="inline-block w-1 h-1 rounded-full bg-[#A78BFA]" />
-                      <span>{currentMetric.sub}</span>
+                    <div className="flex flex-col gap-0.5 mb-1">
+                      <span className="text-[12px] font-bold font-mono text-[#10B981] leading-none">▲{currentMetric.delta}</span>
+                      <span className="text-[10px] font-mono text-[#71717A] leading-none">vs last</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Subtle purple line/accent underneath */}
-                <div className="h-[2px] w-14 bg-gradient-to-r from-[#6E56CF] to-transparent mt-2.5" />
+                {/* Progress bar */}
+                <div className="h-[3px] w-full rounded-full bg-[#1C1C1F] overflow-hidden">
+                  <div className="h-full w-3/4 bg-gradient-to-r from-[#6E56CF] via-[#A78BFA] to-[#10B981] rounded-full" />
+                </div>
+
+                {/* Footer row — sub label + "Load Audited" */}
+                <div
+                  className={`flex items-center justify-between transition-all duration-300 ease-out transform ${
+                    isMetricTransitioning ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'
+                  }`}
+                >
+                  <span className="text-[10px] font-mono tracking-widest uppercase text-[#71717A]">
+                    {currentMetric.sub}
+                  </span>
+                  <span className="text-[10px] font-mono text-[#3F3F46] uppercase tracking-widest">
+                    Load Audited
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -569,6 +597,8 @@ export default function LeaderboardPage({
             <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-[#71717A] flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
               <span>{lastUpdatedText || 'DATA UPDATED JUST NOW'}</span>
+              <span className="text-[#3F3F46]">·</span>
+              <span className="text-[#3F3F46]">BLOCK #99421</span>
             </div>
           </div>
         </div>
