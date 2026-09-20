@@ -33,6 +33,12 @@ function formatReleased(value?: string | null | Date): string {
   return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
+function formatDisplayName(value?: string | null): string {
+  const name = value?.trim();
+  if (!name) return "—";
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
 export const MCP_SUBCATEGORIES: MCPSubCategory[] = [
   { id: "1", name: "APIs", slug: "apis", description: "API integrations and service connectors" },
   { id: "2", name: "Browser", slug: "browser", description: "Browser extensions and web-based tools" },
@@ -65,6 +71,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
   const [activeSubCategory, setActiveSubCategory] = useState<string>(initialSub);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(100);
+  const [invalidLogoIds, setInvalidLogoIds] = useState<Set<string>>(new Set());
 
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -245,15 +252,21 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
       ? fetchedItems
       : FALLBACK_MCP_ITEMS.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-    return sourceItems.sort((a: any, b: any) => {
-      const getScore = (item: any) => {
-        if (item.logoUrl && item.shortDescription && item.shortDescription.trim() !== "") return 2;
-        if (item.logoUrl) return 1;
-        return 0;
-      };
-      return getScore(b) - getScore(a);
-    });
-  }, [data]);
+    return sourceItems
+      .filter((item: any) => (
+        typeof item.logoUrl === "string" &&
+        item.logoUrl.trim() !== "" &&
+        !invalidLogoIds.has(item.id)
+      ))
+      .sort((a: any, b: any) => {
+        const getScore = (item: any) => {
+          if (item.logoUrl && item.shortDescription && item.shortDescription.trim() !== "") return 2;
+          if (item.logoUrl) return 1;
+          return 0;
+        };
+        return getScore(b) - getScore(a);
+      });
+  }, [data, invalidLogoIds, currentPage]);
 
   return (
     <div id="mcp" className="scroll-mt-28 w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1">
@@ -433,19 +446,22 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                                 height={40}
                                 className="h-6 w-6 md:h-9 md:w-9 object-contain"
                                 unoptimized
+                                onError={() => {
+                                  setInvalidLogoIds((previous) => {
+                                    const next = new Set(previous);
+                                    next.add(item.id);
+                                    return next;
+                                  });
+                                }}
                               />
-                            ) : (
-                              <span className="text-[12px] md:text-base font-bold text-neutral-900">
-                                {item.name.charAt(0)}
-                              </span>
-                            )}
+                            ) : null}
                           </div>
                         </div>
 
                         {/* Column 2a: Name */}
                         <div className="min-w-0 sticky left-[64px] md:static z-20 bg-[#000000] group-hover:bg-[#18181C] md:bg-transparent md:group-hover:bg-transparent h-full flex flex-col justify-center before:content-[''] before:absolute before:inset-y-0 before:-left-[16px] before:w-[16px] before:bg-[#000000] group-hover:before:bg-[#18181C] md:before:hidden shadow-[10px_0_10px_-10px_rgba(0,0,0,0.5)] md:shadow-none pr-1 md:pr-0 transition-colors">
                           <span className="text-[11.5px] md:text-[13px] line-clamp-2 md:truncate font-semibold text-white transition-colors duration-200 leading-tight break-words">
-                            {item.name}
+                            {formatDisplayName(item.name)}
                           </span>
                           <p className="hidden md:block mt-0.5 text-[11px] text-[#A1A1AA] leading-relaxed pr-2 truncate">
                             {item.shortDescription}
@@ -462,7 +478,7 @@ export function MCPClient({ defaultCategory = "", defaultSubCategory = "" }: { d
                         {/* Column 3: Company */}
                         <div className="min-w-0 flex items-center pl-4 md:pl-0">
                           <span className="truncate text-[12px] font-medium text-[#D4D4D8]">
-                            {item.providerName || "—"}
+                            {formatDisplayName(item.providerName)}
                           </span>
                         </div>
 

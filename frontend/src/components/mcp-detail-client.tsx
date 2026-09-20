@@ -124,6 +124,12 @@ interface MCPDetailClientProps {
   initialAlternatives?: MCPItem[];
 }
 
+function formatProviderName(value?: string | null): string {
+  const name = value?.trim();
+  if (!name) return "—";
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
 // Reusable Save Button (Bookmark) for MCP items with focus states
 function SaveButton({
   slug,
@@ -291,7 +297,7 @@ function RecommendationCard({ item }: RecommendationCardProps) {
         <h4 className="text-sm font-bold text-white group-hover:text-[#6E56CF] transition-colors line-clamp-1">
           {item.name}
         </h4>
-        <p className="text-[11px] text-neutral-400">by {item.providerName}</p>
+        <p className="text-[11px] text-neutral-400">by {formatProviderName(item.providerName)}</p>
       </div>
 
       <p className="text-[11.5px] text-[#A1A1AA] line-clamp-2 leading-relaxed min-h-[34px]">
@@ -629,7 +635,7 @@ export function MCPDetailClient({ item, initialAlternatives }: MCPDetailClientPr
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-[#A1A1AA]">
                 <div className="flex items-center gap-1">
                   <Building2 size={12} className="text-neutral-500" />
-                  <span>{item.providerName}</span>
+                  <span>{formatProviderName(item.providerName)}</span>
                 </div>
                 <span className="text-[#3a3a3d]" aria-hidden="true">•</span>
                 <div className="flex items-center gap-1.5">
@@ -864,7 +870,7 @@ export function MCPDetailClient({ item, initialAlternatives }: MCPDetailClientPr
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold text-white">{item.providerName}</span>
+                  <span className="text-sm font-bold text-white">{formatProviderName(item.providerName)}</span>
                   {item.isVerified && (
                     <BadgeCheck size={14} className="text-blue-400 shrink-0" aria-label="Verified Provider" />
                   )}

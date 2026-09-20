@@ -249,6 +249,8 @@ export class MCPService {
       andConditions.push({ pricingType });
     }
 
+    andConditions.push({ logoUrl: { not: "" } });
+
     if (search) {
       andConditions.push({
         OR: [
