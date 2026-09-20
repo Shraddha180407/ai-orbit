@@ -20,7 +20,7 @@ import {
   SquarePenIcon,
   TrendingUpIcon,
   WorkflowIcon,
-} from "lucide-react";
+} from "lucide-animated";
 
 
 type DirectoryMode = "tools" | "personal" | "creativity" | "business";
@@ -181,6 +181,11 @@ const BUSINESS_CATEGORY_ICONS: Record<string, React.ElementType> = {
   sales: HandCoinsIcon,
 };
 
+type AnimatedCategoryIconHandle = {
+  startAnimation: () => void;
+  stopAnimation: () => void;
+};
+
 function matchesCategory(tool: any, categorySlug: string): boolean {
   const filter = CATEGORY_FILTER_MAP[categorySlug];
   if (!filter) return true;
@@ -244,6 +249,7 @@ export function ToolsClient({
 
   const subCatContainerRef = useRef<HTMLDivElement>(null);
   const subCatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const businessCategoryIconRefs = useRef<Record<string, AnimatedCategoryIconHandle | null>>({});
 
   const handleCategoryClick = (slug: string) => {
     const container = subCatContainerRef.current;
@@ -409,7 +415,7 @@ export function ToolsClient({
         {/* Category Row */}
         <div
           ref={subCatContainerRef}
-          className="mb-3 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-start gap-2 touch-scroll-x pb-3 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
+          className="mb-3 -mx-4 sm:mx-0 px-4 sm:px-0 flex items-center justify-between gap-2 touch-scroll-x pb-3 scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth"
         >
           {categories.map((topic) => {
             const isSelected = activeCategory === topic.slug;
@@ -421,8 +427,12 @@ export function ToolsClient({
                 key={topic.name}
                 ref={(el) => { subCatRefs.current[topic.slug] = el; }}
                 onClick={() => handleCategoryClick(topic.slug)}
+                onMouseEnter={() => businessCategoryIconRefs.current[topic.slug]?.startAnimation()}
+                onMouseLeave={() => businessCategoryIconRefs.current[topic.slug]?.stopAnimation()}
+                onFocus={() => businessCategoryIconRefs.current[topic.slug]?.startAnimation()}
+                onBlur={() => businessCategoryIconRefs.current[topic.slug]?.stopAnimation()}
                 data-active={isSelected ? "true" : undefined}
-                className={`group inline-flex h-[24px] min-h-0 flex-col items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2.5 text-[11.5px] font-semibold leading-tight tracking-[-0.01em] whitespace-nowrap transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out border active:scale-[0.98] cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b] ${isSelected
+                className={`group inline-flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2.5 text-[11.5px] font-semibold leading-tight tracking-[-0.01em] whitespace-nowrap transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out border active:scale-[0.98] cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b] ${isSelected
                     ? "bg-white text-black border-white shadow-[0_10px_24px_rgba(255,255,255,0.14)]"
                     : "text-neutral-400 bg-white/[0.035] border-white/[0.08] hover:text-white hover:bg-white/[0.07] hover:border-white/[0.18]"
                   }`}
@@ -433,7 +443,11 @@ export function ToolsClient({
                       : "bg-white/[0.07] text-neutral-300 group-hover:bg-white/[0.12] group-hover:text-white"
                     }`}>
                     <CategoryIcon
+                      ref={(instance: AnimatedCategoryIconHandle | null) => {
+                        businessCategoryIconRefs.current[topic.slug] = instance;
+                      }}
                       size={15}
+                      animateOnHover
                       aria-hidden="true"
                       className="shrink-0"
                     />

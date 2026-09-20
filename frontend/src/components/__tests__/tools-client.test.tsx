@@ -1,12 +1,55 @@
-import type { ReactElement } from "react";
+import {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  type ReactElement,
+} from "react";
 import {
   render as testingLibraryRender,
   screen,
   waitFor,
   act,
+  fireEvent,
 } from "@testing-library/react";
 import { vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+vi.mock("lucide-animated", () => {
+  const createAnimatedIcon = (name: string) =>
+    forwardRef<any, any>(({ animateOnHover, ...props }, ref) => {
+      const iconRef = useRef<SVGSVGElement>(null);
+
+      useImperativeHandle(ref, () => ({
+        startAnimation: () =>
+          iconRef.current?.setAttribute("data-animation-started", "true"),
+        stopAnimation: () =>
+          iconRef.current?.removeAttribute("data-animation-started"),
+      }), []);
+
+      return (
+        <svg
+          ref={iconRef}
+          data-animated-icon={name}
+          data-animate-on-hover={animateOnHover ? "true" : "false"}
+          {...props}
+        />
+      );
+    });
+
+  return {
+    BriefcaseBusinessIcon: createAnimatedIcon("BriefcaseBusinessIcon"),
+    CogIcon: createAnimatedIcon("CogIcon"),
+    CpuIcon: createAnimatedIcon("CpuIcon"),
+    FigmaIcon: createAnimatedIcon("FigmaIcon"),
+    HandCoinsIcon: createAnimatedIcon("HandCoinsIcon"),
+    LayoutGridIcon: createAnimatedIcon("LayoutGridIcon"),
+    MessageCircleIcon: createAnimatedIcon("MessageCircleIcon"),
+    SquarePenIcon: createAnimatedIcon("SquarePenIcon"),
+    TrendingUpIcon: createAnimatedIcon("TrendingUpIcon"),
+    WorkflowIcon: createAnimatedIcon("WorkflowIcon"),
+  };
+});
+
 import { ToolsClient } from "@/components/tools-client";
 
 function render(ui: ReactElement) {
@@ -123,10 +166,27 @@ describe("ToolsClient", () => {
       businessCategories.forEach((label) => {
         const button = screen.getByRole("button", { name: label });
         expect(button.querySelector("svg")).toBeInTheDocument();
+        expect(button.querySelector("[data-animated-icon]")).toHaveAttribute(
+          "data-animate-on-hover",
+          "true",
+        );
         expect(button).toHaveClass("flex-col", "items-center");
+        expect(button).toHaveClass("min-h-[72px]");
+        expect(button).not.toHaveClass("h-[24px]");
       });
+      const categoryRow = screen.getByRole("button", { name: "All" }).parentElement;
+      expect(categoryRow).toHaveClass("justify-between");
+      expect(categoryRow).not.toHaveClass("justify-start");
       expect(document.querySelector(".grid")).toHaveClass("lg:grid-cols-4");
     });
+
+    const writingButton = screen.getByRole("button", { name: "Writing & Editing" });
+    const writingIcon = writingButton.querySelector("[data-animated-icon]");
+    expect(writingIcon).not.toHaveAttribute("data-animation-started");
+
+    fireEvent.mouseEnter(writingButton);
+
+    expect(writingIcon).toHaveAttribute("data-animation-started", "true");
   });
 
   it("filters business tools by the selected frontend category", async () => {

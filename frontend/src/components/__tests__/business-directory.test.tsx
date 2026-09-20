@@ -14,7 +14,7 @@ vi.mock("@/components/mvpblocks/geometric-hero", () => ({
   }) => (
     <section data-testid="geometric-hero">
       <span>{badge ?? "Business AI directory"}</span>
-      <h2>{title1 ?? "Find the right AI"} {title2 ?? "for every workflow"}</h2>
+      <h2>{title1 ?? "Find the right AI"} {title2}</h2>
     </section>
   ),
 }));
@@ -25,7 +25,7 @@ describe("BusinessDirectory", () => {
 
     expect(screen.getByTestId("geometric-hero")).toBeInTheDocument();
     expect(screen.getByRole("heading", {
-      name: "Find the right AI for every workflow",
+      name: "Find the right AI",
     })).toBeInTheDocument();
     expect(screen.getByTestId("business-tools")).toBeInTheDocument();
     expect(screen.queryByRole("heading", {
