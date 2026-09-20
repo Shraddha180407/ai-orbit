@@ -25,22 +25,24 @@ const ROW_ACCENT_COLORS = [
   "#FF9900", "#E91E8C", "#00BCD4", "#FF6B35",
 ];
 
-const COMPANY_TYPES: { label: string; value: string; slug: string }[] = [
-  { label: "All", value: "ALL", slug: "all" },
-  { label: "AI Model Providers", value: "AI_MODEL_PROVIDERS", slug: "ai-model-providers" },
-  { label: "Infrastructure", value: "INFRASTRUCTURE", slug: "infrastructure" },
-  { label: "Enterprise", value: "ENTERPRISE", slug: "enterprise" },
-  { label: "Healthcare", value: "HEALTHCARE", slug: "healthcare" },
-  { label: "Generative AI", value: "GENERATIVE_AI", slug: "generative-ai" },
-  { label: "Marketing", value: "MARKETING", slug: "marketing" },
-  { label: "Developer Tools", value: "DEVELOPER_TOOLS", slug: "developer-tools" },
-  { label: "Robotics", value: "ROBOTICS", slug: "robotics" },
-  { label: "Education", value: "EDUCATION", slug: "education" },
-  { label: "Open Source", value: "OPEN_SOURCE", slug: "open-source" },
-  { label: "Finance", value: "FINANCE", slug: "finance" },
-  { label: "AI Native", value: "AI_NATIVE", slug: "ai-native" },
-  { label: "Profitable", value: "PROFITABLE", slug: "profitable" },
-];
+type CompanyCategory = { label: string; value: string; slug: string };
+
+function formatCategoryLabel(value: string): string {
+  return value
+    .trim()
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function getCategorySlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[-_]+/g, "-")
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 type SortField = 'valuation' | 'valEmp' | 'name' | 'country' | 'sector' | 'modelsCount' | 'toolsCount' | 'aiNative' | 'profitable';
 type SortDir = 'asc' | 'desc';
@@ -61,6 +63,73 @@ function cleanCompanySlug(slug: string): string {
 function getCompanyLogo(company: Company): string | null {
   if (company.logoUrl && company.logoUrl.trim()) return company.logoUrl;
   return null;
+}
+
+function isGoogleFaviconUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      (parsed.hostname === "google.com" || parsed.hostname.endsWith(".google.com")) &&
+      parsed.pathname.includes("/s2/favicons")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function getGoogleFaviconDomain(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    return parsed.searchParams.get("domain") || parsed.searchParams.get("domain_url");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Google’s s2 favicon endpoint can return a generic globe with HTTP 200
+ * when a site has no discoverable favicon. For those URLs only, validate
+ * against Google's underlying faviconV2 endpoint: a real favicon loads,
+ * while a missing favicon returns an image error. Other logo URLs are
+ * trusted exactly as provided.
+ */
+function hasUsableCompanyLogo(company: Company): Promise<boolean> {
+  const logoUrl = getCompanyLogo(company);
+
+  if (!logoUrl) return Promise.resolve(false);
+  if (!isGoogleFaviconUrl(logoUrl)) return Promise.resolve(true);
+
+  const domain = getGoogleFaviconDomain(logoUrl);
+  if (!domain) return Promise.resolve(false);
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    let settled = false;
+
+    const finish = (value: boolean) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
+
+    const timeout = window.setTimeout(() => finish(false), 5000);
+
+    img.onload = () => {
+      window.clearTimeout(timeout);
+      finish(true);
+    };
+
+    img.onerror = () => {
+      window.clearTimeout(timeout);
+      finish(false);
+    };
+
+    img.src =
+      `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON` +
+      `&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(
+        domain.startsWith("http") ? domain : `https://${domain}`
+      )}&size=32`;
+  });
 }
 
 function formatValuation(val: string | number | null | undefined): string {
@@ -376,7 +445,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const urlFilterParam = searchParams.get("filter") || searchParams.get("category");
 
   const [activeCategorySlug, setActiveCategorySlug] = useState<string>(() => {
-    return defaultCategory || urlFilterParam || "";
+    return defaultCategory || urlFilterParam || "all";
   });
 
   const subCatContainerRef = useRef<HTMLDivElement>(null);
@@ -386,6 +455,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const [isCountryPopoverOpen, setIsCountryPopoverOpen] = useState<boolean>(false);
   const [countrySearch, setCountrySearch] = useState<string>("");
   const [allCompanyCountries, setAllCompanyCountries] = useState<string[]>([]);
+  const [companySectors, setCompanySectors] = useState<CompanyCategory[]>([]);
   const countryPopoverRef = useRef<HTMLDivElement>(null);
 
   const [sortField, setSortField] = useState<SortField | null>(null);
@@ -401,11 +471,11 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(100);
 
-  const matchedTypeEnum = useMemo(() => {
+  const matchedSector = useMemo(() => {
     if (!activeCategorySlug || activeCategorySlug === "all") return undefined;
-    const matched = COMPANY_TYPES.find(ct => ct.slug === activeCategorySlug);
-    return matched && matched.value !== "ALL" ? matched.value : activeCategorySlug;
-  }, [activeCategorySlug]);
+    const matched = companySectors.find((sector) => sector.slug === activeCategorySlug);
+    return matched?.value;
+  }, [activeCategorySlug, companySectors]);
 
   /*
    * Load the complete company directory once and filter/sort it locally.
@@ -442,38 +512,23 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
             ? (sortDir === "asc" ? "name-asc" : "name-desc")
             : undefined;
 
-      const type = matchedTypeEnum;
       const country =
         selectedCountry !== "all" ? selectedCountry : undefined;
 
       /*
-       * Normal page:
-       * One API request only. This keeps the page fast and prevents the
-       * endless skeleton/loading problem caused by downloading the whole DB.
+       * Fetch the complete server-side result set first, then apply the
+       * logo-only filter and client-side pagination. This keeps pagination
+       * accurate: every page contains only companies that have a logo, and
+       * total/totalPages also count only those companies.
        */
-      if (!companyNameFilter.trim()) {
-        return fetchCompanies({
-          page: currentPage,
-          pageSize,
-          q: query.trim() || undefined,
-          type,
-          country,
-          sort,
-        });
-      }
+      const serverQuery = companyNameFilter.trim()
+        ? companyNameFilter.trim()
+        : query.trim() || undefined;
 
-      /*
-       * COMPANY filter:
-       * Use q only to narrow the server-side candidate set, then check
-       * company.name locally so description/sector matches are discarded.
-       *
-       * We fetch the q-result pages, not the entire company database.
-       */
       const firstResponse = await fetchCompanies({
         page: 1,
         pageSize: 200,
-        q: companyNameFilter.trim(),
-        type,
+        q: serverQuery,
         country,
         sort,
       });
@@ -487,20 +542,17 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
       const totalPagesFromApi =
         typeof firstResponse?.totalPages === "number"
           ? firstResponse.totalPages
-          : 1;
+          : firstCompanies.length < 200
+            ? 1
+            : undefined;
 
-      // Fetch the remaining search-result pages in parallel, with a hard cap
-      // so a malformed API response can never freeze the page.
-      if (totalPagesFromApi > 1) {
-        const remainingPages = Math.min(totalPagesFromApi, 20);
-
+      if (totalPagesFromApi !== undefined && totalPagesFromApi > 1) {
         const responses = await Promise.all(
-          Array.from({ length: remainingPages - 1 }, (_, index) =>
+          Array.from({ length: totalPagesFromApi - 1 }, (_, index) =>
             fetchCompanies({
               page: index + 2,
               pageSize: 200,
-              q: companyNameFilter.trim(),
-              type,
+              q: serverQuery,
               country,
               sort,
             })
@@ -516,14 +568,37 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
         }
       }
 
-      const needle = companyNameFilter.trim().toLocaleLowerCase();
+      // Filter by the actual Sector field from the DB.
+      if (matchedSector) {
+        candidates = candidates.filter((company) => {
+          return (company.sector || "").trim() === matchedSector;
+        });
+      }
 
-      const matchingCompanies = candidates.filter((company) =>
-        formatCompanyName(String(company?.name ?? ""))
-          .trim()
-          .toLocaleLowerCase()
-          .includes(needle)
+      // Only companies with a genuinely usable logo are eligible.
+      // Normal logo URLs are kept untouched. Google favicon URLs get a
+      // targeted fallback check so only generic-globe results are removed.
+      const logoChecks = await Promise.all(
+        candidates.map(async (company) => ({
+          company,
+          hasLogo: await hasUsableCompanyLogo(company),
+        }))
       );
+
+      const logoCompanies = logoChecks
+        .filter(({ hasLogo }) => hasLogo)
+        .map(({ company }) => company);
+
+      // When the company-name filter is active, keep the existing exact
+      // name-focused behavior after the server-side candidate search.
+      const matchingCompanies = companyNameFilter.trim()
+        ? logoCompanies.filter((company) =>
+            formatCompanyName(String(company?.name ?? ""))
+              .trim()
+              .toLocaleLowerCase()
+              .includes(companyNameFilter.trim().toLocaleLowerCase())
+          )
+        : logoCompanies;
 
       const startIndex = (currentPage - 1) * pageSize;
 
@@ -625,22 +700,30 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
           : ((firstResponse?.companies || []) as Company[]);
 
         const countries = new Set<string>();
+        const sectors = new Set<string>();
 
-        firstCompanies.forEach((company) => {
-          const country = company.country?.trim();
-          if (country) countries.add(country);
-        });
+        const collectCompanyMetadata = (companies: Company[]) => {
+          companies.forEach((company) => {
+            const country = company.country?.trim();
+            if (country) countries.add(country);
+
+            const sector = company.sector?.trim();
+            if (sector) sectors.add(sector);
+          });
+        };
+
+        collectCompanyMetadata(firstCompanies);
 
         const totalPagesFromApi =
           typeof firstResponse?.totalPages === "number"
             ? firstResponse.totalPages
-            : 1;
+            : firstCompanies.length < 200
+              ? 1
+              : undefined;
 
-        if (totalPagesFromApi > 1) {
-          const pages = Math.min(totalPagesFromApi, 20);
-
+        if (totalPagesFromApi !== undefined && totalPagesFromApi > 1) {
           const responses = await Promise.all(
-            Array.from({ length: pages - 1 }, (_, index) =>
+            Array.from({ length: totalPagesFromApi - 1 }, (_, index) =>
               fetchCompanies({
                 page: index + 2,
                 pageSize: 200,
@@ -653,15 +736,21 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
               ? (response as Company[])
               : ((response?.companies || []) as Company[]);
 
-            companies.forEach((company) => {
-              const country = company.country?.trim();
-              if (country) countries.add(country);
-            });
+            collectCompanyMetadata(companies);
           });
         }
 
         if (!cancelled) {
           setAllCompanyCountries(Array.from(countries).sort());
+          setCompanySectors(
+            Array.from(sectors)
+              .sort((a, b) => a.localeCompare(b))
+              .map((value) => ({
+                label: formatCategoryLabel(value),
+                value,
+                slug: getCategorySlug(value),
+              }))
+          );
         }
       } catch {
         // Current-page countries remain as fallback.
@@ -727,59 +816,56 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
         container.querySelectorAll("button")
       ) as HTMLButtonElement[];
 
+      const containerRect = container.getBoundingClientRect();
+
+      // Count partially visible chips too. This is important because
+      // a cut-off chip can still be clicked and should trigger scrolling.
       const visibleButtons = buttons.filter((button) => {
         const rect = button.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
 
         return (
-          rect.left >= containerRect.left &&
-          rect.right <= containerRect.right
+          rect.right > containerRect.left &&
+          rect.left < containerRect.right
         );
       });
 
       const clickedVisibleIndex = visibleButtons.indexOf(clickedButton);
 
-      const hasHiddenLeft = container.scrollLeft > 0;
+      const hasHiddenLeft = container.scrollLeft > 1;
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+      const hasHiddenRight = container.scrollLeft < maxScrollLeft - 1;
 
-      const hasHiddenRight =
-        container.scrollLeft + container.clientWidth <
-        container.scrollWidth - 1;
-
-      /*
-       * RIGHT SIDE:
-       *
-       * If there are still chips hidden to the RIGHT and the
-       * clicked chip is one of the last 3 currently visible chips,
-       * move the category row LEFT.
-       *
-       * Example:
-       * 1  2  3  4  5  6  7 | 8  9  10...
-       *             ↑  ↑  ↑
-       *             5  6  7 → move LEFT
-       */
+      // If a clicked chip is among the last 3 visible chips, move
+      // the row left so the next chips become visible.
       if (
         hasHiddenRight &&
+        clickedVisibleIndex >= 0 &&
         clickedVisibleIndex >= visibleButtons.length - 3
       ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          maxScrollLeft - container.scrollLeft
+        );
+
         container.scrollBy({
-          left: container.clientWidth * 0.55,
+          left: scrollAmount,
           behavior: "smooth",
         });
       }
-
-      /*
-       * LEFT SIDE:
-       *
-       * Once the row has moved and there are chips hidden to the
-       * LEFT, clicking one of the first 3 visible chips moves RIGHT.
-       */
+      // If a clicked chip is among the first 3 visible chips, move
+      // the row right so the previous chips become visible.
       else if (
         hasHiddenLeft &&
         clickedVisibleIndex >= 0 &&
         clickedVisibleIndex <= 2
       ) {
+        const scrollAmount = Math.min(
+          container.clientWidth * 0.25,
+          container.scrollLeft
+        );
+
         container.scrollBy({
-          left: -(container.clientWidth * 0.55),
+          left: -scrollAmount,
           behavior: "smooth",
         });
       }
@@ -884,7 +970,7 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
               ref={subCatContainerRef}
               className="flex items-center gap-1.5 touch-scroll-x scrollbar-none pb-1 md:pb-0 flex-1 w-auto sm:w-full -mx-3 sm:mx-0 px-3 sm:px-0 overflow-x-auto scroll-smooth"
             >
-              {COMPANY_TYPES.map((ct) => {
+              {[{ label: "All", value: "ALL", slug: "all" }, ...companySectors].map((ct) => {
                 const isSelected = activeCategorySlug === ct.slug;
 
                 return (
@@ -899,22 +985,15 @@ export function CompaniesClient({ defaultCategory }: { defaultCategory?: string 
                       type="button"
                       onClick={() => handleSubcategoryClick(ct.slug)}
                       className={cn(
-                        "rounded-full px-3.5 py-1 text-xs font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0",
+                        "rounded-full h-6 px-4 text-xs font-semibold border transition-all whitespace-nowrap active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0",
                         isSelected
-                          ? "bg-[#6E56CF] text-white border-[#6E56CF] font-bold shadow-sm"
-                          : "bg-[#131316] border-[#232326] text-[#A1A1AA] hover:border-[#6E56CF]/50 hover:text-white"
+                          ? "bg-white text-black border-white font-bold shadow-sm"
+                          : "bg-[#0D0D0F] border-[#232326] text-[#A1A1AA] hover:border-[#3A3A3D] hover:text-white hover:bg-[#141416]"
                       )}
                     >
                       <span>{ct.label}</span>
                     </button>
 
-                    {isSelected && ct.slug !== "all" && (
-                      <ClearFilterChip
-                        onClick={() =>
-                          handleSubcategoryClick("all")
-                        }
-                      />
-                    )}
                   </div>
                 );
               })}
