@@ -2,67 +2,6 @@
 
 import { Sparkles } from 'lucide-react';
 
-function BusinessWorkflowInfographic() {
-  return (
-    <div
-      aria-hidden="true"
-      data-testid="business-hero-infographic"
-      className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-90"
-    >
-      <svg
-        viewBox="0 0 1200 240"
-        preserveAspectRatio="xMidYMid slice"
-        className="h-full w-full"
-      >
-        <defs>
-          <linearGradient id="business-flow-line" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0" stopColor="#A78BFA" stopOpacity="0.12" />
-            <stop offset="0.5" stopColor="#FFFFFF" stopOpacity="0.22" />
-            <stop offset="1" stopColor="#22D3EE" stopOpacity="0.12" />
-          </linearGradient>
-        </defs>
-
-        <g fill="none" stroke="url(#business-flow-line)" strokeWidth="1.5">
-          <path d="M152 50H286C314 50 320 35 350 35H405" />
-          <path d="M160 188H286C316 188 322 205 350 205H405" />
-          <path d="M795 35H850C880 35 886 50 914 50H1048" />
-          <path d="M795 205H850C880 205 886 188 914 188H1048" />
-          <path d="M118 72V168" strokeDasharray="3 7" opacity="0.55" />
-          <path d="M1080 72V168" strokeDasharray="3 7" opacity="0.55" />
-        </g>
-
-        <g className="fill-white/[0.035] stroke-violet-200/25" strokeWidth="1">
-          <rect x="38" y="28" width="114" height="44" rx="12" />
-          <rect x="38" y="168" width="122" height="44" rx="12" />
-          <rect x="1048" y="28" width="114" height="44" rx="12" />
-          <rect x="1038" y="168" width="124" height="44" rx="12" />
-        </g>
-
-        <g className="fill-cyan-200/45">
-          <circle cx="152" cy="50" r="3" />
-          <circle cx="160" cy="188" r="3" />
-          <circle cx="1048" cy="50" r="3" />
-          <circle cx="1038" cy="188" r="3" />
-        </g>
-
-        <g className="fill-white/45 text-[10px] font-semibold tracking-[0.18em]">
-          <text x="60" y="54">DISCOVER</text>
-          <text x="63" y="194">SUPPORT</text>
-          <text x="1070" y="54">AUTOMATE</text>
-          <text x="1065" y="194">OPERATIONS</text>
-        </g>
-
-        <g className="fill-violet-200/20">
-          <circle cx="350" cy="35" r="2" />
-          <circle cx="350" cy="205" r="2" />
-          <circle cx="850" cy="35" r="2" />
-          <circle cx="850" cy="205" r="2" />
-        </g>
-      </svg>
-    </div>
-  );
-}
-
 export default function HeroGeometric({
   badge = 'Business AI directory',
   title1 = 'Find the right AI',
@@ -78,10 +17,8 @@ export default function HeroGeometric({
     <div className="relative isolate flex min-h-[190px] w-full items-center justify-center overflow-hidden border-b border-white/[0.06] bg-black sm:min-h-[220px]">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(124,92,252,0.2),transparent_42%),radial-gradient(circle_at_80%_80%,rgba(34,211,238,0.08),transparent_32%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(245,166,35,0.14),transparent_38%),radial-gradient(circle_at_50%_10%,rgba(124,92,252,0.2),transparent_42%),radial-gradient(circle_at_80%_80%,rgba(34,211,238,0.08),transparent_32%)]"
       />
-
-      <BusinessWorkflowInfographic />
 
       <div
         data-testid="business-hero-content"

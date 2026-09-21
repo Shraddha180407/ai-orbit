@@ -9,7 +9,6 @@ import {
   screen,
   waitFor,
   act,
-  fireEvent,
 } from "@testing-library/react";
 import { vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -149,55 +148,53 @@ describe("ToolsClient", () => {
     expect(categoryRow).toHaveClass("justify-start", "gap-1.5", "pb-2.5");
   });
 
-  it("uses the business endpoint and renders business categories", async () => {
+  it("uses the business endpoint without rendering the legacy category row", async () => {
     await act(async () => {
-      render(<ToolsClient defaultMode="business" />);
+      render(<ToolsClient defaultMode="business" showCategories={false} />);
     });
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining("/api/v1/tools/category/business"),
       );
-      expect(screen.getByText("Writing & Editing")).toBeInTheDocument();
-      expect(screen.getByText("Design & Creative")).toBeInTheDocument();
-      expect(screen.getByText("Back Office")).toBeInTheDocument();
-      expect(screen.getByText("Growth & Marketing")).toBeInTheDocument();
-      const businessCategories = [
-        "All",
-        "Writing & Editing",
-        "Design & Creative",
-        "Customer Service & Support",
-        "Growth & Marketing",
-        "Technology & IT",
-        "Workflow Automation",
-        "Back Office",
-        "Operations",
-        "Sales",
-      ];
-      businessCategories.forEach((label) => {
-        const button = screen.getByRole("button", { name: label });
-        expect(button.querySelector("svg")).toBeInTheDocument();
-        expect(button.querySelector("[data-animated-icon]")).toHaveAttribute(
-          "data-animate-on-hover",
-          "true",
-        );
-        expect(button).toHaveClass("flex-col", "items-center");
-        expect(button).toHaveClass("min-h-[72px]");
-        expect(button).not.toHaveClass("h-[24px]");
-      });
-      const categoryRow = screen.getByRole("button", { name: "All" }).parentElement;
-      expect(categoryRow).toHaveClass("justify-between");
-      expect(categoryRow).not.toHaveClass("justify-start");
+      expect(screen.queryByRole("button", { name: "Writing & Editing" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Sales" })).not.toBeInTheDocument();
       expect(document.querySelector(".grid")).toHaveClass("lg:grid-cols-4");
     });
+  });
 
-    const writingButton = screen.getByRole("button", { name: "Writing & Editing" });
-    const writingIcon = writingButton.querySelector("[data-animated-icon]");
-    expect(writingIcon).not.toHaveAttribute("data-animation-started");
+  it("can hide the category row for the business icon directory", () => {
+    render(<ToolsClient defaultMode="business" showCategories={false} />);
 
-    fireEvent.mouseEnter(writingButton);
+    expect(screen.queryByRole("button", { name: "Writing & Editing" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sales" })).not.toBeInTheDocument();
+  });
 
-    expect(writingIcon).toHaveAttribute("data-animation-started", "true");
+  it("uses centered pagination with a fixed 100-item page size for business", async () => {
+    const manyTools = Array.from({ length: 101 }, (_, index) => ({
+      ...mockToolsResponse.tools[0],
+      id: `business-tool-${index}`,
+      slug: `business-tool-${index}`,
+      name: `Business Tool ${index}`,
+    }));
+    vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ...mockToolsResponse, tools: manyTools }),
+    } as Response);
+
+    await act(async () => {
+      render(<ToolsClient defaultMode="business" />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("navigation", { name: "Pagination" })).toHaveClass(
+        "justify-center",
+      );
+      expect(
+        screen.queryByRole("button", { name: "Items per page" }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByText("100 / page")).toBeInTheDocument();
+    });
   });
 
   it("filters business tools by the selected frontend category", async () => {

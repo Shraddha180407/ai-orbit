@@ -20,6 +20,8 @@ export type PaginationProps = {
   buildUrl?: (page: number, pageSize?: number) => string;
   className?: string;
   itemLabel?: string;
+  staticPageSizeLabel?: boolean;
+  alwaysShow?: boolean;
 };
 
 export function Pagination({
@@ -33,6 +35,8 @@ export function Pagination({
   params,
   buildUrl,
   className,
+  staticPageSizeLabel = false,
+  alwaysShow = false,
 }: PaginationProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -51,7 +55,7 @@ export function Pagination({
     };
   }, [isDropdownOpen]);
 
-  if (totalPages <= 1 && (!totalCount || totalCount <= pageSize) && !onPageSizeChange) {
+  if (!alwaysShow && totalPages <= 1 && (!totalCount || totalCount <= pageSize) && !onPageSizeChange) {
     return null;
   }
 
@@ -202,39 +206,50 @@ export function Pagination({
         )}
 
         {/* Rows per page dropdown selector */}
-        {(onPageSizeChange || pageSizeOptions.length > 0) && (
-          <div className="relative ml-1 pl-1.5 border-l border-[#232326]" ref={dropdownRef}>
-            <button
-              type="button"
-              onClick={() => setIsDropdownOpen((prev) => !prev)}
+        {staticPageSizeLabel ? (
+          <div className="relative ml-1 pl-1.5 border-l border-[#232326]">
+            <span
               aria-label="Items per page"
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#232326] bg-[#0A0A0C] text-[#D4D4D8] hover:text-white hover:border-[#3A3A3E] text-[11px] sm:text-[11.5px] font-medium transition-all cursor-pointer"
+              className="flex items-center px-2.5 py-1 text-[11px] font-medium text-[#D4D4D8] sm:text-[11.5px]"
             >
-              <span>{pageSize} / page</span>
-              <ChevronDown size={11} aria-hidden="true" className={cn("text-[#A1A1AA] transition-transform", isDropdownOpen && "rotate-180")} />
-            </button>
-
-            {isDropdownOpen && (
-              <div className="absolute right-0 bottom-full mb-2 w-28 rounded-xl border border-[#232326] bg-[#131316] p-1 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100">
-                {pageSizeOptions.map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => handleSizeSelect(size)}
-                    className={cn(
-                      "w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center justify-between",
-                      pageSize === size
-                        ? "bg-[#6E56CF]/20 text-[#A78BFA] font-bold"
-                        : "text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white"
-                    )}
-                  >
-                    <span>{size} / page</span>
-                    {pageSize === size && <span className="w-1.5 h-1.5 rounded-full bg-[#A78BFA]" />}
-                  </button>
-                ))}
-              </div>
-            )}
+              {pageSize} / page
+            </span>
           </div>
+        ) : (
+          (onPageSizeChange || pageSizeOptions.length > 0) && (
+            <div className="relative ml-1 pl-1.5 border-l border-[#232326]" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen((prev) => !prev)}
+                aria-label="Items per page"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#232326] bg-[#0A0A0C] text-[#D4D4D8] hover:text-white hover:border-[#3A3A3E] text-[11px] sm:text-[11.5px] font-medium transition-all cursor-pointer"
+              >
+                <span>{pageSize} / page</span>
+                <ChevronDown size={11} aria-hidden="true" className={cn("text-[#A1A1AA] transition-transform", isDropdownOpen && "rotate-180")} />
+              </button>
+
+              {isDropdownOpen && (
+                <div className="absolute right-0 bottom-full mb-2 w-28 rounded-xl border border-[#232326] bg-[#131316] p-1 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100">
+                  {pageSizeOptions.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => handleSizeSelect(size)}
+                      className={cn(
+                        "w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center justify-between",
+                        pageSize === size
+                          ? "bg-[#6E56CF]/20 text-[#A78BFA] font-bold"
+                          : "text-[#A1A1AA] hover:bg-[#1A1A1E] hover:text-white"
+                      )}
+                    >
+                      <span>{size} / page</span>
+                      {pageSize === size && <span className="w-1.5 h-1.5 rounded-full bg-[#A78BFA]" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
         )}
       </div>
     </nav>

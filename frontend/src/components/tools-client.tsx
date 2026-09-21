@@ -6,6 +6,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { ToolListView } from "@/components/ToolListView";
 import { BusinessToolGrid } from "@/components/BusinessToolGrid";
+import { Pagination } from "@/components/Pagination";
 import { API_URL } from "@/lib/api";
 import type { SortOption } from "@/lib/types";
 import { BUSINESS_CATEGORIES } from "@/lib/business-categories";
@@ -222,10 +223,12 @@ function matchesCategory(tool: any, categorySlug: string): boolean {
 
 export function ToolsClient({
   defaultMode,
-  defaultCategory
+  defaultCategory,
+  showCategories = true,
 }: {
   defaultMode?: DirectoryMode;
   defaultCategory?: string;
+  showCategories?: boolean;
 }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -380,7 +383,7 @@ export function ToolsClient({
   const filteredTools = activeCategory
     ? rawTools.filter((t: any) => matchesCategory(t, activeCategory))
     : rawTools;
-  const businessPageSize = 24;
+  const businessPageSize = 100;
   const totalPages = mode === "business"
     ? Math.max(1, Math.ceil(filteredTools.length / businessPageSize))
     : data?.totalPages || 1;
@@ -413,6 +416,7 @@ export function ToolsClient({
         <div className="mx-auto w-full max-w-[1600px] space-y-4">
 
         {/* Category Row */}
+        {showCategories && (
         <div
           ref={subCatContainerRef}
           className={`-mx-4 sm:mx-0 px-4 sm:px-0 flex items-center touch-scroll-x scrollbar-none w-auto sm:w-full overflow-x-auto scroll-smooth ${mode === "tools"
@@ -466,6 +470,7 @@ export function ToolsClient({
             );
           })}
         </div>
+        )}
 
     {/* List Grid */}
     {mode === "business" ? (
@@ -474,8 +479,18 @@ export function ToolsClient({
       <ToolListView tools={tools} loading={isLoading || isPlaceholderData} />
     )}
 
-    {/* Pagination Bar */}
-    {totalPages > 1 && (
+    {/* Business pagination uses the same floating layout as the home page. */}
+    {mode === "business" ? (
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        pageSize={businessPageSize}
+        totalCount={filteredTools.length}
+        onPageChange={handlePageChange}
+        staticPageSizeLabel
+        alwaysShow
+      />
+    ) : totalPages > 1 && (
       <div className="mt-8 flex items-center justify-center gap-2 pt-4 border-t border-[#232326]">
         {/* Prev Button */}
         <button

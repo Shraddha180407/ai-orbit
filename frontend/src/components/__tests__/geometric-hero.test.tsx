@@ -12,21 +12,24 @@ describe("HeroGeometric", () => {
     expect(content).toHaveClass("py-5", "sm:py-6");
   });
 
-  it("keeps the static workflow infographic behind the hero content", () => {
+  it("keeps the home page yellow signal tint in the hero background", () => {
     const { container } = render(<HeroGeometric />);
-    const infographic = screen.getByTestId("business-hero-infographic");
+    const background = container.firstElementChild?.querySelector(
+      '[aria-hidden="true"]',
+    );
+
+    expect(background?.className).toContain("rgba(245,166,35,0.14)");
+  });
+
+  it("does not render the decorative workflow infographic", () => {
+    const { container } = render(<HeroGeometric />);
     const content = container.querySelector(
       '[data-testid="business-hero-content"]',
     );
 
-    expect(infographic).toHaveAttribute("aria-hidden", "true");
-    expect(infographic).toHaveClass(
-      "absolute",
-      "inset-0",
-      "z-0",
-      "pointer-events-none",
-    );
-    expect(infographic.querySelector("svg")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("business-hero-infographic"),
+    ).not.toBeInTheDocument();
     expect(content).toHaveClass("relative", "z-10");
   });
 
