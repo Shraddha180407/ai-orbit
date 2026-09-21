@@ -112,8 +112,6 @@ export default function LeaderboardPage({
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isMoreDropdownOpen, setIsMoreDropdownOpen] = useState(false);
   const [sortBy, setSortBy] = useState('rank');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(100);
 
   // Loading & Error states
   const [isLoading, setIsLoading] = useState(true);
@@ -208,11 +206,6 @@ export default function LeaderboardPage({
         setIsLoading(false);
       });
   };
-
-  // Reset page when perspective, category, search, or entityType changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activePerspective, searchQuery, selectedCategory, sortBy, entityType, itemsPerPage]);
 
   // Primary categories to show directly as pills
   const PRIMARY_CATEGORIES = [
@@ -500,14 +493,6 @@ export default function LeaderboardPage({
   }, [selectedForCompare]);
 
   const SEARCH_PLACEHOLDER = "Search models, tools, superpowers, or providers...";
-
-  // Pagination calculation
-  const totalPages = Math.ceil(filteredModels.length / itemsPerPage) || 1;
-  const paginatedModels = filteredModels.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
   const hasActiveFilters = searchQuery.trim() !== '' || selectedCategory !== 'All' || activePerspective !== 'overall';
 
   const handleClearFilters = () => {
@@ -961,7 +946,7 @@ export default function LeaderboardPage({
                     <AdaptiveTableHeaders category={selectedCategory} entityType={entityType} />
                   </thead>
                   <tbody className="divide-y divide-[#1F1F24] text-[#E4E4E7]">
-                    {paginatedModels.map((model) => {
+                    {filteredModels.map((model) => {
                       const isCompared = selectedForCompare.some((m) => m.id === model.id);
                       const isTool = model.entityType === 'tool';
                       const displayRank = model.displayRank || model.rank;
@@ -1142,7 +1127,7 @@ export default function LeaderboardPage({
 
             {/* Mobile Cards (<= 640px) */}
             <div className="sm:hidden space-y-3">
-              {paginatedModels.map((model) => {
+              {filteredModels.map((model) => {
                 const isCompared = selectedForCompare.some((m) => m.id === model.id);
                 return (
                   <MobileLeaderboardCard
@@ -1154,96 +1139,8 @@ export default function LeaderboardPage({
                 );
               })}
             </div>
-
-            {/* Pagination Controls */}
-            <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#71717A]">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span>
-                  Showing <strong className="text-white font-mono">{filteredModels.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}</strong> to{' '}
-                  <strong className="text-white font-mono">
-                    {Math.min(currentPage * itemsPerPage, filteredModels.length)}
-                  </strong>{' '}
-                  of <strong className="text-white font-mono">{filteredModels.length}</strong> systems
-                </span>
-
-                <div className="flex items-center gap-1.5 ml-1">
-                  <span className="text-[11px] text-[#71717A]">Per screen:</span>
-                  {[20, 50, 100].map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => {
-                        setItemsPerPage(size);
-                        setCurrentPage(1);
-                      }}
-                      className={`px-2 py-0.5 rounded text-[11px] font-mono border transition-all cursor-pointer ${
-                        itemsPerPage === size
-                          ? 'bg-[#6E56CF] text-white border-[#6E56CF] font-bold shadow-sm'
-                          : 'bg-[#131316] border-[#232326] text-[#A1A1AA] hover:text-white hover:bg-[#1a1a20]'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {totalPages > 1 && (
-                <div className="flex items-center gap-1.5">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#232326] bg-[#131316] text-xs font-medium transition-all cursor-pointer ${
-                      currentPage === 1 ? 'text-[#52525B] cursor-not-allowed' : 'text-white hover:bg-[#1a1a20]'
-                    }`}
-                  >
-                    <ChevronLeft size={13} />
-                    <span>Prev</span>
-                  </button>
-
-                  {(() => {
-                    const pages = [];
-                    if (totalPages <= 7) {
-                      for (let i = 1; i <= totalPages; i++) pages.push(i);
-                    } else if (currentPage <= 4) {
-                      pages.push(1, 2, 3, 4, 5, '...', totalPages);
-                    } else if (currentPage >= totalPages - 3) {
-                      pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-                    } else {
-                      pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
-                    }
-                    return pages.map((pg, idx) => (
-                      typeof pg === 'number' ? (
-                        <button
-                          key={pg}
-                          onClick={() => setCurrentPage(pg)}
-                          className={`w-8 h-8 rounded-xl text-xs font-semibold font-mono border transition-all cursor-pointer ${
-                            currentPage === pg
-                              ? 'bg-white text-black border-white'
-                              : 'bg-[#131316] border-[#232326] text-[#A1A1AA] hover:text-white'
-                          }`}
-                        >
-                          {pg}
-                        </button>
-                      ) : (
-                        <span key={`dots-${idx}`} className="px-1 text-xs text-[#52525B]">...</span>
-                      )
-                    ));
-                  })()}
-
-                  <button
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#232326] bg-[#131316] text-xs font-medium transition-all cursor-pointer ${
-                      currentPage === totalPages ? 'text-[#52525B] cursor-not-allowed' : 'text-white hover:bg-[#1a1a20]'
-                    }`}
-                  >
-                    <span>Next</span>
-                    <ArrowRight size={13} />
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
+
         )}
         </>
         )}
