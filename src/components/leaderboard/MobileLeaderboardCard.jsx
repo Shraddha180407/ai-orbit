@@ -39,6 +39,8 @@ export default function MobileLeaderboardCard({
 
   const parsedGrowth = parseFloat((model.growth || '').replace(/[^0-9.-]/g, '')) || 0;
 
+  const displayRank = model.displayRank || model.rank;
+
   return (
     <div
       onClick={() => navigate(`/leaderboard/${model.slug}`)}
@@ -50,16 +52,16 @@ export default function MobileLeaderboardCard({
           <div className="flex flex-col items-center shrink-0">
             <span
               className={`inline-flex items-center justify-center w-7 h-7 rounded-xl font-bold font-mono text-xs ${
-                model.rank === 1
+                displayRank === 1
                   ? 'bg-gradient-to-br from-[#F5A623] via-[#FBBF24] to-[#D97706] text-black font-extrabold shadow-md shadow-[#F5A623]/30 border border-[#FCD34D]/60'
-                  : model.rank === 2
+                  : displayRank === 2
                   ? 'bg-gradient-to-br from-[#FFFFFF] via-[#E2E8F0] to-[#94A3B8] text-[#0F172A] font-extrabold shadow-md shadow-white/25 border border-white/80 ring-1 ring-white/30'
-                  : model.rank === 3
+                  : displayRank === 3
                   ? 'bg-gradient-to-br from-[#FDBA74] via-[#EA580C] to-[#9A3412] text-white font-extrabold shadow-md shadow-[#EA580C]/35 border border-[#FDBA74]/60 ring-1 ring-[#EA580C]/30'
                   : 'text-[#A1A1AA] bg-[#1a1a20] border border-[#27272e]'
               }`}
             >
-              #{model.rank}
+              #{displayRank}
             </span>
             <div className="mt-1">{renderRankDelta()}</div>
           </div>

@@ -3,7 +3,7 @@
 // 1. LMSYS Chatbot Arena official Hugging Face dataset (rating, rank, vote_count, organization, license)
 // 2. Artificial Analysis public benchmark stream (verified speed tok/s, latency TTFT, isOpenWeights, pricing, contextWindow)
 
-export async function fetchLMSYSArenaData(maxModels = 300) {
+export async function fetchLMSYSArenaData(maxModels = 600) {
   try {
     const allRows = [];
     const pageSize = 100;

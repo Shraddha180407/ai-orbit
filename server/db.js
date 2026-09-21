@@ -248,7 +248,7 @@ export function getLastUpdateTimestamp() {
   }
 }
 
-export function getRankedModels(perspective = 'overall', limit = 100) {
+export function getRankedModels(perspective = 'overall', limit = 500) {
   const db = getDb();
   try {
     const rows = db.prepare(`

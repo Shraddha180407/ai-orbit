@@ -40,6 +40,59 @@ import {
   Check
 } from 'lucide-react';
 
+export function matchesCategory(itemCategory, targetCategory) {
+  if (!targetCategory || targetCategory === 'All') return true;
+  if (!itemCategory) return false;
+
+  const itemCatLower = String(itemCategory).toLowerCase().trim();
+  const targetCatLower = String(targetCategory).toLowerCase().trim();
+
+  if (itemCatLower === targetCatLower) return true;
+
+  // Chat / Chatbot / General LLM
+  if (targetCatLower === 'chat' || targetCatLower === 'chatbot' || targetCatLower === 'chat / general llm') {
+    return itemCatLower.includes('chat') || itemCatLower.includes('llm') || itemCatLower.includes('general');
+  }
+
+  // Code / Coding / Code Assistant / Developer
+  if (targetCatLower === 'code' || targetCatLower === 'coding' || targetCatLower === 'code assistant' || targetCatLower === 'coding / developer') {
+    return itemCatLower.includes('code') || itemCatLower.includes('coding') || itemCatLower.includes('developer');
+  }
+
+  // Reasoning
+  if (targetCatLower === 'reasoning') {
+    return itemCatLower.includes('reason');
+  }
+
+  // Image / Image Generation
+  if (targetCatLower === 'image' || targetCatLower === 'image generation') {
+    return itemCatLower.includes('image');
+  }
+
+  // Video / Video Editing
+  if (targetCatLower === 'video' || targetCatLower === 'video editing') {
+    return itemCatLower.includes('video');
+  }
+
+  // Research
+  if (targetCatLower === 'research') {
+    return itemCatLower.includes('research');
+  }
+
+  // Agents / AI Agents / Automation
+  if (targetCatLower === 'agents' || targetCatLower === 'ai agents') {
+    return itemCatLower.includes('agent') || itemCatLower.includes('automation');
+  }
+
+  // Audio / Voice
+  if (targetCatLower === 'audio' || targetCatLower === 'voice' || targetCatLower === 'audio / voice' || targetCatLower === 'voice / audio') {
+    return itemCatLower.includes('audio') || itemCatLower.includes('voice');
+  }
+
+  // Substring match fallback
+  return itemCatLower.includes(targetCatLower) || targetCatLower.includes(itemCatLower);
+}
+
 export default function LeaderboardPage({ 
   bookmarks = [], 
   onToggleBookmark,
@@ -60,7 +113,7 @@ export default function LeaderboardPage({
   const [isMoreDropdownOpen, setIsMoreDropdownOpen] = useState(false);
   const [sortBy, setSortBy] = useState('rank');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 20;
 
   // Loading & Error states
   const [isLoading, setIsLoading] = useState(true);
@@ -164,18 +217,18 @@ export default function LeaderboardPage({
   // Primary categories to show directly as pills
   const PRIMARY_CATEGORIES = [
     { value: 'All', label: 'All' },
-    { value: 'Chatbot', label: 'Chat' },
-    { value: 'Code Assistant', label: 'Code' },
+    { value: 'Chat', label: 'Chat' },
+    { value: 'Code', label: 'Code' },
     { value: 'Reasoning', label: 'Reasoning' },
-    { value: 'Image Generation', label: 'Image' },
-    { value: 'Video Editing', label: 'Video' },
+    { value: 'Image', label: 'Image' },
+    { value: 'Video', label: 'Video' },
     { value: 'Research', label: 'Research' },
-    { value: 'AI Agents', label: 'Agents' }
+    { value: 'Agents', label: 'Agents' }
   ];
 
   const isSelectedInPrimary = PRIMARY_CATEGORIES.some((c) => c.value === selectedCategory);
   const overflowCategories = LEADERBOARD_CATEGORIES.filter(
-    (cat) => !PRIMARY_CATEGORIES.some((pc) => pc.value === cat)
+    (cat) => !PRIMARY_CATEGORIES.some((pc) => pc.value === cat || pc.label === cat)
   );
 
   // Multi-Perspective Filtering & Sorting Engine (Driven by backend data)
@@ -183,14 +236,18 @@ export default function LeaderboardPage({
     // 0. Base dataset: Use backend verified models (or tools if selected)
     let list = [];
     if (entityType === 'tools') {
-      list = AI_TOOLS_DATA;
-    } else if (backendModels.length > 0) {
-      list = [...backendModels];
+      list = [...AI_TOOLS_DATA];
+    } else if (entityType === 'models') {
+      list = backendModels.length > 0 ? [...backendModels] : [...AI_MODELS_DATA];
     } else {
-      list = LEADERBOARD_DATA.filter((item) => {
-        if (entityType === 'models') return item.entityType === 'model';
-        return true;
-      });
+      // entityType === 'all'
+      if (backendModels.length > 0) {
+        const backendIds = new Set(backendModels.map((m) => m.id));
+        const extraTools = AI_TOOLS_DATA.filter((t) => !backendIds.has(t.id));
+        list = [...backendModels, ...extraTools];
+      } else {
+        list = [...LEADERBOARD_DATA];
+      }
     }
 
     // 1. Perspective Filter
@@ -198,9 +255,17 @@ export default function LeaderboardPage({
       list = list.filter((m) => m.isOpenWeights === true);
     }
 
-    // 2. Category Filter
+    // 2. Category Filter with flexible matching
     if (selectedCategory !== 'All') {
-      list = list.filter((m) => m.category === selectedCategory);
+      let matched = list.filter((m) => matchesCategory(m.category, selectedCategory));
+      
+      // Fallback: If restricted entityType returns 0 items for this category, search full ecosystem
+      if (matched.length === 0) {
+        const fullEcosystem = [...AI_MODELS_DATA, ...AI_TOOLS_DATA];
+        matched = fullEcosystem.filter((m) => matchesCategory(m.category, selectedCategory));
+      }
+      
+      list = matched;
     }
 
     // 3. Search Query Filter
@@ -217,29 +282,73 @@ export default function LeaderboardPage({
     }
 
     // 4. Secondary Sorting if user explicitly chose non-rank sort
+    let sortedList = [...list];
     if (sortBy === 'visits') {
-      return [...list].sort((a, b) => (parseFloat(b.monthlyVisits) || b.votes || 0) - (parseFloat(a.monthlyVisits) || a.votes || 0));
-    }
-    if (sortBy === 'growth') {
-      return [...list].sort((a, b) => {
+      sortedList.sort((a, b) => (parseFloat(b.monthlyVisits) || b.votes || 0) - (parseFloat(a.monthlyVisits) || a.votes || 0));
+    } else if (sortBy === 'growth') {
+      sortedList.sort((a, b) => {
         const deltaA = parseInt((a.rankDelta || '0').replace('+', ''), 10) || 0;
         const deltaB = parseInt((b.rankDelta || '0').replace('+', ''), 10) || 0;
         return deltaB - deltaA;
       });
-    }
-    if (sortBy === 'newest') {
-      return [...list].sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+    } else if (sortBy === 'newest') {
+      sortedList.sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+    } else {
+      // Default: Honor verified backend perspective ranking 1..N
+      sortedList.sort((a, b) => (a.rank || 0) - (b.rank || 0));
     }
 
-    // Default: Honor verified backend perspective ranking 1..N
-    return [...list].sort((a, b) => (a.rank || 0) - (b.rank || 0));
+    // 5. Assign unique sequential ecosystem display rank (1, 2, 3, 4, 5...)
+    return sortedList.map((item, index) => ({
+      ...item,
+      displayRank: index + 1
+    }));
   }, [backendModels, activePerspective, selectedCategory, searchQuery, sortBy, entityType]);
+
+  // Dynamic Entity Type counts for the active perspective & category/search filters
+  const entityTypeCounts = useMemo(() => {
+    let baseModels = backendModels.length > 0 ? backendModels : AI_MODELS_DATA;
+    let baseTools = AI_TOOLS_DATA;
+
+    if (activePerspective === 'open_weights') {
+      baseModels = baseModels.filter((m) => m.isOpenWeights === true);
+      baseTools = baseTools.filter((t) => t.isOpenWeights === true || (t.license && t.license.toLowerCase().includes('open')));
+    }
+
+    if (selectedCategory !== 'All') {
+      baseModels = baseModels.filter((m) => matchesCategory(m.category, selectedCategory));
+      baseTools = baseTools.filter((t) => matchesCategory(t.category, selectedCategory));
+    }
+
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      baseModels = baseModels.filter((m) =>
+        (m.name || '').toLowerCase().includes(q) ||
+        (m.org || '').toLowerCase().includes(q) ||
+        (m.category || '').toLowerCase().includes(q) ||
+        (m.superpower || '').toLowerCase().includes(q)
+      );
+      baseTools = baseTools.filter((t) =>
+        (t.name || '').toLowerCase().includes(q) ||
+        (t.org || '').toLowerCase().includes(q) ||
+        (t.category || '').toLowerCase().includes(q) ||
+        (t.superpower || '').toLowerCase().includes(q)
+      );
+    }
+
+    const modelsCount = baseModels.length;
+    const toolsCount = baseTools.length;
+    const allCount = modelsCount + toolsCount;
+
+    return { all: allCount, models: modelsCount, tools: toolsCount };
+  }, [backendModels, activePerspective, selectedCategory, searchQuery]);
 
   // Real dynamic ecosystem stats computed from actual datasets (no fabricated numbers)
   const ecosystemStats = useMemo(() => {
-    const modelsCount = AI_MODELS_DATA.length;
+    const modelsCount = backendModels.length > 0 ? backendModels.length : AI_MODELS_DATA.length;
     const toolsCount = AI_TOOLS_DATA.length;
     const companiesCount = COMPANIES_DATA.length;
+    const totalTrackedSystems = modelsCount + toolsCount;
 
     // Real throughput calculation
     const speeds = LEADERBOARD_DATA.map((m) => m.speedNum || parseInt(m.outputSpeed, 10) || 0).filter((s) => s > 0);
@@ -255,16 +364,17 @@ export default function LeaderboardPage({
       modelsCount,
       toolsCount,
       companiesCount,
+      totalTrackedSystems,
       maxSpeed,
       fastestName: fastestSystem?.name || 'Top Model',
       maxGrowth,
       topGrowthName: topGrowthSystem?.name || 'Top Mover'
     };
-  }, []);
+  }, [backendModels]);
 
   // Live rotating hero telemetry sequence (single metric at a time)
   const HERO_METRICS = useMemo(() => [
-    { value: `${LEADERBOARD_DATA.length}`, label: 'TRACKED SYSTEMS', sub: 'LIVE INDEX', delta: '+8', badge: 'LIVE' },
+    { value: `${ecosystemStats.totalTrackedSystems}`, label: 'TRACKED SYSTEMS', sub: 'LIVE INDEX', delta: '+8', badge: 'LIVE' },
     { value: `${ecosystemStats.modelsCount}`, label: 'MODELS', sub: 'FOUNDATION ARCHITECTURES', delta: '+5', badge: 'Q1 2025' },
     { value: `${ecosystemStats.toolsCount}`, label: 'TOOLS', sub: 'DEVELOPER APPLICATIONS', delta: '+11', badge: 'Q1 2025' },
     { value: `${ecosystemStats.companiesCount}`, label: 'AI COMPANIES', sub: 'ENTERPRISE INDEX', delta: '+12', badge: 'Q1 2025' },
@@ -499,18 +609,18 @@ export default function LeaderboardPage({
 
             {/* Right Column: Rotating Metric Card — matches Image 2 design */}
             <div className="lg:col-span-4 flex lg:justify-end">
-              <div className="w-full lg:w-auto lg:min-w-[260px] border border-[#232328] rounded-xl bg-[#0D0D10] px-5 py-4 flex flex-col gap-2">
+              <div className="w-full lg:w-auto lg:min-w-[270px] border border-[#2D2D38] rounded-xl bg-[#0D0D12] px-5 py-4 flex flex-col gap-2.5 shadow-xl">
                 {/* Header row — label + badge animate with the metric */}
                 <div
                   className={`flex items-center justify-between transition-all duration-300 ease-out transform ${
                     isMetricTransitioning ? 'opacity-0 -translate-y-1' : 'opacity-100 translate-y-0'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-widest uppercase text-[#71717A]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#6E56CF] shrink-0" />
+                  <div className="flex items-center gap-2 text-[11px] font-mono tracking-widest uppercase text-white font-bold">
+                    <span className="w-2 h-2 rounded-full bg-[#6E56CF] shrink-0" />
                     <span>{currentMetric.label}</span>
                   </div>
-                  <span className="text-[10px] font-mono font-bold text-[#A78BFA] bg-[#6E56CF]/10 border border-[#6E56CF]/30 rounded px-1.5 py-0.5">
+                  <span className="text-[11px] font-mono font-bold text-[#A78BFA] bg-[#6E56CF]/20 border border-[#6E56CF]/50 rounded px-2 py-0.5 shadow-sm">
                     {currentMetric.badge}
                   </span>
                 </div>
@@ -523,33 +633,33 @@ export default function LeaderboardPage({
                       : 'opacity-100 translate-x-0'
                   }`}
                 >
-                  <div className="flex items-end gap-2">
+                  <div className="flex items-end gap-2.5">
                     <div className="text-5xl sm:text-6xl font-extrabold font-mono text-white tracking-tight leading-none">
                       {currentMetric.value}
                     </div>
                     <div className="flex flex-col gap-0.5 mb-1">
-                      <span className="text-[12px] font-bold font-mono text-[#10B981] leading-none">▲{currentMetric.delta}</span>
-                      <span className="text-[10px] font-mono text-[#71717A] leading-none">vs last</span>
+                      <span className="text-[13px] font-extrabold font-mono text-[#10B981] leading-none">▲{currentMetric.delta}</span>
+                      <span className="text-[11px] font-mono text-[#D4D4D8] font-bold leading-none">vs last</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Progress bar */}
-                <div className="h-[3px] w-full rounded-full bg-[#1C1C1F] overflow-hidden">
+                <div className="h-[4px] w-full rounded-full bg-[#1C1C24] overflow-hidden">
                   <div className="h-full w-3/4 bg-gradient-to-r from-[#6E56CF] via-[#A78BFA] to-[#10B981] rounded-full" />
                 </div>
 
-                {/* Footer row — sub label + "Load Audited" */}
+                {/* Footer row — sub label + "LOAD AUDITED" */}
                 <div
                   className={`flex items-center justify-between transition-all duration-300 ease-out transform ${
                     isMetricTransitioning ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'
                   }`}
                 >
-                  <span className="text-[10px] font-mono tracking-widest uppercase text-[#71717A]">
+                  <span className="text-[11px] font-mono tracking-widest uppercase text-[#E4E4E7] font-bold">
                     {currentMetric.sub}
                   </span>
-                  <span className="text-[10px] font-mono text-[#3F3F46] uppercase tracking-widest">
-                    Load Audited
+                  <span className="text-[10px] font-mono text-[#10B981] bg-[#10B981]/15 px-2 py-0.5 rounded border border-[#10B981]/35 font-extrabold uppercase tracking-widest shadow-sm">
+                    LOAD AUDITED
                   </span>
                 </div>
               </div>
@@ -572,7 +682,7 @@ export default function LeaderboardPage({
                 <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
                   activeTab === 'models' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
                 }`}>
-                  {backendModels.length || LEADERBOARD_DATA.length}
+                  {ecosystemStats.totalTrackedSystems}
                 </span>
               </button>
 
@@ -594,11 +704,9 @@ export default function LeaderboardPage({
               </button>
             </div>
 
-            <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-[#71717A] flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-              <span>{lastUpdatedText || 'DATA UPDATED JUST NOW'}</span>
-              <span className="text-[#3F3F46]">·</span>
-              <span className="text-[#3F3F46]">BLOCK #99421</span>
+            <div className="text-[11px] sm:text-[12px] font-mono tracking-wider flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse shrink-0" />
+              <span className="text-[#10B981] font-bold">{lastUpdatedText || 'DATA UPDATED JUST NOW'}</span>
             </div>
           </div>
         </div>
@@ -626,41 +734,41 @@ export default function LeaderboardPage({
         {/* 2. Sub-Filter: Entity Type & Category Pills Bar */}
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 mb-6 sm:mb-8 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
           {/* Entity Type Toggle (All / AI Models / AI Tools) */}
-          <div className="inline-flex items-center p-0.5 rounded-full bg-[#141418] border border-[#232328] shrink-0">
+          <div className="inline-flex items-center p-0.5 rounded-full bg-[#141418] border border-[#2E2E38] shrink-0">
             <button
               onClick={() => setEntityType('all')}
-              className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+              className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
                 entityType === 'all'
                   ? 'bg-white text-black shadow-sm'
-                  : 'text-[#A1A1AA] hover:text-white'
+                  : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
               }`}
             >
-              All ({LEADERBOARD_DATA.length})
+              All ({entityTypeCounts.all})
             </button>
             <button
               onClick={() => setEntityType('models')}
-              className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+              className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
                 entityType === 'models'
                   ? 'bg-white text-black shadow-sm'
-                  : 'text-[#A1A1AA] hover:text-white'
+                  : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
               }`}
             >
-              Models ({ecosystemStats.modelsCount})
+              Models ({entityTypeCounts.models})
             </button>
             <button
               onClick={() => setEntityType('tools')}
-              className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+              className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
                 entityType === 'tools'
                   ? 'bg-white text-black shadow-sm'
-                  : 'text-[#A1A1AA] hover:text-white'
+                  : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
               }`}
             >
-              Tools ({ecosystemStats.toolsCount})
+              Tools ({entityTypeCounts.tools})
             </button>
           </div>
 
           {/* Thin vertical divider between Entity Type and Category Pills */}
-          <div className="h-4 w-[1px] bg-[#27272e] mx-1 shrink-0" aria-hidden="true" />
+          <div className="h-4 w-[1px] bg-[#3F3F4C] mx-1 shrink-0" aria-hidden="true" />
 
           {/* Category Pills */}
           <div className="flex items-center gap-1.5 shrink-0">
@@ -673,10 +781,10 @@ export default function LeaderboardPage({
                     setSelectedCategory(cat.value);
                     setIsMoreDropdownOpen(false);
                   }}
-                  className={`rounded-full px-3 py-1 text-[11px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
+                  className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
                     isSelected
                       ? 'bg-white text-black border-white shadow-sm'
-                      : 'text-[#A1A1AA] hover:text-white bg-[#131316]/60 border-[#232326] hover:border-white/20'
+                      : 'text-[#E4E4E7] hover:text-white bg-[#16161B] border-[#2A2A33] hover:border-white/50 shadow-sm'
                   }`}
                 >
                   {cat.label}
@@ -687,7 +795,7 @@ export default function LeaderboardPage({
             {!isSelectedInPrimary && (
               <button
                 onClick={() => setIsMoreDropdownOpen(false)}
-                className="rounded-full px-3 py-1 text-[11px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 bg-white text-black border-white shadow-sm"
+                className="rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 bg-white text-black border-white shadow-sm"
               >
                 {selectedCategory}
               </button>
@@ -697,16 +805,16 @@ export default function LeaderboardPage({
             <div className="relative shrink-0">
               <button
                 onClick={() => setIsMoreDropdownOpen((prev) => !prev)}
-                className={`rounded-full px-3 py-1 text-[11px] font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer flex items-center gap-1.5 shrink-0 ${
                   isMoreDropdownOpen || !isSelectedInPrimary
-                    ? 'text-white border-white/40 bg-white/10'
-                    : 'text-[#A1A1AA] hover:text-white bg-[#131316]/60 border-[#232326] hover:border-white/20'
+                    ? 'text-white border-white/60 bg-white/15'
+                    : 'text-[#E4E4E7] hover:text-white bg-[#16161B] border-[#2A2A33] hover:border-white/50 shadow-sm'
                 }`}
               >
                 <span>More</span>
                 <ChevronDown
                   size={12}
-                  className={`transition-transform duration-200 ${isMoreDropdownOpen ? 'rotate-180 text-white' : 'text-[#71717A]'}`}
+                  className={`transition-transform duration-200 ${isMoreDropdownOpen ? 'rotate-180 text-white' : 'text-[#A1A1AA]'}`}
                 />
               </button>
 
@@ -856,16 +964,17 @@ export default function LeaderboardPage({
                     {paginatedModels.map((model) => {
                       const isCompared = selectedForCompare.some((m) => m.id === model.id);
                       const isTool = model.entityType === 'tool';
+                      const displayRank = model.displayRank || model.rank;
 
                       return (
                         <tr
                           key={model.id}
                           className={`transition-colors group cursor-pointer ${
-                            model.rank === 1
+                            displayRank === 1
                               ? 'hover:bg-[#1a1710]'
-                              : model.rank === 2
+                              : displayRank === 2
                               ? 'hover:bg-[#18181e]'
-                              : model.rank === 3
+                              : displayRank === 3
                               ? 'hover:bg-[#181512]'
                               : 'hover:bg-[#181820]'
                           }`}
@@ -873,22 +982,22 @@ export default function LeaderboardPage({
                         >
                           {/* Rank badge with Delta & Tapered Stripe */}
                           <td 
-                            className={`py-2.5 px-3.5 text-center transition-colors relative ${getMedalStripeClass(model.rank)}`} 
+                            className={`py-2.5 px-3.5 text-center transition-colors relative ${getMedalStripeClass(displayRank)}`} 
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex flex-col items-center">
                               <span
                                 className={`inline-flex items-center justify-center w-7 h-7 rounded-xl font-bold font-mono text-xs ${
-                                  model.rank === 1
+                                  displayRank === 1
                                     ? 'bg-gradient-to-br from-[#F5A623] via-[#FBBF24] to-[#D97706] text-black font-extrabold shadow-md shadow-[#F5A623]/30 border border-[#FCD34D]/60'
-                                    : model.rank === 2
+                                    : displayRank === 2
                                     ? 'bg-gradient-to-br from-[#FFFFFF] via-[#E2E8F0] to-[#94A3B8] text-[#0F172A] font-extrabold shadow-md shadow-white/25 border border-white/80 ring-1 ring-white/30'
-                                    : model.rank === 3
+                                    : displayRank === 3
                                     ? 'bg-gradient-to-br from-[#FDBA74] via-[#EA580C] to-[#9A3412] text-white font-extrabold shadow-md shadow-[#EA580C]/35 border border-[#FDBA74]/60 ring-1 ring-[#EA580C]/30'
                                     : 'text-[#A1A1AA] bg-[#16161c] border border-[#232328]'
                                 }`}
                               >
-                                #{model.rank}
+                                #{displayRank}
                               </span>
                               <div className="mt-0.5">{renderRankDeltaBadge(model)}</div>
                             </div>
@@ -1068,19 +1177,35 @@ export default function LeaderboardPage({
                   <span>Prev</span>
                 </button>
 
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
-                  <button
-                    key={pg}
-                    onClick={() => setCurrentPage(pg)}
-                    className={`w-8 h-8 rounded-xl text-xs font-semibold font-mono border transition-all cursor-pointer ${
-                      currentPage === pg
-                        ? 'bg-white text-black border-white'
-                        : 'bg-[#131316] border-[#232326] text-[#A1A1AA] hover:text-white'
-                    }`}
-                  >
-                    {pg}
-                  </button>
-                ))}
+                {(() => {
+                  const pages = [];
+                  if (totalPages <= 7) {
+                    for (let i = 1; i <= totalPages; i++) pages.push(i);
+                  } else if (currentPage <= 4) {
+                    pages.push(1, 2, 3, 4, 5, '...', totalPages);
+                  } else if (currentPage >= totalPages - 3) {
+                    pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+                  } else {
+                    pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+                  }
+                  return pages.map((pg, idx) => (
+                    typeof pg === 'number' ? (
+                      <button
+                        key={pg}
+                        onClick={() => setCurrentPage(pg)}
+                        className={`w-8 h-8 rounded-xl text-xs font-semibold font-mono border transition-all cursor-pointer ${
+                          currentPage === pg
+                            ? 'bg-white text-black border-white'
+                            : 'bg-[#131316] border-[#232326] text-[#A1A1AA] hover:text-white'
+                        }`}
+                      >
+                        {pg}
+                      </button>
+                    ) : (
+                      <span key={`dots-${idx}`} className="px-1 text-xs text-[#52525B]">...</span>
+                    )
+                  ));
+                })()}
 
                 <button
                   disabled={currentPage === totalPages}

@@ -20,8 +20,8 @@ export async function handleLeaderboardRequest(req, res) {
     return;
   }
 
-  // POST /api/leaderboard/update -> trigger manual pipeline execution
-  if (req.method === 'POST' && url.pathname.endsWith('/update')) {
+  // GET or POST /api/leaderboard/update -> trigger automated/manual pipeline execution
+  if (url.pathname.endsWith('/update')) {
     try {
       const result = await runIngestionPipeline();
       res.setHeader('Content-Type', 'application/json');
@@ -41,10 +41,10 @@ export async function handleLeaderboardRequest(req, res) {
     const perspective = url.searchParams.get('perspective') || 'overall';
     const category = url.searchParams.get('category') || 'All';
     const searchQuery = (url.searchParams.get('search') || '').toLowerCase().trim();
-    const limit = parseInt(url.searchParams.get('limit') || '100', 10);
+    const limit = parseInt(url.searchParams.get('limit') || '500', 10);
 
     // Query SQLite database
-    let models = getRankedModels(perspective, 100);
+    let models = getRankedModels(perspective, limit);
 
     // Fallback to public snapshot if DB is empty on serverless cold start
     if (!models || models.length === 0) {
@@ -61,7 +61,21 @@ export async function handleLeaderboardRequest(req, res) {
 
     // Apply secondary category filter if requested
     if (category !== 'All') {
-      models = models.filter((m) => m.category === category);
+      const isMatch = (itemCat, targetCat) => {
+        if (!itemCat) return false;
+        const ic = String(itemCat).toLowerCase().trim();
+        const tc = String(targetCat).toLowerCase().trim();
+        if (ic === tc) return true;
+        if (tc === 'chat' || tc === 'chatbot') return ic.includes('chat') || ic.includes('llm');
+        if (tc === 'code' || tc === 'coding') return ic.includes('code') || ic.includes('coding') || ic.includes('developer');
+        if (tc === 'reasoning') return ic.includes('reason');
+        if (tc === 'image') return ic.includes('image');
+        if (tc === 'video') return ic.includes('video');
+        if (tc === 'research') return ic.includes('research');
+        if (tc === 'agents') return ic.includes('agent') || ic.includes('automation');
+        return ic.includes(tc) || tc.includes(ic);
+      };
+      models = models.filter((m) => isMatch(m.category, category));
     }
 
     // Apply search filter if requested

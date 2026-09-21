@@ -54,8 +54,8 @@ export function rankLeaderboard(models = [], perspective = 'overall') {
     }
   }
 
-  // Up to 100 valid models (never fabricate to force 100)
-  const top100 = list.slice(0, 100).map((item, index) => ({
+  // Up to 500 valid models (never fabricate to force 500)
+  const top500 = list.slice(0, 500).map((item, index) => ({
     ...item,
     rank: index + 1 // Assign sequential perspective rank
   }));
@@ -63,7 +63,7 @@ export function rankLeaderboard(models = [], perspective = 'overall') {
   return {
     perspective,
     totalQualifying: list.length,
-    returnedCount: top100.length,
-    models: top100
+    returnedCount: top500.length,
+    models: top500
   };
 }

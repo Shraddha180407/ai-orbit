@@ -37,7 +37,7 @@ export default function PerspectiveTabs({
                 className={`group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 active:scale-95 ${
                   isActive
                     ? 'bg-white text-black border-white shadow-md shadow-white/10 ring-2 ring-white/20 font-bold'
-                    : 'bg-[#141418] text-[#D4D4D8] hover:text-white border-[#2A2A32] hover:border-white/30 hover:bg-[#1A1A20]'
+                    : 'bg-[#16161B] text-[#F4F4F5] hover:text-white border-[#2D2D38] hover:border-white/50 hover:bg-[#1E1E26]'
                 }`}
                 title={tab.description}
                 aria-pressed={isActive}
@@ -45,7 +45,7 @@ export default function PerspectiveTabs({
                 <Icon
                   size={14}
                   className={`transition-colors shrink-0 ${
-                    isActive ? 'text-black' : 'text-[#A1A1AA] group-hover:text-white'
+                    isActive ? 'text-black' : 'text-[#A78BFA] group-hover:text-white'
                   }`}
                 />
                 <span>{tab.label}</span>
@@ -54,7 +54,7 @@ export default function PerspectiveTabs({
                     className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold transition-colors ${
                       isActive
                         ? 'bg-black/15 text-black'
-                        : 'bg-[#22222A] text-[#A1A1AA] border border-[#2E2E38] group-hover:text-white'
+                        : 'bg-[#282834] text-white border border-[#3F3F4E] group-hover:bg-[#343444]'
                     }`}
                   >
                     {count}
@@ -68,7 +68,7 @@ export default function PerspectiveTabs({
         {/* Distinct Divider separating rankings from Open Weights architectural filter */}
         {filterPerspectives.length > 0 && (
           <>
-            <div className="h-5 w-[1px] bg-[#3F3F46] mx-3 shrink-0" aria-hidden="true" />
+            <div className="h-5 w-[1px] bg-[#52525B] mx-3 shrink-0" aria-hidden="true" />
 
             {/* Filter Pills (Open Weights) */}
             <div className="flex items-center gap-2 shrink-0">
@@ -84,7 +84,7 @@ export default function PerspectiveTabs({
                     className={`group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 active:scale-95 ${
                       isActive
                         ? 'bg-white text-black border-white shadow-md shadow-white/10 ring-2 ring-white/20 font-bold'
-                        : 'bg-[#141418] text-[#D4D4D8] hover:text-white border-[#2A2A32] hover:border-white/30 hover:bg-[#1A1A20]'
+                        : 'bg-[#16161B] text-[#F4F4F5] hover:text-white border-[#2D2D38] hover:border-white/50 hover:bg-[#1E1E26]'
                     }`}
                     title={tab.description}
                     aria-pressed={isActive}
@@ -92,7 +92,7 @@ export default function PerspectiveTabs({
                     <Icon
                       size={14}
                       className={`transition-colors shrink-0 ${
-                        isActive ? 'text-black' : 'text-[#A1A1AA] group-hover:text-white'
+                        isActive ? 'text-black' : 'text-[#A78BFA] group-hover:text-white'
                       }`}
                     />
                     <span>{tab.label}</span>
@@ -101,7 +101,7 @@ export default function PerspectiveTabs({
                         className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold transition-colors ${
                           isActive
                             ? 'bg-black/15 text-black'
-                            : 'bg-[#22222A] text-[#A1A1AA] border border-[#2E2E38] group-hover:text-white'
+                            : 'bg-[#282834] text-white border border-[#3F3F4E] group-hover:bg-[#343444]'
                         }`}
                       >
                         {count}
@@ -116,21 +116,21 @@ export default function PerspectiveTabs({
       </div>
 
       {/* Active tab description & ranking explanation trigger */}
-      <div className="mt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-[#8E8EA0] pl-0.5">
+      <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#E4E4E7] pl-0.5">
         {activeTab?.description ? (
-          <p>
-            <span className="text-white font-semibold">{activeTab.label}:</span>{' '}
-            {activeTab.description}
+          <p className="flex items-center gap-1.5 text-xs text-[#E4E4E7]">
+            <span className="text-white font-bold">{activeTab.label}:</span>{' '}
+            <span className="text-[#D4D4D8]">{activeTab.description}</span>
           </p>
         ) : <div />}
 
         {onOpenMethodology && (
           <button
             onClick={onOpenMethodology}
-            className="inline-flex items-center gap-1 text-[#A1A1AA] hover:text-white transition-colors cursor-pointer self-start sm:self-auto shrink-0"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#A78BFA] hover:text-white transition-colors cursor-pointer bg-[#6E56CF]/15 hover:bg-[#6E56CF]/30 px-3 py-1 rounded-lg border border-[#6E56CF]/40 shadow-sm"
           >
             <span>Methodology &amp; Provenance</span>
-            <span>→</span>
+            <span className="text-sm font-extrabold">→</span>
           </button>
         )}
       </div>
