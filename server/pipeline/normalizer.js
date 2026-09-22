@@ -32,11 +32,17 @@ export function determineCategory(name = '', isReasoning = false, isOpenWeights 
   if (lower.includes('thinking') || lower.includes('reason') || lower.includes('o1') || lower.includes('o3') || lower.includes('o4') || lower.includes('r1') || isReasoning) {
     return 'Reasoning';
   }
-  if (lower.includes('coder') || lower.includes('code') || lower.includes('codestral')) {
+  if (lower.includes('coder') || lower.includes('code') || lower.includes('codestral') || lower.includes('starcoder')) {
     return 'Coding';
   }
-  if (isOpenWeights) {
-    return 'Open Weight';
+  if (lower.includes('image') || lower.includes('flux') || lower.includes('diffusion') || lower.includes('sdxl') || lower.includes('kolors')) {
+    return 'Image';
+  }
+  if (lower.includes('video') || lower.includes('cogvideo') || lower.includes('hunyuan') || lower.includes('mochi') || lower.includes('ltx')) {
+    return 'Video';
+  }
+  if (lower.includes('voice') || lower.includes('audio') || lower.includes('whisper') || lower.includes('chattts') || lower.includes('cosyvoice')) {
+    return 'Audio / Voice';
   }
   if (lower.includes('vision') || lower.includes('vl') || lower.includes('omni') || lower.includes('multimodal')) {
     return 'Multimodal';

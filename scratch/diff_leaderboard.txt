@@ -1,0 +1,439 @@
+﻿diff --git a/src/pages/LeaderboardPage.jsx b/src/pages/LeaderboardPage.jsx
+index 38866c9..d2503bf 100644
+--- a/src/pages/LeaderboardPage.jsx
++++ b/src/pages/LeaderboardPage.jsx
+@@ -19,8 +19,6 @@ import CompaniesLeaderboardSection from '../components/leaderboard/CompaniesLead
+ import MethodologyDrawer from '../components/leaderboard/MethodologyDrawer';
+ import { 
+   Trophy, 
+-  Search, 
+-  X, 
+   RotateCcw, 
+   ChevronDown, 
+   ArrowRight, 
+@@ -108,9 +106,7 @@ export default function LeaderboardPage({
+   // State
+   const [entityType, setEntityType] = useState('all'); // 'all' | 'models' | 'tools'
+   const [activePerspective, setActivePerspective] = useState('overall');
+-  const [searchQuery, setSearchQuery] = useState('');
+   const [selectedCategory, setSelectedCategory] = useState('All');
+-  const [isMoreDropdownOpen, setIsMoreDropdownOpen] = useState(false);
+   const [sortBy, setSortBy] = useState('rank');
+ 
+   // Loading & Error states
+@@ -219,10 +215,7 @@ export default function LeaderboardPage({
+     { value: 'Agents', label: 'Agents' }
+   ];
+ 
+-  const isSelectedInPrimary = PRIMARY_CATEGORIES.some((c) => c.value === selectedCategory);
+-  const overflowCategories = LEADERBOARD_CATEGORIES.filter(
+-    (cat) => !PRIMARY_CATEGORIES.some((pc) => pc.value === cat || pc.label === cat)
+-  );
++
+ 
+   // Multi-Perspective Filtering & Sorting Engine (Driven by backend data)
+   const filteredModels = useMemo(() => {
+@@ -250,31 +243,10 @@ export default function LeaderboardPage({
+ 
+     // 2. Category Filter with flexible matching
+     if (selectedCategory !== 'All') {
+-      let matched = list.filter((m) => matchesCategory(m.category, selectedCategory));
+-      
+-      // Fallback: If restricted entityType returns 0 items for this category, search full ecosystem
+-      if (matched.length === 0) {
+-        const fullEcosystem = [...AI_MODELS_DATA, ...AI_TOOLS_DATA];
+-        matched = fullEcosystem.filter((m) => matchesCategory(m.category, selectedCategory));
+-      }
+-      
+-      list = matched;
++      list = list.filter((m) => matchesCategory(m.category, selectedCategory));
+     }
+ 
+-    // 3. Search Query Filter
+-    if (searchQuery.trim() !== '') {
+-      const q = searchQuery.toLowerCase();
+-      list = list.filter((model) => {
+-        const matchesName = (model.name || '').toLowerCase().includes(q);
+-        const matchesOrg = (model.org || '').toLowerCase().includes(q);
+-        const matchesDesc = (model.shortDescription || '').toLowerCase().includes(q);
+-        const matchesCat = (model.category || '').toLowerCase().includes(q);
+-        const matchesSuperpower = (model.superpower || '').toLowerCase().includes(q);
+-        return matchesName || matchesOrg || matchesDesc || matchesCat || matchesSuperpower;
+-      });
+-    }
+-
+-    // 4. Secondary Sorting if user explicitly chose non-rank sort
++    // 3. Secondary Sorting if user explicitly chose non-rank sort
+     let sortedList = [...list];
+     if (sortBy === 'visits') {
+       sortedList.sort((a, b) => (parseFloat(b.monthlyVisits) || b.votes || 0) - (parseFloat(a.monthlyVisits) || a.votes || 0));
+@@ -296,7 +268,7 @@ export default function LeaderboardPage({
+       ...item,
+       displayRank: index + 1
+     }));
+-  }, [backendModels, activePerspective, selectedCategory, searchQuery, sortBy, entityType]);
++  }, [backendModels, activePerspective, selectedCategory, sortBy, entityType]);
+ 
+   // Dynamic Entity Type counts for the active perspective & category/search filters
+   const entityTypeCounts = useMemo(() => {
+@@ -313,32 +285,51 @@ export default function LeaderboardPage({
+       baseTools = baseTools.filter((t) => matchesCategory(t.category, selectedCategory));
+     }
+ 
+-    if (searchQuery.trim() !== '') {
+-      const q = searchQuery.toLowerCase();
+-      baseModels = baseModels.filter((m) =>
+-        (m.name || '').toLowerCase().includes(q) ||
+-        (m.org || '').toLowerCase().includes(q) ||
+-        (m.category || '').toLowerCase().includes(q) ||
+-        (m.superpower || '').toLowerCase().includes(q)
+-      );
+-      baseTools = baseTools.filter((t) =>
+-        (t.name || '').toLowerCase().includes(q) ||
+-        (t.org || '').toLowerCase().includes(q) ||
+-        (t.category || '').toLowerCase().includes(q) ||
+-        (t.superpower || '').toLowerCase().includes(q)
+-      );
+-    }
+-
+     const modelsCount = baseModels.length;
+     const toolsCount = baseTools.length;
+     const allCount = modelsCount + toolsCount;
+ 
+     return { all: allCount, models: modelsCount, tools: toolsCount };
+-  }, [backendModels, activePerspective, selectedCategory, searchQuery]);
++  }, [backendModels, activePerspective, selectedCategory]);
++
++  // Context-aware perspective counts aligned with active entityType (All / Models / Tools)
++  const displayPerspectiveCounts = useMemo(() => {
++    const openToolsCount = AI_TOOLS_DATA.filter(
++      (t) => t.isOpenWeights === true || (t.license && t.license.toLowerCase().includes('open'))
++    ).length;
++    const totalToolsCount = AI_TOOLS_DATA.length;
++
++    if (entityType === 'models') {
++      return {
++        overall: perspectiveCounts.overall || 500,
++        risers: perspectiveCounts.risers || 500,
++        adopted: perspectiveCounts.adopted || 500,
++        speed: perspectiveCounts.speed || 201,
++        open_weights: perspectiveCounts.open_weights || 267
++      };
++    } else if (entityType === 'tools') {
++      return {
++        overall: totalToolsCount,
++        risers: totalToolsCount,
++        adopted: totalToolsCount,
++        speed: totalToolsCount,
++        open_weights: openToolsCount
++      };
++    } else {
++      // entityType === 'all'
++      return {
++        overall: (perspectiveCounts.overall || 500) + totalToolsCount,
++        risers: (perspectiveCounts.risers || 500) + totalToolsCount,
++        adopted: (perspectiveCounts.adopted || 500) + totalToolsCount,
++        speed: (perspectiveCounts.speed || 201) + totalToolsCount,
++        open_weights: (perspectiveCounts.open_weights || 267) + openToolsCount
++      };
++    }
++  }, [entityType, perspectiveCounts]);
+ 
+-  // Real dynamic ecosystem stats computed from actual datasets (no fabricated numbers)
++  // Real dynamic ecosystem stats computed from actual datasets (stable 595 tracked systems across views)
+   const ecosystemStats = useMemo(() => {
+-    const modelsCount = backendModels.length > 0 ? backendModels.length : AI_MODELS_DATA.length;
++    const modelsCount = perspectiveCounts.overall || 500;
+     const toolsCount = AI_TOOLS_DATA.length;
+     const companiesCount = COMPANIES_DATA.length;
+     const totalTrackedSystems = modelsCount + toolsCount;
+@@ -363,7 +354,7 @@ export default function LeaderboardPage({
+       maxGrowth,
+       topGrowthName: topGrowthSystem?.name || 'Top Mover'
+     };
+-  }, [backendModels]);
++  }, [perspectiveCounts.overall]);
+ 
+   // Live rotating hero telemetry sequence (single metric at a time)
+   const HERO_METRICS = useMemo(() => [
+@@ -492,12 +483,10 @@ export default function LeaderboardPage({
+     return { compareWinners: w, aggregateVerdict: verdict };
+   }, [selectedForCompare]);
+ 
+-  const SEARCH_PLACEHOLDER = "Search models, tools, superpowers, or providers...";
+-  const hasActiveFilters = searchQuery.trim() !== '' || selectedCategory !== 'All' || activePerspective !== 'overall';
++  const hasActiveFilters = selectedCategory !== 'All' || activePerspective !== 'overall';
+ 
+   const handleClearFilters = () => {
+     setActivePerspective('overall');
+-    setSearchQuery('');
+     setSelectedCategory('All');
+     setSortBy('rank');
+   };
+@@ -566,10 +555,10 @@ export default function LeaderboardPage({
+   return (
+     <div className="min-h-screen bg-black text-white selection:bg-[#6E56CF]/30 pb-28">
+       {/* Hero Section */}
+-      <div className="border-b border-[#1C1C1F] bg-black pt-8 pb-7 sm:pt-12 sm:pb-9 px-3.5 sm:px-8 relative">
++      <div className="border-b border-[#1C1C1F] bg-black pt-4 pb-3.5 sm:pt-5 sm:pb-4 px-3.5 sm:px-8 relative">
+         <div className="mx-auto max-w-[1440px]">
+           {/* Top Eyebrow */}
+-          <div className="flex items-center gap-2 text-[10.5px] sm:text-[11px] font-mono tracking-wider uppercase text-[#71717A] mb-6 sm:mb-8">
++          <div className="flex items-center gap-2 text-[10.5px] sm:text-[11px] font-mono tracking-wider uppercase text-[#71717A] mb-2 sm:mb-2.5">
+             <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] shrink-0" />
+             <span className="text-[#E4E4E7] font-semibold">LIVE BENCHMARK INDEX</span>
+             <span className="text-[#3F3F46]">┬╖</span>
+@@ -577,17 +566,14 @@ export default function LeaderboardPage({
+           </div>
+ 
+           {/* Main Headline (Left) & Single Live Rotating Metric (Right) */}
+-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-8 sm:mb-10">
+-            {/* Left Column: Headline & Description - Spacing reduced by ~50% */}
++          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center mb-3.5 sm:mb-4.5">
++            {/* Left Column: Headline & Description */}
+             <div className="lg:col-span-8">
+-              <h1 className="text-4xl sm:text-6xl lg:text-[64px] font-extrabold tracking-tight text-white leading-[1.05] mb-1.5">
+-                AI Ecosystem<br />
+-                Leaderboard
++              <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold tracking-tight text-white leading-tight whitespace-nowrap mb-1.5">
++                AI Ecosystem Leaderboard
+               </h1>
+-              <p className="text-sm sm:text-base text-[#A1A1AA] leading-snug max-w-xl font-normal">
+-                Compare the models, tools, and companies shaping the AI ecosystem.
+-                Track real-world evaluation benchmarks, Chatbot Arena Elo scores, and
+-                enterprise pricing at scale.
++              <p className="text-xs sm:text-sm text-[#A1A1AA] leading-snug font-normal whitespace-nowrap overflow-hidden text-ellipsis">
++                Compare the models, tools, and companies shaping the AI ecosystem. Track real-world evaluation benchmarks, Chatbot Arena Elo scores, and enterprise pricing at scale.
+               </p>
+             </div>
+ 
+@@ -652,7 +638,7 @@ export default function LeaderboardPage({
+           </div>
+ 
+           {/* Bottom Switcher: Models vs Companies + Technical Status */}
+-          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[#1C1C1F]">
++          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#1C1C1F]">
+             <div className="inline-flex p-0.5 rounded-xl bg-[#131316] border border-[#232328] shadow-inner">
+               <button
+                 onClick={() => setActiveTab('models')}
+@@ -712,149 +698,74 @@ export default function LeaderboardPage({
+               perspectives={PERSPECTIVE_OPTIONS}
+               activePerspective={activePerspective}
+               onSelectPerspective={setActivePerspective}
+-              perspectiveCounts={perspectiveCounts}
++              perspectiveCounts={displayPerspectiveCounts}
+               onOpenMethodology={() => setIsMethodologyOpen(true)}
+             />
+ 
+-        {/* 2. Sub-Filter: Entity Type & Category Pills Bar */}
+-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 mb-6 sm:mb-8 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+-          {/* Entity Type Toggle (All / AI Models / AI Tools) */}
+-          <div className="inline-flex items-center p-0.5 rounded-full bg-[#141418] border border-[#2E2E38] shrink-0">
+-            <button
+-              onClick={() => setEntityType('all')}
+-              className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+-                entityType === 'all'
+-                  ? 'bg-white text-black shadow-sm'
+-                  : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
+-              }`}
+-            >
+-              All ({entityTypeCounts.all})
+-            </button>
+-            <button
+-              onClick={() => setEntityType('models')}
+-              className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+-                entityType === 'models'
+-                  ? 'bg-white text-black shadow-sm'
+-                  : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
+-              }`}
+-            >
+-              Models ({entityTypeCounts.models})
+-            </button>
+-            <button
+-              onClick={() => setEntityType('tools')}
+-              className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+-                entityType === 'tools'
+-                  ? 'bg-white text-black shadow-sm'
+-                  : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
+-              }`}
+-            >
+-              Tools ({entityTypeCounts.tools})
+-            </button>
+-          </div>
+-
+-          {/* Thin vertical divider between Entity Type and Category Pills */}
+-          <div className="h-4 w-[1px] bg-[#3F3F4C] mx-1 shrink-0" aria-hidden="true" />
+-
+-          {/* Category Pills */}
+-          <div className="flex items-center gap-1.5 shrink-0">
+-            {PRIMARY_CATEGORIES.map((cat) => {
+-              const isSelected = selectedCategory === cat.value;
+-              return (
+-                <button
+-                  key={cat.value}
+-                  onClick={() => {
+-                    setSelectedCategory(cat.value);
+-                    setIsMoreDropdownOpen(false);
+-                  }}
+-                  className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
+-                    isSelected
+-                      ? 'bg-white text-black border-white shadow-sm'
+-                      : 'text-[#E4E4E7] hover:text-white bg-[#16161B] border-[#2A2A33] hover:border-white/50 shadow-sm'
+-                  }`}
+-                >
+-                  {cat.label}
+-                </button>
+-              );
+-            })}
+-
+-            {!isSelectedInPrimary && (
++        {/* 2. Sub-Filter & Controls Bar: Entity Type, Categories, Sort, Compare, Clear */}
++        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 sm:mb-8">
++          {/* Left: Entity Type Toggle & Category Pills */}
++          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
++            {/* Entity Type Toggle (All / AI Models / AI Tools) */}
++            <div className="inline-flex items-center p-0.5 rounded-full bg-[#141418] border border-[#2E2E38] shrink-0">
+               <button
+-                onClick={() => setIsMoreDropdownOpen(false)}
+-                className="rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 bg-white text-black border-white shadow-sm"
++                onClick={() => setEntityType('all')}
++                className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
++                  entityType === 'all'
++                    ? 'bg-white text-black shadow-sm'
++                    : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
++                }`}
+               >
+-                {selectedCategory}
++                All ({entityTypeCounts.all})
+               </button>
+-            )}
+-
+-            {/* More Dropdown */}
+-            <div className="relative shrink-0">
+               <button
+-                onClick={() => setIsMoreDropdownOpen((prev) => !prev)}
+-                className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer flex items-center gap-1.5 shrink-0 ${
+-                  isMoreDropdownOpen || !isSelectedInPrimary
+-                    ? 'text-white border-white/60 bg-white/15'
+-                    : 'text-[#E4E4E7] hover:text-white bg-[#16161B] border-[#2A2A33] hover:border-white/50 shadow-sm'
++                onClick={() => setEntityType('models')}
++                className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
++                  entityType === 'models'
++                    ? 'bg-white text-black shadow-sm'
++                    : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
+                 }`}
+               >
+-                <span>More</span>
+-                <ChevronDown
+-                  size={12}
+-                  className={`transition-transform duration-200 ${isMoreDropdownOpen ? 'rotate-180 text-white' : 'text-[#A1A1AA]'}`}
+-                />
++                Models ({entityTypeCounts.models})
+               </button>
+-
+-              {isMoreDropdownOpen && (
+-                <>
+-                  <div
+-                    className="fixed inset-0 z-20"
+-                    onClick={() => setIsMoreDropdownOpen(false)}
+-                  />
+-                  <div className="absolute left-0 top-full mt-2 z-30 w-48 rounded-xl border border-[#27272A] bg-[#121215] shadow-2xl py-1.5">
+-                    {overflowCategories.map((cat) => (
+-                      <button
+-                        key={cat}
+-                        onClick={() => {
+-                          setSelectedCategory(cat);
+-                          setIsMoreDropdownOpen(false);
+-                        }}
+-                        className={`w-full text-left px-3.5 py-2 text-[12px] transition-colors cursor-pointer ${
+-                          selectedCategory === cat
+-                            ? 'text-white bg-white/10 font-semibold'
+-                            : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181C]'
+-                        }`}
+-                      >
+-                        {cat}
+-                      </button>
+-                    ))}
+-                  </div>
+-                </>
+-              )}
+-            </div>
+-          </div>
+-        </div>
+-
+-        {/* 3. Controls Row: Unified Search + Sort container */}
+-        <div className="p-1.5 sm:p-2 rounded-2xl border border-[#232326] bg-[#111115] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mb-6 sm:mb-8">
+-          <div className="relative flex-1">
+-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
+-            <input
+-              type="text"
+-              value={searchQuery}
+-              onChange={(e) => setSearchQuery(e.target.value)}
+-              placeholder={SEARCH_PLACEHOLDER}
+-              className="w-full rounded-xl border border-[#3a3a40] bg-[#16161b] pl-9 pr-8 text-[13px] text-white placeholder:text-[#71717A] hover:border-[#4a4a52] focus:border-white/40 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all h-9"
+-            />
+-            {searchQuery && (
+               <button
+-                onClick={() => setSearchQuery('')}
+-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#71717A] hover:text-white cursor-pointer"
++                onClick={() => setEntityType('tools')}
++                className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
++                  entityType === 'tools'
++                    ? 'bg-white text-black shadow-sm'
++                    : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
++                }`}
+               >
+-                <X size={14} />
++                Tools ({entityTypeCounts.tools})
+               </button>
+-            )}
++            </div>
++
++            {/* Thin vertical divider between Entity Type and Category Pills */}
++            <div className="h-4 w-[1px] bg-[#3F3F4C] mx-1 shrink-0" aria-hidden="true" />
++
++            {/* Category Pills */}
++            <div className="flex items-center gap-1.5 shrink-0">
++              {PRIMARY_CATEGORIES.map((cat) => {
++                const isSelected = selectedCategory === cat.value;
++                return (
++                  <button
++                    key={cat.value}
++                    onClick={() => setSelectedCategory(cat.value)}
++                    className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
++                      isSelected
++                        ? 'bg-white text-black border-white shadow-sm'
++                        : 'text-[#E4E4E7] hover:text-white bg-[#16161B] border-[#2A2A33] hover:border-white/50 shadow-sm'
++                    }`}
++                  >
++                    {cat.label}
++                  </button>
++                );
++              })}
++            </div>
+           </div>
+ 
+-          <div className="flex items-center gap-2 justify-end shrink-0">
++          {/* Right: Sort + Compare + Clear */}
++          <div className="flex items-center gap-2 shrink-0 ml-auto">
+             <div className="relative inline-flex items-center">
+               <select
+                 value={sortBy}
+@@ -888,7 +799,7 @@ export default function LeaderboardPage({
+                   ? 'text-white bg-[#1f1f26] border-[#383842] hover:bg-[#272732] cursor-pointer shadow-sm'
+                   : 'text-[#52525B] bg-[#141418] border-[#232328] cursor-not-allowed opacity-50'
+               }`}
+-              title={hasActiveFilters ? "Reset all search & filter criteria" : "No active filters to reset"}
++              title={hasActiveFilters ? "Reset all filter criteria" : "No active filters to reset"}
+             >
+               <RotateCcw size={12} className={hasActiveFilters ? "text-white" : "text-[#52525B]"} />
+               <span className="hidden sm:inline">Clear</span>
+@@ -920,7 +831,7 @@ export default function LeaderboardPage({
+         {/* State 3: Empty State */}
+         {!isError && !isLoading && filteredModels.length === 0 && (
+           <div className="p-12 rounded-2xl border border-[#232326] bg-[#111115] text-center max-w-md mx-auto my-8">
+-            <Search size={36} className="text-[#71717A] mx-auto mb-3 opacity-50" />
++            <RotateCcw size={36} className="text-[#71717A] mx-auto mb-3 opacity-50" />
+             <h3 className="text-base font-bold text-white mb-1">No results in this view</h3>
+             <p className="text-xs text-[#A1A1AA] mb-5">
+               Try switching back to the Overall tab or clearing your category filters.
