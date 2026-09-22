@@ -28,7 +28,7 @@ const MOBILE_NAV_LINKS = [
   { label: "Business AI", href: "/business" },
   { label: "Leaderboard", href: "/leaderboard", highlight: true },
   { label: "Resources", href: "/tools" },
-  { label: "Newsletter", href: "/#newsletter" },
+  { label: "Newsletter", href: "https://brief.graphone.co" },
 ];
 
 const DIRECTORY_LINKS = [
@@ -83,6 +83,7 @@ export function Header() {
     } else {
       document.body.style.overflow = "";
     }
+
     return () => {
       document.body.style.overflow = "";
     };
@@ -98,20 +99,25 @@ export function Header() {
         >
           Business AI
         </Link>
+
         <Link
           href="/leaderboard"
           className="text-[12px] font-bold text-[#6E56CF] hover:text-white transition-colors text-center cursor-pointer relative z-50"
         >
           Leaderboard
         </Link>
+
         <Link
           href="/tools"
           className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center cursor-pointer relative z-50"
         >
           Resources
         </Link>
+
         <Link
-          href="/#newsletter"
+          href="https://brief.graphone.co"
+          target="_blank"
+          rel="noopener noreferrer"
           className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center cursor-pointer relative z-50"
         >
           Newsletter
@@ -208,6 +214,14 @@ export function Header() {
                     <Link
                       key={link.href}
                       href={link.href}
+                      target={
+                        link.label === "Newsletter" ? "_blank" : undefined
+                      }
+                      rel={
+                        link.label === "Newsletter"
+                          ? "noopener noreferrer"
+                          : undefined
+                      }
                       onClick={() => setMobileMenuOpen(false)}
                       className={`flex items-center justify-center rounded-xl p-3 text-xs font-bold transition-all ${
                         link.highlight
@@ -226,9 +240,11 @@ export function Header() {
                 <p className="text-[10px] font-mono font-bold tracking-widest text-[#A1A1AA] uppercase mb-3 px-1">
                   Explore Ecosystem
                 </p>
+
                 <div className="grid grid-cols-2 gap-2">
                   {DIRECTORY_LINKS.map((dir) => {
                     const Icon = dir.icon;
+
                     return (
                       <Link
                         key={dir.name}
@@ -243,8 +259,13 @@ export function Header() {
                             borderColor: `${dir.color}35`,
                           }}
                         >
-                          <Icon size={12} aria-hidden="true" style={{ color: dir.color }} />
+                          <Icon
+                            size={12}
+                            aria-hidden="true"
+                            style={{ color: dir.color }}
+                          />
                         </span>
+
                         <span className="text-xs font-semibold text-white group-hover:text-white truncate">
                           {dir.name}
                         </span>
@@ -265,6 +286,7 @@ export function Header() {
                 >
                   <Plus size={14} strokeWidth={2.5} /> Submit AI Tool
                 </Link>
+
                 {user ? (
                   <Link
                     href="/dashboard"
@@ -285,7 +307,7 @@ export function Header() {
               </div>
             </div>
           </div>,
-          document.body,
+          document.body
         )}
     </header>
   );
