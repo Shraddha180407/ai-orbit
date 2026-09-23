@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   LEADERBOARD_DATA, 
@@ -35,61 +35,19 @@ import {
   Cpu,
   Zap,
   HelpCircle,
-  Check
+  Check,
+  X
 } from 'lucide-react';
+import {
+  buildLeaderboardView,
+  createRequestGate,
+  DEFAULT_FILTERS,
+  logLeaderboard,
+  matchesCategory as matchLeaderboardCategory,
+  shouldCommitPerspectiveFetch
+} from '../lib/leaderboardQuery';
 
-export function matchesCategory(itemCategory, targetCategory) {
-  if (!targetCategory || targetCategory === 'All') return true;
-  if (!itemCategory) return false;
-
-  const itemCatLower = String(itemCategory).toLowerCase().trim();
-  const targetCatLower = String(targetCategory).toLowerCase().trim();
-
-  if (itemCatLower === targetCatLower) return true;
-
-  // Chat / Chatbot / General LLM
-  if (targetCatLower === 'chat' || targetCatLower === 'chatbot' || targetCatLower === 'chat / general llm') {
-    return itemCatLower.includes('chat') || itemCatLower.includes('llm') || itemCatLower.includes('general');
-  }
-
-  // Code / Coding / Code Assistant / Developer
-  if (targetCatLower === 'code' || targetCatLower === 'coding' || targetCatLower === 'code assistant' || targetCatLower === 'coding / developer') {
-    return itemCatLower.includes('code') || itemCatLower.includes('coding') || itemCatLower.includes('developer');
-  }
-
-  // Reasoning
-  if (targetCatLower === 'reasoning') {
-    return itemCatLower.includes('reason');
-  }
-
-  // Image / Image Generation
-  if (targetCatLower === 'image' || targetCatLower === 'image generation') {
-    return itemCatLower.includes('image');
-  }
-
-  // Video / Video Editing
-  if (targetCatLower === 'video' || targetCatLower === 'video editing') {
-    return itemCatLower.includes('video');
-  }
-
-  // Research
-  if (targetCatLower === 'research') {
-    return itemCatLower.includes('research');
-  }
-
-  // Agents / AI Agents / Automation
-  if (targetCatLower === 'agents' || targetCatLower === 'ai agents') {
-    return itemCatLower.includes('agent') || itemCatLower.includes('automation');
-  }
-
-  // Audio / Voice
-  if (targetCatLower === 'audio' || targetCatLower === 'voice' || targetCatLower === 'audio / voice' || targetCatLower === 'voice / audio') {
-    return itemCatLower.includes('audio') || itemCatLower.includes('voice');
-  }
-
-  // Substring match fallback
-  return itemCatLower.includes(targetCatLower) || targetCatLower.includes(itemCatLower);
-}
+export const matchesCategory = matchLeaderboardCategory;
 
 export default function LeaderboardPage({ 
   bookmarks = [], 
@@ -103,26 +61,38 @@ export default function LeaderboardPage({
   // Navigation Mode: 'models' (Part A) vs 'companies' (Part B)
   const [activeTab, setActiveTab] = useState('models');
 
-  // State
-  const [entityType, setEntityType] = useState('all'); // 'all' | 'models' | 'tools'
-  const [activePerspective, setActivePerspective] = useState('overall');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [sortBy, setSortBy] = useState('rank');
+  // 1. Unified Single Filter Object
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
-  // Loading & Error states
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
+  // Atomic filter updater
+  const updateFilters = useCallback((updates) => {
+    setFilters((prev) => ({ ...prev, ...updates }));
+  }, []);
 
-  // Backend Dynamic Data & Provenance Metadata
-  const [backendModels, setBackendModels] = useState([]);
-  const [perspectiveCounts, setPerspectiveCounts] = useState({
-    overall: 100,
-    risers: 100,
-    adopted: 100,
-    speed: 100,
-    open_weights: 100
+  const handleClearFilters = useCallback(() => {
+    setFilters({ ...DEFAULT_FILTERS });
+  }, []);
+
+  const hasActiveFilters = 
+    filters.category !== 'All' || 
+    filters.perspective !== 'overall' || 
+    filters.entityType !== 'all' || 
+    filters.sortBy !== 'rank';
+
+  const [reloadToken, setReloadToken] = useState(0);
+  const [perspectivePayload, setPerspectivePayload] = useState({
+    perspective: null,
+    models: [],
+    counts: {
+      overall: 500,
+      risers: 500,
+      adopted: 500,
+      speed: 201,
+      open_weights: 267
+    },
+    lastUpdatedText: 'DATA UPDATED JUST NOW',
+    status: 'loading'
   });
-  const [lastUpdatedText, setLastUpdatedText] = useState('DATA UPDATED JUST NOW');
 
   // Compare Modal state
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
@@ -130,80 +100,178 @@ export default function LeaderboardPage({
   // Methodology Drawer state
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
 
-  // Fetch dynamic leaderboard dataset whenever perspective changes
+  const perspectiveCacheRef = useRef(new Map());
+  const requestGateRef = useRef(createRequestGate());
+  const abortControllerRef = useRef(null);
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+
+  const resolvedPayload = useMemo(() => {
+    if (perspectivePayload.perspective === filters.perspective && perspectivePayload.status === 'ready') {
+      return perspectivePayload;
+    }
+    const cached = perspectiveCacheRef.current.get(filters.perspective);
+    if (cached) {
+      return { ...cached, perspective: filters.perspective, status: 'ready' };
+    }
+    return {
+      perspective: filters.perspective,
+      models: [],
+      counts: perspectivePayload.counts,
+      lastUpdatedText: perspectivePayload.lastUpdatedText,
+      status: perspectivePayload.perspective === filters.perspective ? perspectivePayload.status : 'loading'
+    };
+  }, [filters.perspective, perspectivePayload]);
+
+  const needsRankedModels = filters.entityType !== 'tools';
+  const rankedModelsReady = !needsRankedModels || resolvedPayload.status === 'ready';
+
   useEffect(() => {
-    let isCancelled = false;
-    setIsLoading(true);
-    setIsError(false);
+    const targetPerspective = filters.perspective;
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    const request = requestGateRef.current.start(filters);
+    logLeaderboard('FILTER_CHANGE', {
+      requestId: request.requestId,
+      filter: {
+        perspective: targetPerspective,
+        type: filters.entityType,
+        modality: filters.category
+      }
+    });
+
+    const cached = perspectiveCacheRef.current.get(targetPerspective);
+    if (cached) {
+      logLeaderboard('REQUEST_SUCCESS', {
+        requestId: request.requestId,
+        source: 'cache',
+        perspective: targetPerspective,
+        entityType: filters.entityType,
+        modality: filters.category,
+        rowCount: Array.isArray(cached.models) ? cached.models.length : 0
+      });
+      setPerspectivePayload({ ...cached, perspective: targetPerspective, status: 'ready' });
+      return () => controller.abort();
+    }
+
+    setPerspectivePayload((prev) => ({
+      ...prev,
+      perspective: targetPerspective,
+      models: [],
+      status: 'loading'
+    }));
+
+    logLeaderboard('REQUEST_START', {
+      requestId: request.requestId,
+      perspective: targetPerspective,
+      entityType: filters.entityType,
+      modality: filters.category
+    });
+
+    const commitIfCurrent = (nextPayload, extraLog = {}) => {
+      const current = filtersRef.current;
+      if (!shouldCommitPerspectiveFetch({
+        requestId: request.requestId,
+        requestPerspective: targetPerspective,
+        currentId: requestGateRef.current.currentId,
+        currentPerspective: current.perspective
+      })) {
+        logLeaderboard('REQUEST_DISCARDED', {
+          requestId: request.requestId,
+          reason: 'stale request',
+          perspective: targetPerspective,
+          entityType: request.filters.entityType,
+          modality: request.filters.category
+        });
+        return false;
+      }
+      perspectiveCacheRef.current.set(targetPerspective, nextPayload);
+      setPerspectivePayload({ ...nextPayload, perspective: targetPerspective, status: 'ready' });
+      logLeaderboard('REQUEST_SUCCESS', {
+        requestId: request.requestId,
+        perspective: targetPerspective,
+        entityType: current.entityType,
+        modality: current.category,
+        rowCount: Array.isArray(nextPayload.models) ? nextPayload.models.length : 0,
+        ...extraLog
+      });
+      return true;
+    };
 
     async function loadData() {
       try {
-        const res = await fetch(`/api/leaderboard?perspective=${activePerspective}`);
+        const res = await fetch(`/api/leaderboard?perspective=${targetPerspective}`, {
+          signal: controller.signal
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (!isCancelled) {
-          if (data.models && Array.isArray(data.models)) {
-            setBackendModels(data.models);
-          }
-          if (data.counts) {
-            setPerspectiveCounts(data.counts);
-          }
-          if (data.lastUpdatedText) {
-            setLastUpdatedText(data.lastUpdatedText);
-          }
-          setIsLoading(false);
-        }
+        const models = (data.models && Array.isArray(data.models)) ? data.models : [];
+        commitIfCurrent({
+          models,
+          counts: data.counts,
+          lastUpdatedText: data.lastUpdatedText
+        });
       } catch (apiErr) {
+        if (apiErr.name === 'AbortError') return;
+
         console.warn('[Leaderboard] API fetch failed, trying static snapshot fallback:', apiErr.message);
         try {
-          const snapRes = await fetch('/leaderboard_data.json');
+          const snapRes = await fetch('/leaderboard_data.json', { signal: controller.signal });
           if (!snapRes.ok) throw new Error('Snapshot not found');
           const snapData = await snapRes.json();
-          if (!isCancelled) {
-            const list = snapData.modelsByPerspective?.[activePerspective]?.models || snapData.models || [];
-            setBackendModels(list);
-            if (snapData.metadata?.counts) {
-              setPerspectiveCounts(snapData.metadata.counts);
-            }
-            if (snapData.metadata?.lastUpdated) {
-              const diffHours = Math.floor((Date.now() - new Date(snapData.metadata.lastUpdated).getTime()) / (1000 * 60 * 60));
-              setLastUpdatedText(diffHours >= 1 ? `DATA UPDATED ${diffHours}H AGO` : 'DATA UPDATED JUST NOW');
-            }
-            setIsLoading(false);
+          const list = snapData.modelsByPerspective?.[targetPerspective]?.models || snapData.models || [];
+          let lastUpdatedText = snapData.metadata?.lastUpdated ? 'DATA UPDATED JUST NOW' : null;
+          if (snapData.metadata?.lastUpdated) {
+            const diffHours = Math.floor((Date.now() - new Date(snapData.metadata.lastUpdated).getTime()) / (1000 * 60 * 60));
+            lastUpdatedText = diffHours >= 1 ? `DATA UPDATED ${diffHours}H AGO` : 'DATA UPDATED JUST NOW';
           }
+          commitIfCurrent({
+            models: list,
+            counts: snapData.metadata?.counts,
+            lastUpdatedText
+          }, { source: 'snapshot' });
         } catch (snapErr) {
-          if (!isCancelled) {
-            setIsError(true);
-            setIsLoading(false);
+          if (snapErr.name === 'AbortError') return;
+          if (shouldCommitPerspectiveFetch({
+            requestId: request.requestId,
+            requestPerspective: targetPerspective,
+            currentId: requestGateRef.current.currentId,
+            currentPerspective: filtersRef.current.perspective
+          })) {
+            setPerspectivePayload((prev) => ({
+              ...prev,
+              perspective: targetPerspective,
+              models: [],
+              status: 'error'
+            }));
           }
         }
       }
     }
 
     loadData();
+
     return () => {
-      isCancelled = true;
+      controller.abort();
     };
-  }, [activePerspective]);
+  }, [filters.perspective, reloadToken]);
 
   const handleRetry = () => {
-    setIsError(false);
-    setIsLoading(true);
-    fetch(`/api/leaderboard?perspective=${activePerspective}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.models && Array.isArray(data.models)) setBackendModels(data.models);
-        if (data.counts) setPerspectiveCounts(data.counts);
-        if (data.lastUpdatedText) setLastUpdatedText(data.lastUpdatedText);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setIsError(true);
-        setIsLoading(false);
-      });
+    perspectiveCacheRef.current.delete(filters.perspective);
+    setPerspectivePayload((prev) => ({
+      ...prev,
+      perspective: filters.perspective,
+      models: [],
+      status: 'loading'
+    }));
+    setReloadToken((token) => token + 1);
   };
 
-  // Primary categories to show directly as pills
   const PRIMARY_CATEGORIES = [
     { value: 'All', label: 'All' },
     { value: 'Chat', label: 'Chat' },
@@ -215,90 +283,50 @@ export default function LeaderboardPage({
     { value: 'Agents', label: 'Agents' }
   ];
 
+  const view = useMemo(() => {
+    const modelPool = resolvedPayload.status === 'ready'
+      ? (resolvedPayload.models || [])
+      : [];
 
+    const nextView = buildLeaderboardView({
+      models: modelPool,
+      tools: AI_TOOLS_DATA,
+      filters,
+      ready: rankedModelsReady
+    });
 
-  // Multi-Perspective Filtering & Sorting Engine (Driven by backend data)
-  const filteredModels = useMemo(() => {
-    // 0. Base dataset: Use backend verified models (or tools if selected)
-    let list = [];
-    if (entityType === 'tools') {
-      list = [...AI_TOOLS_DATA];
-    } else if (entityType === 'models') {
-      list = backendModels.length > 0 ? [...backendModels] : [...AI_MODELS_DATA];
-    } else {
-      // entityType === 'all'
-      if (backendModels.length > 0) {
-        const backendIds = new Set(backendModels.map((m) => m.id));
-        const extraTools = AI_TOOLS_DATA.filter((t) => !backendIds.has(t.id));
-        list = [...backendModels, ...extraTools];
-      } else {
-        list = [...LEADERBOARD_DATA];
-      }
+    return nextView;
+  }, [filters, resolvedPayload, needsRankedModels, rankedModelsReady]);
+
+  const lastLoggedViewRef = useRef(null);
+  useEffect(() => {
+    if (view.loading) return;
+    const snapshot = {
+      perspective: view.appliedFilters.perspective,
+      entityType: view.appliedFilters.entityType,
+      modality: view.appliedFilters.category,
+      rowCount: view.rows.length
+    };
+    const prev = lastLoggedViewRef.current;
+    if (
+      !prev ||
+      prev.perspective !== snapshot.perspective ||
+      prev.entityType !== snapshot.entityType ||
+      prev.modality !== snapshot.modality ||
+      prev.rowCount !== snapshot.rowCount
+    ) {
+      logLeaderboard('ROWS_UPDATED', snapshot);
+      lastLoggedViewRef.current = snapshot;
     }
+  }, [view]);
 
-    // 0b. Safety guard: strictly enforce entityType boundaries to prevent cross-contamination
-    if (entityType === 'tools') {
-      list = list.filter((m) => m.entityType === 'tool');
-    } else if (entityType === 'models') {
-      list = list.filter((m) => m.entityType !== 'tool');
-    }
-
-    // 1. Perspective Filter
-    if (activePerspective === 'open_weights') {
-      list = list.filter((m) => m.isOpenWeights === true);
-    }
-
-    // 2. Category Filter with flexible matching (NO fallback — let empty state show if no matches)
-    if (selectedCategory !== 'All') {
-      list = list.filter((m) => matchesCategory(m.category, selectedCategory));
-    }
-
-
-    // 3. Secondary Sorting if user explicitly chose non-rank sort
-    let sortedList = [...list];
-    if (sortBy === 'visits') {
-      sortedList.sort((a, b) => (parseFloat(b.monthlyVisits) || b.votes || 0) - (parseFloat(a.monthlyVisits) || a.votes || 0));
-    } else if (sortBy === 'growth') {
-      sortedList.sort((a, b) => {
-        const deltaA = parseInt((a.rankDelta || '0').replace('+', ''), 10) || 0;
-        const deltaB = parseInt((b.rankDelta || '0').replace('+', ''), 10) || 0;
-        return deltaB - deltaA;
-      });
-    } else if (sortBy === 'newest') {
-      sortedList.sort((a, b) => (b.id || '').localeCompare(a.id || ''));
-    } else {
-      // Default: Honor verified backend perspective ranking 1..N
-      sortedList.sort((a, b) => (a.rank || 0) - (b.rank || 0));
-    }
-
-    // 5. Assign unique sequential ecosystem display rank (1, 2, 3, 4, 5...)
-    return sortedList.map((item, index) => ({
-      ...item,
-      displayRank: index + 1
-    }));
-  }, [backendModels, activePerspective, selectedCategory, sortBy, entityType]);
-
-  // Dynamic Entity Type counts for the active perspective & category/search filters
-  const entityTypeCounts = useMemo(() => {
-    let baseModels = backendModels.length > 0 ? backendModels : AI_MODELS_DATA;
-    let baseTools = AI_TOOLS_DATA;
-
-    if (activePerspective === 'open_weights') {
-      baseModels = baseModels.filter((m) => m.isOpenWeights === true);
-      baseTools = baseTools.filter((t) => t.isOpenWeights === true || (t.license && t.license.toLowerCase().includes('open')));
-    }
-
-    if (selectedCategory !== 'All') {
-      baseModels = baseModels.filter((m) => matchesCategory(m.category, selectedCategory));
-      baseTools = baseTools.filter((t) => matchesCategory(t.category, selectedCategory));
-    }
-
-    const modelsCount = baseModels.length;
-    const toolsCount = baseTools.length;
-    const allCount = modelsCount + toolsCount;
-
-    return { all: allCount, models: modelsCount, tools: toolsCount };
-  }, [backendModels, activePerspective, selectedCategory]);
+  const filteredModels = view.rows;
+  const entityTypeCounts = view.entityTypeCounts;
+  const isLoading = view.loading;
+  const isError = needsRankedModels && resolvedPayload.status === 'error';
+  const lastUpdatedText = resolvedPayload.lastUpdatedText || 'DATA UPDATED JUST NOW';
+  const perspectiveCounts = resolvedPayload.counts || perspectivePayload.counts;
+  const tableFilters = view.appliedFilters;
 
   // Context-aware perspective counts aligned with active entityType (All / Models / Tools)
   const displayPerspectiveCounts = useMemo(() => {
@@ -307,7 +335,7 @@ export default function LeaderboardPage({
     ).length;
     const totalToolsCount = AI_TOOLS_DATA.length;
 
-    if (entityType === 'models') {
+    if (filters.entityType === 'models') {
       return {
         overall: perspectiveCounts.overall || 500,
         risers: perspectiveCounts.risers || 500,
@@ -315,7 +343,7 @@ export default function LeaderboardPage({
         speed: perspectiveCounts.speed || 201,
         open_weights: perspectiveCounts.open_weights || 267
       };
-    } else if (entityType === 'tools') {
+    } else if (filters.entityType === 'tools') {
       return {
         overall: totalToolsCount,
         risers: totalToolsCount,
@@ -324,7 +352,6 @@ export default function LeaderboardPage({
         open_weights: openToolsCount
       };
     } else {
-      // entityType === 'all'
       return {
         overall: (perspectiveCounts.overall || 500) + totalToolsCount,
         risers: (perspectiveCounts.risers || 500) + totalToolsCount,
@@ -333,7 +360,7 @@ export default function LeaderboardPage({
         open_weights: (perspectiveCounts.open_weights || 267) + openToolsCount
       };
     }
-  }, [entityType, perspectiveCounts]);
+  }, [filters.entityType, perspectiveCounts]);
 
   // Real dynamic ecosystem stats computed from actual datasets (stable 595 tracked systems across views)
   const ecosystemStats = useMemo(() => {
@@ -490,14 +517,6 @@ export default function LeaderboardPage({
 
     return { compareWinners: w, aggregateVerdict: verdict };
   }, [selectedForCompare]);
-
-  const hasActiveFilters = selectedCategory !== 'All' || activePerspective !== 'overall';
-
-  const handleClearFilters = () => {
-    setActivePerspective('overall');
-    setSelectedCategory('All');
-    setSortBy('rank');
-  };
 
   // Helper to render rank delta
   const renderRankDeltaBadge = (model) => {
@@ -704,8 +723,8 @@ export default function LeaderboardPage({
             {/* 1. Dynamic Perspective Tabs */}
             <PerspectiveTabs
               perspectives={PERSPECTIVE_OPTIONS}
-              activePerspective={activePerspective}
-              onSelectPerspective={setActivePerspective}
+              activePerspective={filters.perspective}
+              onSelectPerspective={(id) => updateFilters({ perspective: id })}
               perspectiveCounts={displayPerspectiveCounts}
               onOpenMethodology={() => setIsMethodologyOpen(true)}
             />
@@ -717,34 +736,34 @@ export default function LeaderboardPage({
             {/* Entity Type Toggle (All / AI Models / AI Tools) */}
             <div className="inline-flex items-center p-0.5 rounded-full bg-[#141418] border border-[#2E2E38] shrink-0">
               <button
-                onClick={() => setEntityType('all')}
+                onClick={() => updateFilters({ entityType: 'all' })}
                 className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
-                  entityType === 'all'
+                  filters.entityType === 'all'
                     ? 'bg-white text-black shadow-sm'
                     : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
                 }`}
               >
-                All ({entityTypeCounts.all})
+                All ({isLoading ? '—' : entityTypeCounts.all})
               </button>
               <button
-                onClick={() => setEntityType('models')}
+                onClick={() => updateFilters({ entityType: 'models' })}
                 className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
-                  entityType === 'models'
+                  filters.entityType === 'models'
                     ? 'bg-white text-black shadow-sm'
                     : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
                 }`}
               >
-                Models ({entityTypeCounts.models})
+                Models ({isLoading ? '—' : entityTypeCounts.models})
               </button>
               <button
-                onClick={() => setEntityType('tools')}
+                onClick={() => updateFilters({ entityType: 'tools' })}
                 className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
-                  entityType === 'tools'
+                  filters.entityType === 'tools'
                     ? 'bg-white text-black shadow-sm'
                     : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
                 }`}
               >
-                Tools ({entityTypeCounts.tools})
+                Tools ({isLoading ? '—' : entityTypeCounts.tools})
               </button>
             </div>
 
@@ -754,11 +773,11 @@ export default function LeaderboardPage({
             {/* Category Pills */}
             <div className="flex items-center gap-1.5 shrink-0">
               {PRIMARY_CATEGORIES.map((cat) => {
-                const isSelected = selectedCategory === cat.value;
+                const isSelected = filters.category === cat.value;
                 return (
                   <button
                     key={cat.value}
-                    onClick={() => setSelectedCategory(cat.value)}
+                    onClick={() => updateFilters({ category: cat.value })}
                     className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
                       isSelected
                         ? 'bg-white text-black border-white shadow-sm'
@@ -776,8 +795,8 @@ export default function LeaderboardPage({
           <div className="flex items-center gap-2 shrink-0 ml-auto">
             <div className="relative inline-flex items-center">
               <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                value={filters.sortBy}
+                onChange={(e) => updateFilters({ sortBy: e.target.value })}
                 className="appearance-none rounded-xl border border-[#3a3a40] bg-[#16161b] pl-3 pr-8 text-[12px] font-medium text-white hover:border-[#4a4a52] focus:outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20 transition-all cursor-pointer h-9"
               >
                 {SORT_OPTIONS.map((opt) => (
@@ -862,7 +881,7 @@ export default function LeaderboardPage({
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <AdaptiveTableHeaders category={selectedCategory} entityType={entityType} />
+                    <AdaptiveTableHeaders category={tableFilters.category} entityType={tableFilters.entityType} />
                   </thead>
                   <tbody className="divide-y divide-[#1F1F24] text-[#E4E4E7]">
                     {filteredModels.map((model) => {
@@ -930,7 +949,7 @@ export default function LeaderboardPage({
                                     category={model.category}
                                   />
                                 )}
-                                {isTool && entityType !== 'tools' && model.categoryMetricValue && (
+                                {isTool && tableFilters.entityType !== 'tools' && model.categoryMetricValue && (
                                   <span className="text-[10px] text-[#A1A1AA] font-mono bg-[#181820] px-1.5 py-0.5 rounded border border-[#272730]">
                                     {model.categoryMetricLabel ? `${model.categoryMetricLabel}: ` : ''}{model.categoryMetricValue}
                                   </span>
@@ -941,7 +960,7 @@ export default function LeaderboardPage({
 
                           {/* Metric 1 (Arena Elo / Tool Rating) */}
                           <td className="py-2.5 px-3.5 font-mono font-bold text-white text-[13px]">
-                            {entityType === 'tools' ? (
+                            {tableFilters.entityType === 'tools' ? (
                               <div>
                                 <span>{model.categoryMetricValue || '—'}</span>
                                 {model.categoryMetricLabel && (
@@ -966,7 +985,7 @@ export default function LeaderboardPage({
 
                           {/* Metric 2 (Coding Score / Key Benchmark) */}
                           <td className="py-2.5 px-3.5 font-mono text-[#E4E4E7] font-semibold">
-                            {entityType === 'tools' ? (
+                            {tableFilters.entityType === 'tools' ? (
                               <div>
                                 <span>{model.categorySubMetricValue || model.codingScore || '—'}</span>
                                 {model.categorySubMetricLabel && (
@@ -989,7 +1008,7 @@ export default function LeaderboardPage({
 
                           {/* Metric 3 (Speed tok/s / Active Scale) */}
                           <td className="py-2.5 px-3.5 font-mono text-[#A1A1AA]">
-                            {entityType === 'tools' ? (
+                            {tableFilters.entityType === 'tools' ? (
                               <span>{model.categoryDimension3 || model.outputSpeed || model.monthlyVisits || '—'}</span>
                             ) : isTool ? (
                               <span className="text-[#71717A] font-mono text-xs" title="Token throughput (tok/s) is not applicable to developer tools">

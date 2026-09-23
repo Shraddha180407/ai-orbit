@@ -7,6 +7,7 @@ function leaderboardApiPlugin() {
   return {
     name: 'leaderboard-api',
     configureServer(server) {
+      if (process.env.VITEST) return;
       start24HourScheduler();
       server.middlewares.use(async (req, res, next) => {
         if (req.url && req.url.startsWith('/api/leaderboard')) {
@@ -22,6 +23,10 @@ function leaderboardApiPlugin() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), leaderboardApiPlugin()],
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.js']
+  },
   build: {
     rollupOptions: {
       output: {
