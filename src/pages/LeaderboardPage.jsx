@@ -236,15 +236,23 @@ export default function LeaderboardPage({
       }
     }
 
+    // 0b. Safety guard: strictly enforce entityType boundaries to prevent cross-contamination
+    if (entityType === 'tools') {
+      list = list.filter((m) => m.entityType === 'tool');
+    } else if (entityType === 'models') {
+      list = list.filter((m) => m.entityType !== 'tool');
+    }
+
     // 1. Perspective Filter
     if (activePerspective === 'open_weights') {
       list = list.filter((m) => m.isOpenWeights === true);
     }
 
-    // 2. Category Filter with flexible matching
+    // 2. Category Filter with flexible matching (NO fallback — let empty state show if no matches)
     if (selectedCategory !== 'All') {
       list = list.filter((m) => matchesCategory(m.category, selectedCategory));
     }
+
 
     // 3. Secondary Sorting if user explicitly chose non-rank sort
     let sortedList = [...list];
