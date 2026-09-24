@@ -8,6 +8,16 @@ export const DEFAULT_FILTERS = {
   sortBy: 'rank'
 };
 
+/**
+ * Serialize the full filter state to a stable string key.
+ * Used so caches and request gates work across ALL filter dimensions
+ * (perspective + entityType + category), not just perspective alone.
+ */
+export function computeFilterKey(filters) {
+  return `${filters.perspective}|${filters.entityType}|${filters.category}`;
+}
+
+
 export function matchesCategory(itemCategory, targetCategory) {
   if (!targetCategory || targetCategory === 'All') return true;
   if (!itemCategory) return false;
@@ -41,8 +51,9 @@ export function matchesCategory(itemCategory, targetCategory) {
     return itemCatLower.includes('research');
   }
 
+  // "Agents" pill must match both "AI Agents" AND "Automation" tool categories
   if (targetCatLower === 'agents' || targetCatLower === 'ai agents') {
-    return itemCatLower.includes('agent') || itemCatLower.includes('automation');
+    return itemCatLower.includes('agent') || itemCatLower.includes('automat');
   }
 
   if (targetCatLower === 'audio' || targetCatLower === 'voice' || targetCatLower === 'audio / voice' || targetCatLower === 'voice / audio') {

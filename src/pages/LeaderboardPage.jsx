@@ -38,13 +38,14 @@ import {
   Check,
   X
 } from 'lucide-react';
-import {
+import { 
   buildLeaderboardView,
   createRequestGate,
   DEFAULT_FILTERS,
   logLeaderboard,
   matchesCategory as matchLeaderboardCategory,
-  shouldCommitPerspectiveFetch
+  shouldCommitPerspectiveFetch,
+  computeFilterKey
 } from '../lib/leaderboardQuery';
 
 export const matchesCategory = matchLeaderboardCategory;
@@ -64,13 +65,28 @@ export default function LeaderboardPage({
   // 1. Unified Single Filter Object
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
-  // Atomic filter updater
+  // Monotonic generation counter: increments on EVERY filter change (not just perspective).
+  // This ensures that switching entityType or category immediately shows a loading state
+  // rather than briefly displaying stale rows from the previous filter combination.
+  const commitGenRef = useRef(0);
+  const [committedGen, setCommittedGen] = useState(0);
+
+  // Atomic filter updater — bumps the generation counter so the view
+  // immediately becomes "loading" even for non-perspective filter changes.
   const updateFilters = useCallback((updates) => {
+    commitGenRef.current += 1;
+    const gen = commitGenRef.current;
     setFilters((prev) => ({ ...prev, ...updates }));
+    // Schedule setCommittedGen in a microtask so it fires after setFilters
+    // has been batched, guaranteeing at least one render with loading=true.
+    Promise.resolve().then(() => setCommittedGen(gen));
   }, []);
 
   const handleClearFilters = useCallback(() => {
+    commitGenRef.current += 1;
+    const gen = commitGenRef.current;
     setFilters({ ...DEFAULT_FILTERS });
+    Promise.resolve().then(() => setCommittedGen(gen));
   }, []);
 
   const hasActiveFilters = 
@@ -126,6 +142,15 @@ export default function LeaderboardPage({
   const needsRankedModels = filters.entityType !== 'tools';
   const rankedModelsReady = !needsRankedModels || resolvedPayload.status === 'ready';
 
+  // For tools-only views there is no API fetch, so the perspective useEffect
+  // never fires to advance committedGen. This effect handles that case so the
+  // loading guard (genStale) resolves immediately for tool filter changes.
+  useEffect(() => {
+    if (filters.entityType === 'tools' || !needsRankedModels) {
+      setCommittedGen(commitGenRef.current);
+    }
+  }, [filters.entityType, filters.category, filters.perspective, needsRankedModels]);
+
   useEffect(() => {
     const targetPerspective = filters.perspective;
 
@@ -156,6 +181,8 @@ export default function LeaderboardPage({
         rowCount: Array.isArray(cached.models) ? cached.models.length : 0
       });
       setPerspectivePayload({ ...cached, perspective: targetPerspective, status: 'ready' });
+      // Cache hit: advance generation immediately so the view exits loading guard.
+      setCommittedGen(commitGenRef.current);
       return () => controller.abort();
     }
 
@@ -192,6 +219,8 @@ export default function LeaderboardPage({
       }
       perspectiveCacheRef.current.set(targetPerspective, nextPayload);
       setPerspectivePayload({ ...nextPayload, perspective: targetPerspective, status: 'ready' });
+      // Advance the committed generation so the view exits its loading guard.
+      setCommittedGen(commitGenRef.current);
       logLeaderboard('REQUEST_SUCCESS', {
         requestId: request.requestId,
         perspective: targetPerspective,
@@ -284,6 +313,19 @@ export default function LeaderboardPage({
   ];
 
   const view = useMemo(() => {
+    // If committedGen is behind the latest filter-change generation, the filter
+    // state and data state haven't fully reconciled yet — return loading so the
+    // skeleton shows instead of stale rows from the previous filter combination.
+    const genStale = committedGen < commitGenRef.current;
+    if (genStale) {
+      return {
+        appliedFilters: { ...filters },
+        rows: [],
+        entityTypeCounts: { all: 0, models: 0, tools: 0 },
+        loading: true
+      };
+    }
+
     const modelPool = resolvedPayload.status === 'ready'
       ? (resolvedPayload.models || [])
       : [];
@@ -296,7 +338,7 @@ export default function LeaderboardPage({
     });
 
     return nextView;
-  }, [filters, resolvedPayload, needsRankedModels, rankedModelsReady]);
+  }, [filters, resolvedPayload, needsRankedModels, rankedModelsReady, committedGen]);
 
   const lastLoggedViewRef = useRef(null);
   useEffect(() => {
