@@ -9,15 +9,18 @@ export const DEFAULT_FILTERS = {
 };
 
 /**
- * Serialize the full filter state to a stable string key.
- * Used so caches and request gates work across ALL filter dimensions
- * (perspective + entityType + category), not just perspective alone.
+ * Serialize the perspective, entity type, and category for cache lookup.
+ * Sorting does not affect which rows belong to the filter selection.
  */
 export function computeFilterKey(filters) {
   return `${filters.perspective}|${filters.entityType}|${filters.category}`;
 }
 
 
+/**
+ * Match a catalog category against a filter, including equivalent category labels.
+ * An empty or "All" filter accepts every category.
+ */
 export function matchesCategory(itemCategory, targetCategory) {
   if (!targetCategory || targetCategory === 'All') return true;
   if (!itemCategory) return false;

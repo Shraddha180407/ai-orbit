@@ -50,6 +50,9 @@ import {
 
 export const matchesCategory = matchLeaderboardCategory;
 
+/**
+ * Render the leaderboard with filter-aware loading, request gating, and comparison controls.
+ */
 export default function LeaderboardPage({ 
   bookmarks = [], 
   onToggleBookmark,
@@ -71,8 +74,7 @@ export default function LeaderboardPage({
   const commitGenRef = useRef(0);
   const [committedGen, setCommittedGen] = useState(0);
 
-  // Atomic filter updater — bumps the generation counter so the view
-  // immediately becomes "loading" even for non-perspective filter changes.
+  /** Apply filter changes and invalidate the currently displayed generation. */
   const updateFilters = useCallback((updates) => {
     commitGenRef.current += 1;
     const gen = commitGenRef.current;
@@ -82,6 +84,7 @@ export default function LeaderboardPage({
     Promise.resolve().then(() => setCommittedGen(gen));
   }, []);
 
+  /** Restore default filters and invalidate the currently displayed generation. */
   const handleClearFilters = useCallback(() => {
     commitGenRef.current += 1;
     const gen = commitGenRef.current;

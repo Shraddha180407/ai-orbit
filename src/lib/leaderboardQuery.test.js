@@ -97,7 +97,8 @@ describe('leaderboard filter consistency', () => {
 });
 
 describe('asynchronous request gating', () => {
-  it('rejects a request when its filters no longer match the current filters', () => {
+  /** Verify that a current request ID cannot override a changed category. */
+  function rejectsMismatchedFilters() {
     const gate = createRequestGate();
 
     const requestFilters = {
@@ -122,9 +123,11 @@ describe('asynchronous request gating', () => {
       currentId: gate.currentId,
       currentFilters
     })).toBe(false);
-  });
+  }
+  it('rejects a request when its filters no longer match the current filters', rejectsMismatchedFilters);
 
-  it('ignores an older request that resolves after a newer one', () => {
+  /** Verify that matching filters cannot make an older request current. */
+  function ignoresOlderRequest() {
     const gate = createRequestGate();
     const matchingFilters = { perspective: 'overall', entityType: 'models', category: 'Image', sortBy: 'rank' };
 
@@ -146,7 +149,8 @@ describe('asynchronous request gating', () => {
       currentId: gate.currentId,
       currentFilters: matchingFilters
     })).toBe(false);
-  });
+  }
+  it('ignores an older request that resolves after a newer one', ignoresOlderRequest);
 
   it('rapid Image → Video → Code keeps only the final Code result', () => {
     const gate = createRequestGate();
