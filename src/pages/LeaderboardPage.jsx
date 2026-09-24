@@ -239,8 +239,10 @@ export default function LeaderboardPage({
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        const models = (data.models && Array.isArray(data.models)) ? data.models : [];
-        if (models.length === 0) throw new Error('Leaderboard API returned no rows');
+        if (!data || !Array.isArray(data.models)) {
+          throw new Error('Leaderboard API dataset unavailable');
+        }
+        const { models } = data;
         commitIfCurrent({
           models,
           counts: data.counts,
