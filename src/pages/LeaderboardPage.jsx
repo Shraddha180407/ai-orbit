@@ -719,10 +719,9 @@ export default function LeaderboardPage({
             </div>
           </div>
 
-          {/* Bottom Switcher: 5 Top Switcher Tabs + Technical Status */}
+          {/* Bottom Switcher: Models vs Agents vs MCP vs Companies + Technical Status */}
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#1C1C1F]">
             <div className="inline-flex p-0.5 rounded-xl bg-[#131316] border border-[#232328] shadow-inner overflow-x-auto scrollbar-none max-w-full">
-              {/* AI Models */}
               <button
                 onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'models' }); }}
                 className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
@@ -740,7 +739,6 @@ export default function LeaderboardPage({
                 </span>
               </button>
 
-              {/* AI Agents */}
               <button
                 onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'agents' }); }}
                 className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
@@ -758,7 +756,6 @@ export default function LeaderboardPage({
                 </span>
               </button>
 
-              {/* MCP Servers */}
               <button
                 onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'mcp' }); }}
                 className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
@@ -776,7 +773,6 @@ export default function LeaderboardPage({
                 </span>
               </button>
 
-              {/* AI Tools */}
               <button
                 onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'tools' }); }}
                 className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
@@ -794,7 +790,6 @@ export default function LeaderboardPage({
                 </span>
               </button>
 
-              {/* AI Companies — Top 100 */}
               <button
                 onClick={() => setActiveTab('companies')}
                 className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
