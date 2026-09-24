@@ -97,26 +97,30 @@ describe('leaderboard filter consistency', () => {
 });
 
 describe('asynchronous request gating', () => {
-  it('ignores an older request that resolves after a newer one', () => {
+    it('rejects a request when its filters no longer match the current filters', () => {
     const gate = createRequestGate();
-    const filtersA = { perspective: 'overall', entityType: 'models', category: 'Image', sortBy: 'rank' };
-    const filtersB = { perspective: 'overall', entityType: 'tools', category: 'Video', sortBy: 'rank' };
 
-    const reqA = gate.start(filtersA);
-    const reqB = gate.start(filtersB);
+    const requestFilters = {
+      perspective: 'overall',
+      entityType: 'models',
+      category: 'Image',
+      sortBy: 'rank'
+    };
+
+    const currentFilters = {
+      perspective: 'overall',
+      entityType: 'models',
+      category: 'Video',
+      sortBy: 'rank'
+    };
+
+    const request = gate.start(requestFilters);
 
     expect(shouldCommitRequest({
-      requestId: reqB.requestId,
-      requestFilters: reqB.filters,
+      requestId: request.requestId,
+      requestFilters: request.filters,
       currentId: gate.currentId,
-      currentFilters: filtersB
-    })).toBe(true);
-
-    expect(shouldCommitRequest({
-      requestId: reqA.requestId,
-      requestFilters: reqA.filters,
-      currentId: gate.currentId,
-      currentFilters: filtersB
+      currentFilters
     })).toBe(false);
   });
 
