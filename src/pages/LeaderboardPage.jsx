@@ -857,84 +857,24 @@ export default function LeaderboardPage({
 
         {/* 2. Sub-Filter & Controls Bar: Entity Type, Categories, Sort, Compare, Clear */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 sm:mb-8">
-          {/* Left: Entity Type Toggle & Category Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
-            {/* Entity Type Toggle (All / AI Models / AI Tools / Agents / MCP) */}
-            <div className="inline-flex items-center p-0.5 rounded-full bg-[#141418] border border-[#2E2E38] shrink-0">
-              <button
-                onClick={() => updateFilters({ entityType: 'all' })}
-                className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
-                  filters.entityType === 'all'
-                    ? 'bg-white text-black shadow-sm'
-                    : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
-                }`}
-              >
-                All ({isLoading ? '—' : entityTypeCounts.all})
-              </button>
-              <button
-                onClick={() => updateFilters({ entityType: 'models' })}
-                className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
-                  filters.entityType === 'models'
-                    ? 'bg-white text-black shadow-sm'
-                    : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
-                }`}
-              >
-                Models ({isLoading ? '—' : entityTypeCounts.models})
-              </button>
-              <button
-                onClick={() => updateFilters({ entityType: 'agents' })}
-                className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
-                  filters.entityType === 'agents'
-                    ? 'bg-white text-black shadow-sm'
-                    : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
-                }`}
-              >
-                Agents ({isLoading ? '—' : entityTypeCounts.agents || 0})
-              </button>
-              <button
-                onClick={() => updateFilters({ entityType: 'mcp' })}
-                className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
-                  filters.entityType === 'mcp'
-                    ? 'bg-white text-black shadow-sm'
-                    : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
-                }`}
-              >
-                MCP ({isLoading ? '—' : entityTypeCounts.mcp || 0})
-              </button>
-              <button
-                onClick={() => updateFilters({ entityType: 'tools' })}
-                className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
-                  filters.entityType === 'tools'
-                    ? 'bg-white text-black shadow-sm'
-                    : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
-                }`}
-              >
-                Tools ({isLoading ? '—' : entityTypeCounts.tools})
-              </button>
-            </div>
-
-            {/* Thin vertical divider between Entity Type and Category Pills */}
-            <div className="h-4 w-[1px] bg-[#3F3F4C] mx-1 shrink-0" aria-hidden="true" />
-
-            {/* Category Pills */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              {PRIMARY_CATEGORIES.map((cat) => {
-                const isSelected = filters.category === cat.value;
-                return (
-                  <button
-                    key={cat.value}
-                    onClick={() => updateFilters({ category: cat.value })}
-                    className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
-                      isSelected
-                        ? 'bg-white text-black border-white shadow-sm'
-                        : 'text-[#E4E4E7] hover:text-white bg-[#16161B] border-[#2A2A33] hover:border-white/50 shadow-sm'
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                );
-              })}
-            </div>
+          {/* Left: Category Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+            {PRIMARY_CATEGORIES.map((cat) => {
+              const isSelected = filters.category === cat.value;
+              return (
+                <button
+                  key={cat.value}
+                  onClick={() => updateFilters({ category: cat.value })}
+                  className={`rounded-full px-3.5 py-1 text-[11px] font-bold whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 ${
+                    isSelected
+                      ? 'bg-white text-black border-white shadow-sm'
+                      : 'text-[#E4E4E7] hover:text-white bg-[#16161B] border-[#2A2A33] hover:border-white/50 shadow-sm'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Right: Sort + Compare + Clear */}
