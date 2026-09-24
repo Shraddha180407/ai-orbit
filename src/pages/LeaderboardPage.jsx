@@ -245,7 +245,7 @@ export default function LeaderboardPage({
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (!data || !Array.isArray(data.models)) {
+        if (!data || !Array.isArray(data.models) || data.models.length === 0) {
           throw new Error('Leaderboard API dataset unavailable');
         }
         const { models } = data;
