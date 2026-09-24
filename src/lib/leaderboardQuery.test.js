@@ -97,7 +97,7 @@ describe('leaderboard filter consistency', () => {
 });
 
 describe('asynchronous request gating', () => {
-    it('rejects a request when its filters no longer match the current filters', () => {
+  it('rejects a request when its filters no longer match the current filters', () => {
     const gate = createRequestGate();
 
     const requestFilters = {
@@ -121,6 +121,30 @@ describe('asynchronous request gating', () => {
       requestFilters: request.filters,
       currentId: gate.currentId,
       currentFilters
+    })).toBe(false);
+  });
+
+  it('ignores an older request that resolves after a newer one', () => {
+    const gate = createRequestGate();
+    const matchingFilters = { perspective: 'overall', entityType: 'models', category: 'Image', sortBy: 'rank' };
+
+    const older = gate.start(matchingFilters);
+    const newer = gate.start(matchingFilters); // advances currentId
+
+    // Newer request: same filters, same ID → should commit
+    expect(shouldCommitRequest({
+      requestId: newer.requestId,
+      requestFilters: newer.filters,
+      currentId: gate.currentId,
+      currentFilters: matchingFilters
+    })).toBe(true);
+
+    // Older request: same filters, but stale ID → must NOT commit
+    expect(shouldCommitRequest({
+      requestId: older.requestId,
+      requestFilters: older.filters,
+      currentId: gate.currentId,
+      currentFilters: matchingFilters
     })).toBe(false);
   });
 
