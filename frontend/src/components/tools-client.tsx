@@ -444,7 +444,7 @@ export function ToolsClient({
                       ? "bg-white text-black border-white shadow-lg shadow-white/5"
                       : "text-neutral-400 hover:text-white bg-[#131316]/50 border-[#232326]/60 hover:border-white/[0.15]"
                     }`
-                  : `group inline-flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2.5 text-[11.5px] font-semibold leading-tight tracking-[-0.01em] whitespace-nowrap transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out border active:scale-[0.98] cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b] ${isSelected
+                  : `group inline-flex h-[26px] min-w-[10px] flex-col items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2.5 text-[11.5px] font-semibold leading-tight tracking-[-0.01em] whitespace-nowrap transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out border active:scale-[0.98] cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b] ${isSelected
                       ? "bg-white text-black border-white shadow-[0_10px_24px_rgba(255,255,255,0.14)]"
                       : "text-neutral-400 bg-white/[0.035] border-white/[0.08] hover:text-white hover:bg-white/[0.07] hover:border-white/[0.18]"
                     }`}
