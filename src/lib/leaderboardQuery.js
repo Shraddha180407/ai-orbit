@@ -147,9 +147,11 @@ function sortLeaderboard(list, sortBy) {
   return sorted;
 }
 
-export function selectBaseLists({ models, tools, filters }) {
+export function selectBaseLists({ models, tools, agents = [], mcp = [], filters }) {
   const perspectiveModels = applyPerspective(models || [], filters.perspective);
   const perspectiveTools = applyPerspective(tools || [], filters.perspective);
+  const perspectiveAgents = applyPerspective(agents || [], filters.perspective);
+  const perspectiveMcps = applyPerspective(mcp || [], filters.perspective);
 
   if (filters.entityType === 'tools') {
     return perspectiveTools.filter(isToolEntity);
@@ -158,22 +160,34 @@ export function selectBaseLists({ models, tools, filters }) {
     return perspectiveModels.filter((item) => !isToolEntity(item) && !isAgentEntity(item) && !isMCPEntity(item));
   }
   if (filters.entityType === 'agents') {
-    return perspectiveModels.filter(isAgentEntity);
+    const fromModels = perspectiveModels.filter(isAgentEntity);
+    return fromModels.length > 0 ? fromModels : perspectiveAgents;
   }
   if (filters.entityType === 'mcp') {
-    return perspectiveModels.filter(isMCPEntity);
+    const fromModels = perspectiveModels.filter(isMCPEntity);
+    return fromModels.length > 0 ? fromModels : perspectiveMcps;
   }
 
   const modelIds = new Set(perspectiveModels.map((m) => m.id));
   const extraTools = perspectiveTools.filter((t) => !modelIds.has(t.id));
-  return [...perspectiveModels, ...extraTools];
+  const extraAgents = perspectiveAgents.filter((a) => !modelIds.has(a.id));
+  const extraMcps = perspectiveMcps.filter((c) => !modelIds.has(c.id));
+  return [...perspectiveModels, ...extraTools, ...extraAgents, ...extraMcps];
 }
 
-export function computeEntityTypeCounts({ models, tools, filters }) {
+export function computeEntityTypeCounts({ models, tools, agents = [], mcp = [], filters }) {
   const perspectiveModels = applyPerspective(models || [], filters.perspective).filter((item) => !isToolEntity(item) && !isAgentEntity(item) && !isMCPEntity(item));
   const perspectiveTools = applyPerspective(tools || [], filters.perspective).filter(isToolEntity);
-  const perspectiveAgents = applyPerspective(models || [], filters.perspective).filter(isAgentEntity);
-  const perspectiveMcps = applyPerspective(models || [], filters.perspective).filter(isMCPEntity);
+  
+  let perspectiveAgents = applyPerspective(models || [], filters.perspective).filter(isAgentEntity);
+  if (perspectiveAgents.length === 0 && agents.length > 0) {
+    perspectiveAgents = applyPerspective(agents, filters.perspective);
+  }
+
+  let perspectiveMcps = applyPerspective(models || [], filters.perspective).filter(isMCPEntity);
+  if (perspectiveMcps.length === 0 && mcp.length > 0) {
+    perspectiveMcps = applyPerspective(mcp, filters.perspective);
+  }
 
   const category = filters.category;
   const m = perspectiveModels.filter((item) => matchesCategory(item.category, category));
@@ -235,17 +249,17 @@ export function validateLeaderboardRows(rows, filters, { logInvalid = false } = 
   return valid;
 }
 
-export function buildLeaderboardView({ models, tools, filters, ready = true }) {
+export function buildLeaderboardView({ models, tools, agents = [], mcp = [], filters, ready = true }) {
   if (!ready) {
     return {
       appliedFilters: { ...filters },
       rows: [],
-      entityTypeCounts: { all: 0, models: 0, tools: 0 },
+      entityTypeCounts: { all: 0, models: 0, tools: 0, agents: 0, mcp: 0 },
       loading: true
     };
   }
 
-  const base = selectBaseLists({ models, tools, filters });
+  const base = selectBaseLists({ models, tools, agents, mcp, filters });
   const categoryFiltered = filters.category === 'All'
     ? base
     : base.filter((item) => matchesCategory(item.category, filters.category));
@@ -260,7 +274,7 @@ export function buildLeaderboardView({ models, tools, filters, ready = true }) {
   return {
     appliedFilters: { ...filters },
     rows,
-    entityTypeCounts: computeEntityTypeCounts({ models, tools, filters }),
+    entityTypeCounts: computeEntityTypeCounts({ models, tools, agents, mcp, filters }),
     loading: false
   };
 }

@@ -145,14 +145,14 @@ export default function LeaderboardPage({
     };
   }, [filters.perspective, perspectivePayload]);
 
-  const needsRankedModels = filters.entityType !== 'tools';
+  const needsRankedModels = filters.entityType === 'models' || filters.entityType === 'all';
   const rankedModelsReady = !needsRankedModels || resolvedPayload.status === 'ready';
 
-  // For tools-only views there is no API fetch, so the perspective useEffect
+  // For static views (tools, agents, mcp) there is no API fetch, so the perspective useEffect
   // never fires to advance committedGen. This effect handles that case so the
-  // loading guard (genStale) resolves immediately for tool filter changes.
+  // loading guard (genStale) resolves immediately for static filter changes.
   useEffect(() => {
-    if (filters.entityType === 'tools' || !needsRankedModels) {
+    if (filters.entityType === 'tools' || filters.entityType === 'agents' || filters.entityType === 'mcp' || !needsRankedModels) {
       setCommittedGen(commitGenRef.current);
     }
   }, [filters.entityType, filters.category, filters.perspective, needsRankedModels]);
@@ -342,6 +342,8 @@ export default function LeaderboardPage({
     const nextView = buildLeaderboardView({
       models: modelPool,
       tools: AI_TOOLS_DATA,
+      agents: AI_AGENTS_DATA,
+      mcp: MCP_DATA,
       filters,
       ready: rankedModelsReady
     });
@@ -402,13 +404,31 @@ export default function LeaderboardPage({
         speed: totalToolsCount,
         open_weights: openToolsCount
       };
+    } else if (filters.entityType === 'agents') {
+      const openAgentsCount = AI_AGENTS_DATA.filter((a) => a.isOpenWeights === true).length;
+      return {
+        overall: AI_AGENTS_DATA.length,
+        risers: AI_AGENTS_DATA.length,
+        adopted: AI_AGENTS_DATA.length,
+        speed: AI_AGENTS_DATA.length,
+        open_weights: openAgentsCount
+      };
+    } else if (filters.entityType === 'mcp') {
+      const openMcpCount = MCP_DATA.filter((m) => m.isOpenWeights === true).length;
+      return {
+        overall: MCP_DATA.length,
+        risers: MCP_DATA.length,
+        adopted: MCP_DATA.length,
+        speed: MCP_DATA.length,
+        open_weights: openMcpCount
+      };
     } else {
       return {
-        overall: (perspectiveCounts.overall || 500) + totalToolsCount,
-        risers: (perspectiveCounts.risers || 500) + totalToolsCount,
-        adopted: (perspectiveCounts.adopted || 500) + totalToolsCount,
-        speed: (perspectiveCounts.speed || 201) + totalToolsCount,
-        open_weights: (perspectiveCounts.open_weights || 267) + openToolsCount
+        overall: (perspectiveCounts.overall || 500) + totalToolsCount + AI_AGENTS_DATA.length + MCP_DATA.length,
+        risers: (perspectiveCounts.risers || 500) + totalToolsCount + AI_AGENTS_DATA.length + MCP_DATA.length,
+        adopted: (perspectiveCounts.adopted || 500) + totalToolsCount + AI_AGENTS_DATA.length + MCP_DATA.length,
+        speed: (perspectiveCounts.speed || 201) + totalToolsCount + AI_AGENTS_DATA.length + MCP_DATA.length,
+        open_weights: (perspectiveCounts.open_weights || 267) + openToolsCount + AI_AGENTS_DATA.filter((a) => a.isOpenWeights === true).length + MCP_DATA.filter((m) => m.isOpenWeights === true).length
       };
     }
   }, [filters.entityType, perspectiveCounts]);
