@@ -71,6 +71,16 @@ export function isToolEntity(item) {
   return item.entityType === 'tool' || item.type === 'tool';
 }
 
+export function isAgentEntity(item) {
+  if (!item) return false;
+  return item.entityType === 'agent' || item.type === 'agent';
+}
+
+export function isMCPEntity(item) {
+  if (!item) return false;
+  return item.entityType === 'mcp' || item.type === 'mcp';
+}
+
 export function isOpenWeightsItem(item) {
   if (!item) return false;
   if (item.isOpenWeights === true) return true;
@@ -145,7 +155,13 @@ export function selectBaseLists({ models, tools, filters }) {
     return perspectiveTools.filter(isToolEntity);
   }
   if (filters.entityType === 'models') {
-    return perspectiveModels.filter((item) => !isToolEntity(item));
+    return perspectiveModels.filter((item) => !isToolEntity(item) && !isAgentEntity(item) && !isMCPEntity(item));
+  }
+  if (filters.entityType === 'agents') {
+    return perspectiveModels.filter(isAgentEntity);
+  }
+  if (filters.entityType === 'mcp') {
+    return perspectiveModels.filter(isMCPEntity);
   }
 
   const modelIds = new Set(perspectiveModels.map((m) => m.id));
@@ -154,17 +170,23 @@ export function selectBaseLists({ models, tools, filters }) {
 }
 
 export function computeEntityTypeCounts({ models, tools, filters }) {
-  const perspectiveModels = applyPerspective(models || [], filters.perspective).filter((item) => !isToolEntity(item));
+  const perspectiveModels = applyPerspective(models || [], filters.perspective).filter((item) => !isToolEntity(item) && !isAgentEntity(item) && !isMCPEntity(item));
   const perspectiveTools = applyPerspective(tools || [], filters.perspective).filter(isToolEntity);
+  const perspectiveAgents = applyPerspective(models || [], filters.perspective).filter(isAgentEntity);
+  const perspectiveMcps = applyPerspective(models || [], filters.perspective).filter(isMCPEntity);
 
   const category = filters.category;
   const m = perspectiveModels.filter((item) => matchesCategory(item.category, category));
   const t = perspectiveTools.filter((item) => matchesCategory(item.category, category));
+  const a = perspectiveAgents.filter((item) => matchesCategory(item.category, category));
+  const c = perspectiveMcps.filter((item) => matchesCategory(item.category, category));
 
   return {
-    all: m.length + t.length,
+    all: m.length + t.length + a.length + c.length,
     models: m.length,
-    tools: t.length
+    tools: t.length,
+    agents: a.length,
+    mcp: c.length
   };
 }
 
@@ -176,8 +198,12 @@ export function validateLeaderboardRows(rows, filters, { logInvalid = false } = 
     let reason = null;
     if (filters.entityType === 'tools' && !isToolEntity(row)) {
       reason = 'entityType mismatch (expected tool)';
-    } else if (filters.entityType === 'models' && isToolEntity(row)) {
+    } else if (filters.entityType === 'models' && (isToolEntity(row) || isAgentEntity(row) || isMCPEntity(row))) {
       reason = 'entityType mismatch (expected model)';
+    } else if (filters.entityType === 'agents' && !isAgentEntity(row)) {
+      reason = 'entityType mismatch (expected agent)';
+    } else if (filters.entityType === 'mcp' && !isMCPEntity(row)) {
+      reason = 'entityType mismatch (expected mcp)';
     } else if (filters.category !== 'All' && !matchesCategory(row.category, filters.category)) {
       reason = `category mismatch (expected ${filters.category})`;
     }

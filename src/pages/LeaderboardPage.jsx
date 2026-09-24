@@ -74,14 +74,12 @@ export default function LeaderboardPage({
   const commitGenRef = useRef(0);
   const [committedGen, setCommittedGen] = useState(0);
 
-  /** Apply filter changes and invalidate the currently displayed generation. */
+  // Atomic filter updater
   const updateFilters = useCallback((updates) => {
     commitGenRef.current += 1;
     const gen = commitGenRef.current;
     setFilters((prev) => ({ ...prev, ...updates }));
-    // Schedule setCommittedGen in a microtask so it fires after setFilters
-    // has been batched, guaranteeing at least one render with loading=true.
-    Promise.resolve().then(() => setCommittedGen(gen));
+    setCommittedGen(gen);
   }, []);
 
   /** Restore default filters and invalidate the currently displayed generation. */
@@ -89,7 +87,7 @@ export default function LeaderboardPage({
     commitGenRef.current += 1;
     const gen = commitGenRef.current;
     setFilters({ ...DEFAULT_FILTERS });
-    Promise.resolve().then(() => setCommittedGen(gen));
+    setCommittedGen(gen);
   }, []);
 
   const hasActiveFilters = 
@@ -328,7 +326,7 @@ export default function LeaderboardPage({
       return {
         appliedFilters: { ...filters },
         rows: [],
-        entityTypeCounts: { all: 0, models: 0, tools: 0 },
+        entityTypeCounts: { all: 0, models: 0, tools: 0, agents: 0, mcp: 0 },
         loading: true
       };
     }
@@ -782,7 +780,7 @@ export default function LeaderboardPage({
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 sm:mb-8">
           {/* Left: Entity Type Toggle & Category Pills */}
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
-            {/* Entity Type Toggle (All / AI Models / AI Tools) */}
+            {/* Entity Type Toggle (All / AI Models / AI Tools / Agents / MCP) */}
             <div className="inline-flex items-center p-0.5 rounded-full bg-[#141418] border border-[#2E2E38] shrink-0">
               <button
                 onClick={() => updateFilters({ entityType: 'all' })}
@@ -803,6 +801,26 @@ export default function LeaderboardPage({
                 }`}
               >
                 Models ({isLoading ? '—' : entityTypeCounts.models})
+              </button>
+              <button
+                onClick={() => updateFilters({ entityType: 'agents' })}
+                className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+                  filters.entityType === 'agents'
+                    ? 'bg-white text-black shadow-sm'
+                    : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
+                }`}
+              >
+                Agents ({isLoading ? '—' : entityTypeCounts.agents || 0})
+              </button>
+              <button
+                onClick={() => updateFilters({ entityType: 'mcp' })}
+                className={`px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+                  filters.entityType === 'mcp'
+                    ? 'bg-white text-black shadow-sm'
+                    : 'text-[#E4E4E7] hover:text-white hover:bg-[#1F1F28]'
+                }`}
+              >
+                MCP ({isLoading ? '—' : entityTypeCounts.mcp || 0})
               </button>
               <button
                 onClick={() => updateFilters({ entityType: 'tools' })}

@@ -5,9 +5,13 @@
 
 import { AI_MODELS_DATA, MODEL_CATEGORIES } from './modelsData.js';
 import { AI_TOOLS_DATA, TOOL_CATEGORIES } from './toolsData.js';
+import { AI_AGENTS_DATA, AGENT_CATEGORIES } from './agentsData.js';
+import { MCP_DATA, MCP_CATEGORIES } from './mcpData.js';
 
 export { AI_MODELS_DATA, MODEL_CATEGORIES };
 export { AI_TOOLS_DATA, TOOL_CATEGORIES };
+export { AI_AGENTS_DATA, AGENT_CATEGORIES };
+export { MCP_DATA, MCP_CATEGORIES };
 
 // Combined unique categories for universal filters
 export const LEADERBOARD_CATEGORIES = [
@@ -101,6 +105,10 @@ const composeLeaderboard = () => {
   }
   // Remaining Tools
   otherTools.forEach((t) => combined.push(t));
+
+  // Add Agents and MCPs
+  AI_AGENTS_DATA.forEach((a) => combined.push(a));
+  MCP_DATA.forEach((m) => combined.push(m));
 
   // Assign sequential composite ecosystem rank 1..N
   return combined.map((item, index) => ({
