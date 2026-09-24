@@ -240,6 +240,7 @@ export default function LeaderboardPage({
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const models = (data.models && Array.isArray(data.models)) ? data.models : [];
+        if (models.length === 0) throw new Error('Leaderboard API returned no rows');
         commitIfCurrent({
           models,
           counts: data.counts,
@@ -254,6 +255,7 @@ export default function LeaderboardPage({
           if (!snapRes.ok) throw new Error('Snapshot not found');
           const snapData = await snapRes.json();
           const list = snapData.modelsByPerspective?.[targetPerspective]?.models || snapData.models || [];
+          if (!Array.isArray(list) || list.length === 0) throw new Error('Leaderboard snapshot returned no rows');
           let lastUpdatedText = snapData.metadata?.lastUpdated ? 'DATA UPDATED JUST NOW' : null;
           if (snapData.metadata?.lastUpdated) {
             const diffHours = Math.floor((Date.now() - new Date(snapData.metadata.lastUpdated).getTime()) / (1000 * 60 * 60));
