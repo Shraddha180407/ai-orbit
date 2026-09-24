@@ -719,80 +719,29 @@ export default function LeaderboardPage({
             </div>
           </div>
 
-          {/* Bottom Switcher: Models vs Agents vs MCP vs Companies + Technical Status */}
+          {/* Bottom Switcher: Models & Tools vs Companies + Technical Status */}
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#1C1C1F]">
-            <div className="inline-flex p-0.5 rounded-xl bg-[#131316] border border-[#232328] shadow-inner overflow-x-auto scrollbar-none max-w-full">
+            <div className="inline-flex p-0.5 rounded-xl bg-[#131316] border border-[#232328] shadow-inner">
               <button
-                onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'models' }); }}
-                className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === 'models' && (filters.entityType === 'models' || filters.entityType === 'all')
+                onClick={() => setActiveTab('models')}
+                className={`flex items-center gap-2 px-4 py-1.5 sm:px-5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  activeTab === 'models'
                     ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
                     : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181f]'
                 }`}
               >
                 <Cpu size={14} />
-                <span>AI Models</span>
+                <span>AI Models &amp; Tools</span>
                 <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-                  activeTab === 'models' && (filters.entityType === 'models' || filters.entityType === 'all') ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
+                  activeTab === 'models' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
                 }`}>
-                  {ecosystemStats.modelsCount}
-                </span>
-              </button>
-
-              <button
-                onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'agents' }); }}
-                className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === 'models' && filters.entityType === 'agents'
-                    ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
-                    : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181f]'
-                }`}
-              >
-                <Bot size={14} />
-                <span>AI Agents</span>
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-                  activeTab === 'models' && filters.entityType === 'agents' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
-                }`}>
-                  {ecosystemStats.agentsCount}
-                </span>
-              </button>
-
-              <button
-                onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'mcp' }); }}
-                className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === 'models' && filters.entityType === 'mcp'
-                    ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
-                    : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181f]'
-                }`}
-              >
-                <Server size={14} />
-                <span>MCP Servers</span>
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-                  activeTab === 'models' && filters.entityType === 'mcp' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
-                }`}>
-                  {ecosystemStats.mcpCount}
-                </span>
-              </button>
-
-              <button
-                onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'tools' }); }}
-                className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === 'models' && filters.entityType === 'tools'
-                    ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
-                    : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181f]'
-                }`}
-              >
-                <Wrench size={14} />
-                <span>AI Tools</span>
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-                  activeTab === 'models' && filters.entityType === 'tools' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
-                }`}>
-                  {ecosystemStats.toolsCount}
+                  {ecosystemStats.totalTrackedSystems}
                 </span>
               </button>
 
               <button
                 onClick={() => setActiveTab('companies')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-1.5 sm:px-5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   activeTab === 'companies'
                     ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
                     : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181f]'
