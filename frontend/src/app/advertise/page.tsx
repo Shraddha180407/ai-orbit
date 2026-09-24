@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { AdvertiseLanding, advertiseMetadata } from "./advertise-page";
 import {
   ArrowRight,
   Target,
@@ -11,7 +12,7 @@ import {
   Star
 } from "lucide-react";
 
-export default function AdvertisePage() {
+function LegacyAdvertisePage() {
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-white/30 pt-4 sm:pt-6 pb-2">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
@@ -303,4 +304,10 @@ export default function AdvertisePage() {
       </div>
     </div>
   );
+}
+
+export const metadata = advertiseMetadata;
+
+export default function AdvertisePage() {
+  return <AdvertiseLanding />;
 }

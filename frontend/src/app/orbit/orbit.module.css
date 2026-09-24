@@ -1,0 +1,848 @@
+.orbitPage {
+  --orbit-bg: #070708;
+  --orbit-panel: #101014;
+  --orbit-panel-raised: #17171d;
+  --orbit-ink: #f5f5f2;
+  --orbit-muted: #a2a2a8;
+  --orbit-faint: #707078;
+  --orbit-line: rgba(255, 255, 255, 0.13);
+  --orbit-line-soft: rgba(255, 255, 255, 0.08);
+  --orbit-accent: #f5a623;
+  --orbit-accent-soft: rgba(245, 166, 35, 0.14);
+  --orbit-paper: #f1eee6;
+  --orbit-paper-ink: #11100e;
+  --orbit-radius: 18px;
+  --orbit-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: clip;
+  background: var(--orbit-bg);
+  color: var(--orbit-ink);
+}
+
+.heroWrap {
+  position: relative;
+  isolation: isolate;
+  border-bottom: 1px solid var(--orbit-line-soft);
+}
+
+.heroFallback {
+  min-height: 260px;
+}
+
+.sectionContainer {
+  width: min(100% - 48px, 1240px);
+  margin-inline: auto;
+}
+
+.introSection,
+.orbitMapSection,
+.pathsSection,
+.ecosystemSection,
+.faqSection,
+.ctaSection {
+  position: relative;
+  margin-inline: calc((min(100vw - 48px, 1240px) - 100vw) / 2);
+  padding-inline: max(24px, calc((100vw - 1240px) / 2));
+}
+
+.introSection {
+  padding-top: clamp(92px, 12vw, 160px);
+  padding-bottom: clamp(76px, 10vw, 128px);
+  background: var(--orbit-paper);
+  color: var(--orbit-paper-ink);
+}
+
+.introGrid,
+.mapGrid,
+.sectionHeader,
+.ecosystemGrid,
+.faqGrid,
+.ctaInner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.7fr);
+  gap: clamp(42px, 9vw, 150px);
+  align-items: end;
+}
+
+.eyebrow {
+  margin: 0 0 22px;
+  color: var(--orbit-accent);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.18em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.introSection .eyebrow {
+  color: #8b5d10;
+}
+
+.displayHeading,
+.sectionHeading,
+.ctaHeading {
+  max-width: 12ch;
+  margin: 0;
+  font-size: clamp(2.8rem, 5.7vw, 6.6rem);
+  font-weight: 650;
+  letter-spacing: -0.06em;
+  line-height: 0.94;
+  text-wrap: balance;
+}
+
+.displayHeading {
+  color: var(--orbit-paper-ink);
+}
+
+.sectionHeading,
+.ctaHeading {
+  color: var(--orbit-ink);
+}
+
+.introCopy,
+.sectionHeaderCopy,
+.bodyCopy,
+.ctaAside p {
+  max-width: 40ch;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.introCopy {
+  color: rgba(17, 16, 14, 0.68);
+}
+
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px 24px;
+  margin-top: 32px;
+}
+
+.primaryButton,
+.lightButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 19px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 750;
+  text-decoration: none;
+  transition: transform 180ms var(--orbit-ease), background-color 180ms var(--orbit-ease), color 180ms var(--orbit-ease);
+}
+
+.primaryButton {
+  background: var(--orbit-paper-ink);
+  color: var(--orbit-paper);
+}
+
+.primaryButton:hover,
+.primaryButton:focus-visible {
+  background: #8b5d10;
+  transform: translateY(-2px);
+}
+
+.inlineLink,
+.ctaTextLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 180ms var(--orbit-ease), gap 180ms var(--orbit-ease);
+}
+
+.inlineLink:hover,
+.inlineLink:focus-visible,
+.ctaTextLink:hover,
+.ctaTextLink:focus-visible {
+  gap: 12px;
+  color: var(--orbit-accent);
+}
+
+.introSection .inlineLink:hover,
+.introSection .inlineLink:focus-visible {
+  color: #8b5d10;
+}
+
+.signalRail {
+  display: flex;
+  align-items: center;
+  gap: 9px 11px;
+  margin-top: 76px;
+  padding: 17px 0 19px;
+  border-top: 1px solid rgba(17, 16, 14, 0.2);
+  border-bottom: 1px solid rgba(17, 16, 14, 0.2);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.signalRail::-webkit-scrollbar {
+  display: none;
+}
+
+.signalRail span {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  border: 1px solid rgba(17, 16, 14, 0.17);
+  border-radius: 999px;
+  color: rgba(17, 16, 14, 0.62);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.signalRail .railLead {
+  padding-left: 0;
+  border-color: transparent;
+  color: rgba(17, 16, 14, 0.5);
+}
+
+.orbitMapSection {
+  padding-top: clamp(92px, 12vw, 150px);
+  padding-bottom: clamp(92px, 12vw, 150px);
+  background: var(--orbit-bg);
+}
+
+.mapGrid {
+  align-items: center;
+}
+
+.mapCopy {
+  max-width: 560px;
+}
+
+.bodyCopy {
+  margin-top: 28px;
+  color: var(--orbit-muted);
+}
+
+.mapCopy .inlineLink {
+  margin-top: 34px;
+}
+
+.orbitDiagram {
+  position: relative;
+  min-height: clamp(360px, 42vw, 520px);
+  isolation: isolate;
+}
+
+.diagramGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: var(--orbit-accent);
+  filter: blur(90px);
+  opacity: 0.18;
+  transform: translate(-50%, -50%);
+}
+
+.orbitRing {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 1px solid rgba(245, 166, 35, 0.36);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(-20deg);
+}
+
+.orbitRing::after {
+  position: absolute;
+  top: 50%;
+  left: -5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--orbit-accent);
+  box-shadow: 0 0 0 6px rgba(245, 166, 35, 0.12), 0 0 24px rgba(245, 166, 35, 0.55);
+  content: "";
+}
+
+.orbitRingOuter {
+  width: min(100%, 500px);
+  aspect-ratio: 1.6;
+}
+
+.orbitRingInner {
+  width: min(76%, 370px);
+  aspect-ratio: 1.6;
+  border-color: rgba(245, 166, 35, 0.58);
+  transform: translate(-50%, -50%) rotate(27deg);
+}
+
+.orbitRingInner::after {
+  top: 9%;
+  left: 86%;
+  background: var(--orbit-paper);
+  box-shadow: 0 0 0 6px rgba(241, 238, 230, 0.09), 0 0 24px rgba(241, 238, 230, 0.36);
+}
+
+.diagramCore,
+.diagramNode {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diagramCore {
+  top: 50%;
+  left: 50%;
+  flex-direction: column;
+  width: 132px;
+  height: 132px;
+  border: 1px solid rgba(245, 166, 35, 0.7);
+  border-radius: 50%;
+  background: rgba(245, 166, 35, 0.08);
+  box-shadow: 0 0 0 15px rgba(245, 166, 35, 0.04), 0 0 70px rgba(245, 166, 35, 0.16);
+  transform: translate(-50%, -50%);
+}
+
+.diagramCore span {
+  color: var(--orbit-accent);
+  font-size: 10px;
+  letter-spacing: 0.19em;
+}
+
+.diagramCore strong {
+  margin-top: 4px;
+  font-size: 18px;
+  letter-spacing: 0.05em;
+}
+
+.diagramNode {
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid var(--orbit-line);
+  border-radius: 999px;
+  background: rgba(16, 16, 20, 0.9);
+  color: var(--orbit-muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.nodeTools {
+  top: 16%;
+  left: 5%;
+}
+
+.nodeAgents {
+  top: 5%;
+  right: 5%;
+}
+
+.nodeModels {
+  right: 0;
+  bottom: 19%;
+}
+
+.nodeBuilders {
+  bottom: 8%;
+  left: 9%;
+}
+
+.pathsSection {
+  padding-top: clamp(88px, 11vw, 136px);
+  padding-bottom: clamp(88px, 11vw, 136px);
+  background: var(--orbit-panel);
+}
+
+.sectionHeader {
+  align-items: end;
+}
+
+.sectionHeaderCopy {
+  color: var(--orbit-muted);
+}
+
+.pathList {
+  margin-top: 72px;
+  border-top: 1px solid var(--orbit-line);
+}
+
+.pathRow {
+  display: grid;
+  grid-template-columns: 48px 40px minmax(0, 1fr) minmax(170px, 0.45fr);
+  gap: 22px;
+  align-items: center;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--orbit-line);
+  color: inherit;
+  text-decoration: none;
+  transition: color 180ms var(--orbit-ease), padding 180ms var(--orbit-ease);
+}
+
+.pathRow:hover,
+.pathRow:focus-visible {
+  padding-inline: 10px;
+  color: var(--orbit-paper);
+}
+
+.pathIndex {
+  color: var(--orbit-accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.pathIcon,
+.ecosystemIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(245, 166, 35, 0.34);
+  color: var(--orbit-accent);
+}
+
+.pathIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.pathContent {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pathLabel {
+  color: var(--orbit-accent);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.pathContent strong {
+  color: var(--orbit-ink);
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.pathContent > span:last-child {
+  max-width: 48ch;
+  color: var(--orbit-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.pathCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: var(--orbit-muted);
+  font-size: 12px;
+  font-weight: 650;
+  text-align: right;
+}
+
+.pathRow:hover .pathCta,
+.pathRow:focus-visible .pathCta {
+  color: var(--orbit-accent);
+}
+
+.ecosystemSection {
+  padding-top: clamp(92px, 12vw, 148px);
+  padding-bottom: clamp(92px, 12vw, 148px);
+  background: var(--orbit-paper);
+  color: var(--orbit-paper-ink);
+}
+
+.ecosystemSection .eyebrow,
+.ecosystemSection .sectionHeading {
+  color: var(--orbit-paper-ink);
+}
+
+.ecosystemGrid {
+  align-items: start;
+}
+
+.ecosystemLinks {
+  border-top: 1px solid rgba(17, 16, 14, 0.2);
+}
+
+.ecosystemLink {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 17px 0;
+  border-bottom: 1px solid rgba(17, 16, 14, 0.2);
+  color: var(--orbit-paper-ink);
+  text-decoration: none;
+  transition: padding 180ms var(--orbit-ease), color 180ms var(--orbit-ease);
+}
+
+.ecosystemLink:hover,
+.ecosystemLink:focus-visible {
+  padding-inline: 8px;
+  color: #8b5d10;
+}
+
+.ecosystemIcon {
+  width: 38px;
+  height: 38px;
+  border-color: rgba(139, 93, 16, 0.38);
+  border-radius: 50%;
+  color: #8b5d10;
+}
+
+.ecosystemLink > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ecosystemLink strong {
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.ecosystemLink small {
+  color: rgba(17, 16, 14, 0.58);
+  font-size: 12px;
+}
+
+.faqSection {
+  padding-top: clamp(92px, 12vw, 148px);
+  padding-bottom: clamp(92px, 12vw, 148px);
+  background: var(--orbit-panel-raised);
+}
+
+.faqGrid {
+  align-items: start;
+}
+
+.faqList {
+  border-top: 1px solid var(--orbit-line);
+}
+
+.faqItem {
+  border-bottom: 1px solid var(--orbit-line);
+}
+
+.faqItem summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 70px;
+  color: var(--orbit-ink);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  list-style: none;
+}
+
+.faqItem summary::-webkit-details-marker {
+  display: none;
+}
+
+.faqIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  border: 1px solid rgba(245, 166, 35, 0.45);
+  border-radius: 50%;
+  color: var(--orbit-accent);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+  transition: transform 180ms var(--orbit-ease), background-color 180ms var(--orbit-ease);
+}
+
+.faqItem[open] .faqIcon {
+  background: var(--orbit-accent-soft);
+  transform: rotate(45deg);
+}
+
+.faqItem p {
+  max-width: 58ch;
+  margin: -2px 48px 23px 0;
+  color: var(--orbit-muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.ctaSection {
+  padding-top: clamp(88px, 10vw, 120px);
+  padding-bottom: 24px;
+  background: linear-gradient(130deg, #211b0e 0%, #0b0a09 72%);
+}
+
+.ctaOrb {
+  position: absolute;
+  top: -280px;
+  right: -140px;
+  width: 570px;
+  height: 570px;
+  border: 1px solid rgba(245, 166, 35, 0.19);
+  border-radius: 50%;
+  box-shadow: 0 0 0 42px rgba(245, 166, 35, 0.035), 0 0 0 94px rgba(245, 166, 35, 0.025);
+}
+
+.ctaInner {
+  position: relative;
+  z-index: 1;
+  align-items: end;
+  padding-bottom: 108px;
+}
+
+.ctaHeading {
+  max-width: 10ch;
+}
+
+.ctaAside {
+  max-width: 34ch;
+}
+
+.ctaAside p {
+  color: var(--orbit-muted);
+}
+
+.lightButton {
+  margin-top: 26px;
+  background: var(--orbit-paper);
+  color: var(--orbit-paper-ink);
+}
+
+.lightButton:hover,
+.lightButton:focus-visible {
+  background: var(--orbit-accent);
+  transform: translateY(-2px);
+}
+
+.ctaTextLink {
+  color: var(--orbit-ink);
+}
+
+.ctaRule {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--orbit-line);
+  color: var(--orbit-faint);
+  font-size: 11px;
+}
+
+.ctaRule span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ctaRule svg {
+  color: var(--orbit-accent);
+}
+
+.primaryButton:focus-visible,
+.lightButton:focus-visible,
+.inlineLink:focus-visible,
+.ctaTextLink:focus-visible,
+.pathRow:focus-visible,
+.ecosystemLink:focus-visible,
+.faqItem summary:focus-visible {
+  outline: 2px solid var(--orbit-accent);
+  outline-offset: 4px;
+}
+
+@media (max-width: 900px) {
+  .introGrid,
+  .mapGrid,
+  .sectionHeader,
+  .ecosystemGrid,
+  .faqGrid,
+  .ctaInner {
+    grid-template-columns: 1fr;
+  }
+
+  .introGrid,
+  .mapGrid,
+  .sectionHeader,
+  .ecosystemGrid,
+  .faqGrid,
+  .ctaInner {
+    gap: 48px;
+  }
+
+  .orbitDiagram {
+    min-height: min(70vw, 480px);
+  }
+
+  .pathRow {
+    grid-template-columns: 42px 40px minmax(0, 1fr);
+  }
+
+  .pathCta {
+    grid-column: 3;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .ctaAside,
+  .sectionHeaderCopy {
+    max-width: 52ch;
+  }
+}
+
+@media (max-width: 640px) {
+  .sectionContainer {
+    width: min(100% - 32px, 1240px);
+  }
+
+  .introSection,
+  .orbitMapSection,
+  .pathsSection,
+  .ecosystemSection,
+  .faqSection,
+  .ctaSection {
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+
+  .displayHeading,
+  .sectionHeading,
+  .ctaHeading {
+    font-size: clamp(2.7rem, 13vw, 4.3rem);
+  }
+
+  .introCopy,
+  .sectionHeaderCopy,
+  .bodyCopy,
+  .ctaAside p {
+    font-size: 15px;
+  }
+
+  .signalRail {
+    margin-top: 52px;
+  }
+
+  .orbitDiagram {
+    min-height: 330px;
+  }
+
+  .orbitRingOuter {
+    width: 112%;
+  }
+
+  .orbitRingInner {
+    width: 84%;
+  }
+
+  .diagramCore {
+    width: 98px;
+    height: 98px;
+  }
+
+  .diagramCore strong {
+    font-size: 14px;
+  }
+
+  .diagramNode {
+    min-height: 30px;
+    padding-inline: 10px;
+    font-size: 10px;
+  }
+
+  .nodeTools {
+    left: -1%;
+  }
+
+  .nodeAgents {
+    right: -1%;
+  }
+
+  .nodeModels {
+    right: -4%;
+  }
+
+  .pathList {
+    margin-top: 50px;
+  }
+
+  .pathRow {
+    grid-template-columns: 32px 36px minmax(0, 1fr);
+    gap: 12px;
+    padding: 23px 0;
+  }
+
+  .pathRow:hover,
+  .pathRow:focus-visible {
+    padding-inline: 5px;
+  }
+
+  .pathIcon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .pathContent strong {
+    font-size: 17px;
+  }
+
+  .pathContent > span:last-child {
+    font-size: 12px;
+  }
+
+  .pathCta {
+    grid-column: 3;
+    font-size: 11px;
+  }
+
+  .ecosystemLink {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    gap: 11px;
+  }
+
+  .ecosystemIcon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .faqItem summary {
+    min-height: 64px;
+    font-size: 14px;
+  }
+
+  .faqItem p {
+    margin-right: 0;
+    font-size: 13px;
+  }
+
+  .ctaInner {
+    padding-bottom: 76px;
+  }
+
+  .ctaRule {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbitPage *,
+  .orbitPage *::before,
+  .orbitPage *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

@@ -28,6 +28,7 @@ const MOBILE_NAV_LINKS = [
   { label: "Business AI", href: "/business" },
   { label: "Leaderboard", href: "/leaderboard", highlight: true },
   { label: "Resources", href: "/tools" },
+  { label: "Advertise", href: "/advertise" },
   { label: "Newsletter", href: "https://brief.graphone.co" },
 ];
 
@@ -152,6 +153,13 @@ export function Header() {
 
         {/* Right: Action buttons */}
         <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
+          <Link
+            href="/advertise"
+            className="hidden sm:inline-flex h-[26px] sm:h-[28px] items-center justify-center rounded-full border border-[#6E56CF]/60 bg-[#6E56CF]/10 px-2 sm:px-3 text-[10px] sm:text-[11px] font-semibold text-[#C4B5FD] hover:bg-[#6E56CF]/20 hover:text-white transition-colors shrink-0 whitespace-nowrap"
+          >
+            Advertise
+          </Link>
+
           <Link
             href="/submit"
             className="group inline-flex h-[26px] sm:h-[28px] items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-3 text-[10px] sm:text-[11px] font-semibold transition-all duration-200 hover:brightness-110 active:scale-95 shrink-0 whitespace-nowrap bg-[#6E56CF] text-white"

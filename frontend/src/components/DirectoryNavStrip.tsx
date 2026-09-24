@@ -75,7 +75,8 @@ export function DirectoryNavStrip({
       className="relative z-10 w-full overflow-hidden border-y border-[#232326]/40 px-3 py-2 sm:px-6 lg:px-8"
     >
       <div className="mx-auto w-full max-w-[1600px] overflow-hidden">
-        <div className="flex w-full max-w-full touch-scroll-x items-stretch gap-1.5 overflow-x-auto overscroll-x-contain py-1 scrollbar-none sm:gap-2">
+        <div className="w-full max-w-full touch-scroll-x overflow-x-auto overscroll-x-contain scrollbar-none">
+          <div className="flex w-max min-w-full items-stretch justify-center gap-1.5 py-1 sm:gap-2">
           {DIRECTORY_NAV_CARDS.map((card) => {
             const Icon = card.icon;
             const isActive = card.slug === (defaultCategory ?? "");
@@ -109,7 +110,8 @@ export function DirectoryNavStrip({
                 </span>
               </Link>
             );
-          })}
+            })}
+          </div>
         </div>
       </div>
     </nav>

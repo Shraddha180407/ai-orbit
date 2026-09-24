@@ -62,8 +62,8 @@ export function HomeClient() {
       </div>
 
       {/* FIXED: Confined the table wrapper to a lower z-index (z-10) so its sticky columns can never overlap the Hero */}
-      <div id="tools" className="relative z-10 scroll-mt-28 w-full px-3 sm:px-6 lg:px-8 pt-2 pb-8">
-        <div className={`mx-auto w-full max-w-[1600px] space-y-4 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
+      <div id="tools" className="relative z-10 scroll-mt-28 w-full px-0 pt-2 pb-8">
+        <div className={`mx-auto w-full max-w-none space-y-4 transition-opacity duration-150 ${isPlaceholderData ? "opacity-60" : "opacity-100"}`}>
           
           {/* Feed the unified items directly into your full-width table */}
           <ToolListView
