@@ -24,10 +24,11 @@ import Plug from "lucide-react/dist/esm/icons/plug";
 import Mail from "lucide-react/dist/esm/icons/mail";
 import BriefcaseBusiness from "lucide-react/dist/esm/icons/briefcase-business";
 
-const MOBILE_NAV_LINKS = [
+const NAV_LINKS = [
+  { label: "Agents", href: "/agents" },
+  { label: "MCP", href: "/mcp" },
   { label: "Business AI", href: "/business" },
-  { label: "Leaderboard", href: "/leaderboard", highlight: true },
-  { label: "Resources", href: "/tools" },
+  { label: "Leaderboards", href: "/leaderboard", highlight: true },
   { label: "Advertise", href: "/advertise" },
   { label: "Newsletter", href: "https://brief.graphone.co" },
 ];
@@ -93,36 +94,20 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/20 bg-background/80 backdrop-blur-md py-0.5 sm:py-1 relative">
       {/* Center: Nav links, centered against the full page width on lg+ */}
-      <nav className="hidden lg:flex items-center gap-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-auto">
-        <Link
-          href="/business"
-          className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center cursor-pointer relative z-50"
-        >
-          Business AI
-        </Link>
-
-        <Link
-          href="/leaderboard"
-          className="text-[12px] font-bold text-[#6E56CF] hover:text-white transition-colors text-center cursor-pointer relative z-50"
-        >
-          Leaderboard
-        </Link>
-
-        <Link
-          href="/tools"
-          className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center cursor-pointer relative z-50"
-        >
-          Resources
-        </Link>
-
-        <Link
-          href="https://brief.graphone.co"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[12px] font-bold text-foreground-muted hover:text-white transition-colors text-center cursor-pointer relative z-50"
-        >
-          Newsletter
-        </Link>
+      <nav className="hidden lg:flex items-center gap-5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-auto">
+        {NAV_LINKS.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            target={link.label === "Newsletter" ? "_blank" : undefined}
+            rel={link.label === "Newsletter" ? "noopener noreferrer" : undefined}
+            className={`text-[12px] font-bold ${
+              link.highlight ? "text-[#6E56CF]" : "text-foreground-muted"
+            } hover:text-white transition-colors text-center cursor-pointer relative z-50 whitespace-nowrap`}
+          >
+            {link.label}
+          </Link>
+        ))}
       </nav>
 
       <div className="mx-auto max-w-[1440px] px-3.5 sm:px-8 flex items-center justify-between relative gap-2 z-20">
@@ -153,13 +138,6 @@ export function Header() {
 
         {/* Right: Action buttons */}
         <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
-          <Link
-            href="/advertise"
-            className="hidden sm:inline-flex h-[26px] sm:h-[28px] items-center justify-center rounded-full border border-[#6E56CF]/60 bg-[#6E56CF]/10 px-2 sm:px-3 text-[10px] sm:text-[11px] font-semibold text-[#C4B5FD] hover:bg-[#6E56CF]/20 hover:text-white transition-colors shrink-0 whitespace-nowrap"
-          >
-            Advertise
-          </Link>
-
           <Link
             href="/submit"
             className="group inline-flex h-[26px] sm:h-[28px] items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-3 text-[10px] sm:text-[11px] font-semibold transition-all duration-200 hover:brightness-110 active:scale-95 shrink-0 whitespace-nowrap bg-[#6E56CF] text-white"
@@ -218,7 +196,7 @@ export function Header() {
               {/* Main navigation section */}
               <div className="p-3.5 border-b border-[#232326]/60">
                 <div className="grid grid-cols-2 gap-2">
-                  {MOBILE_NAV_LINKS.map((link) => (
+                  {NAV_LINKS.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
