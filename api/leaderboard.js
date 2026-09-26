@@ -39,20 +39,80 @@ export async function handleLeaderboardRequest(req, res) {
   // GET /api/leaderboard
   try {
     const perspective = url.searchParams.get('perspective') || 'overall';
+    const entityType = url.searchParams.get('entityType') || url.searchParams.get('type') || 'models';
     const category = url.searchParams.get('category') || 'All';
     const searchQuery = (url.searchParams.get('search') || '').toLowerCase().trim();
     const limit = parseInt(url.searchParams.get('limit') || '500', 10);
 
-    // Query SQLite database
-    let models = getRankedModels(perspective, limit);
+    const db = getDb();
+    let models = [];
 
-    // Fallback to public snapshot if DB is empty on serverless cold start
+    if (entityType === 'agents') {
+      try {
+        const rows = db.prepare("SELECT * FROM models WHERE entityType = 'agent' ORDER BY rank ASC LIMIT ?").all(limit);
+        models = rows.map((r) => ({
+          ...r,
+          isOpenWeights: r.isOpenWeights === 1,
+          sourceMetadata: r.sourceMetadata ? JSON.parse(r.sourceMetadata) : {}
+        }));
+      } catch (dbErr) {
+        models = [];
+      }
+    } else if (entityType === 'mcp') {
+      try {
+        const rows = db.prepare("SELECT * FROM models WHERE entityType = 'mcp' ORDER BY rank ASC LIMIT ?").all(limit);
+        models = rows.map((r) => ({
+          ...r,
+          isOpenWeights: r.isOpenWeights === 1,
+          sourceMetadata: r.sourceMetadata ? JSON.parse(r.sourceMetadata) : {}
+        }));
+      } catch (dbErr) {
+        models = [];
+      }
+    } else if (entityType === 'tools') {
+      try {
+        const rows = db.prepare("SELECT * FROM models WHERE entityType = 'tool' ORDER BY rank ASC LIMIT ?").all(limit);
+        models = rows.map((r) => ({
+          ...r,
+          isOpenWeights: r.isOpenWeights === 1,
+          sourceMetadata: r.sourceMetadata ? JSON.parse(r.sourceMetadata) : {}
+        }));
+      } catch (dbErr) {
+        models = [];
+      }
+    } else if (entityType === 'companies') {
+      try {
+        const rows = db.prepare("SELECT * FROM models WHERE entityType = 'company' ORDER BY rank ASC LIMIT ?").all(limit);
+        models = rows.map((r) => ({
+          ...r,
+          isOpenWeights: r.isOpenWeights === 1,
+          sourceMetadata: r.sourceMetadata ? JSON.parse(r.sourceMetadata) : {}
+        }));
+      } catch (dbErr) {
+        models = [];
+      }
+    } else {
+      // Query SQLite database for foundation models
+      models = getRankedModels(perspective, limit);
+    }
+
+    // Fallback to public snapshot if DB returns empty
     if (!models || models.length === 0) {
       try {
         const snapPath = path.resolve(process.cwd(), 'public', 'leaderboard_data.json');
         if (fs.existsSync(snapPath)) {
           const snap = JSON.parse(fs.readFileSync(snapPath, 'utf-8'));
-          models = snap.modelsByPerspective?.[perspective]?.models || snap.models?.slice(0, limit) || [];
+          if (entityType === 'agents') {
+            models = snap.agents || [];
+          } else if (entityType === 'mcp') {
+            models = snap.mcp || [];
+          } else if (entityType === 'tools') {
+            models = snap.tools || [];
+          } else if (entityType === 'companies') {
+            models = snap.companies || [];
+          } else {
+            models = snap.modelsByPerspective?.[perspective]?.models || snap.models?.slice(0, limit) || [];
+          }
         }
       } catch (fErr) {
         console.warn('Fallback file read failed:', fErr.message);
@@ -95,7 +155,6 @@ export async function handleLeaderboardRequest(req, res) {
     };
 
     // Perspective counts
-    const db = getDb();
     const counts = {
       overall: db.prepare("SELECT COUNT(*) as c FROM rankings WHERE perspective = 'overall'").get()?.c || 100,
       risers: db.prepare("SELECT COUNT(*) as c FROM rankings WHERE perspective = 'risers'").get()?.c || 100,

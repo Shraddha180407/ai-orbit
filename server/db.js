@@ -48,6 +48,11 @@ function initSchema(db) {
       superpowerShort TEXT,
       shortDescription TEXT,
       badge TEXT,
+      categoryMetricLabel TEXT,
+      categoryMetricValue TEXT,
+      categorySubMetricLabel TEXT,
+      categorySubMetricValue TEXT,
+      categoryDimension3 TEXT,
       sourceMetadata TEXT,
       updated_at TEXT
     );
@@ -83,6 +88,22 @@ function initSchema(db) {
       value TEXT
     );
   `);
+
+  // Migrate existing DBs: add new columns if they don't exist yet
+  const newColumns = [
+    'categoryMetricLabel TEXT',
+    'categoryMetricValue TEXT',
+    'categorySubMetricLabel TEXT',
+    'categorySubMetricValue TEXT',
+    'categoryDimension3 TEXT',
+  ];
+  for (const colDef of newColumns) {
+    try {
+      db.exec(`ALTER TABLE models ADD COLUMN ${colDef}`);
+    } catch {
+      // Column already exists — safe to ignore
+    }
+  }
 }
 
 export function getPreviousSnapshotMap() {
@@ -120,7 +141,7 @@ export function getPreviousSnapshotMap() {
   }
 }
 
-export function saveIngestionResults(models, rankingsByPerspective) {
+export function saveIngestionResults(models, rankingsByPerspective, extraData = {}) {
   const db = getDb();
   const now = new Date().toISOString();
   const dateStr = now.split('T')[0];
@@ -133,39 +154,59 @@ export function saveIngestionResults(models, rankingsByPerspective) {
         id, slug, name, org, category, entityType, rank, arenaElo, votes,
         isOpenWeights, license, licenseType, outputSpeed, speedNum,
         contextWindow, price, rankDelta, eloChange, superpower, superpowerShort,
-        shortDescription, badge, sourceMetadata, updated_at
+        shortDescription, badge,
+        categoryMetricLabel, categoryMetricValue,
+        categorySubMetricLabel, categorySubMetricValue, categoryDimension3,
+        sourceMetadata, updated_at
       ) VALUES (
         ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?
+        ?, ?,
+        ?, ?,
+        ?, ?, ?,
+        ?, ?
       )
     `);
 
-    for (const m of models) {
+    // Combine models and any extra entities (agents, mcp, tools, companies) for database persistence
+    const allEntities = [
+      ...models,
+      ...(extraData.agents || []),
+      ...(extraData.mcps || []),
+      ...(extraData.tools || []),
+      ...(extraData.companies || [])
+    ];
+
+    for (const m of allEntities) {
       insertModel.run(
         m.id,
         m.slug,
         m.name,
         m.org,
         m.category,
-        m.entityType,
+        m.entityType || 'model',
         m.rank,
-        m.arenaElo,
-        m.votes,
+        m.arenaElo || null,
+        m.votes || null,
         m.isOpenWeights ? 1 : 0,
-        m.license,
-        m.licenseType,
-        m.outputSpeed,
-        m.speedNum,
-        m.contextWindow,
-        m.price,
-        m.rankDelta,
-        m.eloChange,
-        m.superpower,
-        m.superpowerShort,
-        m.shortDescription,
-        m.badge,
+        m.license || null,
+        m.licenseType || null,
+        m.outputSpeed || null,
+        m.speedNum || null,
+        m.contextWindow || null,
+        m.price || null,
+        m.rankDelta || null,
+        m.eloChange || null,
+        m.superpower || null,
+        m.superpowerShort || null,
+        m.shortDescription || null,
+        m.badge || null,
+        m.categoryMetricLabel || null,
+        m.categoryMetricValue || null,
+        m.categorySubMetricLabel || null,
+        m.categorySubMetricValue || null,
+        m.categoryDimension3 || null,
         JSON.stringify(m.sourceMetadata || {}),
         now
       );
@@ -197,17 +238,21 @@ export function saveIngestionResults(models, rankingsByPerspective) {
     const setMeta = db.prepare('INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)');
     setMeta.run('last_successful_update', now);
     setMeta.run('total_models', String(models.length));
+    setMeta.run('total_agents', String((extraData.agents || []).length));
+    setMeta.run('total_mcp', String((extraData.mcps || []).length));
+    setMeta.run('total_tools', String((extraData.tools || []).length));
+    setMeta.run('total_companies', String((extraData.companies || []).length));
 
     // Log success
     db.prepare(`
       INSERT INTO ingestion_logs (status, source, models_count, error_message, timestamp)
-      VALUES ('SUCCESS', 'LMSYS Chatbot Arena & Artificial Analysis', ?, NULL, ?)
-    `).run(models.length, now);
+      VALUES ('SUCCESS', 'LMSYS Chatbot Arena, Official MCP Registry & Ecosystem Sources', ?, NULL, ?)
+    `).run(allEntities.length, now);
 
     db.exec('COMMIT');
 
     // Export synced public snapshot
-    exportPublicSnapshot(models, rankingsByPerspective, now);
+    exportPublicSnapshot(models, rankingsByPerspective, now, extraData);
 
     return true;
   } catch (err) {
@@ -217,7 +262,7 @@ export function saveIngestionResults(models, rankingsByPerspective) {
     // Record failure log
     db.prepare(`
       INSERT INTO ingestion_logs (status, source, models_count, error_message, timestamp)
-      VALUES ('FAILED', 'LMSYS & AA', 0, ?, ?)
+      VALUES ('FAILED', 'LMSYS & Ecosystem Pipeline', 0, ?, ?)
     `).run(err.message, now);
 
     throw err;
@@ -272,7 +317,7 @@ export function getRankedModels(perspective = 'overall', limit = 500) {
   }
 }
 
-export function exportPublicSnapshot(models, rankingsByPerspective, timestamp) {
+export function exportPublicSnapshot(models, rankingsByPerspective, timestamp, extraData = {}) {
   try {
     const counts = {};
     for (const [p, r] of Object.entries(rankingsByPerspective)) {
@@ -281,14 +326,22 @@ export function exportPublicSnapshot(models, rankingsByPerspective, timestamp) {
 
     const payload = {
       metadata: {
-        source: 'LMSYS Chatbot Arena Official Dataset & Artificial Analysis',
+        source: 'LMSYS Arena (Models & Agents), Official MCP Registry, Public Tools Registry, AI Ecosystem Companies',
         lastUpdated: timestamp,
         totalModels: models.length,
+        totalAgents: (extraData.agents || []).length,
+        totalMcps: (extraData.mcps || []).length,
+        totalTools: (extraData.tools || []).length,
+        totalCompanies: (extraData.companies || []).length,
         version: '2.5.0',
         counts
       },
       modelsByPerspective: rankingsByPerspective,
-      models
+      models,
+      agents: extraData.agents || [],
+      mcp: extraData.mcps || [],
+      tools: extraData.tools || [],
+      companies: extraData.companies || []
     };
 
     const dir = path.dirname(PUBLIC_JSON_PATH);

@@ -1,3 +1,8 @@
+// AI Orbit Official Companies Dataset
+// Curated AI ecosystem company data enriched with live Hugging Face model ecosystem signals
+// Total Companies: 100
+// Last Synced: 2026-09-26T12:57:49.441Z
+
 export const COMPANY_CATEGORIES = [
   "All",
   "Foundation Models",
@@ -85,7 +90,21 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company",
+    "hfModelCount": 39,
+    "hfDownloads": 64175859,
+    "hfLikes": 31604,
+    "hfTrendingScore": 0,
+    "categoryMetricLabel": "HF Downloads",
+    "categoryMetricValue": "64.2M DL",
+    "categorySubMetricLabel": "HF Models",
+    "categorySubMetricValue": "39",
+    "categoryDimension3": "31,604 likes",
+    "sourceMetadata": {
+      "hfEnriched": true,
+      "hfFetchedAt": "2026-09-26T12:57:49.429Z"
+    }
   },
   {
     "id": "anthropic",
@@ -155,7 +174,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "deepseek",
@@ -214,7 +234,21 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Estimated / Private"
+    "verificationStatus": "Estimated / Private",
+    "entityType": "company",
+    "hfModelCount": 100,
+    "hfDownloads": 24248965,
+    "hfLikes": 78758,
+    "hfTrendingScore": 0,
+    "categoryMetricLabel": "HF Downloads",
+    "categoryMetricValue": "24.2M DL",
+    "categorySubMetricLabel": "HF Models",
+    "categorySubMetricValue": "100",
+    "categoryDimension3": "78,758 likes",
+    "sourceMetadata": {
+      "hfEnriched": true,
+      "hfFetchedAt": "2026-09-26T12:57:49.429Z"
+    }
   },
   {
     "id": "databricks",
@@ -284,7 +318,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "perplexity",
@@ -354,7 +389,21 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company",
+    "hfModelCount": 18,
+    "hfDownloads": 117172,
+    "hfLikes": 565,
+    "hfTrendingScore": 0,
+    "categoryMetricLabel": "HF Downloads",
+    "categoryMetricValue": "117K DL",
+    "categorySubMetricLabel": "HF Models",
+    "categorySubMetricValue": "18",
+    "categoryDimension3": "565 likes",
+    "sourceMetadata": {
+      "hfEnriched": true,
+      "hfFetchedAt": "2026-09-26T12:57:49.429Z"
+    }
   },
   {
     "id": "anysphere",
@@ -423,7 +472,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "scale-ai",
@@ -490,7 +540,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "midjourney",
@@ -548,7 +599,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Estimated Bootstrapped"
+    "verificationStatus": "Estimated Bootstrapped",
+    "entityType": "company"
   },
   {
     "id": "elevenlabs",
@@ -614,7 +666,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "cohere",
@@ -685,7 +738,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "mistral",
@@ -755,7 +809,21 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company",
+    "hfModelCount": 75,
+    "hfDownloads": 10484787,
+    "hfLikes": 42976,
+    "hfTrendingScore": 0,
+    "categoryMetricLabel": "HF Downloads",
+    "categoryMetricValue": "10.5M DL",
+    "categorySubMetricLabel": "HF Models",
+    "categorySubMetricValue": "75",
+    "categoryDimension3": "42,976 likes",
+    "sourceMetadata": {
+      "hfEnriched": true,
+      "hfFetchedAt": "2026-09-26T12:57:49.429Z"
+    }
   },
   {
     "id": "runway",
@@ -825,7 +893,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "together-ai",
@@ -895,7 +964,21 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company",
+    "hfModelCount": 38,
+    "hfDownloads": 41769,
+    "hfLikes": 3084,
+    "hfTrendingScore": 0,
+    "categoryMetricLabel": "HF Downloads",
+    "categoryMetricValue": "42K DL",
+    "categorySubMetricLabel": "HF Models",
+    "categorySubMetricValue": "38",
+    "categoryDimension3": "3,084 likes",
+    "sourceMetadata": {
+      "hfEnriched": true,
+      "hfFetchedAt": "2026-09-26T12:57:49.429Z"
+    }
   },
   {
     "id": "notion-labs",
@@ -964,7 +1047,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "vercel",
@@ -1030,7 +1114,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "hugging-face",
@@ -1092,7 +1177,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "groq",
@@ -1153,7 +1239,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "cerebras-systems",
@@ -1214,7 +1301,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "xai",
@@ -1276,7 +1364,21 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company",
+    "hfModelCount": 2,
+    "hfDownloads": 9135,
+    "hfLikes": 3616,
+    "hfTrendingScore": 0,
+    "categoryMetricLabel": "HF Downloads",
+    "categoryMetricValue": "9K DL",
+    "categorySubMetricLabel": "HF Models",
+    "categorySubMetricValue": "2",
+    "categoryDimension3": "3,616 likes",
+    "sourceMetadata": {
+      "hfEnriched": true,
+      "hfFetchedAt": "2026-09-26T12:57:49.429Z"
+    }
   },
   {
     "id": "figure-ai",
@@ -1337,7 +1439,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "coreweave",
@@ -1399,7 +1502,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "lambda-labs",
@@ -1459,7 +1563,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "stability-ai",
@@ -1520,7 +1625,21 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company",
+    "hfModelCount": 100,
+    "hfDownloads": 6801584,
+    "hfLikes": 49843,
+    "hfTrendingScore": 0,
+    "categoryMetricLabel": "HF Downloads",
+    "categoryMetricValue": "6.8M DL",
+    "categorySubMetricLabel": "HF Models",
+    "categorySubMetricValue": "100",
+    "categoryDimension3": "49,843 likes",
+    "sourceMetadata": {
+      "hfEnriched": true,
+      "hfFetchedAt": "2026-09-26T12:57:49.429Z"
+    }
   },
   {
     "id": "glean",
@@ -1581,7 +1700,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "writer",
@@ -1642,7 +1762,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "harvey-ai",
@@ -1703,7 +1824,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "suno-ai",
@@ -1763,7 +1885,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "udio",
@@ -1823,7 +1946,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "luma-ai",
@@ -1883,7 +2007,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "pika-labs",
@@ -1943,7 +2068,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "cognition-devin-",
@@ -2003,7 +2129,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "poolside",
@@ -2063,7 +2190,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "magic-ai",
@@ -2124,7 +2252,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "adept-ai",
@@ -2185,7 +2314,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "hebbia",
@@ -2245,7 +2375,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "sierra",
@@ -2305,7 +2436,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "decagon",
@@ -2365,7 +2497,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "braintrust",
@@ -2425,7 +2558,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "langchain",
@@ -2485,7 +2619,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "weights-biases",
@@ -2546,7 +2681,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "pinecone",
@@ -2606,7 +2742,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "weaviate",
@@ -2666,7 +2803,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "qdrant",
@@ -2726,7 +2864,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "chroma",
@@ -2786,7 +2925,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "modal-labs",
@@ -2846,7 +2986,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "boston-dynamics",
@@ -2905,7 +3046,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "physical-intelligence-pi-",
@@ -2966,7 +3108,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "1x-technologies",
@@ -3026,7 +3169,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "unitree-robotics",
@@ -3086,7 +3230,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "agility-robotics",
@@ -3146,7 +3291,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "covariant",
@@ -3207,7 +3353,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "skild-ai",
@@ -3269,7 +3416,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "black-forest-labs",
@@ -3329,7 +3477,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "ideogram",
@@ -3389,7 +3538,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "kling-ai-kuaishou-",
@@ -3447,7 +3597,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "hailuo-ai-minimax-",
@@ -3508,7 +3659,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "krea-ai",
@@ -3567,7 +3719,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "leonardo-ai",
@@ -3627,7 +3780,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "captions",
@@ -3687,7 +3841,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "heygen",
@@ -3747,7 +3902,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "synthesia",
@@ -3808,7 +3964,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "tome",
@@ -3868,7 +4025,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "gamma",
@@ -3928,7 +4086,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "codiumai-qodo-",
@@ -3988,7 +4147,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "tabnine",
@@ -4048,7 +4208,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "replit",
@@ -4109,7 +4270,21 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company",
+    "hfModelCount": 2,
+    "hfDownloads": 1735,
+    "hfLikes": 1060,
+    "hfTrendingScore": 0,
+    "categoryMetricLabel": "HF Downloads",
+    "categoryMetricValue": "2K DL",
+    "categorySubMetricLabel": "HF Models",
+    "categorySubMetricValue": "2",
+    "categoryDimension3": "1,060 likes",
+    "sourceMetadata": {
+      "hfEnriched": true,
+      "hfFetchedAt": "2026-09-26T12:57:49.429Z"
+    }
   },
   {
     "id": "sourcegraph-cody-",
@@ -4169,7 +4344,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "magicschool-ai",
@@ -4229,7 +4405,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "braintrust-data",
@@ -4289,7 +4466,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "unstructured",
@@ -4349,7 +4527,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "lamini",
@@ -4409,7 +4588,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "octoai",
@@ -4470,7 +4650,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "anyscale",
@@ -4531,7 +4712,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "fireworks-ai",
@@ -4592,7 +4774,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "deepgram",
@@ -4653,7 +4836,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "cartesia",
@@ -4713,7 +4897,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "smallest-ai",
@@ -4772,7 +4957,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "playht",
@@ -4831,7 +5017,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "phind",
@@ -4890,7 +5077,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "you-com",
@@ -4951,7 +5139,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "kindo-ai",
@@ -5010,7 +5199,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "cribl",
@@ -5071,7 +5261,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "abacus-ai",
@@ -5131,7 +5322,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "deepl",
@@ -5191,7 +5383,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "otter-ai",
@@ -5251,7 +5444,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "character-ai",
@@ -5311,7 +5505,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "inworld-ai",
@@ -5372,7 +5567,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "hippocratic-ai",
@@ -5432,7 +5628,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "abridge",
@@ -5493,7 +5690,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "ambience-healthcare",
@@ -5553,7 +5751,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "insilico-medicine",
@@ -5613,7 +5812,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "recursion-pharmaceuticals",
@@ -5674,7 +5874,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "cradle-bio",
@@ -5734,7 +5935,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "twelve-labs",
@@ -5794,7 +5996,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "arthur-ai",
@@ -5854,7 +6057,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "robust-intelligence",
@@ -5914,7 +6118,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "galileo",
@@ -5974,7 +6179,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "writerbuddy",
@@ -6033,7 +6239,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "deepl-se",
@@ -6093,7 +6300,8 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   },
   {
     "id": "ai2-allen-institute-for-ai-",
@@ -6152,6 +6360,7 @@ export const COMPANIES_DATA = [
       }
     ],
     "lastUpdated": "March 2026",
-    "verificationStatus": "Verified Disclosed"
+    "verificationStatus": "Verified Disclosed",
+    "entityType": "company"
   }
 ];

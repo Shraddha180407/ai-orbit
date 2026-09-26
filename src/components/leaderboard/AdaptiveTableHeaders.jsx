@@ -29,12 +29,27 @@ export default function AdaptiveTableHeaders({ category = 'All', entityType = 'a
     category === 'Automation' ||
     category === 'Translation';
 
+  let nameColHeader = 'Model / Tool';
   let metric1Label = 'Arena Elo';
   let metric2Label = 'Coding Score';
   let metric3Label = 'Speed (tok/s)';
+  let col6Header = 'Pricing';
 
-  // If entityType is dedicated to tools, adapt headers specifically for developer tools & applications
-  if (entityType === 'tools') {
+  if (entityType === 'agents') {
+    nameColHeader = 'AI Agent';
+    metric1Label = 'Task Win Rate';
+    metric2Label = 'Eval Sessions';
+    metric3Label = 'Observations';
+    col6Header = 'License';
+  } else if (entityType === 'mcp') {
+    nameColHeader = 'MCP Server';
+    metric1Label = 'Protocol Ver';
+    metric2Label = 'Transport';
+    metric3Label = 'Registry Status';
+    col6Header = 'Access';
+  } else if (entityType === 'tools') {
+    nameColHeader = 'AI Tool';
+    col6Header = 'Pricing';
     if (isCreative) {
       metric1Label = 'Visual Rating';
       metric2Label = 'Render Time';
@@ -53,6 +68,8 @@ export default function AdaptiveTableHeaders({ category = 'All', entityType = 'a
       metric3Label = 'Scale / Latency';
     }
   } else {
+    nameColHeader = entityType === 'models' ? 'Foundation Model' : 'Model / Tool';
+    col6Header = 'Pricing';
     if (isCreative) {
       metric1Label = 'Visual Elo';
       metric2Label = 'Render Time';
@@ -80,8 +97,6 @@ export default function AdaptiveTableHeaders({ category = 'All', entityType = 'a
     }
   }
 
-  const nameColHeader = entityType === 'tools' ? 'AI Tool' : entityType === 'models' ? 'Foundation Model' : 'Model / Tool';
-
   return (
     <tr className="bg-[#16161c] border-b border-[#232326] text-[#71717A] uppercase font-semibold text-[11px] tracking-wider">
       <th className="py-2.5 px-3.5 w-16 text-center">
@@ -91,7 +106,7 @@ export default function AdaptiveTableHeaders({ category = 'All', entityType = 'a
       <th className="py-2.5 px-3.5">{metric1Label}</th>
       <th className="py-2.5 px-3.5">{metric2Label}</th>
       <th className="py-2.5 px-3.5">{metric3Label}</th>
-      <th className="py-2.5 px-3.5">Pricing</th>
+      <th className="py-2.5 px-3.5">{col6Header}</th>
       <th className="py-2.5 px-3.5">Category</th>
       <th className="py-2.5 px-3.5 text-right">Actions</th>
     </tr>

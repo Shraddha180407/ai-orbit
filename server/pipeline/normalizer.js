@@ -186,3 +186,234 @@ export function mergeAndNormalize(lmsysModels = [], aaModels = [], previousSnaps
 
   return normalizedList;
 }
+
+export function normalizeArenaAgents(rawAgentRows = []) {
+  return rawAgentRows.map((raw, idx) => {
+    const slug = (raw.model_name || `agent-${idx}`).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const org = normalizeOrg(raw.organization, raw.model_name);
+    const scoreVal = typeof raw.score === 'number' ? raw.score : 0;
+    const scorePct = `${scoreVal >= 0 ? '+' : ''}${(scoreVal * 100).toFixed(1)}%`;
+    const sessions = typeof raw.session_count === 'number' ? raw.session_count : 0;
+    const obs = typeof raw.observation_count === 'number' ? raw.observation_count : 0;
+    const license = raw.license || 'Proprietary';
+    const isOpen = !(license.toLowerCase().includes('proprietary') || license.toLowerCase().includes('custom'));
+
+    let agentCategory = 'AI Agents';
+    const lowerName = (raw.model_name || '').toLowerCase();
+    if (lowerName.includes('code') || lowerName.includes('coder') || lowerName.includes('dev')) {
+      agentCategory = 'Coding Agents';
+    } else if (lowerName.includes('max') || lowerName.includes('high') || lowerName.includes('opus')) {
+      agentCategory = 'Autonomous SWE';
+    }
+
+    return {
+      id: `agent-${slug}`,
+      slug,
+      name: raw.model_name,
+      org,
+      category: 'AI Agents',
+      subCategory: agentCategory,
+      entityType: 'agent',
+      rank: raw.rank || (idx + 1),
+      rankDelta: raw.rank <= 3 ? 'NEW' : '0',
+      score: scoreVal,
+      arenaElo: null,
+      codingScore: null,
+      outputSpeed: 'Agentic Runtime',
+      monthlyVisits: `${(sessions / 1000).toFixed(1)}k sess`,
+      price: isOpen ? 'Open Weights' : 'Commercial API',
+      license,
+      licenseType: isOpen ? 'Open Weights' : 'Commercial API',
+      isOpenWeights: isOpen,
+      superpower: 'Autonomous Multi-Turn Agentic Execution',
+      superpowerShort: 'Autonomous Agent',
+      superpowerDetail: `LMSYS Agent Arena: ${scorePct} win rate across ${sessions.toLocaleString()} evaluation sessions`,
+      categoryMetricLabel: 'Task Win Rate',
+      categoryMetricValue: scorePct,
+      categorySubMetricLabel: 'Eval Sessions',
+      categorySubMetricValue: sessions.toLocaleString(),
+      categoryDimension3: obs > 0 ? `${Math.round(obs / 1000)}k obs` : 'Verified',
+      badge: raw.rank === 1 ? 'World #1 Agent' : raw.rank <= 5 ? 'Top Agent' : 'Verified Agent',
+      shortDescription: `Official LMSYS Arena Agent ranking #${raw.rank || idx + 1} with ${scorePct} win index across ${sessions.toLocaleString()} sessions.`,
+      fullDescription: `${raw.model_name} by ${org} is evaluated on the LMSYS Arena Agent benchmark under complex multi-turn autonomous tool use, environment interactions, and self-correction tasks.`,
+      website: org === 'Anthropic' ? 'https://www.anthropic.com' : org === 'OpenAI' ? 'https://openai.com' : org === 'Google' ? 'https://deepmind.google' : 'https://lmarena.ai',
+      sourceMetadata: {
+        dataset: 'lmarena-ai/leaderboard-dataset',
+        config: 'agent',
+        split: 'latest',
+        publishDate: raw.leaderboard_publish_date,
+        observationCount: obs,
+        sessionCount: sessions
+      }
+    };
+  });
+}
+
+export function normalizeMCPServers(rawServers = []) {
+  const byName = new Map();
+  for (const item of rawServers) {
+    const s = item.server;
+    if (!s || !s.name) continue;
+    if (!byName.has(s.name)) {
+      byName.set(s.name, item);
+    }
+  }
+
+  return Array.from(byName.values()).map((item, idx) => {
+    const s = item.server;
+    const meta = item._meta?.['io.modelcontextprotocol.registry/official'] || {};
+    const title = s.title || s.name.split('/').pop().replace(/-/g, ' ');
+    const displayName = title.charAt(0).toUpperCase() + title.slice(1);
+    const slug = (s.name || title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const org = s.name.includes('/') ? s.name.split('/')[0] : 'MCP Community';
+    const transport = s.remotes?.[0]?.type || 'stdio / http';
+    const version = s.version ? `v${s.version}` : 'v1.0';
+    const description = s.description || 'Verified server from the Official Model Context Protocol Registry.';
+
+    let category = 'MCP';
+    const dLower = description.toLowerCase();
+    if (dLower.includes('database') || dLower.includes('sql') || dLower.includes('postgres')) {
+      category = 'Databases';
+    } else if (dLower.includes('search') || dLower.includes('web') || dLower.includes('browse')) {
+      category = 'Search & Web';
+    } else if (dLower.includes('code') || dLower.includes('git') || dLower.includes('developer')) {
+      category = 'Developer Tools';
+    }
+
+    return {
+      id: `mcp-${slug}`,
+      slug,
+      name: displayName,
+      rawName: s.name,
+      org,
+      category: 'MCP',
+      subCategory: category,
+      entityType: 'mcp',
+      rank: idx + 1,
+      rankDelta: '0',
+      version,
+      categoryMetricLabel: 'Protocol Version',
+      categoryMetricValue: version,
+      categorySubMetricLabel: 'Transport',
+      categorySubMetricValue: transport,
+      categoryDimension3: 'Official Registry',
+      outputSpeed: 'Direct Stream',
+      monthlyVisits: 'Active Protocol',
+      price: 'Free / Open Protocol',
+      license: 'MIT / Open Protocol',
+      licenseType: 'Open Source',
+      isOpenWeights: true,
+      badge: 'Official MCP',
+      superpower: description.length > 45 ? `${description.slice(0, 42)}...` : description,
+      superpowerShort: 'MCP Server',
+      superpowerDetail: `Official Model Context Protocol Server (${version}) with ${transport} transport`,
+      shortDescription: description,
+      fullDescription: `${displayName} (${s.name}) is an officially registered Model Context Protocol server. ${description}`,
+      website: s.remotes?.[0]?.url || 'https://registry.modelcontextprotocol.io',
+      sourceMetadata: {
+        source: 'Official Model Context Protocol Registry (GET /v0.1/servers)',
+        registrySchema: s['$schema'],
+        remotes: s.remotes || [],
+        publishedAt: meta.publishedAt,
+        status: meta.status || 'active'
+      }
+    };
+  });
+}
+
+export function normalizeRegistryTools(rawPackages = [], existingTools = []) {
+  const existingIds = new Set(existingTools.map((t) => t.id));
+  const newTools = [];
+
+  for (const obj of rawPackages) {
+    const pkg = obj.package;
+    if (!pkg || !pkg.name) continue;
+    const slug = pkg.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const toolId = `tool-${slug}`;
+    if (existingIds.has(toolId) || existingIds.has(slug)) continue;
+
+    newTools.push({
+      id: toolId,
+      slug,
+      name: pkg.name,
+      org: pkg.publisher?.username || 'Open Source',
+      category: 'Coding / Developer',
+      entityType: 'tool',
+      rank: existingTools.length + newTools.length + 1,
+      rankDelta: '0',
+      categoryMetricLabel: 'Version',
+      categoryMetricValue: `v${pkg.version}`,
+      categorySubMetricLabel: 'Publisher',
+      categorySubMetricValue: pkg.publisher?.username || 'Verified',
+      categoryDimension3: 'npm Registry',
+      price: 'Free / Open Source',
+      license: pkg.license || 'MIT',
+      licenseType: 'Open Source',
+      isOpenWeights: true,
+      badge: 'Verified Registry',
+      superpower: pkg.description ? (pkg.description.slice(0, 40) + '...') : 'Developer AI Package',
+      superpowerShort: 'Dev Tool',
+      shortDescription: pkg.description || 'Verified package from public registry.',
+      website: pkg.links?.homepage || pkg.links?.npm || pkg.links?.repository,
+      sourceMetadata: {
+        source: 'Public npm Registry API',
+        version: pkg.version,
+        publisher: pkg.publisher
+      }
+    });
+  }
+
+  return [...existingTools, ...newTools];
+}
+
+/**
+ * Normalize curated COMPANIES_DATA enriched with live HF ecosystem signals.
+ * Merges real HF stats (model count, downloads, likes) into each company record
+ * to power the "growth" perspective with real data signals.
+ *
+ * @param {Array} companies - Curated COMPANIES_DATA from companiesData.js
+ * @param {Object} hfStats - Map of { slug → { hfModelCount, hfDownloads, hfLikes, hfTrendingScore } }
+ * @returns {Array} Enriched company records
+ */
+export function normalizeCompanies(companies, hfStats = {}) {
+  return companies.map((company) => {
+    const stats = hfStats[company.slug] || hfStats[company.id] || null;
+
+    // Format HF download count into human-readable string (e.g. "4.6M / mo")
+    const formatDownloads = (n) => {
+      if (!n) return null;
+      if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B DL`;
+      if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M DL`;
+      if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K DL`;
+      return `${n} DL`;
+    };
+
+    const enriched = {
+      ...company,
+      entityType: 'company',
+    };
+
+    if (stats) {
+      // Augment with real HF signals — don't overwrite curated funding/valuation
+      enriched.hfModelCount = stats.hfModelCount;
+      enriched.hfDownloads = stats.hfDownloads;
+      enriched.hfLikes = stats.hfLikes;
+      enriched.hfTrendingScore = stats.hfTrendingScore;
+
+      // Real metric for the category metric columns (shown in the growth perspective)
+      enriched.categoryMetricLabel = 'HF Downloads';
+      enriched.categoryMetricValue = formatDownloads(stats.hfDownloads);
+      enriched.categorySubMetricLabel = 'HF Models';
+      enriched.categorySubMetricValue = String(stats.hfModelCount);
+      enriched.categoryDimension3 = `${stats.hfLikes.toLocaleString()} likes`;
+
+      enriched.sourceMetadata = {
+        ...company.sourceMetadata,
+        hfEnriched: true,
+        hfFetchedAt: new Date().toISOString(),
+      };
+    }
+
+    return enriched;
+  });
+}
