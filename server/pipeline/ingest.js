@@ -65,7 +65,7 @@ export async function runIngestionPipeline() {
     console.log('[Ingestion] 3/5 Fetching Official MCP Registry servers...');
     let rawMcpServers = [];
     try {
-      rawMcpServers = await fetchMCPRegistryData(60);
+      rawMcpServers = await fetchMCPRegistryData(150);
       console.log(`[Ingestion] Received ${rawMcpServers.length} Official MCP Registry records.`);
     } catch (mcpErr) {
       console.warn('[Ingestion] MCP Registry fetch warning:', mcpErr.message);

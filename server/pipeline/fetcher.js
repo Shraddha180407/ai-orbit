@@ -54,39 +54,95 @@ export async function fetchLMSYSArenaData(maxModels = 600, configs = ['text', 'v
   }
 }
 
-export async function fetchArenaAgentData(maxAgents = 100) {
+export async function fetchArenaAgentData(maxAgents = 200) {
   try {
-    const url = `https://datasets-server.huggingface.co/rows?dataset=lmarena-ai/leaderboard-dataset&config=agent&split=latest&offset=0&limit=${maxAgents}`;
-    const res = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'AI-Orbit-Data-Pipeline/2.0'
-      }
-    });
+    const configs = [
+      'agent',
+      'agent_bash_recovery_steps',
+      'agent_praise_complaint',
+      'agent_steerability',
+      'agent_task_outcome_explicit',
+      'agent_tool_hallucination'
+    ];
+    const allAgentRows = [];
 
-    if (!res.ok) {
-      throw new Error(`Arena Agent dataset returned HTTP ${res.status}`);
+    // Fetch from official LMSYS Agent evaluation configs
+    for (const config of configs) {
+      try {
+        const url = `https://datasets-server.huggingface.co/rows?dataset=lmarena-ai/leaderboard-dataset&config=${config}&split=latest&offset=0&limit=100`;
+        const res = await fetch(url, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'AI-Orbit-Data-Pipeline/2.0'
+          },
+          signal: AbortSignal.timeout(8000)
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.rows && Array.isArray(data.rows)) {
+            for (const r of data.rows) {
+              allAgentRows.push({
+                ...r.row,
+                sourceConfig: config
+              });
+            }
+          }
+        }
+      } catch (cErr) {
+        console.warn(`[Fetcher] LMSYS Agent config ${config} warning:`, cErr.message);
+      }
     }
 
-    const data = await res.json();
-    return (data.rows || []).map((r) => r.row);
+    // Also fetch public registry agent packages (e.g., AutoGen, LangChain Agent, CrewAI, etc.)
+    try {
+      const npmUrl = 'https://registry.npmjs.org/-/v1/search?text=keywords:agent,ai-agent,autonomous-agent,agentic&size=50';
+      const npmRes = await fetch(npmUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'AI-Orbit-Data-Pipeline/2.0'
+        },
+        signal: AbortSignal.timeout(8000)
+      });
+      if (npmRes.ok) {
+        const npmData = await npmRes.json();
+        if (npmData.objects && Array.isArray(npmData.objects)) {
+          for (const item of npmData.objects) {
+            allAgentRows.push({
+              isNpmAgent: true,
+              package: item.package,
+              score: item.score
+            });
+          }
+        }
+      }
+    } catch (npmErr) {
+      console.warn('[Fetcher] NPM agent search warning:', npmErr.message);
+    }
+
+    return allAgentRows;
   } catch (err) {
     console.error('[Fetcher] Error fetching Arena Agent data:', err.message);
     throw err;
   }
 }
 
-export async function fetchMCPRegistryData(maxServers = 100) {
+export async function fetchMCPRegistryData(minUniqueServers = 150) {
   try {
-    let url = 'https://registry.modelcontextprotocol.io/v0.1/servers';
+    let cursor = null;
     const allServers = [];
+    const uniqueNames = new Set();
+    let page = 0;
+    const maxPages = 30;
 
-    while (url && allServers.length < maxServers) {
+    while (page < maxPages && uniqueNames.size < minUniqueServers) {
+      const url = `https://registry.modelcontextprotocol.io/v0.1/servers?limit=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
       const res = await fetch(url, {
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'AI-Orbit-Data-Pipeline/2.0'
-        }
+        },
+        signal: AbortSignal.timeout(8000)
       });
 
       if (!res.ok) {
@@ -95,17 +151,24 @@ export async function fetchMCPRegistryData(maxServers = 100) {
       }
 
       const data = await res.json();
-      if (data.servers && Array.isArray(data.servers)) {
-        allServers.push(...data.servers);
+      const list = data.servers || [];
+      if (list.length === 0) break;
+
+      for (const item of list) {
+        const s = item.server || item;
+        const name = s.name || s.id;
+        if (name) {
+          uniqueNames.add(name);
+          allServers.push(item);
+        }
       }
 
-      if (data.metadata?.nextCursor && allServers.length < maxServers) {
-        url = `https://registry.modelcontextprotocol.io/v0.1/servers?cursor=${encodeURIComponent(data.metadata.nextCursor)}`;
-      } else {
-        break;
-      }
+      cursor = data.nextCursor || data.metadata?.nextCursor || null;
+      page++;
+      if (!cursor) break;
     }
 
+    console.log(`[Fetcher] Collected ${allServers.length} raw MCP registry items across ${uniqueNames.size} unique servers.`);
     return allServers;
   } catch (err) {
     console.error('[Fetcher] Error fetching MCP Registry data:', err.message);

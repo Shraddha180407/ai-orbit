@@ -188,8 +188,72 @@ export function mergeAndNormalize(lmsysModels = [], aaModels = [], previousSnaps
 }
 
 export function normalizeArenaAgents(rawAgentRows = []) {
-  return rawAgentRows.map((raw, idx) => {
-    const slug = (raw.model_name || `agent-${idx}`).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const normalizedList = [];
+
+  const CONFIG_TITLES = {
+    'agent': 'General Agent Evaluation',
+    'agent_bash_recovery_steps': 'Bash Error Recovery',
+    'agent_praise_complaint': 'Praise & Complaint Dynamics',
+    'agent_steerability': 'Steerability & Instruction',
+    'agent_task_outcome_explicit': 'Task Outcome Verification',
+    'agent_tool_hallucination': 'Tool Accuracy & Hallucination'
+  };
+
+  for (let idx = 0; idx < rawAgentRows.length; idx++) {
+    const raw = rawAgentRows[idx];
+
+    if (raw.isNpmAgent && raw.package) {
+      const pkg = raw.package;
+      const slug = pkg.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const version = pkg.version ? `v${pkg.version}` : 'v1.0';
+
+      normalizedList.push({
+        id: `agent-pkg-${slug}`,
+        slug: `pkg-${slug}`,
+        name: pkg.name,
+        org: pkg.publisher?.username || 'Open Source Agent',
+        category: 'AI Agents',
+        subCategory: 'Agent Frameworks',
+        entityType: 'agent',
+        rank: normalizedList.length + 1,
+        rankDelta: 'NEW',
+        score: pkg.score?.final || 0.8,
+        arenaElo: null,
+        codingScore: null,
+        outputSpeed: 'Agent Framework',
+        monthlyVisits: 'Developer Package',
+        price: 'Open Source',
+        license: pkg.license || 'MIT',
+        licenseType: 'Open Source',
+        isOpenWeights: true,
+        superpower: pkg.description ? (pkg.description.slice(0, 45) + '...') : 'Autonomous Agent Framework',
+        superpowerShort: 'Agent Framework',
+        superpowerDetail: `Verified developer AI Agent package (${version}) on public registry`,
+        categoryMetricLabel: 'Registry Status',
+        categoryMetricValue: version,
+        categorySubMetricLabel: 'Publisher',
+        categorySubMetricValue: pkg.publisher?.username || 'npm',
+        categoryDimension3: pkg.license || 'MIT',
+        badge: 'Verified Package',
+        shortDescription: pkg.description || 'Verified AI Agent package from public developer registry.',
+        fullDescription: `${pkg.name} is an active AI agent framework/package published on the public package registry.`,
+        website: pkg.links?.homepage || pkg.links?.npm || pkg.links?.repository || 'https://npmjs.com',
+        sourceMetadata: {
+          source: 'Public npm Registry API',
+          version: pkg.version,
+          publisher: pkg.publisher
+        }
+      });
+      continue;
+    }
+
+    if (!raw.model_name) continue;
+
+    const configKey = raw.sourceConfig || 'agent';
+    const configTitle = CONFIG_TITLES[configKey] || 'Agent Evaluation';
+    const baseSlug = raw.model_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slug = configKey === 'agent' ? baseSlug : `${baseSlug}-${configKey.replace('agent_', '').replace(/_/g, '-')}`;
+    const displayName = configKey === 'agent' ? raw.model_name : `${raw.model_name} (${configTitle})`;
     const org = normalizeOrg(raw.organization, raw.model_name);
     const scoreVal = typeof raw.score === 'number' ? raw.score : 0;
     const scorePct = `${scoreVal >= 0 ? '+' : ''}${(scoreVal * 100).toFixed(1)}%`;
@@ -206,15 +270,16 @@ export function normalizeArenaAgents(rawAgentRows = []) {
       agentCategory = 'Autonomous SWE';
     }
 
-    return {
+    normalizedList.push({
       id: `agent-${slug}`,
       slug,
-      name: raw.model_name,
+      name: displayName,
+      rawName: raw.model_name,
       org,
       category: 'AI Agents',
       subCategory: agentCategory,
       entityType: 'agent',
-      rank: raw.rank || (idx + 1),
+      rank: normalizedList.length + 1,
       rankDelta: raw.rank <= 3 ? 'NEW' : '0',
       score: scoreVal,
       arenaElo: null,
@@ -225,28 +290,30 @@ export function normalizeArenaAgents(rawAgentRows = []) {
       license,
       licenseType: isOpen ? 'Open Weights' : 'Commercial API',
       isOpenWeights: isOpen,
-      superpower: 'Autonomous Multi-Turn Agentic Execution',
+      superpower: `Multi-Turn ${configTitle}`,
       superpowerShort: 'Autonomous Agent',
-      superpowerDetail: `LMSYS Agent Arena: ${scorePct} win rate across ${sessions.toLocaleString()} evaluation sessions`,
+      superpowerDetail: `LMSYS ${configTitle}: ${scorePct} win rate across ${sessions.toLocaleString()} evaluation sessions`,
       categoryMetricLabel: 'Task Win Rate',
       categoryMetricValue: scorePct,
       categorySubMetricLabel: 'Eval Sessions',
       categorySubMetricValue: sessions.toLocaleString(),
       categoryDimension3: obs > 0 ? `${Math.round(obs / 1000)}k obs` : 'Verified',
       badge: raw.rank === 1 ? 'World #1 Agent' : raw.rank <= 5 ? 'Top Agent' : 'Verified Agent',
-      shortDescription: `Official LMSYS Arena Agent ranking #${raw.rank || idx + 1} with ${scorePct} win index across ${sessions.toLocaleString()} sessions.`,
-      fullDescription: `${raw.model_name} by ${org} is evaluated on the LMSYS Arena Agent benchmark under complex multi-turn autonomous tool use, environment interactions, and self-correction tasks.`,
+      shortDescription: `Official LMSYS Arena ${configTitle} ranking #${raw.rank || idx + 1} with ${scorePct} win index across ${sessions.toLocaleString()} sessions.`,
+      fullDescription: `${raw.model_name} by ${org} evaluated on LMSYS Arena ${configTitle} benchmark under complex multi-turn autonomous tool use, environment interactions, and self-correction tasks.`,
       website: org === 'Anthropic' ? 'https://www.anthropic.com' : org === 'OpenAI' ? 'https://openai.com' : org === 'Google' ? 'https://deepmind.google' : 'https://lmarena.ai',
       sourceMetadata: {
         dataset: 'lmarena-ai/leaderboard-dataset',
-        config: 'agent',
+        config: configKey,
         split: 'latest',
         publishDate: raw.leaderboard_publish_date,
         observationCount: obs,
         sessionCount: sessions
       }
-    };
-  });
+    });
+  }
+
+  return normalizedList;
 }
 
 export function normalizeMCPServers(rawServers = []) {
