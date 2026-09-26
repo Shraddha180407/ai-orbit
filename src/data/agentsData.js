@@ -1,7 +1,7 @@
 // AI Orbit Official Agents Dataset
 // Sourced from LMSYS Arena Agent official benchmark dataset
 // Total Verified Agents: 274
-// Last Synced: 2026-09-26T13:27:21.257Z
+// Last Synced: 2026-09-26T14:13:48.368Z
 
 export const AGENT_CATEGORIES = [
   "All",

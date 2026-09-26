@@ -176,7 +176,7 @@ export async function fetchMCPRegistryData(minUniqueServers = 150) {
   }
 }
 
-export async function fetchToolsRegistryData(limit = 60) {
+export async function fetchToolsRegistryData(limit = 100) {
   try {
     const url = `https://registry.npmjs.org/-/v1/search?text=keywords:ai-tools,agent,mcp,llm&size=${limit}`;
     const res = await fetch(url, {

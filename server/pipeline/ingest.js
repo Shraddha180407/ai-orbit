@@ -140,6 +140,12 @@ export async function runIngestionPipeline() {
         fs.writeFileSync(mcpFilePath, mcpContent, 'utf-8');
       }
 
+      if (normalizedTools.length > 0) {
+        const toolsFilePath = path.resolve(process.cwd(), 'src', 'data', 'toolsData.js');
+        const toolsContent = `// AI Orbit Official Tools Registry Dataset\n// Sourced from curated AI tools + public package registry search API\n// Total Verified Tools: ${normalizedTools.length}\n// Last Synced: ${new Date().toISOString()}\n\nexport const TOOL_CATEGORIES = [\n  "All",\n  "Coding / Developer",\n  "Search & Research",\n  "Creative & Audio",\n  "Productivity & Workflow"\n];\n\nexport const AI_TOOLS_DATA = ${JSON.stringify(normalizedTools, null, 2)};\n`;
+        fs.writeFileSync(toolsFilePath, toolsContent, 'utf-8');
+      }
+
       if (normalizedCompanies.length > 0) {
         const companiesFilePath = path.resolve(process.cwd(), 'src', 'data', 'companiesData.js');
         // Preserve the COMPANY_CATEGORIES and COMPANY_PERSPECTIVES exports at the top

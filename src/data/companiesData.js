@@ -1,7 +1,7 @@
 // AI Orbit Official Companies Dataset
 // Curated AI ecosystem company data enriched with live Hugging Face model ecosystem signals
 // Total Companies: 100
-// Last Synced: 2026-09-26T13:27:21.291Z
+// Last Synced: 2026-09-26T14:13:48.398Z
 
 export const COMPANY_CATEGORIES = [
   "All",
@@ -103,7 +103,7 @@ export const COMPANIES_DATA = [
     "categoryDimension3": "31,604 likes",
     "sourceMetadata": {
       "hfEnriched": true,
-      "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+      "hfFetchedAt": "2026-09-26T14:13:48.364Z"
     }
   },
   {
@@ -238,16 +238,16 @@ export const COMPANIES_DATA = [
     "entityType": "company",
     "hfModelCount": 100,
     "hfDownloads": 24248965,
-    "hfLikes": 78759,
+    "hfLikes": 78761,
     "hfTrendingScore": 0,
     "categoryMetricLabel": "HF Downloads",
     "categoryMetricValue": "24.2M DL",
     "categorySubMetricLabel": "HF Models",
     "categorySubMetricValue": "100",
-    "categoryDimension3": "78,759 likes",
+    "categoryDimension3": "78,761 likes",
     "sourceMetadata": {
       "hfEnriched": true,
-      "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+      "hfFetchedAt": "2026-09-26T14:13:48.364Z"
     }
   },
   {
@@ -402,7 +402,7 @@ export const COMPANIES_DATA = [
     "categoryDimension3": "565 likes",
     "sourceMetadata": {
       "hfEnriched": true,
-      "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+      "hfFetchedAt": "2026-09-26T14:13:48.364Z"
     }
   },
   {
@@ -813,16 +813,16 @@ export const COMPANIES_DATA = [
     "entityType": "company",
     "hfModelCount": 75,
     "hfDownloads": 10484787,
-    "hfLikes": 42977,
+    "hfLikes": 42979,
     "hfTrendingScore": 0,
     "categoryMetricLabel": "HF Downloads",
     "categoryMetricValue": "10.5M DL",
     "categorySubMetricLabel": "HF Models",
     "categorySubMetricValue": "75",
-    "categoryDimension3": "42,977 likes",
+    "categoryDimension3": "42,979 likes",
     "sourceMetadata": {
       "hfEnriched": true,
-      "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+      "hfFetchedAt": "2026-09-26T14:13:48.364Z"
     }
   },
   {
@@ -977,7 +977,7 @@ export const COMPANIES_DATA = [
     "categoryDimension3": "3,084 likes",
     "sourceMetadata": {
       "hfEnriched": true,
-      "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+      "hfFetchedAt": "2026-09-26T14:13:48.364Z"
     }
   },
   {
@@ -1377,7 +1377,7 @@ export const COMPANIES_DATA = [
     "categoryDimension3": "3,616 likes",
     "sourceMetadata": {
       "hfEnriched": true,
-      "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+      "hfFetchedAt": "2026-09-26T14:13:48.364Z"
     }
   },
   {
@@ -1629,16 +1629,16 @@ export const COMPANIES_DATA = [
     "entityType": "company",
     "hfModelCount": 100,
     "hfDownloads": 6801584,
-    "hfLikes": 49845,
+    "hfLikes": 49852,
     "hfTrendingScore": 0,
     "categoryMetricLabel": "HF Downloads",
     "categoryMetricValue": "6.8M DL",
     "categorySubMetricLabel": "HF Models",
     "categorySubMetricValue": "100",
-    "categoryDimension3": "49,845 likes",
+    "categoryDimension3": "49,852 likes",
     "sourceMetadata": {
       "hfEnriched": true,
-      "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+      "hfFetchedAt": "2026-09-26T14:13:48.364Z"
     }
   },
   {
@@ -4283,7 +4283,7 @@ export const COMPANIES_DATA = [
     "categoryDimension3": "1,060 likes",
     "sourceMetadata": {
       "hfEnriched": true,
-      "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+      "hfFetchedAt": "2026-09-26T14:13:48.364Z"
     }
   },
   {

@@ -1,7 +1,7 @@
 // AI Orbit Official MCP Registry Dataset
 // Sourced directly from Official Model Context Protocol Registry (GET /v0.1/servers)
 // Total Registered Official Servers: 180
-// Last Synced: 2026-09-26T13:27:21.275Z
+// Last Synced: 2026-09-26T14:13:48.380Z
 
 export const MCP_CATEGORIES = [
   "All",

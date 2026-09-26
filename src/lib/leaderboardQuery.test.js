@@ -4,6 +4,7 @@ import { AI_MODELS_DATA } from '../data/modelsData.js';
 import {
   buildLeaderboardView,
   createRequestGate,
+  DEFAULT_FILTERS,
   isToolEntity,
   matchesCategory,
   shouldCommitPerspectiveFetch,
@@ -38,6 +39,14 @@ function viewFor(filters) {
 }
 
 describe('leaderboard filter consistency', () => {
+  it('DEFAULT_FILTERS defaults to models entityType', () => {
+    expect(DEFAULT_FILTERS.entityType).toBe('models');
+    const view = viewFor(DEFAULT_FILTERS);
+    expect(view.rows.length).toBeGreaterThan(0);
+    expect(view.rows.every((row) => row.entityType === 'model')).toBe(true);
+    expect(view.rows.some(isToolEntity)).toBe(false);
+  });
+
   it('Image + Tools returns only image tools', () => {
     const view = viewFor({ entityType: 'tools', category: 'Image' });
     expect(view.rows.length).toBeGreaterThan(0);

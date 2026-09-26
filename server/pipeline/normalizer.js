@@ -389,7 +389,18 @@ export function normalizeMCPServers(rawServers = []) {
 }
 
 export function normalizeRegistryTools(rawPackages = [], existingTools = []) {
-  const existingIds = new Set(existingTools.map((t) => t.id));
+  const seenSlugs = new Set();
+  const dedupedExisting = [];
+  for (const t of existingTools) {
+    const key = t.slug || t.id;
+    if (key && !seenSlugs.has(key)) {
+      seenSlugs.add(key);
+      if (t.id) seenSlugs.add(t.id);
+      dedupedExisting.push(t);
+    }
+  }
+
+  const existingIds = seenSlugs;
   const newTools = [];
 
   for (const obj of rawPackages) {
@@ -398,6 +409,9 @@ export function normalizeRegistryTools(rawPackages = [], existingTools = []) {
     const slug = pkg.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const toolId = `tool-${slug}`;
     if (existingIds.has(toolId) || existingIds.has(slug)) continue;
+
+    existingIds.add(toolId);
+    existingIds.add(slug);
 
     newTools.push({
       id: toolId,
@@ -430,7 +444,7 @@ export function normalizeRegistryTools(rawPackages = [], existingTools = []) {
     });
   }
 
-  return [...existingTools, ...newTools];
+  return [...dedupedExisting, ...newTools];
 }
 
 /**

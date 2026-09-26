@@ -3,7 +3,7 @@
 
 export const DEFAULT_FILTERS = {
   perspective: 'overall',
-  entityType: 'all',
+  entityType: 'models',
   category: 'All',
   sortBy: 'rank'
 };

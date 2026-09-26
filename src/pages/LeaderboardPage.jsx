@@ -95,12 +95,6 @@ export default function LeaderboardPage({
     setCommittedGen(gen);
   }, []);
 
-  const hasActiveFilters = 
-    filters.category !== 'All' || 
-    filters.perspective !== 'overall' || 
-    filters.entityType !== 'all' || 
-    filters.sortBy !== 'rank';
-
   const [reloadToken, setReloadToken] = useState(0);
   const [perspectivePayload, setPerspectivePayload] = useState({
     perspective: null,
@@ -115,6 +109,37 @@ export default function LeaderboardPage({
     lastUpdatedText: 'DATA UPDATED JUST NOW',
     status: 'loading'
   });
+
+  const handleSwitchEntityType = useCallback((newEntityType) => {
+    setActiveTab('models');
+    let resetCat = false;
+    if (filters.category !== 'All') {
+      const currentModels = (perspectivePayload.status === 'ready' && perspectivePayload.models?.length > 0)
+        ? perspectivePayload.models
+        : AI_MODELS_DATA;
+      const testView = buildLeaderboardView({
+        models: currentModels,
+        tools: AI_TOOLS_DATA,
+        agents: AI_AGENTS_DATA,
+        mcp: MCP_DATA,
+        filters: { ...filters, entityType: newEntityType },
+        ready: true
+      });
+      if (testView.rows.length === 0) {
+        resetCat = true;
+      }
+    }
+    updateFilters({
+      entityType: newEntityType,
+      ...(resetCat ? { category: 'All' } : {})
+    });
+  }, [filters, perspectivePayload, updateFilters]);
+
+  const hasActiveFilters = 
+    filters.category !== 'All' || 
+    filters.perspective !== 'overall' || 
+    filters.entityType !== 'models' || 
+    filters.sortBy !== 'rank';
 
   // Compare Modal state
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
@@ -335,9 +360,19 @@ export default function LeaderboardPage({
       };
     }
 
-    const modelPool = resolvedPayload.status === 'ready'
-      ? (resolvedPayload.models || [])
-      : [];
+    const baseModels = (resolvedPayload.status === 'ready' && resolvedPayload.models?.length > 0)
+      ? resolvedPayload.models
+      : AI_MODELS_DATA;
+
+    // Preserve static Image models if target payload lacks image category models
+    const hasImageModel = baseModels.some((m) => matchLeaderboardCategory(m.category, 'Image'));
+    let modelPool = baseModels;
+    if (!hasImageModel) {
+      const staticImageModels = AI_MODELS_DATA.filter((m) => matchLeaderboardCategory(m.category, 'Image'));
+      const existingIds = new Set(baseModels.map((m) => m.id));
+      const extraImageModels = staticImageModels.filter((m) => !existingIds.has(m.id));
+      modelPool = [...baseModels, ...extraImageModels];
+    }
 
     const nextView = buildLeaderboardView({
       models: modelPool,
@@ -345,11 +380,11 @@ export default function LeaderboardPage({
       agents: AI_AGENTS_DATA,
       mcp: MCP_DATA,
       filters,
-      ready: rankedModelsReady
+      ready: true
     });
 
     return nextView;
-  }, [filters, resolvedPayload, needsRankedModels, rankedModelsReady, committedGen]);
+  }, [filters, resolvedPayload, committedGen]);
 
   const lastLoggedViewRef = useRef(null);
   useEffect(() => {
@@ -743,9 +778,9 @@ export default function LeaderboardPage({
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#1C1C1F]">
             <div className="inline-flex p-0.5 rounded-xl bg-[#131316] border border-[#232328] shadow-inner overflow-x-auto scrollbar-none max-w-full">
               <button
-                onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'models' }); }}
+                onClick={() => handleSwitchEntityType('models')}
                 className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === 'models' && (filters.entityType === 'models' || filters.entityType === 'all')
+                  activeTab === 'models' && filters.entityType === 'models'
                     ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
                     : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181f]'
                 }`}
@@ -753,14 +788,14 @@ export default function LeaderboardPage({
                 <Cpu size={14} />
                 <span>AI Models</span>
                 <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-                  activeTab === 'models' && (filters.entityType === 'models' || filters.entityType === 'all') ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
+                  activeTab === 'models' && filters.entityType === 'models' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
                 }`}>
                   {ecosystemStats.modelsCount}
                 </span>
               </button>
 
               <button
-                onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'agents' }); }}
+                onClick={() => handleSwitchEntityType('agents')}
                 className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'models' && filters.entityType === 'agents'
                     ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
@@ -777,7 +812,7 @@ export default function LeaderboardPage({
               </button>
 
               <button
-                onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'mcp' }); }}
+                onClick={() => handleSwitchEntityType('mcp')}
                 className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'models' && filters.entityType === 'mcp'
                     ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
@@ -794,7 +829,7 @@ export default function LeaderboardPage({
               </button>
 
               <button
-                onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'tools' }); }}
+                onClick={() => handleSwitchEntityType('tools')}
                 className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'models' && filters.entityType === 'tools'
                     ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'

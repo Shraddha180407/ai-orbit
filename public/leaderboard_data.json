@@ -1,11 +1,11 @@
 {
   "metadata": {
     "source": "LMSYS Arena (Models & Agents), Official MCP Registry, Public Tools Registry, AI Ecosystem Companies",
-    "lastUpdated": "2026-09-26T13:27:21.319Z",
+    "lastUpdated": "2026-09-26T14:13:48.404Z",
     "totalModels": 178,
     "totalAgents": 274,
     "totalMcps": 180,
-    "totalTools": 130,
+    "totalTools": 121,
     "totalCompanies": 100,
     "version": "2.5.0",
     "counts": {
@@ -50400,124 +50400,6 @@
       "platformAvailability": "Web Application"
     },
     {
-      "id": "bolt-new",
-      "slug": "bolt-new",
-      "name": "Bolt.new",
-      "org": "StackBlitz",
-      "category": "Coding / Developer",
-      "entityType": "tool",
-      "rank": 59,
-      "rankDelta": "NEW",
-      "superpower": "Coding / Developer Suite",
-      "superpowerShort": "Coding",
-      "superpowerDetail": "Rank #59 tool",
-      "isOpenWeights": false,
-      "licenseType": "Freemium / SaaS",
-      "license": "Commercial SaaS",
-      "arenaElo": 1250,
-      "eloChange": "+0",
-      "mmluPro": "N/A",
-      "codingScore": "88.0%",
-      "mathScore": "N/A",
-      "monthlyVisits": "15M",
-      "growth": "+18.4%",
-      "growthTrend": "up",
-      "price": "Free / Pro $20",
-      "outputSpeed": "Instant",
-      "speedNum": 100,
-      "contextWindow": "SaaS Workflow",
-      "badge": "Popular Tool",
-      "shortDescription": "Bolt.new is a leading Coding / Developer platform built by StackBlitz.",
-      "fullDescription": "Bolt.new empowers developers and teams with streamlined Coding / Developer automation and intelligent workflow features.",
-      "website": "https://ai-orbit.org",
-      "logoText": "STA",
-      "logoColor": "#6E56CF",
-      "releaseDate": "2024",
-      "source": "Verified AI Tool Index",
-      "lastUpdated": "March 2026",
-      "keyFeatures": [
-        "Automated Coding / Developer capabilities",
-        "Over 15M monthly active users",
-        "Seamless enterprise workflow integrations"
-      ],
-      "benchmarks": [
-        {
-          "name": "User Satisfaction Rating",
-          "score": "4.9 / 5.0",
-          "rank": "#59"
-        }
-      ],
-      "specs": {
-        "inputPrice": "Free / Pro $20",
-        "outputPrice": "SaaS Subscription",
-        "contextWindow": "Cloud Integration",
-        "maxOutput": "Real-time output",
-        "cutoff": "Live Web Service",
-        "modalities": "Interactive UI & API",
-        "speed": "Instant response",
-        "ttft": "100ms"
-      }
-    },
-    {
-      "id": "replit-agent",
-      "slug": "replit-agent",
-      "name": "Replit Agent",
-      "org": "Replit",
-      "category": "Coding / Developer",
-      "entityType": "tool",
-      "rank": 60,
-      "rankDelta": "NEW",
-      "superpower": "Coding / Developer Suite",
-      "superpowerShort": "Coding",
-      "superpowerDetail": "Rank #60 tool",
-      "isOpenWeights": false,
-      "licenseType": "Freemium / SaaS",
-      "license": "Commercial SaaS",
-      "arenaElo": 1250,
-      "eloChange": "+0",
-      "mmluPro": "N/A",
-      "codingScore": "88.0%",
-      "mathScore": "N/A",
-      "monthlyVisits": "12M",
-      "growth": "+18.4%",
-      "growthTrend": "up",
-      "price": "$25/mo",
-      "outputSpeed": "Instant",
-      "speedNum": 100,
-      "contextWindow": "SaaS Workflow",
-      "badge": "Popular Tool",
-      "shortDescription": "Replit Agent is a leading Coding / Developer platform built by Replit.",
-      "fullDescription": "Replit Agent empowers developers and teams with streamlined Coding / Developer automation and intelligent workflow features.",
-      "website": "https://ai-orbit.org",
-      "logoText": "REP",
-      "logoColor": "#6E56CF",
-      "releaseDate": "2024",
-      "source": "Verified AI Tool Index",
-      "lastUpdated": "March 2026",
-      "keyFeatures": [
-        "Automated Coding / Developer capabilities",
-        "Over 12M monthly active users",
-        "Seamless enterprise workflow integrations"
-      ],
-      "benchmarks": [
-        {
-          "name": "User Satisfaction Rating",
-          "score": "4.8 / 5.0",
-          "rank": "#60"
-        }
-      ],
-      "specs": {
-        "inputPrice": "$25/mo",
-        "outputPrice": "SaaS Subscription",
-        "contextWindow": "Cloud Integration",
-        "maxOutput": "Real-time output",
-        "cutoff": "Live Web Service",
-        "modalities": "Interactive UI & API",
-        "speed": "Instant response",
-        "ttft": "100ms"
-      }
-    },
-    {
       "id": "copilot-workspace",
       "slug": "copilot-workspace",
       "name": "Copilot Workspace",
@@ -50862,65 +50744,6 @@
       ],
       "specs": {
         "inputPrice": "Free / Pro $9",
-        "outputPrice": "SaaS Subscription",
-        "contextWindow": "Cloud Integration",
-        "maxOutput": "Real-time output",
-        "cutoff": "Live Web Service",
-        "modalities": "Interactive UI & API",
-        "speed": "Instant response",
-        "ttft": "100ms"
-      }
-    },
-    {
-      "id": "continue-dev",
-      "slug": "continue-dev",
-      "name": "Continue.dev",
-      "org": "Continue",
-      "category": "Coding / Developer",
-      "entityType": "tool",
-      "rank": 67,
-      "rankDelta": "NEW",
-      "superpower": "Coding / Developer Suite",
-      "superpowerShort": "Coding",
-      "superpowerDetail": "Rank #67 tool",
-      "isOpenWeights": false,
-      "licenseType": "Open Source",
-      "license": "MIT / Apache",
-      "arenaElo": 1250,
-      "eloChange": "+0",
-      "mmluPro": "N/A",
-      "codingScore": "88.0%",
-      "mathScore": "N/A",
-      "monthlyVisits": "2M",
-      "growth": "+18.4%",
-      "growthTrend": "up",
-      "price": "Free OSS",
-      "outputSpeed": "Instant",
-      "speedNum": 100,
-      "contextWindow": "SaaS Workflow",
-      "badge": "Popular Tool",
-      "shortDescription": "Continue.dev is a leading Coding / Developer platform built by Continue.",
-      "fullDescription": "Continue.dev empowers developers and teams with streamlined Coding / Developer automation and intelligent workflow features.",
-      "website": "https://ai-orbit.org",
-      "logoText": "CON",
-      "logoColor": "#6E56CF",
-      "releaseDate": "2024",
-      "source": "Verified AI Tool Index",
-      "lastUpdated": "March 2026",
-      "keyFeatures": [
-        "Automated Coding / Developer capabilities",
-        "Over 2M monthly active users",
-        "Seamless enterprise workflow integrations"
-      ],
-      "benchmarks": [
-        {
-          "name": "User Satisfaction Rating",
-          "score": "4.8 / 5.0",
-          "rank": "#67"
-        }
-      ],
-      "specs": {
-        "inputPrice": "Free OSS",
         "outputPrice": "SaaS Subscription",
         "contextWindow": "Cloud Integration",
         "maxOutput": "Real-time output",
@@ -51285,65 +51108,6 @@
       }
     },
     {
-      "id": "scite-ai",
-      "slug": "scite-ai",
-      "name": "Scite.ai",
-      "org": "Scite",
-      "category": "Research",
-      "entityType": "tool",
-      "rank": 74,
-      "rankDelta": "NEW",
-      "superpower": "Research Suite",
-      "superpowerShort": "Research",
-      "superpowerDetail": "Rank #74 tool",
-      "isOpenWeights": false,
-      "licenseType": "Freemium / SaaS",
-      "license": "Commercial SaaS",
-      "arenaElo": 1250,
-      "eloChange": "+0",
-      "mmluPro": "N/A",
-      "codingScore": "N/A",
-      "mathScore": "N/A",
-      "monthlyVisits": "2M",
-      "growth": "+18.4%",
-      "growthTrend": "up",
-      "price": "$12/mo",
-      "outputSpeed": "Instant",
-      "speedNum": 100,
-      "contextWindow": "SaaS Workflow",
-      "badge": "Popular Tool",
-      "shortDescription": "Scite.ai is a leading Research platform built by Scite.",
-      "fullDescription": "Scite.ai empowers developers and teams with streamlined Research automation and intelligent workflow features.",
-      "website": "https://ai-orbit.org",
-      "logoText": "SCI",
-      "logoColor": "#6E56CF",
-      "releaseDate": "2024",
-      "source": "Verified AI Tool Index",
-      "lastUpdated": "March 2026",
-      "keyFeatures": [
-        "Automated Research capabilities",
-        "Over 2M monthly active users",
-        "Seamless enterprise workflow integrations"
-      ],
-      "benchmarks": [
-        {
-          "name": "User Satisfaction Rating",
-          "score": "4.7 / 5.0",
-          "rank": "#74"
-        }
-      ],
-      "specs": {
-        "inputPrice": "$12/mo",
-        "outputPrice": "SaaS Subscription",
-        "contextWindow": "Cloud Integration",
-        "maxOutput": "Real-time output",
-        "cutoff": "Live Web Service",
-        "modalities": "Interactive UI & API",
-        "speed": "Instant response",
-        "ttft": "100ms"
-      }
-    },
-    {
       "id": "researchrabbit",
       "slug": "researchrabbit",
       "name": "ResearchRabbit",
@@ -51462,124 +51226,6 @@
       }
     },
     {
-      "id": "jasper-ai",
-      "slug": "jasper-ai",
-      "name": "Jasper AI",
-      "org": "Jasper",
-      "category": "Writing",
-      "entityType": "tool",
-      "rank": 77,
-      "rankDelta": "NEW",
-      "superpower": "Writing Suite",
-      "superpowerShort": "Writing",
-      "superpowerDetail": "Rank #77 tool",
-      "isOpenWeights": false,
-      "licenseType": "Freemium / SaaS",
-      "license": "Commercial SaaS",
-      "arenaElo": 1250,
-      "eloChange": "+0",
-      "mmluPro": "N/A",
-      "codingScore": "N/A",
-      "mathScore": "N/A",
-      "monthlyVisits": "5M",
-      "growth": "+18.4%",
-      "growthTrend": "up",
-      "price": "$39/mo",
-      "outputSpeed": "Instant",
-      "speedNum": 100,
-      "contextWindow": "SaaS Workflow",
-      "badge": "Popular Tool",
-      "shortDescription": "Jasper AI is a leading Writing platform built by Jasper.",
-      "fullDescription": "Jasper AI empowers developers and teams with streamlined Writing automation and intelligent workflow features.",
-      "website": "https://ai-orbit.org",
-      "logoText": "JAS",
-      "logoColor": "#6E56CF",
-      "releaseDate": "2024",
-      "source": "Verified AI Tool Index",
-      "lastUpdated": "March 2026",
-      "keyFeatures": [
-        "Automated Writing capabilities",
-        "Over 5M monthly active users",
-        "Seamless enterprise workflow integrations"
-      ],
-      "benchmarks": [
-        {
-          "name": "User Satisfaction Rating",
-          "score": "4.7 / 5.0",
-          "rank": "#77"
-        }
-      ],
-      "specs": {
-        "inputPrice": "$39/mo",
-        "outputPrice": "SaaS Subscription",
-        "contextWindow": "Cloud Integration",
-        "maxOutput": "Real-time output",
-        "cutoff": "Live Web Service",
-        "modalities": "Interactive UI & API",
-        "speed": "Instant response",
-        "ttft": "100ms"
-      }
-    },
-    {
-      "id": "copy-ai",
-      "slug": "copy-ai",
-      "name": "Copy.ai",
-      "org": "Copy.ai",
-      "category": "Writing",
-      "entityType": "tool",
-      "rank": 78,
-      "rankDelta": "NEW",
-      "superpower": "Writing Suite",
-      "superpowerShort": "Writing",
-      "superpowerDetail": "Rank #78 tool",
-      "isOpenWeights": false,
-      "licenseType": "Freemium / SaaS",
-      "license": "Commercial SaaS",
-      "arenaElo": 1250,
-      "eloChange": "+0",
-      "mmluPro": "N/A",
-      "codingScore": "N/A",
-      "mathScore": "N/A",
-      "monthlyVisits": "4M",
-      "growth": "+18.4%",
-      "growthTrend": "up",
-      "price": "Free / $36",
-      "outputSpeed": "Instant",
-      "speedNum": 100,
-      "contextWindow": "SaaS Workflow",
-      "badge": "Popular Tool",
-      "shortDescription": "Copy.ai is a leading Writing platform built by Copy.ai.",
-      "fullDescription": "Copy.ai empowers developers and teams with streamlined Writing automation and intelligent workflow features.",
-      "website": "https://ai-orbit.org",
-      "logoText": "COP",
-      "logoColor": "#6E56CF",
-      "releaseDate": "2024",
-      "source": "Verified AI Tool Index",
-      "lastUpdated": "March 2026",
-      "keyFeatures": [
-        "Automated Writing capabilities",
-        "Over 4M monthly active users",
-        "Seamless enterprise workflow integrations"
-      ],
-      "benchmarks": [
-        {
-          "name": "User Satisfaction Rating",
-          "score": "4.6 / 5.0",
-          "rank": "#78"
-        }
-      ],
-      "specs": {
-        "inputPrice": "Free / $36",
-        "outputPrice": "SaaS Subscription",
-        "contextWindow": "Cloud Integration",
-        "maxOutput": "Real-time output",
-        "cutoff": "Live Web Service",
-        "modalities": "Interactive UI & API",
-        "speed": "Instant response",
-        "ttft": "100ms"
-      }
-    },
-    {
       "id": "writesonic",
       "slug": "writesonic",
       "name": "Writesonic",
@@ -51688,65 +51334,6 @@
       ],
       "specs": {
         "inputPrice": "Free / $9.95",
-        "outputPrice": "SaaS Subscription",
-        "contextWindow": "Cloud Integration",
-        "maxOutput": "Real-time output",
-        "cutoff": "Live Web Service",
-        "modalities": "Interactive UI & API",
-        "speed": "Instant response",
-        "ttft": "100ms"
-      }
-    },
-    {
-      "id": "leonardo-ai",
-      "slug": "leonardo-ai",
-      "name": "Leonardo AI",
-      "org": "Leonardo.ai",
-      "category": "Image Generation",
-      "entityType": "tool",
-      "rank": 81,
-      "rankDelta": "NEW",
-      "superpower": "Image Generation Suite",
-      "superpowerShort": "Image",
-      "superpowerDetail": "Rank #81 tool",
-      "isOpenWeights": false,
-      "licenseType": "Freemium / SaaS",
-      "license": "Commercial SaaS",
-      "arenaElo": 1250,
-      "eloChange": "+0",
-      "mmluPro": "N/A",
-      "codingScore": "N/A",
-      "mathScore": "N/A",
-      "monthlyVisits": "8M",
-      "growth": "+18.4%",
-      "growthTrend": "up",
-      "price": "Free / $12",
-      "outputSpeed": "Instant",
-      "speedNum": 100,
-      "contextWindow": "SaaS Workflow",
-      "badge": "Popular Tool",
-      "shortDescription": "Leonardo AI is a leading Image Generation platform built by Leonardo.ai.",
-      "fullDescription": "Leonardo AI empowers developers and teams with streamlined Image Generation automation and intelligent workflow features.",
-      "website": "https://ai-orbit.org",
-      "logoText": "LEO",
-      "logoColor": "#6E56CF",
-      "releaseDate": "2024",
-      "source": "Verified AI Tool Index",
-      "lastUpdated": "March 2026",
-      "keyFeatures": [
-        "Automated Image Generation capabilities",
-        "Over 8M monthly active users",
-        "Seamless enterprise workflow integrations"
-      ],
-      "benchmarks": [
-        {
-          "name": "User Satisfaction Rating",
-          "score": "4.8 / 5.0",
-          "rank": "#81"
-        }
-      ],
-      "specs": {
-        "inputPrice": "Free / $12",
         "outputPrice": "SaaS Subscription",
         "contextWindow": "Cloud Integration",
         "maxOutput": "Real-time output",
@@ -52337,124 +51924,6 @@
       ],
       "specs": {
         "inputPrice": "Free / Pro",
-        "outputPrice": "SaaS Subscription",
-        "contextWindow": "Cloud Integration",
-        "maxOutput": "Real-time output",
-        "cutoff": "Live Web Service",
-        "modalities": "Interactive UI & API",
-        "speed": "Instant response",
-        "ttft": "100ms"
-      }
-    },
-    {
-      "id": "otter-ai",
-      "slug": "otter-ai",
-      "name": "Otter.ai",
-      "org": "Otter",
-      "category": "Productivity",
-      "entityType": "tool",
-      "rank": 92,
-      "rankDelta": "NEW",
-      "superpower": "Productivity Suite",
-      "superpowerShort": "Productivity",
-      "superpowerDetail": "Rank #92 tool",
-      "isOpenWeights": false,
-      "licenseType": "Freemium / SaaS",
-      "license": "Commercial SaaS",
-      "arenaElo": 1250,
-      "eloChange": "+0",
-      "mmluPro": "N/A",
-      "codingScore": "N/A",
-      "mathScore": "N/A",
-      "monthlyVisits": "8M",
-      "growth": "+18.4%",
-      "growthTrend": "up",
-      "price": "Free / $16.99",
-      "outputSpeed": "Instant",
-      "speedNum": 100,
-      "contextWindow": "SaaS Workflow",
-      "badge": "Popular Tool",
-      "shortDescription": "Otter.ai is a leading Productivity platform built by Otter.",
-      "fullDescription": "Otter.ai empowers developers and teams with streamlined Productivity automation and intelligent workflow features.",
-      "website": "https://ai-orbit.org",
-      "logoText": "OTT",
-      "logoColor": "#6E56CF",
-      "releaseDate": "2024",
-      "source": "Verified AI Tool Index",
-      "lastUpdated": "March 2026",
-      "keyFeatures": [
-        "Automated Productivity capabilities",
-        "Over 8M monthly active users",
-        "Seamless enterprise workflow integrations"
-      ],
-      "benchmarks": [
-        {
-          "name": "User Satisfaction Rating",
-          "score": "4.7 / 5.0",
-          "rank": "#92"
-        }
-      ],
-      "specs": {
-        "inputPrice": "Free / $16.99",
-        "outputPrice": "SaaS Subscription",
-        "contextWindow": "Cloud Integration",
-        "maxOutput": "Real-time output",
-        "cutoff": "Live Web Service",
-        "modalities": "Interactive UI & API",
-        "speed": "Instant response",
-        "ttft": "100ms"
-      }
-    },
-    {
-      "id": "raycast-ai",
-      "slug": "raycast-ai",
-      "name": "Raycast AI",
-      "org": "Raycast",
-      "category": "Productivity",
-      "entityType": "tool",
-      "rank": 93,
-      "rankDelta": "NEW",
-      "superpower": "Productivity Suite",
-      "superpowerShort": "Productivity",
-      "superpowerDetail": "Rank #93 tool",
-      "isOpenWeights": false,
-      "licenseType": "Freemium / SaaS",
-      "license": "Commercial SaaS",
-      "arenaElo": 1250,
-      "eloChange": "+0",
-      "mmluPro": "N/A",
-      "codingScore": "N/A",
-      "mathScore": "N/A",
-      "monthlyVisits": "2M",
-      "growth": "+18.4%",
-      "growthTrend": "up",
-      "price": "$8/mo",
-      "outputSpeed": "Instant",
-      "speedNum": 100,
-      "contextWindow": "SaaS Workflow",
-      "badge": "Popular Tool",
-      "shortDescription": "Raycast AI is a leading Productivity platform built by Raycast.",
-      "fullDescription": "Raycast AI empowers developers and teams with streamlined Productivity automation and intelligent workflow features.",
-      "website": "https://ai-orbit.org",
-      "logoText": "RAY",
-      "logoColor": "#6E56CF",
-      "releaseDate": "2024",
-      "source": "Verified AI Tool Index",
-      "lastUpdated": "March 2026",
-      "keyFeatures": [
-        "Automated Productivity capabilities",
-        "Over 2M monthly active users",
-        "Seamless enterprise workflow integrations"
-      ],
-      "benchmarks": [
-        {
-          "name": "User Satisfaction Rating",
-          "score": "4.9 / 5.0",
-          "rank": "#93"
-        }
-      ],
-      "specs": {
-        "inputPrice": "$8/mo",
         "outputPrice": "SaaS Subscription",
         "contextWindow": "Cloud Integration",
         "maxOutput": "Real-time output",
@@ -53790,7 +53259,7 @@
       "categoryDimension3": "31,604 likes",
       "sourceMetadata": {
         "hfEnriched": true,
-        "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+        "hfFetchedAt": "2026-09-26T14:13:48.364Z"
       }
     },
     {
@@ -53925,16 +53394,16 @@
       "entityType": "company",
       "hfModelCount": 100,
       "hfDownloads": 24248965,
-      "hfLikes": 78759,
+      "hfLikes": 78761,
       "hfTrendingScore": 0,
       "categoryMetricLabel": "HF Downloads",
       "categoryMetricValue": "24.2M DL",
       "categorySubMetricLabel": "HF Models",
       "categorySubMetricValue": "100",
-      "categoryDimension3": "78,759 likes",
+      "categoryDimension3": "78,761 likes",
       "sourceMetadata": {
         "hfEnriched": true,
-        "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+        "hfFetchedAt": "2026-09-26T14:13:48.364Z"
       }
     },
     {
@@ -54089,7 +53558,7 @@
       "categoryDimension3": "565 likes",
       "sourceMetadata": {
         "hfEnriched": true,
-        "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+        "hfFetchedAt": "2026-09-26T14:13:48.364Z"
       }
     },
     {
@@ -54500,16 +53969,16 @@
       "entityType": "company",
       "hfModelCount": 75,
       "hfDownloads": 10484787,
-      "hfLikes": 42977,
+      "hfLikes": 42979,
       "hfTrendingScore": 0,
       "categoryMetricLabel": "HF Downloads",
       "categoryMetricValue": "10.5M DL",
       "categorySubMetricLabel": "HF Models",
       "categorySubMetricValue": "75",
-      "categoryDimension3": "42,977 likes",
+      "categoryDimension3": "42,979 likes",
       "sourceMetadata": {
         "hfEnriched": true,
-        "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+        "hfFetchedAt": "2026-09-26T14:13:48.364Z"
       }
     },
     {
@@ -54664,7 +54133,7 @@
       "categoryDimension3": "3,084 likes",
       "sourceMetadata": {
         "hfEnriched": true,
-        "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+        "hfFetchedAt": "2026-09-26T14:13:48.364Z"
       }
     },
     {
@@ -55064,7 +54533,7 @@
       "categoryDimension3": "3,616 likes",
       "sourceMetadata": {
         "hfEnriched": true,
-        "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+        "hfFetchedAt": "2026-09-26T14:13:48.364Z"
       }
     },
     {
@@ -55316,16 +54785,16 @@
       "entityType": "company",
       "hfModelCount": 100,
       "hfDownloads": 6801584,
-      "hfLikes": 49845,
+      "hfLikes": 49852,
       "hfTrendingScore": 0,
       "categoryMetricLabel": "HF Downloads",
       "categoryMetricValue": "6.8M DL",
       "categorySubMetricLabel": "HF Models",
       "categorySubMetricValue": "100",
-      "categoryDimension3": "49,845 likes",
+      "categoryDimension3": "49,852 likes",
       "sourceMetadata": {
         "hfEnriched": true,
-        "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+        "hfFetchedAt": "2026-09-26T14:13:48.364Z"
       }
     },
     {
@@ -57970,7 +57439,7 @@
       "categoryDimension3": "1,060 likes",
       "sourceMetadata": {
         "hfEnriched": true,
-        "hfFetchedAt": "2026-09-26T13:27:21.248Z"
+        "hfFetchedAt": "2026-09-26T14:13:48.364Z"
       }
     },
     {
