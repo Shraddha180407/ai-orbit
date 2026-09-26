@@ -96,6 +96,8 @@ export default function BusinessPage() {
           <div className="mt-6 max-w-md relative">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#71717A]" />
             <input
+              id="business-search-input"
+              name="businessSearch"
               type="text"
               placeholder="Search business functions, tools, or ROI metrics..."
               value={search}

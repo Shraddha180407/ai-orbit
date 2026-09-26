@@ -74,6 +74,8 @@ export default function SearchModal({ isOpen, onClose }) {
           <div className="flex items-center px-4 py-3.5 border-b border-[#232326]">
             <Search size={18} className="text-[#71717A] shrink-0 mr-3" />
             <input
+              id="global-search-modal-input"
+              name="globalSearch"
               type="text"
               autoFocus
               value={query}

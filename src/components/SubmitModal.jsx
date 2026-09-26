@@ -70,8 +70,10 @@ export default function SubmitModal({ isOpen, onClose }) {
             <form onSubmit={handleSubmit} className="space-y-3 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#A1A1AA] font-medium mb-1">Platform Name *</label>
+                  <label htmlFor="submit-robot-name-input" className="block text-[#A1A1AA] font-medium mb-1">Platform Name *</label>
                   <input
+                    id="submit-robot-name-input"
+                    name="robotName"
                     type="text"
                     required
                     placeholder="e.g. Atlas All-Electric"
@@ -81,8 +83,10 @@ export default function SubmitModal({ isOpen, onClose }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-[#A1A1AA] font-medium mb-1">Manufacturer / Lab *</label>
+                  <label htmlFor="submit-manufacturer-input" className="block text-[#A1A1AA] font-medium mb-1">Manufacturer / Lab *</label>
                   <input
+                    id="submit-manufacturer-input"
+                    name="manufacturer"
                     type="text"
                     required
                     placeholder="e.g. Boston Dynamics"
@@ -95,8 +99,10 @@ export default function SubmitModal({ isOpen, onClose }) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#A1A1AA] font-medium mb-1">Locomotion Category</label>
+                  <label htmlFor="submit-category-select" className="block text-[#A1A1AA] font-medium mb-1">Locomotion Category</label>
                   <select
+                    id="submit-category-select"
+                    name="category"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full rounded-xl border border-[#232326] bg-[#16161c] px-3 py-2 text-white focus:border-[#6E56CF] focus:outline-none"
@@ -108,8 +114,10 @@ export default function SubmitModal({ isOpen, onClose }) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[#A1A1AA] font-medium mb-1">Payload (kg)</label>
+                  <label htmlFor="submit-payload-input" className="block text-[#A1A1AA] font-medium mb-1">Payload (kg)</label>
                   <input
+                    id="submit-payload-input"
+                    name="payload"
                     type="text"
                     placeholder="e.g. 20 kg"
                     value={formData.payload}
@@ -120,8 +128,10 @@ export default function SubmitModal({ isOpen, onClose }) {
               </div>
 
               <div>
-                <label className="block text-[#A1A1AA] font-medium mb-1">Official Website / Documentation URL</label>
+                <label htmlFor="submit-website-url-input" className="block text-[#A1A1AA] font-medium mb-1">Official Website / Documentation URL</label>
                 <input
+                  id="submit-website-url-input"
+                  name="websiteUrl"
                   type="url"
                   placeholder="https://manufacturer.com/robot"
                   value={formData.websiteUrl}
@@ -131,8 +141,10 @@ export default function SubmitModal({ isOpen, onClose }) {
               </div>
 
               <div>
-                <label className="block text-[#A1A1AA] font-medium mb-1">Short Description &amp; Actuation Notes</label>
+                <label htmlFor="submit-description-textarea" className="block text-[#A1A1AA] font-medium mb-1">Short Description &amp; Actuation Notes</label>
                 <textarea
+                  id="submit-description-textarea"
+                  name="description"
                   rows={3}
                   placeholder="Describe joint actuators, sensor suite, battery life, and target industrial application..."
                   value={formData.description}

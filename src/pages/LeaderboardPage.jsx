@@ -916,6 +916,8 @@ export default function LeaderboardPage({
           <div className="flex items-center gap-2 shrink-0 ml-auto">
             <div className="relative inline-flex items-center">
               <select
+                id="leaderboard-sort-select"
+                name="sortBy"
                 value={filters.sortBy}
                 onChange={(e) => updateFilters({ sortBy: e.target.value })}
                 className="appearance-none rounded-xl border border-[#3a3a40] bg-[#16161b] pl-3 pr-8 text-[12px] font-medium text-white hover:border-[#4a4a52] focus:outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20 transition-all cursor-pointer h-9"

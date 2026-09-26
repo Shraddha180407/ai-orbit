@@ -72,6 +72,8 @@ export default function ConceptMatrixModal({ isOpen, onClose }) {
         {/* Search Input */}
         <div className="px-6 py-3 bg-[#050508] border-b border-[#161622]">
           <input 
+            id="concept-matrix-search-input"
+            name="conceptSearch"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}

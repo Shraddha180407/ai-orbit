@@ -84,6 +84,8 @@ export default function CompaniesPage() {
           <div className="mt-6 max-w-md relative">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#71717A]" />
             <input
+              id="companies-page-search-input"
+              name="companiesSearch"
               type="text"
               placeholder="Search companies, labs, or products..."
               value={search}

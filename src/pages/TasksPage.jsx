@@ -64,6 +64,8 @@ export default function TasksPage() {
           <div className="mt-6 max-w-md relative">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#71717A]" />
             <input
+              id="tasks-page-search-input"
+              name="tasksSearch"
               type="text"
               placeholder="Search tasks (e.g. assembly, inspection, picking)..."
               value={search}

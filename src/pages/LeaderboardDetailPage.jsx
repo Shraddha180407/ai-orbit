@@ -1170,6 +1170,8 @@ print(response.choices[0].message.content)`;
                     <span className="font-mono font-bold text-white">{callsPerDay.toLocaleString()}</span>
                   </div>
                   <input
+                    id="cost-calc-calls-per-day-input"
+                    name="callsPerDay"
                     type="range"
                     min="100"
                     max="10000"
@@ -1186,6 +1188,8 @@ print(response.choices[0].message.content)`;
                     <span className="font-mono font-bold text-white">{tokensPerCall.toLocaleString()}</span>
                   </div>
                   <input
+                    id="cost-calc-tokens-per-call-input"
+                    name="tokensPerCall"
                     type="range"
                     min="500"
                     max="8000"

@@ -158,8 +158,10 @@ export default function LessonReaderModal({
 
         {/* Footer Action */}
         <div className="px-6 py-4 border-t border-[#161622] bg-black/80 backdrop-blur-xl flex items-center justify-between">
-          <label className="flex items-center gap-3 cursor-pointer select-none">
+          <label htmlFor="lesson-complete-checkbox" className="flex items-center gap-3 cursor-pointer select-none">
             <input 
+              id="lesson-complete-checkbox"
+              name="lessonCompleted"
               type="checkbox"
               checked={isCompleted}
               onChange={() => onToggleComplete(lesson.id)}

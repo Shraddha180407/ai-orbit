@@ -215,6 +215,8 @@ export default function LearnPage() {
                 </svg>
               </div>
               <input 
+                id="learn-search-input"
+                name="learnSearch"
                 ref={searchInputRef}
                 type="text"
                 value={searchQuery}

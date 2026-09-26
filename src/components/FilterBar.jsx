@@ -72,6 +72,8 @@ export default function FilterBar({
           <div className="relative flex-1 max-w-md">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
             <input
+              id="filter-search-input"
+              name="filterSearch"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -93,6 +95,8 @@ export default function FilterBar({
             {/* Status Filter */}
             <div className="relative inline-flex items-center">
               <select
+                id="filter-status-select"
+                name="filterStatus"
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="appearance-none rounded-xl border border-[#232326] bg-[#131316] pl-3 pr-8 py-1 text-[12px] font-medium text-[#E4E4E7] hover:border-[#3a3a40] focus:outline-none focus:border-[#6E56CF] transition-all cursor-pointer h-9"
@@ -109,6 +113,8 @@ export default function FilterBar({
             {/* Sort Dropdown */}
             <div className="relative inline-flex items-center">
               <select
+                id="filter-sort-select"
+                name="filterSortBy"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="appearance-none rounded-xl border border-[#232326] bg-[#131316] pl-3 pr-8 py-1 text-[12px] font-medium text-[#E4E4E7] hover:border-[#3a3a40] focus:outline-none focus:border-[#6E56CF] transition-all cursor-pointer h-9"

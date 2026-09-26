@@ -166,6 +166,8 @@ export default function CompaniesLeaderboardSection() {
         <div className="relative flex-1 max-w-md">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
           <input
+            id="company-search-input"
+            name="companySearch"
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

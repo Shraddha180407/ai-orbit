@@ -81,8 +81,10 @@ export default function InquiryModal({ isOpen, onClose, selectedRobot = null }) 
             <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#A1A1AA] font-medium mb-1">Full Name *</label>
+                  <label htmlFor="inquiry-name-input" className="block text-[#A1A1AA] font-medium mb-1">Full Name *</label>
                   <input
+                    id="inquiry-name-input"
+                    name="name"
                     type="text"
                     required
                     placeholder="e.g. Dr. Alex Vance"
@@ -92,8 +94,10 @@ export default function InquiryModal({ isOpen, onClose, selectedRobot = null }) 
                   />
                 </div>
                 <div>
-                  <label className="block text-[#A1A1AA] font-medium mb-1">Work Email *</label>
+                  <label htmlFor="inquiry-email-input" className="block text-[#A1A1AA] font-medium mb-1">Work Email *</label>
                   <input
+                    id="inquiry-email-input"
+                    name="email"
                     type="email"
                     required
                     placeholder="alex@enterprise.com"
@@ -106,8 +110,10 @@ export default function InquiryModal({ isOpen, onClose, selectedRobot = null }) 
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#A1A1AA] font-medium mb-1">Company / Organization *</label>
+                  <label htmlFor="inquiry-company-input" className="block text-[#A1A1AA] font-medium mb-1">Company / Organization *</label>
                   <input
+                    id="inquiry-company-input"
+                    name="company"
                     type="text"
                     required
                     placeholder="e.g. BMW Robotics Hub"
@@ -117,8 +123,10 @@ export default function InquiryModal({ isOpen, onClose, selectedRobot = null }) 
                   />
                 </div>
                 <div>
-                  <label className="block text-[#A1A1AA] font-medium mb-1">Fleet Scope</label>
+                  <label htmlFor="inquiry-fleet-select" className="block text-[#A1A1AA] font-medium mb-1">Fleet Scope</label>
                   <select
+                    id="inquiry-fleet-select"
+                    name="fleetSize"
                     value={formData.fleetSize}
                     onChange={(e) => setFormData({ ...formData, fleetSize: e.target.value })}
                     className="w-full rounded-xl border border-[#232326] bg-[#16161c] px-3 py-2 text-white focus:border-[#6E56CF] focus:outline-none cursor-pointer"
@@ -132,8 +140,10 @@ export default function InquiryModal({ isOpen, onClose, selectedRobot = null }) 
               </div>
 
               <div>
-                <label className="block text-[#A1A1AA] font-medium mb-1">Target Application &amp; Industry</label>
+                <label htmlFor="inquiry-industry-select" className="block text-[#A1A1AA] font-medium mb-1">Target Application &amp; Industry</label>
                 <select
+                  id="inquiry-industry-select"
+                  name="industry"
                   value={formData.industry}
                   onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
                   className="w-full rounded-xl border border-[#232326] bg-[#16161c] px-3 py-2 text-white focus:border-[#6E56CF] focus:outline-none cursor-pointer"
@@ -147,8 +157,10 @@ export default function InquiryModal({ isOpen, onClose, selectedRobot = null }) 
               </div>
 
               <div>
-                <label className="block text-[#A1A1AA] font-medium mb-1">Deployment Requirements / Notes</label>
+                <label htmlFor="inquiry-notes-textarea" className="block text-[#A1A1AA] font-medium mb-1">Deployment Requirements / Notes</label>
                 <textarea
+                  id="inquiry-notes-textarea"
+                  name="notes"
                   rows={3}
                   placeholder="Outline your cycle time requirements, payload constraints, or ROS 2 integration needs..."
                   value={formData.notes}
