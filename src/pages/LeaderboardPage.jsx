@@ -380,11 +380,11 @@ export default function LeaderboardPage({
       agents: AI_AGENTS_DATA,
       mcp: MCP_DATA,
       filters,
-      ready: true
+      ready: rankedModelsReady
     });
 
     return nextView;
-  }, [filters, resolvedPayload, committedGen]);
+  }, [filters, resolvedPayload, committedGen, rankedModelsReady]);
 
   const lastLoggedViewRef = useRef(null);
   useEffect(() => {
