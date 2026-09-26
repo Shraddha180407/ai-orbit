@@ -161,11 +161,15 @@ export function selectBaseLists({ models, tools, agents = [], mcp = [], filters 
   }
   if (filters.entityType === 'agents') {
     const fromModels = perspectiveModels.filter(isAgentEntity);
-    return fromModels.length > 0 ? fromModels : perspectiveAgents;
+    return (perspectiveAgents.length >= fromModels.length && perspectiveAgents.length > 0)
+      ? perspectiveAgents
+      : (fromModels.length > 0 ? fromModels : perspectiveAgents);
   }
   if (filters.entityType === 'mcp') {
     const fromModels = perspectiveModels.filter(isMCPEntity);
-    return fromModels.length > 0 ? fromModels : perspectiveMcps;
+    return (perspectiveMcps.length >= fromModels.length && perspectiveMcps.length > 0)
+      ? perspectiveMcps
+      : (fromModels.length > 0 ? fromModels : perspectiveMcps);
   }
 
   const modelIds = new Set(perspectiveModels.map((m) => m.id));
@@ -179,12 +183,12 @@ export function computeEntityTypeCounts({ models, tools, agents = [], mcp = [], 
   const perspectiveModels = applyPerspective(models || [], filters.perspective).filter((item) => !isToolEntity(item) && !isAgentEntity(item) && !isMCPEntity(item));
   const perspectiveTools = applyPerspective(tools || [], filters.perspective).filter(isToolEntity);
   
-  let perspectiveAgents = applyPerspective(models || [], filters.perspective).filter(isAgentEntity);
+  let perspectiveAgents = applyPerspective(agents && agents.length > 0 ? agents : models || [], filters.perspective);
   if (perspectiveAgents.length === 0 && agents.length > 0) {
     perspectiveAgents = applyPerspective(agents, filters.perspective);
   }
 
-  let perspectiveMcps = applyPerspective(models || [], filters.perspective).filter(isMCPEntity);
+  let perspectiveMcps = applyPerspective(mcp && mcp.length > 0 ? mcp : models || [], filters.perspective);
   if (perspectiveMcps.length === 0 && mcp.length > 0) {
     perspectiveMcps = applyPerspective(mcp, filters.perspective);
   }
