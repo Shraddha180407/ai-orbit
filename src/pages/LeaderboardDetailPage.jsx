@@ -358,7 +358,7 @@ print(response.choices[0].message.content)`;
   return (
     <div className="min-h-screen bg-black text-white selection:bg-[#6E56CF]/30 pb-20">
       {/* Top Breadcrumb Navigation */}
-      <div className="border-b border-[#1C1C1F] bg-[#09090b]/80 backdrop-blur-md sticky top-[57px] z-30 py-2.5 px-4 sm:px-8">
+      <div className="border-b border-[#1C1C1F] bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-30 py-2.5 px-4 sm:px-8">
         <div className="mx-auto max-w-[1440px] flex items-center justify-between gap-4 text-xs">
           <div className="flex items-center gap-1.5 text-[#A1A1AA] overflow-x-auto scrollbar-none whitespace-nowrap">
             <Link to="/" className="hover:text-white transition-colors flex items-center gap-1">

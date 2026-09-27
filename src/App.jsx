@@ -28,6 +28,9 @@ function ScrollToTop() {
 }
 
 export default function App() {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+
   // Leaderboard compare selection state
   const [selectedForCompare, setSelectedForCompare] = useState([]);
 
@@ -92,13 +95,15 @@ export default function App() {
     <div className="min-h-screen bg-black text-white flex flex-col font-sans selection:bg-[#6E56CF]/30 selection:text-white antialiased overflow-x-hidden">
       <ScrollToTop />
 
-      {/* Main AI Orbit Header with Real Logo */}
-      <Header
-        onOpenSearch={() => setIsSearchOpen(true)}
-        bookmarksCount={bookmarks.length}
-        onOpenBookmarks={() => setIsBookmarksOpen(true)}
-        onOpenSubmit={() => setIsSubmitOpen(true)}
-      />
+      {/* Main AI Orbit Header rendered ONLY on the Home page */}
+      {isHomePage && (
+        <Header
+          onOpenSearch={() => setIsSearchOpen(true)}
+          bookmarksCount={bookmarks.length}
+          onOpenBookmarks={() => setIsBookmarksOpen(true)}
+          onOpenSubmit={() => setIsSubmitOpen(true)}
+        />
+      )}
 
       {/* Main Routes */}
       <div className="flex-1 flex flex-col">
@@ -191,8 +196,8 @@ export default function App() {
         </Routes>
       </div>
 
-      {/* Global AI Orbit Footer with Real Logo */}
-      <Footer />
+      {/* Global AI Orbit Footer & LED Marquee rendered ONLY on the Home page */}
+      {isHomePage && <Footer />}
 
       {/* Overlays & Modals */}
       <SearchModal 
