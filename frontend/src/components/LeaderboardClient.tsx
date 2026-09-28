@@ -14,7 +14,7 @@ import SearchX from 'lucide-react/dist/esm/icons/search-x';
 import X from 'lucide-react/dist/esm/icons/x';
 import Info from 'lucide-react/dist/esm/icons/info';
 import { cn, scrollChipIntoView } from "@/lib/utils";
-import { fetchLeaderboardTools, fetchLeaderboardModels, fetchLeaderboardCompanies } from "@/lib/api";
+import { getLeaderboardTools, getLeaderboardModels, getLeaderboardCompanies } from "@/lib/leaderboardData";
 import { Pagination } from "@/components/Pagination";
 
 type LeaderboardTool = {
@@ -190,7 +190,7 @@ const t: Record<string, Record<string, string>> = {
 
 export function LeaderboardClient() {
   const [lang, setLang] = useState<"en" | "hi">("en");
-  const [activeTab, setActiveTab] = useState<"tools" | "agents" | "mcp" | "models" | "companies">("tools");
+  const [activeTab, setActiveTab] = useState<"tools" | "agents" | "mcp" | "models" | "companies" | "bookmarks">("tools");
   const [activeCategory, setActiveCategory] = useState("All Categories");
   const [sortBy, setSortBy] = useState("Rank");
   const [searchQuery, setSearchQuery] = useState("");
@@ -203,6 +203,8 @@ export function LeaderboardClient() {
 
 
   const [tools, setTools] = useState<LeaderboardTool[]>([]);
+  const [agents, setAgents] = useState<LeaderboardTool[]>([]);
+  const [mcp, setMcp] = useState<LeaderboardTool[]>([]);
   const [models, setModels] = useState<LeaderboardModel[]>([]);
   const [companies, setCompanies] = useState<LeaderboardCompany[]>([]);
   const [loading, setLoading] = useState(true);
@@ -214,31 +216,43 @@ export function LeaderboardClient() {
   // Local bookmarks set
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
 
-  // Get current active categories based on active tab
+  // Get current active categories based on active tab — all keys unique per tab
   const getCategoriesForTab = () => {
-    if (activeTab === "tools" || activeTab === "agents" || activeTab === "mcp") {
+    if (activeTab === "tools") {
       return [
         "All Categories",
-        "Audio & Voice",
-        "Chatbot",
-        "Code Assistant",
-        "Copywriting",
-        "Data Analysis",
-        "Image Generation",
-        "Productivity",
-        "Search & Answer",
-        "Translation",
-        "UI/UX Design",
-        "Video Editing",
+        "Coding / Developer",
+        "Search & Research",
+        "Creative & Audio",
+        "Productivity & Workflow",
+      ];
+    } else if (activeTab === "agents") {
+      return [
+        "All Categories",
+        "AI Agents",
+        "Autonomous SWE",
+        "Coding Agents",
+      ];
+    } else if (activeTab === "mcp") {
+      return [
+        "All Categories",
+        "MCP",
+        "Developer Tools",
+        "Databases",
+        "Search & Web",
       ];
     } else if (activeTab === "models") {
       return [
         "All Categories",
-        "Code Model",
-        "LLM",
-        "Multi-modal",
+        "Chat / General LLM",
+        "Coding",
+        "Reasoning",
+        "Open Weight",
         "Multimodal",
-        "Reasoning LLM",
+        "Image",
+        "Video",
+        "Audio / Voice",
+        "Embeddings",
       ];
     } else {
       return ["All Categories"];
@@ -267,53 +281,40 @@ export function LeaderboardClient() {
     setBookmarkedIds(next);
   };
 
-  // Load initial data
+  // Load real local data — no backend / DB required for local development
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        let toolsData = await fetchLeaderboardTools();
-        const modelsData = await fetchLeaderboardModels();
-        const companiesData = await fetchLeaderboardCompanies();
-        
-        if (toolsData.length === 0) {
-          toolsData = [
-            { id: '1', name: 'Midjourney', category: 'Generative AI', description: 'Advanced AI image generation.', pricing: 'Paid', tags: '["AI", "Image"]', visits: '15.2M', growth: 12, url: 'https://midjourney.com', rank: 1, rating: 5, votes: 1234, saves: 567, addedDate: new Date().toISOString() },
-            { id: '2', name: 'ChatGPT', category: 'Chatbots', description: 'Powerful conversational AI.', pricing: 'Freemium', tags: '["AI", "Chat"]', visits: '45.0M', growth: 5, url: 'https://chat.openai.com', rank: 2, rating: 5, votes: 5678, saves: 1234, addedDate: new Date().toISOString() },
-            { id: '3', name: 'Cursor', category: 'Code Assistant', description: 'AI code editor for engineers.', pricing: 'Paid', tags: '["Code", "Dev"]', visits: '22.0M', growth: -2, url: 'https://cursor.sh', rank: 3, rating: 4, votes: 345, saves: 123, addedDate: new Date().toISOString() }
-          ];
-        }
+    setLoading(true);
+    try {
+      const toolsData = getLeaderboardTools("tool");
+      const agentsData = getLeaderboardTools("agent");
+      const mcpData = getLeaderboardTools("mcp");
+      const modelsData = getLeaderboardModels();
+      const companiesData = getLeaderboardCompanies();
 
-        setTools(toolsData);
-        setModels(modelsData);
-        setCompanies(companiesData);
+      setTools(toolsData);
+      setAgents(agentsData);
+      setMcp(mcpData);
+      setModels(modelsData);
+      setCompanies(companiesData);
 
-        // Pre-bookmark first few items for demonstration
-        if (toolsData.length > 0) {
-          setBookmarkedIds(new Set([toolsData[0].id, toolsData[2].id]));
-        }
-      } catch (err) {
-        console.error("Error fetching leaderboard data:", err);
-        const mockData = [
-          { id: '1', name: 'Midjourney', category: 'Generative AI', description: 'Advanced AI image generation.', pricing: 'Paid', tags: '["AI", "Image"]', visits: '15.2M', growth: 12, url: 'https://midjourney.com', rank: 1, rating: 5, votes: 1234, saves: 567, addedDate: new Date().toISOString() },
-          { id: '2', name: 'ChatGPT', category: 'Chatbots', description: 'Powerful conversational AI.', pricing: 'Freemium', tags: '["AI", "Chat"]', visits: '45.0M', growth: 5, url: 'https://chat.openai.com', rank: 2, rating: 5, votes: 5678, saves: 1234, addedDate: new Date().toISOString() },
-          { id: '3', name: 'Cursor', category: 'Code Assistant', description: 'AI code editor for engineers.', pricing: 'Paid', tags: '["Code", "Dev"]', visits: '22.0M', growth: -2, url: 'https://cursor.sh', rank: 3, rating: 4, votes: 345, saves: 123, addedDate: new Date().toISOString() }
-        ];
-        setTools(mockData);
-        setModels([]);
-        setCompanies([]);
-        setBookmarkedIds(new Set([mockData[0].id, mockData[2].id]));
-      } finally {
-        setLoading(false);
+      if (toolsData.length > 0) {
+        setBookmarkedIds(new Set([toolsData[0].id, toolsData[2]?.id].filter(Boolean) as string[]));
       }
+    } catch (err) {
+      console.error("Error loading leaderboard data:", err);
+    } finally {
+      setLoading(false);
     }
-    loadData();
   }, []);
 
   // Filter tools by category & search query
   const getFilteredTools = () => {
     let list = tools;
-    if (activeTab === "bookmarks") {
+    if (activeTab === "agents") {
+      list = agents;
+    } else if (activeTab === "mcp") {
+      list = mcp;
+    } else if (activeTab === "bookmarks") {
       list = tools.filter((t) => bookmarkedIds.has(t.id));
     }
 
@@ -332,15 +333,22 @@ export function LeaderboardClient() {
       // Category filter
       if (activeCategory === "All Categories") return true;
       const categoryMapping: Record<string, string> = {
-        "Audio & Voice": "Audio",
-        "Chatbot": "Chatbots",
-        "Code Assistant": "Coding",
-        "Copywriting": "Writing",
-        "Image Generation": "Image Generation",
-        "Productivity": "Productivity",
-        "Video Editing": "Video",
+        // Tools tab (toolsData.js TOOL_CATEGORIES)
+        "Coding / Developer": "Coding / Developer",
+        "Search & Research": "Search",
+        "Creative & Audio": "Creative",
+        "Productivity & Workflow": "Productivity",
+        // Agents tab (agentsData.js AGENT_CATEGORIES)
+        "AI Agents": "AI Agents",
+        "Autonomous SWE": "Autonomous SWE",
+        "Coding Agents": "Coding Agents",
+        // MCP tab (mcpData.js MCP_CATEGORIES)
+        "MCP": "MCP",
+        "Developer Tools": "Developer Tools",
+        "Databases": "Databases",
+        "Search & Web": "Search",
       };
-      const target = categoryMapping[activeCategory] || activeCategory;
+      const target = categoryMapping[activeCategory] ?? activeCategory;
       return t.category.toLowerCase().includes(target.toLowerCase());
     });
 
@@ -359,17 +367,32 @@ export function LeaderboardClient() {
     const name = m.name.toLowerCase();
     const desc = m.description.toLowerCase();
 
-    if (target === "Code Model") {
-      return cat.includes("code") || name.includes("code") || name.includes("coder");
+    if (target === "Chat / General LLM") {
+      return cat.includes("chat") || cat.includes("general") || cat.includes("llm");
     }
-    if (target === "LLM") {
-      return cat.includes("text");
+    if (target === "Coding") {
+      return cat.includes("code") || cat.includes("coding") || name.includes("code") || name.includes("coder");
     }
-    if (target === "Multi-modal" || target === "Multimodal") {
-      return cat.includes(",") || cat.includes("vision") || cat.includes("audio") || desc.includes("multimodal");
+    if (target === "Reasoning") {
+      return cat.includes("reason") || desc.includes("reasoning");
     }
-    if (target === "Reasoning LLM") {
-      return desc.includes("reasoning") || name.includes("reasoning") || name.startsWith("o1");
+    if (target === "Open Weight") {
+      return cat.includes("open") || (m as unknown as { openSource: boolean }).openSource === true;
+    }
+    if (target === "Multimodal") {
+      return cat.includes("multi") || cat.includes("vision") || cat.includes("audio") || desc.includes("multimodal");
+    }
+    if (target === "Image") {
+      return cat.includes("image");
+    }
+    if (target === "Video") {
+      return cat.includes("video");
+    }
+    if (target === "Audio / Voice") {
+      return cat.includes("audio") || cat.includes("voice");
+    }
+    if (target === "Embeddings") {
+      return cat.includes("embed");
     }
     return cat.includes(target.toLowerCase());
   };
@@ -496,8 +519,8 @@ export function LeaderboardClient() {
     }
     return (
       <div className="flex flex-row flex-nowrap gap-1.5 overflow-hidden max-w-[200px]">
-        {tagList.slice(0, 2).map((tag) => (
-          <span key={tag} className="px-2.5 py-1 rounded-md bg-white/5 backdrop-blur-md text-[10px] text-white border border-white/10 font-semibold whitespace-nowrap group-hover:border-white/20 transition-all">
+        {tagList.slice(0, 2).map((tag, idx) => (
+          <span key={`${tag}-${idx}`} className="px-2.5 py-1 rounded-md bg-white/5 backdrop-blur-md text-[10px] text-white border border-white/10 font-semibold whitespace-nowrap group-hover:border-white/20 transition-all">
             {tag}
           </span>
         ))}
