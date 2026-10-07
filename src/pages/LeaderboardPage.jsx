@@ -95,6 +95,12 @@ export default function LeaderboardPage({
     setCommittedGen(gen);
   }, []);
 
+  const hasActiveFilters = 
+    filters.category !== 'All' || 
+    filters.perspective !== 'overall' || 
+    filters.entityType !== 'all' || 
+    filters.sortBy !== 'rank';
+
   const [reloadToken, setReloadToken] = useState(0);
   const [perspectivePayload, setPerspectivePayload] = useState({
     perspective: null,
@@ -109,37 +115,6 @@ export default function LeaderboardPage({
     lastUpdatedText: 'DATA UPDATED JUST NOW',
     status: 'loading'
   });
-
-  const handleSwitchEntityType = useCallback((newEntityType) => {
-    setActiveTab('models');
-    let resetCat = false;
-    if (filters.category !== 'All') {
-      const currentModels = (perspectivePayload.status === 'ready' && perspectivePayload.models?.length > 0)
-        ? perspectivePayload.models
-        : AI_MODELS_DATA;
-      const testView = buildLeaderboardView({
-        models: currentModels,
-        tools: AI_TOOLS_DATA,
-        agents: AI_AGENTS_DATA,
-        mcp: MCP_DATA,
-        filters: { ...filters, entityType: newEntityType },
-        ready: true
-      });
-      if (testView.rows.length === 0) {
-        resetCat = true;
-      }
-    }
-    updateFilters({
-      entityType: newEntityType,
-      ...(resetCat ? { category: 'All' } : {})
-    });
-  }, [filters, perspectivePayload, updateFilters]);
-
-  const hasActiveFilters = 
-    filters.category !== 'All' || 
-    filters.perspective !== 'overall' || 
-    filters.entityType !== 'models' || 
-    filters.sortBy !== 'rank';
 
   // Compare Modal state
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
@@ -360,19 +335,9 @@ export default function LeaderboardPage({
       };
     }
 
-    const baseModels = (resolvedPayload.status === 'ready' && resolvedPayload.models?.length > 0)
-      ? resolvedPayload.models
-      : AI_MODELS_DATA;
-
-    // Preserve static Image models if target payload lacks image category models
-    const hasImageModel = baseModels.some((m) => matchLeaderboardCategory(m.category, 'Image'));
-    let modelPool = baseModels;
-    if (!hasImageModel) {
-      const staticImageModels = AI_MODELS_DATA.filter((m) => matchLeaderboardCategory(m.category, 'Image'));
-      const existingIds = new Set(baseModels.map((m) => m.id));
-      const extraImageModels = staticImageModels.filter((m) => !existingIds.has(m.id));
-      modelPool = [...baseModels, ...extraImageModels];
-    }
+    const modelPool = resolvedPayload.status === 'ready'
+      ? (resolvedPayload.models || [])
+      : [];
 
     const nextView = buildLeaderboardView({
       models: modelPool,
@@ -384,7 +349,7 @@ export default function LeaderboardPage({
     });
 
     return nextView;
-  }, [filters, resolvedPayload, committedGen, rankedModelsReady]);
+  }, [filters, resolvedPayload, needsRankedModels, rankedModelsReady, committedGen]);
 
   const lastLoggedViewRef = useRef(null);
   useEffect(() => {
@@ -778,9 +743,9 @@ export default function LeaderboardPage({
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#1C1C1F]">
             <div className="inline-flex p-0.5 rounded-xl bg-[#131316] border border-[#232328] shadow-inner overflow-x-auto scrollbar-none max-w-full">
               <button
-                onClick={() => handleSwitchEntityType('models')}
+                onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'models' }); }}
                 className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === 'models' && filters.entityType === 'models'
+                  activeTab === 'models' && (filters.entityType === 'models' || filters.entityType === 'all')
                     ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
                     : 'text-[#A1A1AA] hover:text-white hover:bg-[#18181f]'
                 }`}
@@ -788,14 +753,14 @@ export default function LeaderboardPage({
                 <Cpu size={14} />
                 <span>AI Models</span>
                 <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-                  activeTab === 'models' && filters.entityType === 'models' ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
+                  activeTab === 'models' && (filters.entityType === 'models' || filters.entityType === 'all') ? 'bg-white/20 text-white' : 'bg-[#1f1f26] text-[#71717A]'
                 }`}>
                   {ecosystemStats.modelsCount}
                 </span>
               </button>
 
               <button
-                onClick={() => handleSwitchEntityType('agents')}
+                onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'agents' }); }}
                 className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'models' && filters.entityType === 'agents'
                     ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
@@ -812,7 +777,7 @@ export default function LeaderboardPage({
               </button>
 
               <button
-                onClick={() => handleSwitchEntityType('mcp')}
+                onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'mcp' }); }}
                 className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'models' && filters.entityType === 'mcp'
                     ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
@@ -829,7 +794,7 @@ export default function LeaderboardPage({
               </button>
 
               <button
-                onClick={() => handleSwitchEntityType('tools')}
+                onClick={() => { setActiveTab('models'); updateFilters({ entityType: 'tools' }); }}
                 className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'models' && filters.entityType === 'tools'
                     ? 'bg-[#6E56CF] text-white shadow-md shadow-[#6E56CF]/30'
@@ -916,8 +881,6 @@ export default function LeaderboardPage({
           <div className="flex items-center gap-2 shrink-0 ml-auto">
             <div className="relative inline-flex items-center">
               <select
-                id="leaderboard-sort-select"
-                name="sortBy"
                 value={filters.sortBy}
                 onChange={(e) => updateFilters({ sortBy: e.target.value })}
                 className="appearance-none rounded-xl border border-[#3a3a40] bg-[#16161b] pl-3 pr-8 text-[12px] font-medium text-white hover:border-[#4a4a52] focus:outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20 transition-all cursor-pointer h-9"
@@ -1081,23 +1044,9 @@ export default function LeaderboardPage({
                             </div>
                           </td>
 
-                          {/* Metric 1 (Arena Elo / Tool Rating / Agent Win Rate / MCP Version) */}
+                          {/* Metric 1 (Arena Elo / Tool Rating) */}
                           <td className="py-2.5 px-3.5 font-mono font-bold text-white text-[13px]">
-                            {tableFilters.entityType === 'agents' ? (
-                              <div>
-                                <span className="text-[#A78BFA]">{model.categoryMetricValue || '—'}</span>
-                                {model.categoryMetricLabel && (
-                                  <span className="text-[10px] text-[#71717A] block font-sans font-normal">{model.categoryMetricLabel}</span>
-                                )}
-                              </div>
-                            ) : tableFilters.entityType === 'mcp' ? (
-                              <div>
-                                <span className="text-emerald-400">{model.categoryMetricValue || model.version || 'v1.0'}</span>
-                                {model.categoryMetricLabel && (
-                                  <span className="text-[10px] text-[#71717A] block font-sans font-normal">{model.categoryMetricLabel}</span>
-                                )}
-                              </div>
-                            ) : tableFilters.entityType === 'tools' ? (
+                            {tableFilters.entityType === 'tools' ? (
                               <div>
                                 <span>{model.categoryMetricValue || '—'}</span>
                                 {model.categoryMetricLabel && (
@@ -1120,23 +1069,9 @@ export default function LeaderboardPage({
                             )}
                           </td>
 
-                          {/* Metric 2 (Coding Score / Key Benchmark / Eval Sessions / Transport) */}
+                          {/* Metric 2 (Coding Score / Key Benchmark) */}
                           <td className="py-2.5 px-3.5 font-mono text-[#E4E4E7] font-semibold">
-                            {tableFilters.entityType === 'agents' ? (
-                              <div>
-                                <span>{model.categorySubMetricValue || '—'}</span>
-                                {model.categorySubMetricLabel && (
-                                  <span className="text-[10px] text-[#71717A] block font-sans font-normal">{model.categorySubMetricLabel}</span>
-                                )}
-                              </div>
-                            ) : tableFilters.entityType === 'mcp' ? (
-                              <div>
-                                <span className="text-xs">{model.categorySubMetricValue || 'stdio / http'}</span>
-                                {model.categorySubMetricLabel && (
-                                  <span className="text-[10px] text-[#71717A] block font-sans font-normal">{model.categorySubMetricLabel}</span>
-                                )}
-                              </div>
-                            ) : tableFilters.entityType === 'tools' ? (
+                            {tableFilters.entityType === 'tools' ? (
                               <div>
                                 <span>{model.categorySubMetricValue || model.codingScore || '—'}</span>
                                 {model.categorySubMetricLabel && (
@@ -1157,16 +1092,9 @@ export default function LeaderboardPage({
                             )}
                           </td>
 
-                          {/* Metric 3 (Speed tok/s / Active Scale / Obs / Registry) */}
+                          {/* Metric 3 (Speed tok/s / Active Scale) */}
                           <td className="py-2.5 px-3.5 font-mono text-[#A1A1AA]">
-                            {tableFilters.entityType === 'agents' ? (
-                              <span className="text-xs">{model.categoryDimension3 || '—'}</span>
-                            ) : tableFilters.entityType === 'mcp' ? (
-                              <span className="inline-flex items-center gap-1.5 text-[10.5px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                {model.categoryDimension3 || 'Official Registry'}
-                              </span>
-                            ) : tableFilters.entityType === 'tools' ? (
+                            {tableFilters.entityType === 'tools' ? (
                               <span>{model.categoryDimension3 || model.outputSpeed || model.monthlyVisits || '—'}</span>
                             ) : isTool ? (
                               <span className="text-[#71717A] font-mono text-xs" title="Token throughput (tok/s) is not applicable to developer tools">
@@ -1177,15 +1105,9 @@ export default function LeaderboardPage({
                             )}
                           </td>
 
-                          {/* Pricing / License */}
+                          {/* Pricing */}
                           <td className="py-2.5 px-3.5 font-mono text-xs text-[#E4E4E7]">
-                            {tableFilters.entityType === 'agents' ? (
-                              <span className="text-xs text-white/90">{model.license || model.price || 'Commercial API'}</span>
-                            ) : tableFilters.entityType === 'mcp' ? (
-                              <span className="text-xs text-emerald-300 font-medium">{model.price || 'Free Protocol'}</span>
-                            ) : (
-                              model.price
-                            )}
+                            {model.price}
                           </td>
 
                           {/* Category */}

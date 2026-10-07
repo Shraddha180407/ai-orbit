@@ -106,33 +106,41 @@ function initSchema(db) {
   }
 }
 
-export function getPreviousSnapshotMap() {
+export function getPreviousSnapshotMap(currentDateStr = null) {
   const db = getDb();
   try {
-    // Find the latest snapshot date that is older than today or the most recent prior batch
-    const dateRow = db.prepare(`
-      SELECT DISTINCT snapshot_date FROM snapshots 
-      ORDER BY snapshot_date DESC LIMIT 1 OFFSET 1
-    `).get();
+    const today = currentDateStr || new Date().toISOString().split('T')[0];
+    
+    // Find the single most recent snapshot at or before T-30 days (MAX date <= T-30d)
+    const baselineDateRow = db.prepare(`
+      SELECT MAX(snapshot_date) as baseline_date
+      FROM snapshots
+      WHERE snapshot_date <= date(?, '-30 days')
+    `).get(today);
 
-    const targetDate = dateRow?.snapshot_date;
+    let targetDate = baselineDateRow?.baseline_date;
+
+    // If no snapshot exists <= T-30d, fallback to the most recent prior snapshot before today
     if (!targetDate) {
-      // If no second date, return the earliest snapshot
-      const firstDateRow = db.prepare(`
-        SELECT DISTINCT snapshot_date FROM snapshots 
-        ORDER BY snapshot_date ASC LIMIT 1
-      `).get();
-      if (!firstDateRow) return new Map();
+      const priorDateRow = db.prepare(`
+        SELECT MAX(snapshot_date) as prior_date
+        FROM snapshots
+        WHERE snapshot_date < ?
+      `).get(today);
+      targetDate = priorDateRow?.prior_date;
     }
 
-    const compareDate = targetDate || db.prepare(`SELECT DISTINCT snapshot_date FROM snapshots ORDER BY snapshot_date ASC LIMIT 1`).get()?.snapshot_date;
+    if (!targetDate) return new Map();
+
     const rows = db.prepare(`
-      SELECT model_id, rank, elo, votes FROM snapshots WHERE snapshot_date = ?
-    `).all(compareDate);
+      SELECT model_id, rank, elo, votes 
+      FROM snapshots 
+      WHERE snapshot_date = ?
+    `).all(targetDate);
 
     const map = new Map();
     for (const r of rows) {
-      map.set(r.model_id, { rank: r.rank, elo: r.elo, votes: r.votes });
+      map.set(r.model_id, { rank: r.rank, elo: r.elo, votes: r.votes, baselineDate: targetDate });
     }
     return map;
   } catch (err) {
@@ -218,7 +226,7 @@ export function saveIngestionResults(models, rankingsByPerspective, extraData = 
       VALUES (?, ?, ?, ?, ?)
     `);
     for (const m of models) {
-      insertSnapshot.run(dateStr, m.slug, m.rank, m.arenaElo, m.votes);
+      insertSnapshot.run(dateStr, m.slug, m.rank || 0, m.arenaElo ?? null, m.votes ?? null);
     }
 
     // Clear and insert perspective rankings

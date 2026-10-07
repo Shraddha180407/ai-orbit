@@ -67,9 +67,19 @@ export default function MobileLeaderboardCard({
           </div>
 
           <div className="min-w-0">
-            <h4 className="font-bold text-sm text-white truncate group-hover:text-[#A78BFA] transition-colors">
-              {model.name}
-            </h4>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h4 className="font-bold text-sm text-white truncate group-hover:text-[#A78BFA] transition-colors">
+                {model.name}
+              </h4>
+              {model.domainPercentile && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9.5px] font-mono font-bold bg-[#6E56CF]/15 text-[#A78BFA] border border-[#6E56CF]/30">
+                  <span>{model.domainPercentile}th</span>
+                  <span className="text-[8px] uppercase tracking-wider text-[#D4D4D8] bg-[#6E56CF]/30 px-1 rounded">
+                    {model.domainType || model.entityType}
+                  </span>
+                </span>
+              )}
+            </div>
             <span className="text-[11px] text-[#71717A] font-mono block">
               {model.org} • {model.category}
             </span>

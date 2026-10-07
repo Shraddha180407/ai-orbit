@@ -40,75 +40,47 @@ export const LEADERBOARD_CATEGORIES = [
 ];
 
 // Unified composite ranking for All Ecosystem View
-// Combines frontier AI Models and flagship AI Tools into an integrated ecosystem ranking
+// Ranks cross-domain entities by Domain Percentile Positioning (0-100)
+// Ensures top models, flagship tools, premier agents, and key MCP servers are fairly interleaved
 const composeLeaderboard = () => {
-  const models = AI_MODELS_DATA.map((m) => ({
+  const models = AI_MODELS_DATA.map((m, idx) => ({
     ...m,
-    modelRank: m.rank
+    domainRank: idx + 1,
+    domainType: 'model',
+    domainPercentile: Math.max(0.1, Math.min(99.9, Math.round((1 - idx / AI_MODELS_DATA.length) * 1000) / 10))
   }));
 
-  const tools = AI_TOOLS_DATA.map((t) => ({
+  const tools = AI_TOOLS_DATA.map((t, idx) => ({
     ...t,
-    toolRank: t.rank
+    domainRank: idx + 1,
+    domainType: 'tool',
+    domainPercentile: Math.max(0.1, Math.min(99.9, Math.round((1 - idx / AI_TOOLS_DATA.length) * 1000) / 10))
   }));
 
-  // Flagship tools that sit alongside frontier models in overall prominence
-  const flagshipToolIds = [
-    "cursor-composer",
-    "github-copilot",
-    "windsurf-codeium",
-    "v0-by-vercel",
-    "supermaven",
-    "perplexity-pro",
-    "google-notebooklm",
-    "midjourney-web",
-    "elevenlabs-studio",
-    "notion-ai",
-    "cognition-devin",
-    "figma-ai"
-  ];
+  const agents = AI_AGENTS_DATA.map((a, idx) => ({
+    ...a,
+    domainRank: idx + 1,
+    domainType: 'agent',
+    domainPercentile: Math.max(0.1, Math.min(99.9, Math.round((1 - idx / AI_AGENTS_DATA.length) * 1000) / 10))
+  }));
 
-  const flagshipTools = tools.filter((t) => flagshipToolIds.includes(t.id));
-  const otherTools = tools.filter((t) => !flagshipToolIds.includes(t.id));
+  const mcps = MCP_DATA.map((c, idx) => ({
+    ...c,
+    domainRank: idx + 1,
+    domainType: 'mcp',
+    domainPercentile: Math.max(0.1, Math.min(99.9, Math.round((1 - idx / MCP_DATA.length) * 1000) / 10))
+  }));
 
-  const combined = [];
-  let mIdx = 0;
-  let fIdx = 0;
-
-  // Tier 1: Top 6 Models
-  while (mIdx < 6 && mIdx < models.length) {
-    combined.push(models[mIdx++]);
-  }
-  // Tier 1 Flagship Tools: Cursor, GitHub Copilot
-  while (fIdx < 2 && fIdx < flagshipTools.length) {
-    combined.push(flagshipTools[fIdx++]);
-  }
-  // Tier 2: Next 6 Models (7-12)
-  while (mIdx < 12 && mIdx < models.length) {
-    combined.push(models[mIdx++]);
-  }
-  // Tier 2 Flagship Tools: Windsurf, v0, Supermaven
-  while (fIdx < 5 && fIdx < flagshipTools.length) {
-    combined.push(flagshipTools[fIdx++]);
-  }
-  // Tier 3: Next 8 Models (13-20)
-  while (mIdx < 20 && mIdx < models.length) {
-    combined.push(models[mIdx++]);
-  }
-  // Tier 3 Flagship Tools: Perplexity, NotebookLM, Midjourney, ElevenLabs, Notion, Devin, Figma
-  while (fIdx < flagshipTools.length) {
-    combined.push(flagshipTools[fIdx++]);
-  }
-  // Remaining Models
-  while (mIdx < models.length) {
-    combined.push(models[mIdx++]);
-  }
-  // Remaining Tools
-  otherTools.forEach((t) => combined.push(t));
-
-  // Add Agents and MCPs
-  AI_AGENTS_DATA.forEach((a) => combined.push(a));
-  MCP_DATA.forEach((m) => combined.push(m));
+  // Combine and sort by domain percentile descending
+  const combined = [...models, ...tools, ...agents, ...mcps];
+  combined.sort((a, b) => {
+    if (b.domainPercentile !== a.domainPercentile) {
+      return b.domainPercentile - a.domainPercentile;
+    }
+    // Priority tie-breaker: model -> tool -> agent -> mcp
+    const priority = { model: 4, tool: 3, agent: 2, mcp: 1 };
+    return (priority[b.domainType] || 0) - (priority[a.domainType] || 0);
+  });
 
   // Assign sequential composite ecosystem rank 1..N
   return combined.map((item, index) => ({

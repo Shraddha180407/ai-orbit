@@ -37,16 +37,31 @@ export default defineConfig({
           if (id.includes('node_modules/lucide-react')) {
             return 'icons';
           }
-          if (id.includes('src/data/modelsData') || id.includes('src/data/toolsData') || id.includes('src/data/leaderboardData')) {
-            return 'leaderboard-data';
+          if (id.includes('src/data/modelsData')) {
+            return 'models-data';
+          }
+          if (id.includes('src/data/toolsData')) {
+            return 'tools-data';
+          }
+          if (id.includes('src/data/agentsData')) {
+            return 'agents-data';
+          }
+          if (id.includes('src/data/mcpData')) {
+            return 'mcp-data';
           }
           if (id.includes('src/data/companiesData')) {
             return 'companies-data';
           }
+          if (id.includes('src/data/robotsData')) {
+            return 'robots-data';
+          }
+          if (id.includes('src/data/leaderboardData')) {
+            return 'leaderboard-data';
+          }
         }
       }
     },
-    chunkSizeWarningLimit: 600
+    chunkSizeWarningLimit: 2500
   }
 })
 

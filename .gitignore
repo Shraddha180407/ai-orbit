@@ -27,3 +27,6 @@ dist-ssr
 !.env.example
 .vercel
 data/*.db-journal
+
+# Nested workspaces
+AiOrbit/
