@@ -1,6 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { LEADERBOARD_DATA, AI_MODELS_DATA } from '../data/leaderboardData';
+import { 
+  LEADERBOARD_DATA, 
+  AI_MODELS_DATA, 
+  AI_TOOLS_DATA, 
+  AI_AGENTS_DATA, 
+  MCP_DATA 
+} from '../data/leaderboardData';
 import { 
   ArrowLeft, 
   ArrowRight,
@@ -85,7 +91,62 @@ export default function LeaderboardDetailPage({
   const { slug } = useParams();
   const navigate = useNavigate();
 
-  const model = LEADERBOARD_DATA.find((m) => m.slug === slug) || LEADERBOARD_DATA[0];
+  // Pool all tracked entities for resolution
+  const allItems = useMemo(() => [
+    ...((LEADERBOARD_DATA) || []),
+    ...((AI_MODELS_DATA) || []),
+    ...((AI_TOOLS_DATA) || []),
+    ...((AI_AGENTS_DATA) || []),
+    ...((MCP_DATA) || [])
+  ], []);
+
+  // Context-aware model resolution matching exact slug, normalized slug, or fuzzy token
+  const model = useMemo(() => {
+    if (!slug) return (LEADERBOARD_DATA)[0] || {};
+
+    const targetSlug = slug.toLowerCase();
+    const normalize = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const targetNorm = normalize(slug);
+
+    // 1. Exact match by slug or id
+    let found = allItems.find(
+      (m) => m.slug?.toLowerCase() === targetSlug || m.id?.toLowerCase() === targetSlug
+    );
+    if (found) return found;
+
+    // 2. Normalized match (ignoring hyphens/dots/underscores)
+    found = allItems.find(
+      (m) => normalize(m.slug) === targetNorm || normalize(m.id) === targetNorm || normalize(m.name) === targetNorm
+    );
+    if (found) return found;
+
+    // 3. Substring match
+    found = allItems.find((m) => {
+      const s = normalize(m.slug);
+      const id = normalize(m.id);
+      return (s && (targetNorm.includes(s) || s.includes(targetNorm))) ||
+             (id && (targetNorm.includes(id) || id.includes(targetNorm)));
+    });
+    if (found) return found;
+
+    // 4. Token-based word match
+    const tokens = targetSlug.split(/[-_.]/).filter((t) => t.length > 2);
+    let bestScore = 0;
+    let bestItem = null;
+    for (const item of allItems) {
+      const itemNorm = `${normalize(item.name)} ${normalize(item.slug)} ${normalize(item.id)}`;
+      const score = tokens.filter((tok) => itemNorm.includes(tok)).length;
+      if (score > bestScore) {
+        bestScore = score;
+        bestItem = item;
+      }
+    }
+    if (bestScore > 0 && bestItem) {
+      return bestItem;
+    }
+
+    return (LEADERBOARD_DATA)[0] || {};
+  }, [slug, allItems]);
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);

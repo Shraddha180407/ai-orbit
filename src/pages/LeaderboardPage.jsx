@@ -1044,9 +1044,23 @@ export default function LeaderboardPage({
                             </div>
                           </td>
 
-                          {/* Metric 1 (Arena Elo / Tool Rating) */}
+                          {/* Metric 1 (Arena Elo / Tool Rating / Agent Win Rate / MCP Version) */}
                           <td className="py-2.5 px-3.5 font-mono font-bold text-white text-[13px]">
-                            {tableFilters.entityType === 'tools' ? (
+                            {tableFilters.entityType === 'agents' ? (
+                              <div>
+                                <span className="text-[#A78BFA]">{model.categoryMetricValue || '—'}</span>
+                                {model.categoryMetricLabel && (
+                                  <span className="text-[10px] text-[#71717A] block font-sans font-normal">{model.categoryMetricLabel}</span>
+                                )}
+                              </div>
+                            ) : tableFilters.entityType === 'mcp' ? (
+                              <div>
+                                <span className="text-emerald-400">{model.categoryMetricValue || model.version || 'v1.0'}</span>
+                                {model.categoryMetricLabel && (
+                                  <span className="text-[10px] text-[#71717A] block font-sans font-normal">{model.categoryMetricLabel}</span>
+                                )}
+                              </div>
+                            ) : tableFilters.entityType === 'tools' ? (
                               <div>
                                 <span>{model.categoryMetricValue || '—'}</span>
                                 {model.categoryMetricLabel && (
@@ -1069,9 +1083,23 @@ export default function LeaderboardPage({
                             )}
                           </td>
 
-                          {/* Metric 2 (Coding Score / Key Benchmark) */}
+                          {/* Metric 2 (Coding Score / Key Benchmark / Eval Sessions / Transport) */}
                           <td className="py-2.5 px-3.5 font-mono text-[#E4E4E7] font-semibold">
-                            {tableFilters.entityType === 'tools' ? (
+                            {tableFilters.entityType === 'agents' ? (
+                              <div>
+                                <span>{model.categorySubMetricValue || '—'}</span>
+                                {model.categorySubMetricLabel && (
+                                  <span className="text-[10px] text-[#71717A] block font-sans font-normal">{model.categorySubMetricLabel}</span>
+                                )}
+                              </div>
+                            ) : tableFilters.entityType === 'mcp' ? (
+                              <div>
+                                <span className="text-xs">{model.categorySubMetricValue || 'stdio / http'}</span>
+                                {model.categorySubMetricLabel && (
+                                  <span className="text-[10px] text-[#71717A] block font-sans font-normal">{model.categorySubMetricLabel}</span>
+                                )}
+                              </div>
+                            ) : tableFilters.entityType === 'tools' ? (
                               <div>
                                 <span>{model.categorySubMetricValue || model.codingScore || '—'}</span>
                                 {model.categorySubMetricLabel && (
@@ -1092,9 +1120,16 @@ export default function LeaderboardPage({
                             )}
                           </td>
 
-                          {/* Metric 3 (Speed tok/s / Active Scale) */}
+                          {/* Metric 3 (Speed tok/s / Active Scale / Obs / Registry) */}
                           <td className="py-2.5 px-3.5 font-mono text-[#A1A1AA]">
-                            {tableFilters.entityType === 'tools' ? (
+                            {tableFilters.entityType === 'agents' ? (
+                              <span className="text-xs">{model.categoryDimension3 || '—'}</span>
+                            ) : tableFilters.entityType === 'mcp' ? (
+                              <span className="inline-flex items-center gap-1.5 text-[10.5px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                {model.categoryDimension3 || 'Official Registry'}
+                              </span>
+                            ) : tableFilters.entityType === 'tools' ? (
                               <span>{model.categoryDimension3 || model.outputSpeed || model.monthlyVisits || '—'}</span>
                             ) : isTool ? (
                               <span className="text-[#71717A] font-mono text-xs" title="Token throughput (tok/s) is not applicable to developer tools">
@@ -1105,9 +1140,15 @@ export default function LeaderboardPage({
                             )}
                           </td>
 
-                          {/* Pricing */}
+                          {/* Pricing / License */}
                           <td className="py-2.5 px-3.5 font-mono text-xs text-[#E4E4E7]">
-                            {model.price}
+                            {tableFilters.entityType === 'agents' ? (
+                              <span className="text-xs text-white/90">{model.license || model.price || 'Commercial API'}</span>
+                            ) : tableFilters.entityType === 'mcp' ? (
+                              <span className="text-xs text-emerald-300 font-medium">{model.price || 'Free Protocol'}</span>
+                            ) : (
+                              model.price
+                            )}
                           </td>
 
                           {/* Category */}
